@@ -1,0 +1,120 @@
+---
+title: "Understanding Diffusion and Flow Matching Models"
+author: "Timothy Wang"
+date: "2025-11-27"
+categories: [diffusion, flow-matching, generative-models]
+toc: true
+---
+
+A deep dive into the mathematics behind diffusion models and flow matching, two powerful approaches to generative modeling.
+
+## Introduction
+
+Diffusion models and flow matching have emerged as state-of-the-art approaches for generative modeling, powering systems like Stable Diffusion, DALL-E, and Flux. Despite their different formulations, both methods share a common goal: learning to transform noise into data.
+
+## Diffusion Models
+
+### The Forward Process
+
+Diffusion models define a forward process that gradually adds Gaussian noise to data over $T$ timesteps. Given a data point $\mathbf{x}_0 \sim q(\mathbf{x})$, the forward process is defined as:
+
+$$
+q(\mathbf{x}_t | \mathbf{x}_{t-1}) = \mathcal{N}(\mathbf{x}_t; \sqrt{1 - \beta_t} \mathbf{x}_{t-1}, \beta_t \mathbf{I})
+$$
+
+where $\beta_t$ is the noise schedule. A key insight is that we can sample $\mathbf{x}_t$ directly from $\mathbf{x}_0$:
+
+$$
+q(\mathbf{x}_t | \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_t; \sqrt{\bar{\alpha}_t} \mathbf{x}_0, (1 - \bar{\alpha}_t) \mathbf{I})
+$$
+
+where $\alpha_t = 1 - \beta_t$ and $\bar{\alpha}_t = \prod_{s=1}^{t} \alpha_s$.
+
+### The Reverse Process
+
+The reverse process learns to denoise:
+
+$$
+p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1}; \boldsymbol{\mu}_\theta(\mathbf{x}_t, t), \sigma_t^2 \mathbf{I})
+$$
+
+### Training Objective
+
+The simplified training objective predicts the noise $\boldsymbol{\epsilon}$:
+
+$$
+\mathcal{L}_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}} \left[ \| \boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t) \|^2 \right]
+$$
+
+where $\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t} \boldsymbol{\epsilon}$ and $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$.
+
+## Flow Matching
+
+Flow matching offers an elegant alternative by directly learning a velocity field that transports samples from noise to data.
+
+### Continuous Normalizing Flows
+
+We define a time-dependent vector field $\mathbf{v}_t: \mathbb{R}^d \rightarrow \mathbb{R}^d$ that generates a flow $\phi_t$ via the ODE:
+
+$$
+\frac{d\phi_t(\mathbf{x})}{dt} = \mathbf{v}_t(\phi_t(\mathbf{x}))
+$$
+
+with initial condition $\phi_0(\mathbf{x}) = \mathbf{x}$.
+
+### Optimal Transport Path
+
+The simplest interpolation between noise $\mathbf{x}_0 \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and data $\mathbf{x}_1 \sim q(\mathbf{x})$ is linear:
+
+$$
+\mathbf{x}_t = (1 - t) \mathbf{x}_0 + t \mathbf{x}_1
+$$
+
+The conditional velocity field for this path is simply:
+
+$$
+\mathbf{u}_t(\mathbf{x} | \mathbf{x}_1) = \mathbf{x}_1 - \mathbf{x}_0
+$$
+
+### Flow Matching Objective
+
+The training objective minimizes:
+
+$$
+\mathcal{L}_{\text{FM}} = \mathbb{E}_{t, q(\mathbf{x}_1), p(\mathbf{x}_0)} \left[ \| \mathbf{v}_\theta(\mathbf{x}_t, t) - (\mathbf{x}_1 - \mathbf{x}_0) \|^2 \right]
+$$
+
+This is remarkably simple compared to diffusion models!
+
+## Comparison
+
+| Aspect | Diffusion | Flow Matching |
+|--------|-----------|---------------|
+| Path | Stochastic (SDE) | Deterministic (ODE) |
+| Training | Predict noise $\boldsymbol{\epsilon}$ | Predict velocity $\mathbf{v}$ |
+| Sampling | Iterative denoising | ODE integration |
+| Theory | Score matching | Optimal transport |
+
+## Connection Between the Two
+
+Interestingly, diffusion models can be viewed through the lens of flow matching. The probability flow ODE for diffusion is:
+
+$$
+d\mathbf{x} = \left[ \mathbf{f}(\mathbf{x}, t) - \frac{1}{2} g(t)^2 \nabla_\mathbf{x} \log p_t(\mathbf{x}) \right] dt
+$$
+
+where the score function $\nabla_\mathbf{x} \log p_t(\mathbf{x})$ relates to the noise prediction via:
+
+$$
+\nabla_\mathbf{x} \log p_t(\mathbf{x}) = -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}, t)}{\sqrt{1 - \bar{\alpha}_t}}
+$$
+
+## Conclusion
+
+Both diffusion and flow matching provide powerful frameworks for generative modeling. While diffusion models were developed first and have a rich theoretical foundation in score matching, flow matching offers a simpler and often more efficient alternative based on optimal transport theory.
+
+## References
+
+1. Ho, J., Jain, A., & Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. *NeurIPS*.
+2. Lipman, Y., et al. (2023). Flow Matching for Generative Modeling. *ICLR*.
+3. Song, Y., et al. (2021). Score-Based Generative Modeling through Stochastic Differential Equations. *ICLR*.
