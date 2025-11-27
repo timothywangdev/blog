@@ -21,11 +21,67 @@
     "text": "Get in Touch\nFeel free to reach out via GitHub."
   },
   {
+    "objectID": "posts/diffusion-flow-models/index.html",
+    "href": "posts/diffusion-flow-models/index.html",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "",
+    "text": "A deep dive into the mathematics behind diffusion models and flow matching, two powerful approaches to generative modeling."
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#introduction",
+    "href": "posts/diffusion-flow-models/index.html#introduction",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "Introduction",
+    "text": "Introduction\nDiffusion models and flow matching have emerged as state-of-the-art approaches for generative modeling, powering systems like Stable Diffusion, DALL-E, and Flux. Despite their different formulations, both methods share a common goal: learning to transform noise into data."
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#diffusion-models",
+    "href": "posts/diffusion-flow-models/index.html#diffusion-models",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "Diffusion Models",
+    "text": "Diffusion Models\n\nThe Forward Process\nDiffusion models define a forward process that gradually adds Gaussian noise to data over \\(T\\) timesteps. Given a data point \\(\\mathbf{x}_0 \\sim q(\\mathbf{x})\\), the forward process is defined as:\n\\[\nq(\\mathbf{x}_t | \\mathbf{x}_{t-1}) = \\mathcal{N}(\\mathbf{x}_t; \\sqrt{1 - \\beta_t} \\mathbf{x}_{t-1}, \\beta_t \\mathbf{I})\n\\]\nwhere \\(\\beta_t\\) is the noise schedule. A key insight is that we can sample \\(\\mathbf{x}_t\\) directly from \\(\\mathbf{x}_0\\):\n\\[\nq(\\mathbf{x}_t | \\mathbf{x}_0) = \\mathcal{N}(\\mathbf{x}_t; \\sqrt{\\bar{\\alpha}_t} \\mathbf{x}_0, (1 - \\bar{\\alpha}_t) \\mathbf{I})\n\\]\nwhere \\(\\alpha_t = 1 - \\beta_t\\) and \\(\\bar{\\alpha}_t = \\prod_{s=1}^{t} \\alpha_s\\).\n\n\nThe Reverse Process\nThe reverse process learns to denoise:\n\\[\np_\\theta(\\mathbf{x}_{t-1} | \\mathbf{x}_t) = \\mathcal{N}(\\mathbf{x}_{t-1}; \\boldsymbol{\\mu}_\\theta(\\mathbf{x}_t, t), \\sigma_t^2 \\mathbf{I})\n\\]\n\n\nTraining Objective\nThe simplified training objective predicts the noise \\(\\boldsymbol{\\epsilon}\\):\n\\[\n\\mathcal{L}_{\\text{simple}} = \\mathbb{E}_{t, \\mathbf{x}_0, \\boldsymbol{\\epsilon}} \\left[ \\| \\boldsymbol{\\epsilon} - \\boldsymbol{\\epsilon}_\\theta(\\mathbf{x}_t, t) \\|^2 \\right]\n\\]\nwhere \\(\\mathbf{x}_t = \\sqrt{\\bar{\\alpha}_t} \\mathbf{x}_0 + \\sqrt{1 - \\bar{\\alpha}_t} \\boldsymbol{\\epsilon}\\) and \\(\\boldsymbol{\\epsilon} \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{I})\\)."
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#flow-matching",
+    "href": "posts/diffusion-flow-models/index.html#flow-matching",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "Flow Matching",
+    "text": "Flow Matching\nFlow matching offers an elegant alternative by directly learning a velocity field that transports samples from noise to data.\n\nContinuous Normalizing Flows\nWe define a time-dependent vector field \\(\\mathbf{v}_t: \\mathbb{R}^d \\rightarrow \\mathbb{R}^d\\) that generates a flow \\(\\phi_t\\) via the ODE:\n\\[\n\\frac{d\\phi_t(\\mathbf{x})}{dt} = \\mathbf{v}_t(\\phi_t(\\mathbf{x}))\n\\]\nwith initial condition \\(\\phi_0(\\mathbf{x}) = \\mathbf{x}\\).\n\n\nOptimal Transport Path\nThe simplest interpolation between noise \\(\\mathbf{x}_0 \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{I})\\) and data \\(\\mathbf{x}_1 \\sim q(\\mathbf{x})\\) is linear:\n\\[\n\\mathbf{x}_t = (1 - t) \\mathbf{x}_0 + t \\mathbf{x}_1\n\\]\nThe conditional velocity field for this path is simply:\n\\[\n\\mathbf{u}_t(\\mathbf{x} | \\mathbf{x}_1) = \\mathbf{x}_1 - \\mathbf{x}_0\n\\]\n\n\nFlow Matching Objective\nThe training objective minimizes:\n\\[\n\\mathcal{L}_{\\text{FM}} = \\mathbb{E}_{t, q(\\mathbf{x}_1), p(\\mathbf{x}_0)} \\left[ \\| \\mathbf{v}_\\theta(\\mathbf{x}_t, t) - (\\mathbf{x}_1 - \\mathbf{x}_0) \\|^2 \\right]\n\\]\nThis is remarkably simple compared to diffusion models!"
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#comparison",
+    "href": "posts/diffusion-flow-models/index.html#comparison",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "Comparison",
+    "text": "Comparison\n\n\n\n\n\n\n\n\nAspect\nDiffusion\nFlow Matching\n\n\n\n\nPath\nStochastic (SDE)\nDeterministic (ODE)\n\n\nTraining\nPredict noise \\(\\boldsymbol{\\epsilon}\\)\nPredict velocity \\(\\mathbf{v}\\)\n\n\nSampling\nIterative denoising\nODE integration\n\n\nTheory\nScore matching\nOptimal transport"
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#connection-between-the-two",
+    "href": "posts/diffusion-flow-models/index.html#connection-between-the-two",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "Connection Between the Two",
+    "text": "Connection Between the Two\nInterestingly, diffusion models can be viewed through the lens of flow matching. The probability flow ODE for diffusion is:\n\\[\nd\\mathbf{x} = \\left[ \\mathbf{f}(\\mathbf{x}, t) - \\frac{1}{2} g(t)^2 \\nabla_\\mathbf{x} \\log p_t(\\mathbf{x}) \\right] dt\n\\]\nwhere the score function \\(\\nabla_\\mathbf{x} \\log p_t(\\mathbf{x})\\) relates to the noise prediction via:\n\\[\n\\nabla_\\mathbf{x} \\log p_t(\\mathbf{x}) = -\\frac{\\boldsymbol{\\epsilon}_\\theta(\\mathbf{x}, t)}{\\sqrt{1 - \\bar{\\alpha}_t}}\n\\]"
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#conclusion",
+    "href": "posts/diffusion-flow-models/index.html#conclusion",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "Conclusion",
+    "text": "Conclusion\nBoth diffusion and flow matching provide powerful frameworks for generative modeling. While diffusion models were developed first and have a rich theoretical foundation in score matching, flow matching offers a simpler and often more efficient alternative based on optimal transport theory."
+  },
+  {
+    "objectID": "posts/diffusion-flow-models/index.html#references",
+    "href": "posts/diffusion-flow-models/index.html#references",
+    "title": "Understanding Diffusion and Flow Matching Models",
+    "section": "References",
+    "text": "References\n\nHo, J., Jain, A., & Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. NeurIPS.\nLipman, Y., et al. (2023). Flow Matching for Generative Modeling. ICLR.\nSong, Y., et al. (2021). Score-Based Generative Modeling through Stochastic Differential Equations. ICLR."
+  },
+  {
     "objectID": "index.html",
     "href": "index.html",
     "title": "AI Models Blog",
     "section": "",
-    "text": "Welcome to My AI Blog\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
+    "text": "Understanding Diffusion and Flow Matching Models\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to My AI Blog\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/welcome/index.html",

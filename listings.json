@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/diffusion-flow-models/index.html",
       "/posts/welcome/index.html"
     ]
   }

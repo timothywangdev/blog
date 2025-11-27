@@ -12,6 +12,133 @@
 <generator>quarto-1.8.26</generator>
 <lastBuildDate>Thu, 27 Nov 2025 00:00:00 GMT</lastBuildDate>
 <item>
+  <title>Understanding Diffusion and Flow Matching Models</title>
+  <dc:creator>Timothy Wang</dc:creator>
+  <link>https://timothywangdev.github.io/blog/posts/diffusion-flow-models/</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>A deep dive into the mathematics behind diffusion models and flow matching, two powerful approaches to generative modeling.</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Diffusion models and flow matching have emerged as state-of-the-art approaches for generative modeling, powering systems like Stable Diffusion, DALL-E, and Flux. Despite their different formulations, both methods share a common goal: learning to transform noise into data.</p>
+</section>
+<section id="diffusion-models" class="level2">
+<h2 class="anchored" data-anchor-id="diffusion-models">Diffusion Models</h2>
+<section id="the-forward-process" class="level3">
+<h3 class="anchored" data-anchor-id="the-forward-process">The Forward Process</h3>
+<p>Diffusion models define a forward process that gradually adds Gaussian noise to data over <img src="https://latex.codecogs.com/png.latex?T"> timesteps. Given a data point <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_0%20%5Csim%20q(%5Cmathbf%7Bx%7D)">, the forward process is defined as:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Aq(%5Cmathbf%7Bx%7D_t%20%7C%20%5Cmathbf%7Bx%7D_%7Bt-1%7D)%20=%20%5Cmathcal%7BN%7D(%5Cmathbf%7Bx%7D_t;%20%5Csqrt%7B1%20-%20%5Cbeta_t%7D%20%5Cmathbf%7Bx%7D_%7Bt-1%7D,%20%5Cbeta_t%20%5Cmathbf%7BI%7D)%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> is the noise schedule. A key insight is that we can sample <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_t"> directly from <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_0">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Aq(%5Cmathbf%7Bx%7D_t%20%7C%20%5Cmathbf%7Bx%7D_0)%20=%20%5Cmathcal%7BN%7D(%5Cmathbf%7Bx%7D_t;%20%5Csqrt%7B%5Cbar%7B%5Calpha%7D_t%7D%20%5Cmathbf%7Bx%7D_0,%20(1%20-%20%5Cbar%7B%5Calpha%7D_t)%20%5Cmathbf%7BI%7D)%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Calpha_t%20=%201%20-%20%5Cbeta_t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbar%7B%5Calpha%7D_t%20=%20%5Cprod_%7Bs=1%7D%5E%7Bt%7D%20%5Calpha_s">.</p>
+</section>
+<section id="the-reverse-process" class="level3">
+<h3 class="anchored" data-anchor-id="the-reverse-process">The Reverse Process</h3>
+<p>The reverse process learns to denoise:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap_%5Ctheta(%5Cmathbf%7Bx%7D_%7Bt-1%7D%20%7C%20%5Cmathbf%7Bx%7D_t)%20=%20%5Cmathcal%7BN%7D(%5Cmathbf%7Bx%7D_%7Bt-1%7D;%20%5Cboldsymbol%7B%5Cmu%7D_%5Ctheta(%5Cmathbf%7Bx%7D_t,%20t),%20%5Csigma_t%5E2%20%5Cmathbf%7BI%7D)%0A"></p>
+</section>
+<section id="training-objective" class="level3">
+<h3 class="anchored" data-anchor-id="training-objective">Training Objective</h3>
+<p>The simplified training objective predicts the noise <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cepsilon%7D">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7B%5Ctext%7Bsimple%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20%5Cmathbf%7Bx%7D_0,%20%5Cboldsymbol%7B%5Cepsilon%7D%7D%20%5Cleft%5B%20%5C%7C%20%5Cboldsymbol%7B%5Cepsilon%7D%20-%20%5Cboldsymbol%7B%5Cepsilon%7D_%5Ctheta(%5Cmathbf%7Bx%7D_t,%20t)%20%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_t%20=%20%5Csqrt%7B%5Cbar%7B%5Calpha%7D_t%7D%20%5Cmathbf%7Bx%7D_0%20+%20%5Csqrt%7B1%20-%20%5Cbar%7B%5Calpha%7D_t%7D%20%5Cboldsymbol%7B%5Cepsilon%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cepsilon%7D%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmathbf%7B0%7D,%20%5Cmathbf%7BI%7D)">.</p>
+</section>
+</section>
+<section id="flow-matching" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching">Flow Matching</h2>
+<p>Flow matching offers an elegant alternative by directly learning a velocity field that transports samples from noise to data.</p>
+<section id="continuous-normalizing-flows" class="level3">
+<h3 class="anchored" data-anchor-id="continuous-normalizing-flows">Continuous Normalizing Flows</h3>
+<p>We define a time-dependent vector field <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D_t:%20%5Cmathbb%7BR%7D%5Ed%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Ed"> that generates a flow <img src="https://latex.codecogs.com/png.latex?%5Cphi_t"> via the ODE:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%5Cphi_t(%5Cmathbf%7Bx%7D)%7D%7Bdt%7D%20=%20%5Cmathbf%7Bv%7D_t(%5Cphi_t(%5Cmathbf%7Bx%7D))%0A"></p>
+<p>with initial condition <img src="https://latex.codecogs.com/png.latex?%5Cphi_0(%5Cmathbf%7Bx%7D)%20=%20%5Cmathbf%7Bx%7D">.</p>
+</section>
+<section id="optimal-transport-path" class="level3">
+<h3 class="anchored" data-anchor-id="optimal-transport-path">Optimal Transport Path</h3>
+<p>The simplest interpolation between noise <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_0%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmathbf%7B0%7D,%20%5Cmathbf%7BI%7D)"> and data <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_1%20%5Csim%20q(%5Cmathbf%7Bx%7D)"> is linear:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bx%7D_t%20=%20(1%20-%20t)%20%5Cmathbf%7Bx%7D_0%20+%20t%20%5Cmathbf%7Bx%7D_1%0A"></p>
+<p>The conditional velocity field for this path is simply:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bu%7D_t(%5Cmathbf%7Bx%7D%20%7C%20%5Cmathbf%7Bx%7D_1)%20=%20%5Cmathbf%7Bx%7D_1%20-%20%5Cmathbf%7Bx%7D_0%0A"></p>
+</section>
+<section id="flow-matching-objective" class="level3">
+<h3 class="anchored" data-anchor-id="flow-matching-objective">Flow Matching Objective</h3>
+<p>The training objective minimizes:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7B%5Ctext%7BFM%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20q(%5Cmathbf%7Bx%7D_1),%20p(%5Cmathbf%7Bx%7D_0)%7D%20%5Cleft%5B%20%5C%7C%20%5Cmathbf%7Bv%7D_%5Ctheta(%5Cmathbf%7Bx%7D_t,%20t)%20-%20(%5Cmathbf%7Bx%7D_1%20-%20%5Cmathbf%7Bx%7D_0)%20%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>This is remarkably simple compared to diffusion models!</p>
+</section>
+</section>
+<section id="comparison" class="level2">
+<h2 class="anchored" data-anchor-id="comparison">Comparison</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 32%">
+<col style="width: 44%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Aspect</th>
+<th>Diffusion</th>
+<th>Flow Matching</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Path</td>
+<td>Stochastic (SDE)</td>
+<td>Deterministic (ODE)</td>
+</tr>
+<tr class="even">
+<td>Training</td>
+<td>Predict noise <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cepsilon%7D"></td>
+<td>Predict velocity <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D"></td>
+</tr>
+<tr class="odd">
+<td>Sampling</td>
+<td>Iterative denoising</td>
+<td>ODE integration</td>
+</tr>
+<tr class="even">
+<td>Theory</td>
+<td>Score matching</td>
+<td>Optimal transport</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="connection-between-the-two" class="level2">
+<h2 class="anchored" data-anchor-id="connection-between-the-two">Connection Between the Two</h2>
+<p>Interestingly, diffusion models can be viewed through the lens of flow matching. The probability flow ODE for diffusion is:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ad%5Cmathbf%7Bx%7D%20=%20%5Cleft%5B%20%5Cmathbf%7Bf%7D(%5Cmathbf%7Bx%7D,%20t)%20-%20%5Cfrac%7B1%7D%7B2%7D%20g(t)%5E2%20%5Cnabla_%5Cmathbf%7Bx%7D%20%5Clog%20p_t(%5Cmathbf%7Bx%7D)%20%5Cright%5D%20dt%0A"></p>
+<p>where the score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla_%5Cmathbf%7Bx%7D%20%5Clog%20p_t(%5Cmathbf%7Bx%7D)"> relates to the noise prediction via:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_%5Cmathbf%7Bx%7D%20%5Clog%20p_t(%5Cmathbf%7Bx%7D)%20=%20-%5Cfrac%7B%5Cboldsymbol%7B%5Cepsilon%7D_%5Ctheta(%5Cmathbf%7Bx%7D,%20t)%7D%7B%5Csqrt%7B1%20-%20%5Cbar%7B%5Calpha%7D_t%7D%7D%0A"></p>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>Both diffusion and flow matching provide powerful frameworks for generative modeling. While diffusion models were developed first and have a rich theoretical foundation in score matching, flow matching offers a simpler and often more efficient alternative based on optimal transport theory.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. <em>NeurIPS</em>.</li>
+<li>Lipman, Y., et al.&nbsp;(2023). Flow Matching for Generative Modeling. <em>ICLR</em>.</li>
+<li>Song, Y., et al.&nbsp;(2021). Score-Based Generative Modeling through Stochastic Differential Equations. <em>ICLR</em>.</li>
+</ol>
+
+
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <guid>https://timothywangdev.github.io/blog/posts/diffusion-flow-models/</guid>
+  <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
+</item>
+<item>
   <title>Welcome to My AI Blog</title>
   <dc:creator>Timothy Wang</dc:creator>
   <link>https://timothywangdev.github.io/blog/posts/welcome/</link>
