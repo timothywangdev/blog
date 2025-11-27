@@ -1,0 +1,18 @@
+---
+title: "About"
+---
+
+Welcome to my blog about AI models! Here I share insights, tutorials, and explorations of artificial intelligence, machine learning, and deep learning technologies.
+
+## Topics I Cover
+
+- Large Language Models (LLMs)
+- Computer Vision
+- Reinforcement Learning
+- Model Architecture and Design
+- AI Research Papers
+- Practical AI Applications
+
+## Get in Touch
+
+Feel free to reach out via [GitHub](https://github.com/timothywangdev).

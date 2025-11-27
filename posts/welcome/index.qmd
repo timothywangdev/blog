@@ -1,0 +1,21 @@
+---
+title: "Welcome to My AI Blog"
+author: "Timothy Wang"
+date: "2025-11-27"
+categories: [news, introduction]
+---
+
+Welcome to my blog! This is where I'll be sharing my thoughts and explorations on AI models.
+
+## What to Expect
+
+I'll be covering topics such as:
+
+- **Large Language Models**: Deep dives into architectures like Transformers, attention mechanisms, and the latest developments in LLMs
+- **Model Training**: Techniques for fine-tuning, RLHF, and efficient training strategies
+- **AI Applications**: Practical guides on using AI models for real-world problems
+- **Research Summaries**: Breakdowns of interesting papers from arXiv and top conferences
+
+## Stay Tuned
+
+More posts coming soon! Feel free to check out the [About](../../about.qmd) page to learn more about this blog.
