@@ -1,0 +1,51 @@
+[
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "Welcome to my blog about AI models! Here I share insights, tutorials, and explorations of artificial intelligence, machine learning, and deep learning technologies."
+  },
+  {
+    "objectID": "about.html#topics-i-cover",
+    "href": "about.html#topics-i-cover",
+    "title": "About",
+    "section": "Topics I Cover",
+    "text": "Topics I Cover\n\nLarge Language Models (LLMs)\nComputer Vision\nReinforcement Learning\nModel Architecture and Design\nAI Research Papers\nPractical AI Applications"
+  },
+  {
+    "objectID": "about.html#get-in-touch",
+    "href": "about.html#get-in-touch",
+    "title": "About",
+    "section": "Get in Touch",
+    "text": "Get in Touch\nFeel free to reach out via GitHub."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "AI Models Blog",
+    "section": "",
+    "text": "Welcome to My AI Blog\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "Welcome to My AI Blog",
+    "section": "",
+    "text": "Welcome to my blog! This is where I’ll be sharing my thoughts and explorations on AI models."
+  },
+  {
+    "objectID": "posts/welcome/index.html#what-to-expect",
+    "href": "posts/welcome/index.html#what-to-expect",
+    "title": "Welcome to My AI Blog",
+    "section": "What to Expect",
+    "text": "What to Expect\nI’ll be covering topics such as:\n\nLarge Language Models: Deep dives into architectures like Transformers, attention mechanisms, and the latest developments in LLMs\nModel Training: Techniques for fine-tuning, RLHF, and efficient training strategies\nAI Applications: Practical guides on using AI models for real-world problems\nResearch Summaries: Breakdowns of interesting papers from arXiv and top conferences"
+  },
+  {
+    "objectID": "posts/welcome/index.html#stay-tuned",
+    "href": "posts/welcome/index.html#stay-tuned",
+    "title": "Welcome to My AI Blog",
+    "section": "Stay Tuned",
+    "text": "Stay Tuned\nMore posts coming soon! Feel free to check out the About page to learn more about this blog."
+  }
+]

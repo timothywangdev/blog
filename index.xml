@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>AI Models Blog</title>
+<link>https://timothywangdev.github.io/blog/</link>
+<atom:link href="https://timothywangdev.github.io/blog/index.xml" rel="self" type="application/rss+xml"/>
+<description>Exploring AI models, machine learning, and deep learning</description>
+<generator>quarto-1.8.26</generator>
+<lastBuildDate>Thu, 27 Nov 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Welcome to My AI Blog</title>
+  <dc:creator>Timothy Wang</dc:creator>
+  <link>https://timothywangdev.github.io/blog/posts/welcome/</link>
+  <description><![CDATA[ 
+
+
+
+
+<p>Welcome to my blog! This is where I’ll be sharing my thoughts and explorations on AI models.</p>
+<section id="what-to-expect" class="level2">
+<h2 class="anchored" data-anchor-id="what-to-expect">What to Expect</h2>
+<p>I’ll be covering topics such as:</p>
+<ul>
+<li><strong>Large Language Models</strong>: Deep dives into architectures like Transformers, attention mechanisms, and the latest developments in LLMs</li>
+<li><strong>Model Training</strong>: Techniques for fine-tuning, RLHF, and efficient training strategies</li>
+<li><strong>AI Applications</strong>: Practical guides on using AI models for real-world problems</li>
+<li><strong>Research Summaries</strong>: Breakdowns of interesting papers from arXiv and top conferences</li>
+</ul>
+</section>
+<section id="stay-tuned" class="level2">
+<h2 class="anchored" data-anchor-id="stay-tuned">Stay Tuned</h2>
+<p>More posts coming soon! Feel free to check out the <a href="../../about.html">About</a> page to learn more about this blog.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>news</category>
+  <category>introduction</category>
+  <guid>https://timothywangdev.github.io/blog/posts/welcome/</guid>
+  <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
