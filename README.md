@@ -37,3 +37,4 @@ categories: [category1, category2]
 The site is automatically deployed to GitHub Pages via GitHub Actions when you push to the `master` branch.
 
 **Important**: After the first deployment, go to your GitHub repository Settings > Pages and set the source to "Deploy from a branch" with the `gh-pages` branch.
+# test
