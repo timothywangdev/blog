@@ -6,15 +6,15 @@
       version="2.0">
 <channel>
 <title>AI Models Blog</title>
-<link>https://timothywangdev.github.io/blog/</link>
-<atom:link href="https://timothywangdev.github.io/blog/index.xml" rel="self" type="application/rss+xml"/>
+<link>https://layernorm.dev/</link>
+<atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring AI models, machine learning, and deep learning</description>
 <generator>quarto-1.8.26</generator>
 <lastBuildDate>Thu, 27 Nov 2025 00:00:00 GMT</lastBuildDate>
 <item>
   <title>Understanding Diffusion and Flow Matching Models</title>
   <dc:creator>Timothy Wang</dc:creator>
-  <link>https://timothywangdev.github.io/blog/posts/diffusion-flow-models/</link>
+  <link>https://layernorm.dev/posts/diffusion-flow-models/</link>
   <description><![CDATA[ 
 
 
@@ -135,13 +135,13 @@
   <category>diffusion</category>
   <category>flow-matching</category>
   <category>generative-models</category>
-  <guid>https://timothywangdev.github.io/blog/posts/diffusion-flow-models/</guid>
+  <guid>https://layernorm.dev/posts/diffusion-flow-models/</guid>
   <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
   <title>Welcome to My AI Blog</title>
   <dc:creator>Timothy Wang</dc:creator>
-  <link>https://timothywangdev.github.io/blog/posts/welcome/</link>
+  <link>https://layernorm.dev/posts/welcome/</link>
   <description><![CDATA[ 
 
 
@@ -168,7 +168,7 @@
  ]]></description>
   <category>news</category>
   <category>introduction</category>
-  <guid>https://timothywangdev.github.io/blog/posts/welcome/</guid>
+  <guid>https://layernorm.dev/posts/welcome/</guid>
   <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 </channel>

@@ -1,1 +1,1 @@
-Sitemap: https://timothywangdev.github.io/blog/sitemap.xml
+Sitemap: https://layernorm.dev/sitemap.xml
