@@ -2,8 +2,9 @@ project:
   type: website
 
 website:
-  title: "AI Models Blog"
-  description: "Exploring AI models, machine learning, and deep learning"
+  title: "LayerNorm"
+  description: "Exploring state-of-the-art AI models"
+  site-url: https://layernorm.dev
   navbar:
     right:
       - about.qmd
@@ -12,10 +13,15 @@ website:
       - icon: rss
         href: index.xml
   page-footer:
-    center: "Copyright 2025, AI Models Blog"
+    center: "Copyright 2025, LayerNorm"
 
 format:
   html:
-    theme: cosmo
+    theme:
+      light: flatly
+      dark: darkly
+    highlight-style: atom-one
+    code-copy: true
+    code-overflow: wrap
     css: styles.css
     toc: true
