@@ -5,10 +5,10 @@
       xmlns:dc="http://purl.org/dc/elements/1.1/" 
       version="2.0">
 <channel>
-<title>AI Models Blog</title>
+<title>LayerNorm</title>
 <link>https://layernorm.dev/</link>
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
-<description>Exploring AI models, machine learning, and deep learning</description>
+<description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.26</generator>
 <lastBuildDate>Thu, 27 Nov 2025 00:00:00 GMT</lastBuildDate>
 <item>
@@ -16,6 +16,7 @@
   <dc:creator>Timothy Wang</dc:creator>
   <link>https://layernorm.dev/posts/diffusion-flow-models/</link>
   <description><![CDATA[ 
+
 
 
 
@@ -143,6 +144,7 @@
   <dc:creator>Timothy Wang</dc:creator>
   <link>https://layernorm.dev/posts/welcome/</link>
   <description><![CDATA[ 
+
 
 
 
