@@ -21,6 +21,55 @@
     "text": "Get in Touch\nFeel free to reach out via GitHub."
   },
   {
+    "objectID": "posts/diffusion/2-flows/index.html",
+    "href": "posts/diffusion/2-flows/index.html",
+    "title": "Flows Explained Simply: A Visual Guide",
+    "section": "",
+    "text": "Imagine a river with currents flowing in different directions at different locations.\n\nVector field \\(u_t(x)\\): The current at each point — it tells a particle “if you’re here, move in this direction”\nTrajectory \\(X_t\\): Following one leaf dropped in the river — where is that specific leaf at time \\(t\\)?\nFlow \\(\\phi_t(x)\\): A map that answers “where does any leaf end up at time \\(t\\), given it started at position \\(x\\)?”\n\nThe key insight: \\(X_t\\) tracks one particle, while \\(\\phi_t\\) describes how the entire space transforms over time.\n\n\n\n\n\n\nFigure 1: A single trajectory following the vector field\n\n\n\n\n\n\nEvery ODE is defined by a vector field \\(u_t(x)\\). A solution \\(X_t\\) starting from \\(x_0\\) must satisfy:\n\\[\n\\begin{aligned}\n\\frac{dX_t}{dt} &= u_t(X_t) \\\\\nX_0 &= x_0 \\quad (\\text{initial condition})\n\\end{aligned}\n\\tag{1}\\]\nIn words: “your velocity equals whatever the vector field says at your current location.”\n\n\n\nThe trajectory \\(X_t\\) answers: “where am I at time \\(t\\), given I started at \\(x_0\\)?”\nBut what if we want to know the answer for any starting point? That’s the flow \\(\\phi_t(x)\\): a function that takes any starting position \\(x\\) and returns where it ends up at time \\(t\\).\n\\[\nX_t = \\phi_t(x_0)\n\\]\nFor one specific starting point \\(x_0\\), the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.\n\n\n\n\n\n\nFigure 2: Multiple trajectories: the flow describes where ANY starting point ends up\n\n\n\n\n\n\nSince the flow satisfies the ODE, we can substitute \\(X_t = \\phi_t(x_0)\\):\n\\[\n\\begin{aligned}\n\\frac{dX_t}{dt} &= u_t(X_t) \\implies \\frac{d \\phi_t(x_0)}{dt} = u_t(\\phi_t(x_0)) \\\\\nX_0 &= x_0 \\implies \\phi_0(x_0) = x_0\n\\end{aligned}\n\\tag{2}\\]\nThe second line says: at \\(t=0\\), every point is where it started (the flow is the identity map).\n\n\n\n\n\n\n\n\n\n\n\nConcept\nNotation\nWhat it answers\n\n\n\n\nVector field\n\\(u_t(x)\\)\n“What direction should I move at position \\(x\\)?”\n\n\nTrajectory\n\\(X_t\\)\n“Where is this one particle at time \\(t\\)?”\n\n\nFlow\n\\(\\phi_t(x)\\)\n“Where does any point \\(x\\) end up at time \\(t\\)?”\n\n\n\nVector fields define ODEs whose solutions are flows.\nThink of it like Google Maps:\n\nVector field = Traffic directions at every location (“turn left here”, “go straight there”)\nODE = The instruction “just follow the GPS”\nTrajectory = The route YOUR car takes\nFlow = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up\n\nSo: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow)."
+  },
+  {
+    "objectID": "posts/diffusion/2-flows/index.html#intuition-think-of-a-river",
+    "href": "posts/diffusion/2-flows/index.html#intuition-think-of-a-river",
+    "title": "Flows Explained Simply: A Visual Guide",
+    "section": "",
+    "text": "Imagine a river with currents flowing in different directions at different locations.\n\nVector field \\(u_t(x)\\): The current at each point — it tells a particle “if you’re here, move in this direction”\nTrajectory \\(X_t\\): Following one leaf dropped in the river — where is that specific leaf at time \\(t\\)?\nFlow \\(\\phi_t(x)\\): A map that answers “where does any leaf end up at time \\(t\\), given it started at position \\(x\\)?”\n\nThe key insight: \\(X_t\\) tracks one particle, while \\(\\phi_t\\) describes how the entire space transforms over time.\n\n\n\n\n\n\nFigure 1: A single trajectory following the vector field"
+  },
+  {
+    "objectID": "posts/diffusion/2-flows/index.html#formal-definition",
+    "href": "posts/diffusion/2-flows/index.html#formal-definition",
+    "title": "Flows Explained Simply: A Visual Guide",
+    "section": "",
+    "text": "Every ODE is defined by a vector field \\(u_t(x)\\). A solution \\(X_t\\) starting from \\(x_0\\) must satisfy:\n\\[\n\\begin{aligned}\n\\frac{dX_t}{dt} &= u_t(X_t) \\\\\nX_0 &= x_0 \\quad (\\text{initial condition})\n\\end{aligned}\n\\tag{1}\\]\nIn words: “your velocity equals whatever the vector field says at your current location.”"
+  },
+  {
+    "objectID": "posts/diffusion/2-flows/index.html#from-trajectory-to-flow",
+    "href": "posts/diffusion/2-flows/index.html#from-trajectory-to-flow",
+    "title": "Flows Explained Simply: A Visual Guide",
+    "section": "",
+    "text": "The trajectory \\(X_t\\) answers: “where am I at time \\(t\\), given I started at \\(x_0\\)?”\nBut what if we want to know the answer for any starting point? That’s the flow \\(\\phi_t(x)\\): a function that takes any starting position \\(x\\) and returns where it ends up at time \\(t\\).\n\\[\nX_t = \\phi_t(x_0)\n\\]\nFor one specific starting point \\(x_0\\), the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.\n\n\n\n\n\n\nFigure 2: Multiple trajectories: the flow describes where ANY starting point ends up"
+  },
+  {
+    "objectID": "posts/diffusion/2-flows/index.html#flow-equation",
+    "href": "posts/diffusion/2-flows/index.html#flow-equation",
+    "title": "Flows Explained Simply: A Visual Guide",
+    "section": "",
+    "text": "Since the flow satisfies the ODE, we can substitute \\(X_t = \\phi_t(x_0)\\):\n\\[\n\\begin{aligned}\n\\frac{dX_t}{dt} &= u_t(X_t) \\implies \\frac{d \\phi_t(x_0)}{dt} = u_t(\\phi_t(x_0)) \\\\\nX_0 &= x_0 \\implies \\phi_0(x_0) = x_0\n\\end{aligned}\n\\tag{2}\\]\nThe second line says: at \\(t=0\\), every point is where it started (the flow is the identity map)."
+  },
+  {
+    "objectID": "posts/diffusion/2-flows/index.html#summary",
+    "href": "posts/diffusion/2-flows/index.html#summary",
+    "title": "Flows Explained Simply: A Visual Guide",
+    "section": "",
+    "text": "Concept\nNotation\nWhat it answers\n\n\n\n\nVector field\n\\(u_t(x)\\)\n“What direction should I move at position \\(x\\)?”\n\n\nTrajectory\n\\(X_t\\)\n“Where is this one particle at time \\(t\\)?”\n\n\nFlow\n\\(\\phi_t(x)\\)\n“Where does any point \\(x\\) end up at time \\(t\\)?”\n\n\n\nVector fields define ODEs whose solutions are flows.\nThink of it like Google Maps:\n\nVector field = Traffic directions at every location (“turn left here”, “go straight there”)\nODE = The instruction “just follow the GPS”\nTrajectory = The route YOUR car takes\nFlow = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up\n\nSo: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow)."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "AI Models Blog",
+    "section": "",
+    "text": "Flows Explained Simply: A Visual Guide\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 30, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nUnderstanding Diffusion and Flow Matching Models\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to My AI Blog\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
+  },
+  {
     "objectID": "posts/diffusion-flow-models/index.html",
     "href": "posts/diffusion-flow-models/index.html",
     "title": "Understanding Diffusion and Flow Matching Models",
@@ -75,13 +124,6 @@
     "title": "Understanding Diffusion and Flow Matching Models",
     "section": "References",
     "text": "References\n\nHo, J., Jain, A., & Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. NeurIPS.\nLipman, Y., et al. (2023). Flow Matching for Generative Modeling. ICLR.\nSong, Y., et al. (2021). Score-Based Generative Modeling through Stochastic Differential Equations. ICLR."
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "AI Models Blog",
-    "section": "",
-    "text": "Understanding Diffusion and Flow Matching Models\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to My AI Blog\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/welcome/index.html",

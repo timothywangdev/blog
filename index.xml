@@ -10,7 +10,122 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.26</generator>
-<lastBuildDate>Thu, 27 Nov 2025 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 30 Nov 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Flows Explained Simply: A Visual Guide</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/2-flows/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="flow" class="level1">
+<h1>Flow</h1>
+<section id="intuition-think-of-a-river" class="level2">
+<h2 class="anchored" data-anchor-id="intuition-think-of-a-river">Intuition: Think of a River</h2>
+<p>Imagine a river with currents flowing in different directions at different locations.</p>
+<ul>
+<li><strong>Vector field</strong> <img src="https://latex.codecogs.com/png.latex?u_t(x)">: The current at each point — it tells a particle “if you’re here, move in this direction”</li>
+<li><strong>Trajectory</strong> <img src="https://latex.codecogs.com/png.latex?X_t">: Following one leaf dropped in the river — where is <em>that specific leaf</em> at time <img src="https://latex.codecogs.com/png.latex?t">?</li>
+<li><strong>Flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)">: A map that answers “where does <em>any</em> leaf end up at time <img src="https://latex.codecogs.com/png.latex?t">, given it started at position <img src="https://latex.codecogs.com/png.latex?x">?”</li>
+</ul>
+<p>The key insight: <img src="https://latex.codecogs.com/png.latex?X_t"> tracks one particle, while <img src="https://latex.codecogs.com/png.latex?%5Cphi_t"> describes how the <em>entire space</em> transforms over time.</p>
+<div id="fig-single-trajectory" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/2-flows/single-trajectory.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: A single trajectory following the vector field
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="formal-definition" class="level2">
+<h2 class="anchored" data-anchor-id="formal-definition">Formal Definition</h2>
+<p>Every ODE is defined by a vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)">. A solution <img src="https://latex.codecogs.com/png.latex?X_t"> starting from <img src="https://latex.codecogs.com/png.latex?x_0"> must satisfy:</p>
+<p><span id="eq-vector-field"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cquad%20(%5Ctext%7Binitial%20condition%7D)%0A%5Cend%7Baligned%7D%0A%5Ctag%7B1%7D"></span></p>
+<p>In words: “your velocity equals whatever the vector field says at your current location.”</p>
+</section>
+<section id="from-trajectory-to-flow" class="level2">
+<h2 class="anchored" data-anchor-id="from-trajectory-to-flow">From Trajectory to Flow</h2>
+<p>The trajectory <img src="https://latex.codecogs.com/png.latex?X_t"> answers: “where am I at time <img src="https://latex.codecogs.com/png.latex?t">, given I started at <img src="https://latex.codecogs.com/png.latex?x_0">?”</p>
+<p>But what if we want to know the answer for <em>any</em> starting point? That’s the <strong>flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)">: a function that takes any starting position <img src="https://latex.codecogs.com/png.latex?x"> and returns where it ends up at time <img src="https://latex.codecogs.com/png.latex?t">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AX_t%20=%20%5Cphi_t(x_0)%0A"></p>
+<p>For one specific starting point <img src="https://latex.codecogs.com/png.latex?x_0">, the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.</p>
+<div id="fig-multiple-trajectories" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/2-flows/multiple-trajectories.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting point ends up
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="flow-equation" class="level2">
+<h2 class="anchored" data-anchor-id="flow-equation">Flow Equation</h2>
+<p>Since the flow satisfies the ODE, we can substitute <img src="https://latex.codecogs.com/png.latex?X_t%20=%20%5Cphi_t(x_0)">:</p>
+<p><span id="eq-flow-ode"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5Cimplies%20%5Cfrac%7Bd%20%5Cphi_t(x_0)%7D%7Bdt%7D%20=%20u_t(%5Cphi_t(x_0))%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cimplies%20%5Cphi_0(x_0)%20=%20x_0%0A%5Cend%7Baligned%7D%0A%5Ctag%7B2%7D"></span></p>
+<p>The second line says: at <img src="https://latex.codecogs.com/png.latex?t=0">, every point is where it started (the flow is the identity map).</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 27%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Notation</th>
+<th>What it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Vector field</td>
+<td><img src="https://latex.codecogs.com/png.latex?u_t(x)"></td>
+<td>“What direction should I move at position <img src="https://latex.codecogs.com/png.latex?x">?”</td>
+</tr>
+<tr class="even">
+<td>Trajectory</td>
+<td><img src="https://latex.codecogs.com/png.latex?X_t"></td>
+<td>“Where is this one particle at time <img src="https://latex.codecogs.com/png.latex?t">?”</td>
+</tr>
+<tr class="odd">
+<td>Flow</td>
+<td><img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)"></td>
+<td>“Where does any point <img src="https://latex.codecogs.com/png.latex?x"> end up at time <img src="https://latex.codecogs.com/png.latex?t">?”</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
+<p>Think of it like Google Maps:</p>
+<ul>
+<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
+<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
+<li><strong>Trajectory</strong> = The route YOUR car takes</li>
+<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
+</ul>
+<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <guid>https://layernorm.dev/posts/diffusion/2-flows/</guid>
+  <pubDate>Sun, 30 Nov 2025 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Understanding Diffusion and Flow Matching Models</title>
   <dc:creator>Timothy Wang</dc:creator>

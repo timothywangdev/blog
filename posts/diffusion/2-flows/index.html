@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2025-11-30">
 
-<title>AI Models Blog – LayerNorm</title>
+<title>Flows Explained Simply: A Visual Guide – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,30 +25,28 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-listing/list.min.js"></script>
-<script src="site_libs/quarto-listing/quarto-listing.js"></script>
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-5fa770aa67c23ef3364642465cd873db.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-5fa770aa67c23ef3364642465cd873db.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -74,35 +74,6 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
-
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -134,8 +105,8 @@ window.Quarto = {
 };
 </script>
 
-<link rel="stylesheet" href="styles.css">
-<link rel="alternate" type="application/rss+xml" title="LayerNorm" href="index.xml" data-external="1"></head>
+<link rel="stylesheet" href="../../../styles.css">
+</head>
 
 <body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -306,7 +277,7 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../../index.html">
     <span class="navbar-title">LayerNorm</span>
     </a>
   </div>
@@ -317,7 +288,7 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./about.html"> 
+    <a class="nav-link" href="../../../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item compact">
@@ -326,7 +297,7 @@ window.Quarto = {
 <span class="menu-text"></span></a>
   </li>  
   <li class="nav-item compact">
-    <a class="nav-link" href="./index.xml"> <i class="bi bi-rss" role="img">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -343,22 +314,52 @@ window.Quarto = {
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(3)</span></div><div class="category" data-category="ZGlmZnVzaW9u">diffusion <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Zmxvdy1tYXRjaGluZw==">flow-matching <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Z2VuZXJhdGl2ZS1tb2RlbHM=">generative-models <span class="quarto-category-count">(2)</span></div><div class="category" data-category="aW50cm9kdWN0aW9u">introduction <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bmV3cw==">news <span class="quarto-category-count">(1)</span></div></div></div>
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#flow" id="toc-flow" class="nav-link active" data-scroll-target="#flow">Flow</a>
+  <ul class="collapse">
+  <li><a href="#intuition-think-of-a-river" id="toc-intuition-think-of-a-river" class="nav-link" data-scroll-target="#intuition-think-of-a-river">Intuition: Think of a River</a></li>
+  <li><a href="#formal-definition" id="toc-formal-definition" class="nav-link" data-scroll-target="#formal-definition">Formal Definition</a></li>
+  <li><a href="#from-trajectory-to-flow" id="toc-from-trajectory-to-flow" class="nav-link" data-scroll-target="#from-trajectory-to-flow">From Trajectory to Flow</a></li>
+  <li><a href="#flow-equation" id="toc-flow-equation" class="nav-link" data-scroll-target="#flow-equation">Flow Equation</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">AI Models Blog</h1>
-</div>
+<h1 class="title">Flows Explained Simply: A Visual Guide</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">diffusion</div>
+    <div class="quarto-category">flow-matching</div>
+    <div class="quarto-category">generative-models</div>
+  </div>
+  </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 30, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -368,115 +369,117 @@ window.Quarto = {
 </header>
 
 
-
-
-
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764460800000" data-listing-file-modified-sort="1764485953321" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="401">
-<div class="thumbnail"><a href="./posts/diffusion/2-flows/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/2-flows/single-trajectory.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/2-flows/index.html" class="no-external">Flows Explained Simply: A Visual Guide</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
+<section id="flow" class="level1">
+<h1>Flow</h1>
+<section id="intuition-think-of-a-river" class="level2">
+<h2 class="anchored" data-anchor-id="intuition-think-of-a-river">Intuition: Think of a River</h2>
+<p>Imagine a river with currents flowing in different directions at different locations.</p>
+<ul>
+<li><strong>Vector field</strong> <span class="math inline">\(u_t(x)\)</span>: The current at each point — it tells a particle “if you’re here, move in this direction”</li>
+<li><strong>Trajectory</strong> <span class="math inline">\(X_t\)</span>: Following one leaf dropped in the river — where is <em>that specific leaf</em> at time <span class="math inline">\(t\)</span>?</li>
+<li><strong>Flow</strong> <span class="math inline">\(\phi_t(x)\)</span>: A map that answers “where does <em>any</em> leaf end up at time <span class="math inline">\(t\)</span>, given it started at position <span class="math inline">\(x\)</span>?”</li>
+</ul>
+<p>The key insight: <span class="math inline">\(X_t\)</span> tracks one particle, while <span class="math inline">\(\phi_t\)</span> describes how the <em>entire space</em> transforms over time.</p>
+<div id="fig-single-trajectory" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="single-trajectory.png" class="img-fluid figure-img">
 </div>
-<div class="delink listing-description"><a href="./posts/diffusion/2-flows/index.html" class="no-external">
-Imagine a river with currents flowing in different directions at different locations.
-</a></div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: A single trajectory following the vector field
+</figcaption>
+</figure>
 </div>
-<div class="metadata">
-<a href="./posts/diffusion/2-flows/index.html" class="no-external">
-<div class="listing-date">
-Nov 30, 2025
+</section>
+<section id="formal-definition" class="level2">
+<h2 class="anchored" data-anchor-id="formal-definition">Formal Definition</h2>
+<p>Every ODE is defined by a vector field <span class="math inline">\(u_t(x)\)</span>. A solution <span class="math inline">\(X_t\)</span> starting from <span class="math inline">\(x_0\)</span> must satisfy:</p>
+<p><span id="eq-vector-field"><span class="math display">\[
+\begin{aligned}
+\frac{dX_t}{dt} &amp;= u_t(X_t) \\
+X_0 &amp;= x_0 \quad (\text{initial condition})
+\end{aligned}
+\tag{1}\]</span></span></p>
+<p>In words: “your velocity equals whatever the vector field says at your current location.”</p>
+</section>
+<section id="from-trajectory-to-flow" class="level2">
+<h2 class="anchored" data-anchor-id="from-trajectory-to-flow">From Trajectory to Flow</h2>
+<p>The trajectory <span class="math inline">\(X_t\)</span> answers: “where am I at time <span class="math inline">\(t\)</span>, given I started at <span class="math inline">\(x_0\)</span>?”</p>
+<p>But what if we want to know the answer for <em>any</em> starting point? That’s the <strong>flow</strong> <span class="math inline">\(\phi_t(x)\)</span>: a function that takes any starting position <span class="math inline">\(x\)</span> and returns where it ends up at time <span class="math inline">\(t\)</span>.</p>
+<p><span class="math display">\[
+X_t = \phi_t(x_0)
+\]</span></p>
+<p>For one specific starting point <span class="math inline">\(x_0\)</span>, the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.</p>
+<div id="fig-multiple-trajectories" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="multiple-trajectories.png" class="img-fluid figure-img">
 </div>
-<div class="listing-author">
-Hujie Wang
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting point ends up
+</figcaption>
+</figure>
 </div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1764485953321" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="473">
-<div class="thumbnail"><a href="./posts/diffusion-flow-models/index.html" class="no-external">
+</section>
+<section id="flow-equation" class="level2">
+<h2 class="anchored" data-anchor-id="flow-equation">Flow Equation</h2>
+<p>Since the flow satisfies the ODE, we can substitute <span class="math inline">\(X_t = \phi_t(x_0)\)</span>:</p>
+<p><span id="eq-flow-ode"><span class="math display">\[
+\begin{aligned}
+\frac{dX_t}{dt} &amp;= u_t(X_t) \implies \frac{d \phi_t(x_0)}{dt} = u_t(\phi_t(x_0)) \\
+X_0 &amp;= x_0 \implies \phi_0(x_0) = x_0
+\end{aligned}
+\tag{2}\]</span></span></p>
+<p>The second line says: at <span class="math inline">\(t=0\)</span>, every point is where it started (the flow is the identity map).</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 27%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Notation</th>
+<th>What it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Vector field</td>
+<td><span class="math inline">\(u_t(x)\)</span></td>
+<td>“What direction should I move at position <span class="math inline">\(x\)</span>?”</td>
+</tr>
+<tr class="even">
+<td>Trajectory</td>
+<td><span class="math inline">\(X_t\)</span></td>
+<td>“Where is this one particle at time <span class="math inline">\(t\)</span>?”</td>
+</tr>
+<tr class="odd">
+<td>Flow</td>
+<td><span class="math inline">\(\phi_t(x)\)</span></td>
+<td>“Where does any point <span class="math inline">\(x\)</span> end up at time <span class="math inline">\(t\)</span>?”</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
+<p>Think of it like Google Maps:</p>
+<ul>
+<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
+<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
+<li><strong>Trajectory</strong> = The route YOUR car takes</li>
+<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
+</ul>
+<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
 
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
 
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion-flow-models/index.html" class="no-external">Understanding Diffusion and Flow Matching Models</a>
-</h3>
-<div class="listing-categories">
+</section>
+</section>
 
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion-flow-models/index.html" class="no-external">
-A deep dive into the mathematics behind diffusion models and flow matching, two powerful approaches to generative modeling.
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion-flow-models/index.html" class="no-external">
-<div class="listing-date">
-Nov 27, 2025
-</div>
-<div class="listing-author">
-Timothy Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-categories="bmV3cyUyQ2ludHJvZHVjdGlvbg==" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1764485953333" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="90">
-<div class="thumbnail"><a href="./posts/welcome/index.html" class="no-external">
-
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/welcome/index.html" class="no-external">Welcome to My AI Blog</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('bmV3cw=='); return false;">news</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('aW50cm9kdWN0aW9u'); return false;">introduction</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/welcome/index.html" class="no-external">
-Welcome to my blog! This is where I’ll be sharing my thoughts and explorations on AI models.
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/welcome/index.html" class="no-external">
-<div class="listing-date">
-Nov 27, 2025
-</div>
-<div class="listing-author">
-Timothy Wang
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
