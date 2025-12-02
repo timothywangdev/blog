@@ -1,0 +1,56 @@
+var
+w:array[1..100]of integer;
+map:array[1..100,1..100]of boolean;
+f:array[1..100]of integer;
+route:array[1..100]of integer;
+n,i,j,k,max,themax,t:integer;
+begin
+fillchar(route,sizeof(route),0);
+fillchar(f,sizeof(f),0);
+fillchar(w,sizeof(w),0);
+fillchar(map,sizeof(map),false);
+themax:=0;
+readln(n);
+for i:=1 to n do read(w[i]);
+f[n]:=w[n];
+for i:=1 to n-1 do
+ begin
+ for j:=i+1 to n do
+  begin
+  read(t);
+  if t=1 then
+   map[i,j]:=true
+  end;
+ readln
+ end;
+for i:=n downto 1 do
+ begin
+ max:=0;
+ for j:=i+1 to n do
+  if i+1<=n then
+   begin
+   if map[i,j] and (f[j]+w[i]>f[i])then
+    begin
+    f[i]:=f[j]+w[i];
+    route[i]:=j
+    end;
+   if max<f[i] then
+    begin
+    max:=f[i];
+    themax:=i
+    end
+   end
+  end;
+i:=themax;
+while i<>0 do
+ begin
+ if route[i]=0 then
+  write(i)
+ else
+  write(i,'->');
+ i:=route[i]
+ end;
+ writeln;
+writeln('max=',max);
+end.
+

@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2012-01-09">
+
+<title>今天看了下11年ACM的队名，我彻底无语了。。。。。。 – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-5fa770aa67c23ef3364642465cd873db.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">今天看了下11年ACM的队名，我彻底无语了。。。。。。</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">miscellaneous</div>
+    <div class="quarto-category">imported</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 9, 2012</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>学校排名</th>
+<th>学校名称</th>
+<th>队伍排名</th>
+<th>队伍名</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>上海交通大学</td>
+<td>1</td>
+<td>史诗 (team29)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>清华大学</td>
+<td>2</td>
+<td>DivineRapier (team4)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>清华大学</td>
+<td>3</td>
+<td>machinator (team88)</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td>中山大学</td>
+<td>4</td>
+<td>SYSU_Metalgarurumon (team94)</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td>复旦大学</td>
+<td>5</td>
+<td>FDU_BGM (team5)</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>浙江工业大学</td>
+<td>6</td>
+<td>小和山职业技术学院 (team33)</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td>电子科技大学</td>
+<td>7</td>
+<td>成电-宙斯 (team18)</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td>北京大学</td>
+<td>8</td>
+<td>巴斯特 (team14)</td>
+</tr>
+<tr class="odd">
+<td>北京大学</td>
+<td>9</td>
+<td>若爆了 (team27)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td>国防科技大学</td>
+<td>10</td>
+<td>阿蕾泡菜 (team52)</td>
+</tr>
+<tr class="odd">
+<td>北京大学</td>
+<td>11</td>
+<td>丽华 (team106)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>北京大学</td>
+<td>12</td>
+<td>OSU (team48)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td>武汉大学</td>
+<td>13</td>
+<td>旅途 (team25)</td>
+</tr>
+<tr class="even">
+<td>电子科技大学</td>
+<td>14</td>
+<td>成电-阿波罗 (team57)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>中山大学</td>
+<td>15</td>
+<td>SYSU_HolyAngemon (team11)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>中山大学</td>
+<td>16</td>
+<td>SYSU_AtlurKabuterimon (team51)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>复旦大学</td>
+<td>17</td>
+<td>FDU_Sanguosha (team43)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>北京大学</td>
+<td>18</td>
+<td>OSU安格瑞扣得死 (team121)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td>北京航空航天大学</td>
+<td>19</td>
+<td>北航-1 (team16)</td>
+</tr>
+<tr class="even">
+<td>11</td>
+<td>西安电子科技大学</td>
+<td>20</td>
+<td>XDU_ Avalon (team12)</td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td>哈尔滨工业大学</td>
+<td>21</td>
+<td>史诗 (team28)</td>
+</tr>
+<tr class="even">
+<td>13</td>
+<td>天津大学</td>
+<td>22</td>
+<td>哎呦喂~ (team13)</td>
+</tr>
+<tr class="odd">
+<td>14</td>
+<td>北京邮电大学</td>
+<td>23</td>
+<td>魔女 (team145)</td>
+</tr>
+<tr class="even">
+<td>清华大学</td>
+<td>24</td>
+<td>Odds (team41)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td>南京理工大学</td>
+<td>25</td>
+<td>STSky (team10)</td>
+</tr>
+<tr class="even">
+<td>*</td>
+<td>华东理工大学</td>
+<td>26</td>
+<td>哆啦A梦 (team61)</td>
+</tr>
+<tr class="odd">
+<td>复旦大学</td>
+<td>27</td>
+<td>Buer (team83)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>北京邮电大学</td>
+<td>28</td>
+<td>逐日者 (team38)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>16</td>
+<td>杭州电子科技大学</td>
+<td>29</td>
+<td>我知道你喜欢我 (team153)</td>
+</tr>
+<tr class="even">
+<td>17</td>
+<td>福州大学</td>
+<td>30</td>
+<td>编译器 (team55)</td>
+</tr>
+<tr class="odd">
+<td>18</td>
+<td>西南民族大学</td>
+<td>31</td>
+<td>SWUN_Snow_storm (team130)</td>
+</tr>
+<tr class="even">
+<td>19</td>
+<td>北京师范大学</td>
+<td>32</td>
+<td>雷霆 (team24)</td>
+</tr>
+<tr class="odd">
+<td>20</td>
+<td>蒙古国立大学</td>
+<td>33</td>
+<td>S.M.C.S (team91)</td>
+</tr>
+<tr class="even">
+<td>21</td>
+<td>中国人民大学</td>
+<td>34</td>
+<td>人大金仓 (team147)</td>
+</tr>
+<tr class="odd">
+<td>22</td>
+<td>华南农业大学</td>
+<td>35</td>
+<td>SCAU_病了 (team50)</td>
+</tr>
+<tr class="even">
+<td>23</td>
+<td>湘潭大学</td>
+<td>36</td>
+<td>湘潭大学10号队 (team32)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>国防科技大学</td>
+<td>37</td>
+<td>阿蕾泡醋 (team133)</td>
+</tr>
+<tr class="even">
+<td>武汉大学</td>
+<td>38</td>
+<td>你信吗 (team109)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>24</td>
+<td>湖南大学</td>
+<td>39</td>
+<td>旅行者 (team107)</td>
+</tr>
+<tr class="even">
+<td>25</td>
+<td>中国科学技术大学</td>
+<td>40</td>
+<td>开源 (team23)</td>
+</tr>
+<tr class="odd">
+<td>哈尔滨工业大学</td>
+<td>41</td>
+<td>奔跑， 运行， 一击脱离 (team54)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>26</td>
+<td>西安交通大学</td>
+<td>42</td>
+<td>FollowDream (team44)</td>
+</tr>
+<tr class="odd">
+<td>27</td>
+<td>华东交通大学</td>
+<td>43</td>
+<td>素数音乐 (team74)</td>
+</tr>
+<tr class="even">
+<td>28</td>
+<td>广东工业大学</td>
+<td>44</td>
+<td>多拉AC梦 (team60)</td>
+</tr>
+<tr class="odd">
+<td>29</td>
+<td>华中科技大学</td>
+<td>45</td>
+<td>HUST_lol (team8)</td>
+</tr>
+<tr class="even">
+<td>电子科技大学</td>
+<td>46</td>
+<td>成电-缪斯 (team134)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>福州大学</td>
+<td>47</td>
+<td>歪歪 (team115)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>北京航空航天大学</td>
+<td>48</td>
+<td>我们喜欢气球。.. (team116)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>30</td>
+<td>北京交通大学</td>
+<td>49</td>
+<td>缘分天使 (team117)</td>
+</tr>
+<tr class="even">
+<td>华中科技大学</td>
+<td>50</td>
+<td>HUST_DONE (team87)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>大连理工大学</td>
+<td>51</td>
+<td>一帆风顺 (team35)</td>
+</tr>
+<tr class="even">
+<td>北京师范大学</td>
+<td>52</td>
+<td>Attiix (team42)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>天津大学</td>
+<td>53</td>
+<td>逗你玩～ (team59)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>*</td>
+<td>山东大学</td>
+<td>54</td>
+<td>S.O.G (team49)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>福建师范大学</td>
+<td>55</td>
+<td>灵魂链 (team143)</td>
+</tr>
+<tr class="even">
+<td>31</td>
+<td>浙江大学城市学院</td>
+<td>56</td>
+<td>造神奇 (team118)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>大连理工大学</td>
+<td>57</td>
+<td>蠕虫 (team110)</td>
+</tr>
+<tr class="even">
+<td>*</td>
+<td>大连理工大学</td>
+<td>58</td>
+<td>使徒 (team30)</td>
+</tr>
+<tr class="odd">
+<td>32</td>
+<td>山东大学</td>
+<td>59</td>
+<td>Ace Coders (team122)</td>
+</tr>
+<tr class="even">
+<td>33</td>
+<td>南京大学</td>
+<td>60</td>
+<td>Heracles (team85)</td>
+</tr>
+<tr class="odd">
+<td>34</td>
+<td>吉林大学</td>
+<td>61</td>
+<td>GAP (team7)</td>
+</tr>
+<tr class="even">
+<td>北京交通大学</td>
+<td>62</td>
+<td>Only (team69)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>华中科技大学</td>
+<td>63</td>
+<td>HUST_Cutit (team45)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>35</td>
+<td>南阳理工学院</td>
+<td>64</td>
+<td>Lambda (team47)</td>
+</tr>
+<tr class="odd">
+<td>36</td>
+<td>东北林业大学</td>
+<td>65</td>
+<td>穿越火线 (team135)</td>
+</tr>
+<tr class="even">
+<td>37</td>
+<td>东北师范大学</td>
+<td>66</td>
+<td>苦艾酒 (team104)</td>
+</tr>
+<tr class="odd">
+<td>38</td>
+<td>厦门大学</td>
+<td>67</td>
+<td>伙伴系统 (team103)</td>
+</tr>
+<tr class="even">
+<td>39</td>
+<td>华东理工大学</td>
+<td>68</td>
+<td>超级漏洞 (team17)</td>
+</tr>
+<tr class="odd">
+<td>40</td>
+<td>华南师范大学</td>
+<td>69</td>
+<td>SCNU_Cindy_Prinse (team9)</td>
+</tr>
+<tr class="even">
+<td>41</td>
+<td>北京林业大学</td>
+<td>70</td>
+<td>无压力 (team76)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>天津大学</td>
+<td>71</td>
+<td>TJU_Orion (team132)</td>
+</tr>
+<tr class="even">
+<td>吉林大学</td>
+<td>72</td>
+<td>jojer (team46)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>42</td>
+<td>北京化工大学</td>
+<td>73</td>
+<td>AngryBirds (team123)</td>
+</tr>
+<tr class="even">
+<td>43</td>
+<td>怀化学院</td>
+<td>74</td>
+<td>蓝鸟2 (team105)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>大连理工大学</td>
+<td>75</td>
+<td>GBM (team126)</td>
+</tr>
+<tr class="even">
+<td>北京邮电大学</td>
+<td>76</td>
+<td>派 (team71)</td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>东北师范大学</td>
+<td>77</td>
+<td>多态 (team19)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>44</td>
+<td>浙江师范大学</td>
+<td>78</td>
+<td>撄宁 (team36)</td>
+</tr>
+<tr class="odd">
+<td>北京交通大学</td>
+<td>79</td>
+<td>永无止境 (team37)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>45</td>
+<td>哈尔滨工程大学</td>
+<td>80</td>
+<td>梦之奇迹 (team144)</td>
+</tr>
+<tr class="odd">
+<td>西安交通大学</td>
+<td>81</td>
+<td>Smarabbit (team129)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>46</td>
+<td>中国地质大学（武汉）</td>
+<td>82</td>
+<td>南望山 (team146)</td>
+</tr>
+<tr class="odd">
+<td>47</td>
+<td>安徽大学</td>
+<td>83</td>
+<td>ahu_chorus (team81)</td>
+</tr>
+<tr class="even">
+<td>47</td>
+<td>北京信息科技大学</td>
+<td>83</td>
+<td>卡布奇诺 (team141)</td>
+</tr>
+<tr class="odd">
+<td>49</td>
+<td>西南科技大学</td>
+<td>85</td>
+<td>贡嘎雪山 (team137)</td>
+</tr>
+<tr class="even">
+<td>50</td>
+<td>山东理工大学</td>
+<td>86</td>
+<td>Loda_影魔 (team127)</td>
+</tr>
+<tr class="odd">
+<td>50</td>
+<td>同济大学</td>
+<td>86</td>
+<td>Molecule (team128)</td>
+</tr>
+<tr class="even">
+<td>52</td>
+<td>南开大学</td>
+<td>88</td>
+<td>THRILLING HOT VI (team96)</td>
+</tr>
+<tr class="odd">
+<td>*</td>
+<td>大连理工大学</td>
+<td>89</td>
+<td>小Y (team154)</td>
+</tr>
+<tr class="even">
+<td>53</td>
+<td>重庆大学</td>
+<td>90</td>
+<td>.铃科丶百合子 (team1)</td>
+</tr>
+<tr class="odd">
+<td>山东大学</td>
+<td>91</td>
+<td>SuperBrother (team93)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>*</td>
+<td>哈尔滨工业大学</td>
+<td>92</td>
+<td>时间原点 (team148)</td>
+</tr>
+<tr class="odd">
+<td>杭州电子科技大学</td>
+<td>93</td>
+<td>坑爹啊~ (team68)</td>
+<td></td>
+</tr>
+<tr class="even">
+<td>54</td>
+<td>合肥工业大学</td>
+<td>94</td>
+<td>工大雷克斯 (team63)</td>
+</tr>
+<tr class="odd">
+<td>55</td>
+<td>浙江中医药大学</td>
+<td>95</td>
+<td>杰哥带我们来打酱油 (team67)</td>
+</tr>
+<tr class="even">
+<td>56</td>
+<td>北京理工大学</td>
+<td>96</td>
+<td>愤怒的蚂蚁 (team62)</td>
+</tr>
+</tbody>
+</table>
+<p>尤其是北大的《弱爆了》。。。。。</p>
+
+
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

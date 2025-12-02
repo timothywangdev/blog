@@ -1,0 +1,98 @@
+var
+c,d,e:array[1..1500]of longint;
+a,b:array[1..1500] of char;
+j,la,lb,lc,ld,i:integer;
+over:boolean;
+procedure add;
+var
+i:integer;
+begin
+if lc<ld then
+lc:=ld;
+for i:=1 to lc do
+begin
+e[i]:=e[i]+c[i]+d[i];
+e[i+1]:=e[i+1]+e[i] div 10000;
+e[i]:=e[i] mod 10000;
+end;
+if e[lc+1]<>0 then inc(lc)
+end;
+
+procedure readnext;
+var
+i:integer;
+begin
+i:=0;
+repeat
+inc(i);
+read(b[i]);
+if((ord(b[i])<48)or(57<ord(b[i])))and(b[i]<>'+') then
+over:=true
+until (b[i]='+')or over;
+dec(i);lb:=i;
+for i:=0 to lb-1 do
+begin
+j:=(lb-i+3)div 4;
+d[j]:=d[j]*10+ord(b[i+1])-48
+end;
+ld:=(lb+3)div 4
+end;
+
+procedure clean;
+begin
+fillchar(d,sizeof(d),0);
+fillchar(b,sizeof(b),'-');
+fillchar(e,sizeof(e),0)
+end;
+procedure changetoc;
+var
+i:integer;
+begin
+for i:=1 to lc do
+c[i]:=e[i]
+end;
+procedure printe;
+var
+i:integer;
+begin
+write(e[lc]);
+for i:=lc-1 downto 1 do
+write(e[i] div 1000,(e[i] div 100)mod 10,(e[i] div 10)mod 10,e[i] mod 10)
+end;
+begin
+fillchar(a,sizeof(a),'-');
+fillchar(b,sizeof(b),'-');
+fillchar(c,sizeof(c),0);
+fillchar(d,sizeof(d),0);
+fillchar(e,sizeof(e),0);
+over:=false;
+i:=0;
+repeat
+inc(i);
+read(a[i]);
+if((ord(a[i])<48)or(57<ord(a[i])))and(a[i]<>'+')then
+ begin
+ for j:=1 to i-1 do
+  write(a[j]);
+ halt
+ end;
+until (a[i]='+');
+dec(i);la:=i;
+
+for i:=0 to la-1 do
+begin
+j:=(la-i+3)div 4;
+c[j]:=c[j]*10+ord(a[i+1])-48
+end;
+lc:=(la+3)div 4;
+
+while not over do
+begin
+readnext;
+add;
+if not over then
+changetoc
+else printe;
+clean
+end;
+end.
