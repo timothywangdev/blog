@@ -1,0 +1,8 @@
+---
+title: "对于在vector中 当前迭代器在末尾时 使用pop_back()出错解决方法"
+date: "2012-04-22"
+categories: [imported, notes]
+draft: false
+---
+
+[cpp] #include "stdafx.h" #include <iostream> #include <vector> using namespace std; vector<int> test; bool Delete(vector<int>::iterator it) //确认是否删除，若是返回真，否则返回假。 { if(*it==3) { test.pop_back(); return true; } return false; } int main() { test.push_back(1); test.push_back(2); test.push_back(3); for(vector<int>::iterator it=test.begin();it!=test.end();it++) { //下面先判断迭代器是否在末尾，如果在并且确认删除，提前退出循环防止迭代器继续自增。 if((it+1==test.end())&&Delete(it)) break; } return 0; } [/cpp] 暂时没有更好的方法，等想出来再改。

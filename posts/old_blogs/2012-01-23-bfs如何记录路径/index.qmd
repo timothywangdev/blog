@@ -1,0 +1,8 @@
+---
+title: "BFS如何记录路径【转帖】"
+date: "2012-01-23"
+categories: [algorithms, imported]
+draft: false
+---
+
+在写某道USACO的时候第一次遇到这个问题.(表示本人遇到的某题和这位的某题一样。。。） 首先，我想到了一种方法：从遍历的方案队列中寻找需要的方案. 在那道usaco中， 遍历的实际上是一个三叉树，我们可以像二叉树一样根据节点编号来推断父节点或者子节点.如下图：![](/images/uploads/2012/01/4bf7b658h8dc276c00f6b690.png) 推算起来比较麻烦... 另一种方法是我在lrj《算法竞赛入门经典》上看到的：在把节点加入队列的同时，记录父节点和方案.程序很简单，就不写伪代码了： [php]void print(int node)//输出操作 { int c = 0; square tmp; int dir[30]; for(;;) { uncontor(node, tmp); if(node == 1) break; dir[c++] = op[node]; node = fa[node]; } while(c--) fputc(dir[c]+'A'-1, fout); }[/php] 来自：<http://blog.sina.com.cn/s/blog_4bf7b6580100l2zz.html>

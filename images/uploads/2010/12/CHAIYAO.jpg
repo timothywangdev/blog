@@ -1,0 +1,22 @@
+var
+t,m,i,j:integer;
+ti:array[1..100]of integer;
+vi:array[1..100]of integer;
+f:array[0..100,1..1000]of integer;
+begin
+fillchar(ti,sizeof(ti),0);
+fillchar(vi,sizeof(vi),0);
+fillchar(f,sizeof(f),0);
+readln(t,m);
+for i:=1 to m do
+ readln(ti[i],vi[i]);
+for i:=1 to m do
+ for j:=0 to t do
+  begin
+  f[i,j]:=f[i-1,j];
+  if (ti[i]<=j)AND(f[i-1,j-ti[i]]+vi[i]>f[i,j])then
+   f[i,j]:=f[i-1,j-ti[i]]+vi[i]
+  end;
+writeln(f[m,t]);
+end.
+

@@ -1,0 +1,8 @@
+---
+title: "回文词细节问题"
+date: "2011-11-12"
+categories: [imported, notes]
+draft: false
+---
+
+注意可以一个在中间也可以二个相同的在中间。

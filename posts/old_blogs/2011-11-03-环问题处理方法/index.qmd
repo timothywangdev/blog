@@ -1,0 +1,8 @@
+---
+title: "环问题处理方法"
+date: "2011-11-03"
+categories: [imported, notes]
+draft: false
+---
+
+如果不方便处理，可以把这个环转成链再复制两边。

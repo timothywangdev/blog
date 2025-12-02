@@ -1,0 +1,37 @@
+var
+a:array[0..100]of longint;
+fmax:array[0..10000]of longint;
+fmin:array[0..10000]of longint;
+i,j,k,n,s,min:longint;
+begin
+fillchar(a,sizeof(a),0);
+fillchar(fmax,sizeof(fmax),0);
+fillchar(fmin,sizeof(fmin),0);
+readln(n);
+readln(s);
+for i:=1 to n do
+ readln(a[i]);
+for i:=1 to n do
+ begin
+ fmin[i]:=0;
+ fmax[i]:=0
+ end;
+fmax[0]:=0;
+fmin[0]:=1;
+for i:=1 to n do
+ writeln(fmin[i]);
+for i:=1 to n do
+ begin
+ min:=2147483647;
+ for j:=a[i] to s do
+  begin
+  if ((fmax[j-a[i]]+1)>fmax[j])then
+   fmax[j]:=fmax[j-a[i]]+1;
+  if ((fmin[j-a[i]]+1)<min)and(fmin[j-a[i]]<>0)then
+   min:=fmin[j-a[i]]+1
+  end;
+ fmin[j]:=min
+end;
+writeln(fmin[s]);
+writeln(fmax[s]);
+end.

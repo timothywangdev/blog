@@ -1,0 +1,8 @@
+---
+title: "两个互质的数a,b，ax+by(x,y,a,b≥0)最大不能表示为ab-a-b证明"
+date: "2012-05-22"
+categories: [imported, notes]
+draft: false
+---
+
+条件：gcd(a,b)=1，(a,b∈$\mathbb{N}$) 若可以表示为ab-a-b则： ab-a-b=ax+by 因为有解，所以可以凑出一个特殊解，取解（-1，a-1)正好等式成立 根据一元二次不定方程通解公式得出通解（-1-bt,a(t+1)-1） ∵-1-bt≥0.....① a(t+1)-1≥0.....② 两式联立解得：$ 1/a-1<=t<=-1/b$ ∵t∈$\mathbb{Z}$ ∴-1<t<0 $\Rightarrow$等式无解，与假设矛盾，所以不能表示为ab-a-b，证毕。

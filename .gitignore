@@ -1,2 +1,14 @@
 /.quarto/
 /_site/
+
+**/*.quarto_ipynb
+
+# MCP config (contains API keys)
+.mcp.json
+
+# Virtual environments
+.venv/
+**/.venv/
+
+# Playwright state
+.playwright-mcp/

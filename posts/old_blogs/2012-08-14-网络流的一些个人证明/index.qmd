@@ -1,0 +1,8 @@
+---
+title: "网络流的一些个人证明"
+date: "2012-08-14"
+categories: [imported, notes]
+draft: false
+---
+
+1.对于一个网络流G=(V,E),u∈V-{s},前置流f:V×V$right$R. f(V,u)=f(A,u)-f(u,B) (A={v∈V|f(v,u)>0};B={v∈V|f(u,v)>0}) 证明：f(V,u)=f(A,u)+(-f(u,B))=f(A,u)-f(u,B)

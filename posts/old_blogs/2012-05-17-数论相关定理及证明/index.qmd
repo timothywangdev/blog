@@ -1,0 +1,8 @@
+---
+title: "如果a和b是不都为0的任意整数，则gcd(a,b)是a与b的线性组合集合{ax+by:x,y∈Z}中的最小正元素证明"
+date: "2012-05-17"
+categories: [imported, notes]
+draft: false
+---
+
+[*[Image unavailable: 定理31.2.png]*](/images/uploads/2012/05/定理31.2.png) 31.4在下面： [![](/images/uploads/2012/05/31.4.png)](/images/uploads/2012/05/31.4.png) 算导证明的相当简洁漂亮！ 参考资料：《算法导论》-第七部分 算法研究问题选编-第31章 有关数论的算法-定理31.2 及式31.4  

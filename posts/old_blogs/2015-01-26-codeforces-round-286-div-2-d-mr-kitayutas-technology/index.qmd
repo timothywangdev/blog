@@ -1,0 +1,8 @@
+---
+title: "Codeforces Round #286 (Div. 2)  D. Mr. Kitayuta's Technology"
+date: "2015-01-26"
+categories: [algorithms, imported]
+draft: false
+---
+
+1\. Building a graph G(V,E) from input 2\. Reduction Let G'(V,E') be a graph such that (u,v) $$\in$$ E' iff (u,v) or (v,u) $$ \in $$ E. Finding connected components of G', then we can come up solutions for each connected components of G' and add them up since each connected component is independent from others. Let a component found from step 2 be C, and let edges in C be the edges of G . If C has cycles in it, the minimum number of edges required is at least |C| since a smaller solution implies C is a tree(1) which means that there is no cycles in the solution, which contradicts that C has cycles. Note that |C| is valid since we can always construct a ring. If C does not contain cycles, |C|-1 is valid solution since we can always create a tree which satisfies the requirements (By using topological sort). Now we prove that |C|-1 is optimal by proving (1): If there is a smaller solution, then the solution disconnects C(Every edge of a tree is a bridge). Let A,B be two parts of C separated by the solution, then there does not exist any edges between these two parts, but this contradicts that C is connected in G', so C is at least a tree. Merging components found in step 2 does not give a better solution, proof can be found in the editorial. Solution: <https://github.com/hujiewang/Programming-Contests/blob/master/codeforces/%23286/d.cpp>

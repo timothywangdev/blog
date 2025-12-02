@@ -1,0 +1,8 @@
+---
+title: "二元一次不定方程通解公式推导"
+date: "2012-05-21"
+categories: [imported, notes]
+draft: false
+---
+
+方程：px+qy=m(p,q,m∈$\mathbb{Z}$) 根据裴蜀定理当且仅当d|m时方程有解且有无数个整数解。 假设有解，两边约掉公约数d,设新方程为 ax+by=c(a,b,c∈$\mathbb{Z}$) 且gcd(a,b)=1 存在一组整数解（$x_0,y_0$),假设另一组整数解为（$x_1,y_1$) $ax_0+by_0=c$....① $ax_1+by_1=c$....② 方程①-②得：a($x_0-x_1$)=b($y_1-y_0$) ∵gcd(a,b)=1 ∴a|($y_1-y_0$),b|($x_0-x_1$) 设：$x_0-x_1=bt_1,y_1-y_0=at_2$ (t1,t2∈$\mathbb{Z}$) 整理得：$x_1=x_0-bt_1,y_1=y_0+at_2$ 带入②式整理得$abt_2-abt_1=0 \Rightarrow t1=t2$ 设:t1=t2=t(t∈$\mathbb{Z}$) 最终得到通解公式：$x=x_0-bt,y=y_0+at$ 参考资料：[http://wenda.tianya.cn/wenda/thread?tid=6b0b465c3471f9fa](http://wenda.tianya.cn/wenda/thread?tid=6b0b465c3471f9fa) 并加以修改

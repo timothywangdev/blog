@@ -1,0 +1,8 @@
+---
+title: "gcd(n,n+1)=1 证明"
+date: "2012-05-21"
+categories: [imported, notes]
+draft: false
+---
+
+**gcd(n,n+1)=1 (n >0或n<-1,n$\in \mathbb{N}$)** 若gcd(n,n+1)=d>1 (d$\in \mathbb{N}$) 设：n=ad,n+1=bd,$a,b \in \mathbb{N}$ bd-ad=1$\Rightarrow d=1/{b-a}$ ∵b>a ∴d<0,与假设d>1矛盾 ∴gcd(n,n+1)=1

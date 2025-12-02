@@ -1,0 +1,12 @@
+---
+title: "SRM 654 DIV 1"
+date: "2015-03-28"
+categories: [algorithms, imported]
+draft: false
+---
+
+**SquareScores** [http://community.topcoder.com/stat?c=problem_statement&pm=13694&rd=16318&rm=325638&cr=23296695](http://community.topcoder.com/stat?c=problem_statement&pm=13694&rd=16318&rm=325638&cr=23296695) Let a random variable $$X$$ denote the total combined score for all possible strings, and the random variable $$X_s^c$$ be the score of a substring s which only contains characters c. Then $X=\sum\limits_{c}\sum\limits_{s}X_s^c$ where s is a substring. Therefore $E[X]=E[\sum\limits_{c}\sum\limits_{s}X_s^c]=\sum\limits_{c}\sum\limits_{s}E[X_s^c]$ and $E[X_s^c]=1 \cdot Pr(all \: characters \: of \: s \: are \: c)$ Let $$Pr_c[i..j]$$ be the probability of the substring[i..j] only contains characters c, or more formally $Pr_c[i..j]=\prod\limits_{k=i}^{j}Pr(S[k]=c)$ Particularly, $Pr(S[j]=c)= \begin{cases} p[c] & \text{if } S[i]='?' \\ 1.0 & \text{if } S[i]=c \\ 0.0 & \text{if } S[i]\neq c \land s[i] \neq '?' \\ \end{cases}$ $$Pr_c[i..j]$$ can be computed in $$O(n^2)$$ by using $Pr_c[i..j]=Pr_c[i..j-1]*Pr(S[j]=c)$ Then $E[X]=\sum\limits_{c='a'}^{'z'}\sum\limits_{i=0}^{|S|-1}\sum\limits_{j=i}^{|S|-1} Pr_c[i..j]$ The overall time complexity if $$O(n^2)$$. **Solution**(I used a slightly different approach in my code) <https://github.com/hujiewang/Programming-Contests/blob/master/topcoder/SRM%20654%20DIV%201/SquareScores.cpp>
+
+* * *
+
+  **SuccessiveSubtraction2** [http://community.topcoder.com/stat?c=problem_statement&pm=13699&rd=16318&rm=325638&cr=23296695](http://community.topcoder.com/stat?c=problem_statement&pm=13699&rd=16318&rm=325638&cr=23296695) I think this problem is way too easy for DIV1 level 2, even easier then SquareScores. You don't need any insightful ideas to solve this problem, simply treat a[] as a new problem after each change. Finding maximum value after inserting some parentheses into a[] can be done with dynamic programming approach. Let f[i][open][used] be the maximum value of a[i..(|a|-1)] after inserting 'used' open parentheses in a[0..i-1] and there are 'open' open brackets before index i. There are only four transitions: f[i+1][open+1][used+1], f[i+1][open][used], f[i+1][open-1][used], f[i+1][open-2][used] We certainly need check the validity of transitions such as $$open \geq 0$$, or $$open\leq used$$, etc Time complexity: $$O(n^2)$$ **Solution** <https://github.com/hujiewang/Programming-Contests/blob/master/topcoder/SRM%20654%20DIV%201/SuccessiveSubtraction2.cpp>

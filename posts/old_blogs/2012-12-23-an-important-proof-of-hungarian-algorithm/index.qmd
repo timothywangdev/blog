@@ -1,0 +1,8 @@
+---
+title: "An important proof of Hungarian algorithm"
+date: "2012-12-23"
+categories: [algorithms, imported]
+draft: false
+---
+
+Proposition:we only need to check every node in one set of vectors of bipartite graph exactly once. Proof:Let G be a bipartite graph with bipartition X,Y,Let vector v∈X. We need to prove that if there does not exist any M-alternating path from v,then there would not exist any M-alternating path after adding edges of matching set M. Assume that there does not exist any M-alternating path from v and there exists an M-alternating path from v after adding edges of matching set M.. Note that the only way to create an M-alternating path from v is to change the matching edges of its augmenting path,then we need an another M-alternating path from an another vector which passes through v's augmenting path.However,if there exists an another M-alternating path from an another vector which passes through v's augmenting path,which means there exists an M-alternating path from v,which is a contradiction. 

@@ -1,0 +1,8 @@
+---
+title: "Got in top 11 in UVA problem 143  \"Orchard Trees\""
+date: "2013-11-08"
+categories: [imported, notes]
+draft: false
+---
+
+[![rank11](/images/uploads/2013/11/rank111.png)](/images/uploads/2013/11/rank111.png)

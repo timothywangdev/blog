@@ -1,0 +1,8 @@
+---
+title: "写了个生命游戏，无聊做下数据统计。"
+date: "2011-11-17"
+categories: [miscellaneous, imported]
+draft: false
+---
+
+和原版的有些差别，每个周期每个方块有一定概率P出现生命，以便持续打破平衡，观察发展。 区域大小400 [*[Image unavailable: 六十分之一.jpg]*](/images/uploads/2011/11/六十分之一.jpg) 生命体数量平均

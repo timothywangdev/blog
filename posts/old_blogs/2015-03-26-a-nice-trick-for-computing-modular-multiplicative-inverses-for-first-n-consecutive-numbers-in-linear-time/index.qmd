@@ -1,0 +1,8 @@
+---
+title: "A nice trick for computing modular multiplicative inverses for first n consecutive numbers in linear time"
+date: "2015-03-26"
+categories: [algorithms, imported]
+draft: false
+---
+
+Suppose we want to find $$i^{-1}\bmod{m}$$ for $$ 1\leq i \leq n$$ assuming $$ m > n$$, and m is a prime. An intuitive way is to compute modular inverse for each i by using Euler's theorem or Extended Euclidean algorithm which takes O(log(m)) for each i, therefore, the overall time complexity is O(nlog(m)). If you don't know how to apply Euler's theorem to compute modular inverse, check this out, otherwise, skip the following content. Euler's theorem shows that $a^{-1} \equiv a^{m-2} (\bmod{m})$ Computing $$a^{m-2} (\bmod{m}) $$ take O(log(m)) by using modular exponentiation. It turns out we can compute modular inverses for first n consecutive numbers in linear time. $p \bmod{i}=p-{\lfloor}{\frac{p}{i}}{\rfloor}\cdot i \\ \Rightarrow p \bmod{i} \equiv -{\lfloor}{\frac{p}{i}}{\rfloor}\cdot i (\bmod{m})$ Multiply both sides by $\frac{1}{i \cdot (p \bmod{i})}$ We get $\frac{1}{i} \equiv -{\lfloor}{\frac{p}{i}}{\rfloor} \frac{1}{p \bmod{i}} (\bmod{m})$ Note that $$ p \bmod{i} < i $$, thus all the inverses can be computed from 1 to n by applying this formula n times. Time complexity is O(n), apparently. Thanks for [Kaban-5](http://codeforces.com/profile/Kaban-5) for this insightful idea.

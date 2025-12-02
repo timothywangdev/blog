@@ -1,0 +1,8 @@
+---
+title: "Binary Raise Algorithm"
+date: "2015-03-22"
+categories: [algorithms, imported]
+draft: false
+---
+
+Given $$f(x)$$, we want to compute $$f^k(x)$$ where $$f^k(x)=\overbrace{{f(...f}}^k(x))$$ and $$f^1(x)=f(x)$$. In other words, $$f^k(x)$$ is the result after applying $$f(x)$$ k times. Here I will describe the Binary Raise Algorithm which computes $$f^k(x)$$ in O(log(k)) assuming f(x) takes constant time. First we compute $$f^{2^j}(x)$$ for $$j\in [0,log(k)]$$ $f^{2^j}(x)= \begin{cases} f^{2^{j-1}}(f^{2^{j-1}}(x)) \hfill \: if \: j \geq 1 \\ f(x) \hfill \: if \: j = 0 \end{cases}$ The preprocessing takes O(log(k)) obviously. Suppose we need to compute $$f^k(x)$$, we will iteratively find the largest j such that $$ 2^j \leq k$$ and then reduce the problem to $$f^{k-2^j}(x)$$, keep decreasing k until k=0 and we are done. We use each j at most once, since we are choosing the largest j such that $$ 2^j\leq k$$, if we can still choose such j after decreasing k, that implies that we should have chosen j+1 instead of j, which is a contradiction. The reduction step takes O(log(k)), so the overall time complexity is O(log(k))  

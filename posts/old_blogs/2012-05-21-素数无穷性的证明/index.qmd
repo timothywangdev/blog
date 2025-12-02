@@ -1,0 +1,23 @@
+---
+title: "素数无穷性的证明"
+date: "2012-05-21"
+categories: [imported, notes]
+draft: false
+---
+
+素数有无穷多个。现在已知最早的证明方法是[欧几里得](http://zh.wikipedia.org/wiki/%E6%AD%90%E5%B9%BE%E9%87%8C%E5%BE%97 "欧几里得")在他的《[几何原本](http://zh.wikipedia.org/wiki/%E5%B9%BE%E4%BD%95%E5%8E%9F%E6%9C%AC "几何原本")》中提出的，该证明方法如下： 
+
+  * 假设只有有限个素数![p_1,p_2,p_3ldots p_n](http://upload.wikimedia.org/wikipedia/zh/math/b/d/a/bdab5d858e956c380ee36b61aab8700e.png)。令![N=p_1times p_2times p_3times ldots times p_n](http://upload.wikimedia.org/wikipedia/zh/math/2/7/e/27e38f8fe4f4d58636156a2f47650305.png)。那么，N+1是素数或者不是素数。
+  * 如果N+1为素数，则N+1要大于![p_1,p_2,p_3ldots p_n](http://upload.wikimedia.org/wikipedia/zh/math/b/d/a/bdab5d858e956c380ee36b61aab8700e.png)，所以它不在那些假设的素数集合中。
+  * 如果N+1为合数，因为任何一个[合数](http://zh.wikipedia.org/wiki/%E5%90%88%E6%95%B0 "合数")都可以分解为几个素数的积；而N和N+1的最大公约数是1，所以N+1不可能被![p_1,p_2,p_3ldots p_n](http://upload.wikimedia.org/wikipedia/zh/math/b/d/a/bdab5d858e956c380ee36b61aab8700e.png)整除，所以该合数分解得到的素因数肯定不在假设的素数集合中。
+  * 因此无论该数是素数还是合数，都意味着在假设的有限个素数之外还存在着其他素数。
+  * 对任何有限个素数的集合来说，用上述的方法永远可以得到有一个素数不在假设的素数集合中的结论。
+  * 所以原先的假设不成立。也就是说，素数有无穷多个。
+
+
+
+参考资料：
+
+[http://zh.wikipedia.org/wiki/%E7%B4%A0%E6%95%B0#.E7.B4.A0.E6.95.B0.E6.97.A0.E7.A9.B7.E6.80.A7.E7.](http://zh.wikipedia.org/wiki/%E7%B4%A0%E6%95%B0#.E7.B4.A0.E6.95.B0.E6.97.A0.E7.A9.B7.E6.80.A7.E7.9A.84.E8.AF.81.E6.98.8E)
+
+[9A.84.E8.AF.81.E6.98.8E](http://zh.wikipedia.org/wiki/%E7%B4%A0%E6%95%B0#.E7.B4.A0.E6.95.B0.E6.97.A0.E7.A9.B7.E6.80.A7.E7.9A.84.E8.AF.81.E6.98.8E)

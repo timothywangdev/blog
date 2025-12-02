@@ -1,0 +1,8 @@
+---
+title: "石子合并注意地方。"
+date: "2010-12-13"
+categories: [imported, notes]
+draft: false
+---
+
+在f[i,1]的时候没有石子合并，所以为0，而不是第i个石头的重量。 读取重量时只用读取sum[i,1]即可。

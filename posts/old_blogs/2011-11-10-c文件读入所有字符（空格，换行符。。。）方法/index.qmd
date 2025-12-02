@@ -1,0 +1,8 @@
+---
+title: "C++文件读入所有字符（空格，换行符。。。）方法"
+date: "2011-11-10"
+categories: [imported, notes]
+draft: false
+---
+
+fin.get(ch)函数 并且没达到末尾返回1，否则返回0 [php] while(fin.get(ch)) //这样更简便 { ..... } [/php] 

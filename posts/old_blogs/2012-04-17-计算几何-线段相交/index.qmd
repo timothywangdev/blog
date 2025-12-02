@@ -1,0 +1,52 @@
+---
+title: "计算几何-线段相交"
+date: "2012-04-17"
+categories: [imported, notes]
+draft: false
+---
+
+1.相互进行跨立试验 若都成功，相交 否则 2.若出现边界情况 看点是否在线段上，若是，则相交 否则 不相交。 具体代码：  
+    
+    
+    bool Segments_Intersect(Point p1,Point p2,Point p3,Point p4)
+    {
+    int d1=Direction(p1,p3,p4), //根据线段2点的对于另一线段相对位置，进行跨立试验。
+    d2=Direction(p2,p3,p4),
+    d3=Direction(p3,p1,p2),
+    d4=Direction(p4,p1,p2);
+    if(((d10)||(d1>0&&d20)||(d3>0&&d4 return true;
+    else if((d1==0)&&(On_Segment(p1,p3,p4))) //若出现边界情况，下面相同。
+    return true;
+    else if((d2==0)&&(On_Segment(p2,p3,p4)))
+    return true;
+    else if((d3==0)&&(On_Segment(p3,p1,p2)))
+    return true;
+    else if((d4==0)&&(On_Segment(p4,p1,p2)))
+    return true;
+    else
+    return false; //否则不想交。
+    }
+
+附送里面的两个函数： 
+    
+    
+    int Direction(Point target,Point p1,Point p2)
+    {
+    Point v1,v2;
+    v1.x=p1.x-target.x,
+    v1.y=p1.y-target.y,
+    v2.x=p2.x-target.x,
+    v2.y=p2.y-target.y;
+    return Cross_Product(v1,v2);
+    }
+    bool On_Segment(Point target,Point p1,Point p2)
+    {
+    if((min<int>(p1.x,p2.x)<=target.x)&&(target.x<=max<int>(p1.x,p2.x))
+    &&(min<int>(p1.y,p2.y)<=target.y)&&(target.y<=max<int>(p1.y,p2.y)))
+    return true;
+    else
+    return false;
+    }
+    
+
+    注意：里面的v1,v2等表示向量。 参考资料：《算法导论》第七部分-算法研究问题选编-计算几何学-33.1

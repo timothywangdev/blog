@@ -1,0 +1,27 @@
+---
+title: "USACO/milk2 个人题解"
+date: "2011-11-03"
+categories: [algorithms, imported]
+draft: false
+---
+
+
+    ==分段动态规划==
+    时间复杂度（nlogn),全部0毫秒。
+    以开始时间从小到大快排每个农民
+    
+    快排后：
+    
+    f[i]表示第i个农民所在的最长连续线段
+    last_start表示这个线段的起点。
+    a[i].begin 第i个农民的起点时间，a[i].end 终点时间
+    
+    可以得出方程：
+    f[i]={max{f[i-1],a[i].end}  (a[i].begin<=f[i-1]) //加上第i个农民仍然连续
+          a[i].end              (a[i].begin>f[i-1])  /*加上第i个农民变不连续 
+                                                       在这里开始以此农民的开始时间的新的一条连续线段，
+                                                       更新last_start=a[i].begin作为新起点，因为有间隔，
+                                                       所以更新longest_idle_time=max(longest_idle_time,a[i].begin-f[i-1]);*/
+    
+    在每次循环处理后longest_continuous_time=max(longest_continuous_time,f[i]-last_start)
+    最后输出longest_continuous_time和longest_idle_time即可。

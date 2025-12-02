@@ -1,0 +1,8 @@
+---
+title: "Proof of Evenshtein Distance"
+date: "2013-11-21"
+categories: [imported, notes]
+draft: false
+---
+
+[![proof_levenshtein_distance](/images/uploads/2013/11/proof_levenshtein_distance1.png)](/images/uploads/2013/11/proof_levenshtein_distance1.png) There is a little mistake here, I have fixed it with blue pen. Source:<http://www.cs.uiuc.edu/~jeffe/teaching/algorithms/notes/05-dynprog.pdf>

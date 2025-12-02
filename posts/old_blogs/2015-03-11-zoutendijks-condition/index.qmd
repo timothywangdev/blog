@@ -1,0 +1,153 @@
+---
+title: "Zoutendijk's condition"
+date: "2015-03-11"
+categories: [imported, notes]
+draft: false
+---
+
+Consider any iteration of the form $x_{k+1}=x_k+\alpha_k p_k$ where $p_k$ is a descent direction and $\alpha_k$ satisfies the [**Wolfe conditions**](http://en.wikipedia.org/wiki/Wolfe_conditions):
+
+$$
+f(x_k+\alpha p_k) \leq f(x_k)+c_1 \alpha_k \nabla f_k^T p_k \tag{2}
+$$
+
+$$
+\nabla f(x_k+\alpha_k p_k)^T p_k \geq c_2 \nabla f_k^T p_k \tag{3}
+$$
+
+with $0 < c_1 < c_2 < 1$.
+
+Suppose $f$ is bounded from below in $\mathbb{R}^n$ and $f$ is continuously differentiable in an open set $N$ containing the level set $L \stackrel{\text{def}}{=} \{ x: f(x) < f(x_0) \}$, where $x_0$ is the starting point of the iteration. Assume also that the gradient $\nabla f$ is Lipschitz continuous on $N$, that is, there exists a constant $L > 0$ such that
+
+$$
+\|\nabla f(x)-\nabla f(\tilde{x})\| \leq L \| x-\tilde{x}\| \tag{4}
+$$
+
+Then
+
+$$
+\sum_{k \geq 0} \cos^2 \theta_k {\|\nabla f_k \|}^2 < \infty \tag{5}
+$$
+
+**Proof:** From (1) and (2) we have
+
+$$
+\begin{aligned}
+\nabla f(x_k+\alpha_k p_k)^T p_k &= \nabla f(x_{k+1})^T p_k \geq c_2 \nabla f_k^T p_k \\
+\Rightarrow (\nabla f_{k+1}- \nabla f_k)^T p_k &\geq c_2 \nabla f_k^T p_k - \nabla f_k^T p_k \\
+\Rightarrow (\nabla f_{k+1}- \nabla f_k)^T p_k &\geq (c_2-1) \nabla f_k^T p_k
+\end{aligned}
+$$ {#eq-6}
+
+while (4) and (1) implies that
+
+$$
+\begin{aligned}
+\|\nabla f_{k+1}-\nabla f_k\| &\leq L \| x_{k+1}-x_k\|=\alpha_k L\|p_k\| \\
+\Rightarrow \|\nabla f_{k+1}-\nabla f_k \|\|p_k\| &\leq \alpha_k L{\|p_k\|}^2 \\
+\Rightarrow \|\nabla f_{k+1}-\nabla f_k \|\|p_k\|\cos \theta_k &\leq \alpha_k L{\|p_k\|}^2 \quad (\text{since } \cos \theta \leq 1) \\
+\Rightarrow (\nabla f_{k+1}-\nabla f_k)^T p_k &\leq \alpha_k L{\|p_k\|}^2
+\end{aligned}
+$$ {#eq-7}
+
+By combining (6) and (7), we obtain
+
+$$
+\alpha_k \geq \frac{c_2-1}{L} \frac{\nabla f_k^T p_k}{{\|p_k\|}^2} \tag{8}
+$$
+
+By substituting (8) into (2), we have
+
+$$
+f_{k+1} \leq f_k-c_1 \frac{1-c_2}{L} \frac{(\nabla f_k^T p_k)^2}{{\|p_k\|}^2} \tag{9}
+$$
+
+Note that the angle $\theta_k$ between $p_k$ and the steepest descent direction $-\nabla f_k$ is defined by
+
+$$
+\cos \theta_k=\frac{-\nabla f_k^T p_k}{\|\nabla f_k\|\|p_k\|} \tag{10}
+$$
+
+therefore, we can rewrite (9) as
+
+$$
+f_{k+1} \leq f_k-c \cos^2 \theta_k {\|\nabla f_k\|}^2 \quad \text{where } c=\frac{c_1(1-c_2)}{L} \tag{11}
+$$
+
+$$
+\Rightarrow f_{k+1} \leq f_0-c\sum_{i=0}^k \cos^2 \theta_i {\|\nabla f_i\|}^2 \tag{12}
+$$
+
+Since $f$ is bounded below, $f_0 - f_{\infty} < K$ where $K>0$, therefore
+
+$$
+\sum_{i=0}^\infty \cos^2 \theta_i {\|\nabla f_i\|}^2 < \infty \tag{13}
+$$
+
+Q.E.D.
+
+Furthermore,
+
+$$
+\sum_{i=0}^\infty \cos^2 \theta_i {\|\nabla f_i\|}^2 < \infty \Rightarrow \cos^2 \theta_i {\|\nabla f_i\|}^2 \to 0 \text{ as } i \to \infty \tag{14}
+$$
+
+and if $\forall k$, $\cos \theta_k > \delta > 0$, then
+
+$$
+\lim_{k \to \infty} \|\nabla f_k\| = 0 \tag{15}
+$$
+
+## Implications
+
+For Newton-like methods the search direction is of the form
+
+$$
+p_k=-B_k^{-1}\nabla f_k \tag{16}
+$$
+
+Consider (16) and assume all $B_k$ are positive definite with a uniformly bounded condition number:
+
+$$
+\forall k, \quad \|B_k\|\|B_k^{-1}\| \leq M \tag{17}
+$$
+
+**Lemma 1:** For any non-singular matrix $B$,
+
+$$
+\|Bx\| \geq \frac{\|x\|}{\|B^{-1}\|}
+$$
+
+*Proof:*
+
+$$
+\|B^{-1}\|\|Bx\| \geq \|B^{-1}Bx\|=\|x\| \Rightarrow \|Bx\| \geq \frac{\|x\|}{\|B^{-1}\|}
+$$
+
+**Lemma 2:** For any non-singular symmetric positive definite matrix $B$,
+
+$$
+\|B^{1/2}\|^2=\|B\|
+$$
+
+*Proof: TODO*
+
+Then from (10) we can show
+
+$$
+\begin{aligned}
+\cos \theta_k &= \frac{-\nabla f_k^T p_k}{\|\nabla f_k\|\|p_k\|} = \frac{\nabla f_k^T B_k^{-1}\nabla f_k}{\|\nabla f_k\|\|B_k^{-1}\nabla f_k\|} \\
+&\geq \frac{\nabla f_k^T B_k^{-1}\nabla f_k}{\|\nabla f_k\|\|B_k^{-1}\|\|\nabla f_k\|} \\
+&= \frac{\nabla f_k^T B_k^{-1/2}B_k^{-1/2}\nabla f_k}{\|\nabla f_k\|\|B_k^{-1}\|\|\nabla f_k\|} \\
+&= \frac{\|B_k^{-1/2} \nabla f_k\|^2}{{\|\nabla f_k\|}^2\|B_k^{-1}\|} \\
+&\geq \frac{{\|\nabla f_k\|}^2}{{\|\nabla f_k\|}^2\|B_k^{-1}\|{\|B_k^{1/2}\|}^2} \quad \text{(Lemma 1)} \\
+&= \frac{{\|\nabla f_k\|}^2}{{\|\nabla f_k\|}^2\|B_k^{-1}\|{\|B_k\|}} \quad \text{(Lemma 2)} \\
+&= \frac{1}{\|B_k^{-1}\|{\|B_k\|}} \geq \frac{1}{M}
+\end{aligned}
+$$ {#eq-18}
+
+which implies (15), or Newton-like methods are globally convergent if all of the following are true:
+
+1. Matrices $B_k$ are symmetric and positive definite
+2. Matrices $B_k$ have a bounded condition number
+3. Step lengths satisfy the Wolfe conditions

@@ -1,0 +1,8 @@
+---
+title: "Proof of \" perfect squares <=> a number which has an odd number of factors\""
+date: "2013-12-19"
+categories: [imported, notes]
+draft: false
+---
+
+Proof of " perfect squares $$\Rightarrow$$ a number which has an odd number of factors" Let a perfect square n=$$k^2$$, k is a natural number. Let $$k=p_0^{r_0}p_1^{r_1}$$...$$p_m^{r_m}$$ where $$p_0,p_1,...,p_n$$ are primes and $$p_i<p_i+1$$ Then $$n=k^2$$ $$=(p_0^{r_0}p_1^{r_1}$$...$$p_m^{r_m})^2$$ $$=p_0^{2{r_0}}p_1^{2{r_1}}$$...$$p_m^{2{r_m}}$$ Let d be a factor of n, then $$d==p_0^{2{x_0}}p_1^{2{x_1}}$$...$$p_m^{2{x_m}}$$ where $$ 0<=x_i<=2{r_i}$$, $$ 0<=i<=m$$ We need to count the number of d, which is equal to the combination of factors of k and the power of factors of k. Let the total number be S, since $$ 0<=x_i<=2{r_i}$$, we have $$S=(2{r_0}+1)(2{r_1}+1)...(2{r_m}+1)$$ (since number of $$x_i$$ is $$ 2{r_i}-0+1=2{r_i}+1$$) =odd*odd*...*odd =odd $$\Rightarrow $$ " perfect squares $$\Rightarrow$$ a number which has an odd number of factors"   Proof of " perfect squares $$\Leftarrow$$ a number which has an odd number of factors" Let $$n=p_0^{b_0}p_1^{b_1}$$...$$p_m^{b_m}$$ where $$p_0,p_1,...,p_n$$ are primes and $$p_i<p_i+1$$ Let d be a factor of n, then $$d==p_0^{x_0}p_1^{x_1}$$...$$p_m^{x_m}$$ where $$ 0<=x_i<=b_i$$, $$ 0<=i<=m$$ The number of d, which is equal to the combination of factors of k and the power of factors of n Let the total number be S $$S=(b_0+1)(b_1+1)...(b_m+1)$$=an odd number $$\Rightarrow$$ $$ {b_i+1}$$ is an odd number $$\Rightarrow $$ $$b_i=2{r_i}$$ where$$r_i$$ is a natural number $$\Rightarrow $$ $$n=p_0^{2{r_0}}p_1^{2{r_1}}$$...$$p_m^{2{r_m}}$$ $$\Rightarrow $$ $$n=(p_0^{r_0}p_1^{r_1}$$...$$p_m^{r_m})^2$$ $$\Rightarrow $$ n is a perfect square number.    

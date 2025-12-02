@@ -1,0 +1,8 @@
+---
+title: "Dijkstra的堆优化时间复杂度【转载】"
+date: "2012-01-30"
+categories: [algorithms, imported]
+draft: false
+---
+
+使用[二叉堆](http://www.nocow.cn/index.php/%E4%BA%8C%E5%8F%89%E5%A0%86 "二叉堆")(Binary Heap)来保存没有扩展过的点的距离并维护其最小值，并在访问每条边的时候更新，可以把时间复杂度变成O((V+E)logV)。 当边数远小于点数的平方时，这种算法相对来说有很好的效果。但是当E=O(V2)时（有时候表现为不限制边的条数），用二叉堆的优化反倒会更慢。因为此时的复杂度是O(V+V2logV)，大于不用堆的实现的O(n2)的复杂度。 另外此时要用[邻接表](http://www.nocow.cn/index.php/%E9%82%BB%E6%8E%A5%E8%A1%A8 "邻接表")保存边，使得扩展边的总复杂度为O(E)，否则复杂度不会减小。

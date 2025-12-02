@@ -1,0 +1,44 @@
+---
+title: "USACO 4.1 Beef McNuggets DP上界证明"
+date: "2012-05-22"
+categories: [algorithms, imported]
+draft: false
+---
+
+假设两个数是a，b，如果c可以用a，b表示，则意味着不定方程
+
+ax+by=c
+
+有正整数解。（a b c均为正整数）
+
+首先，**方程有整数解的充要条件是a，b的最大公因数能整除c** 。（可以参考裴蜀定理）
+
+现假设方程已经有整数解。 那么，由数论知识可以得到方程的通解：
+
+$x = x_0 + bt$ $y = y_0 - at$ （ x0，y0 是方程的一个整数解，t为整数）
+
+我们要求的是正整数解，所以：
+
+$x_0+bt>0$
+
+$y_0-at>0$
+
+变形得到：$-x_0 / b < t < y_0 / a$
+
+要保证在上面t的范围内至少有一个整数，需满足：
+
+$y_0 / a + x_0 / b >= 1$
+
+即
+
+$a x_0 + b y_0 >= a b$
+
+因为x0 , y0 是方程的一个解，所以：
+
+$c >= ab$
+
+也就是说，只要方程有整数解，对于所有c>=ab都有整数解。
+
+对于这个上界证明的评价：一个字，帅！！！！
+
+参考资料：[http://hi.baidu.com/ickchen2/blog/item/76b3fb65cdfa2cf8f6365479.html](http://hi.baidu.com/ickchen2/blog/item/76b3fb65cdfa2cf8f6365479.html)

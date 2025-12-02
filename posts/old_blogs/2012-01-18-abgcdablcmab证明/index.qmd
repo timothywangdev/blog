@@ -1,0 +1,8 @@
+---
+title: "a*b=gcd(a,b)lcm(a,b)个人证明"
+date: "2012-01-18"
+categories: [imported, notes]
+draft: false
+---
+
+设: a=${p_1}^e1{p_2}^e2...{p_r}^er$ b=${p_1}^f1{p_2}^f2...{p_r}^fr$ 所以 ab=${p_1}^e1{p_2}^e2...{p_r}^er{p_1}^f1{p_2}^f2...{p_r}^fr$ 因为gcd(a,b)=${p_1}^{m\in(e1,f1)}{p_2}^{m\in(e2,f2)}...{p_r}^{m\in(er,fr)}$ lcm(a,b)=${p_1}^{max(e1,f1)}{p_2}^{max(e2,f2)}...{p_r}^{max(er,fr)}$ 又因为${p_k}^ek{p_k}^fk={p_k}^{max(ek,fk)}{p_k}^{m\in(ek,fk)}$ 所以a*b=gcd(a,b)lcm(a,b)

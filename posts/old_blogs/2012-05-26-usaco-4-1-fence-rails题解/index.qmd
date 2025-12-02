@@ -1,0 +1,8 @@
+---
+title: "USACO 4.1 Fence Rails题解"
+date: "2012-05-26"
+categories: [algorithms, imported]
+draft: false
+---
+
+本人习惯不写题解，但此题给我的印象过于深刻，写的时候有想死的感觉。。。。。。囧 此题乃本人第一次见到如此恶心的搜索题，花4个小时修改一直超时，最后去看了下大牛的剪枝的思路才完成。 题解在代码注释里： [php] /* PROG:fence8 LANG:C++ */ //#include "stdafx.h" #include <fstream> #include <algorithm> using namespace std; ifstream fin("fence8.in"); ofstream fout("fence8.out"); int boards[50],rails[1023],s[1024] int N,R,i,j,mid,boardsoards_sum=0,sum=0; bool DFSID(int i,int pos) { if(i<0)return true; if(sum>boardsoards_sum-s[mid])return false; //大剪枝：剩余不可切剪木板长度和>木板长度和-前mid+1个栅栏长度和 无解 for(int j=pos;j<N;j++) if(rails[i]<=boards[j]) { boards[j]-=rails[i]; if(rails[0]>boards[j]) sum+=boards[j]; if((i!=0)&&(rails[i]==rails[i-1])) //小剪枝：相邻两栅栏长度相等，规定栅栏i-1所切的木板编号大于i所切木板 // 编号，防止重复搜索。 { if(DFSID(i-1,j)) { boards[j]+=rails[i]; return true; } } else if(DFSID(i-1,0)) { boards[j]+=rails[i]; return true; } if(rails[0]>boards[j]) sum-=boards[j]; boards[j]+=rails[i]; } return false; } int main() { fin>>N; for(i=0;i<N;i++) { fin>>boards[i]; boardsoards_sum+=boards[i]; } fin>>R; for(i=0;i<R;i++)fin>>rails[i]; sort(rails,rails+R); //大剪枝：若能剪出k个栅栏则一定是前k小个栅栏，证明很容易。 s[0]=0; for(i=1;i<=R;i++) s[i]=s[i-1]+rails[i-1]; i--; while(s[i]>boardsoards_sum)i--; int l=0,r=i; while(l<=r) //二分加速迭代加深搜索 { sum=0; mid=(l+r)>>1; if(DFSID(mid-1,0)) l=mid+1; else r=mid-1; } fout<<r<<endl; return 0; } [/php] ****

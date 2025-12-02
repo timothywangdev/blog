@@ -1,0 +1,40 @@
+---
+title: "算法导论 Edmonds-Karp算法时间复杂度证明"
+date: "2012-06-28"
+categories: [imported, notes]
+draft: false
+---
+
+[![](/images/uploads/2012/06/EK1.png)](/images/uploads/2012/06/EK1.png)[![](/images/uploads/2012/06/EK2.png)](/images/uploads/2012/06/EK2.png)
+    
+    
+    **BFS寻增广路径伪代码**
+    **algorithm** BreadthFirstSearch
+        **input** :
+            C, E, s, t, F
+        **output** :
+            M[t]          _(Capacity of path found)_
+            P             _(Parent table)_
+        P := **array**(1..n)
+        **for** u **in** 1..n
+            P[u] := -1
+        P[s] := -2 _(make sure source is not rediscovered)_
+        M := **array**(1..n) _(Capacity of found path to node)_
+        M[s] := ∞
+        Q := queue()
+        Q.push(s)
+        **while** Q.size() > 0
+            u := Q.pop()
+            **for** v **in** E[u]
+                _(If there is available capacity,_
+    _and v is not seen before in search)_
+                **if** C[u,v] - F[u,v] > 0 **and** P[v] = -1
+                    P[v] := u
+                    M[v] := min(M[u], C[u,v] - F[u,v])
+                    **if** v ≠ t
+                        Q.push(v)
+                    **else**
+                        **return** M[t], P
+        **return** 0, P
+
+这里有几点解释下： 1.什么原理？ 根据BFS基本原理以及所有边的权值都为1的特性，因为是一层一层搜索，所以最早搜索到的增广路经一定是所有增广路经中最短的。 2.为何每个顶点最多搜索一次？ 假设使用已经搜索过的顶点P，目前所在顶点V,根据BFS原理，这个点所在深度一定≤顶点V的深度，这里的深度可以直接换成路径总长。假设这条路径可通至汇点，那么如果直接从顶点P使用这条路径（s...p...t 不经过v)的长度一定比s...v→p...t这条路径更优，因为返回上若干层的某个节点（包括本层另一个节点）会增长路径长度，所以没必要选择以搜索过的顶点。 3.为何BFS寻找增广路经的算法时间复杂度为O(E)? 每个顶点最多搜索一次这点很重要，换句话说就是最多搜索V个顶点，我们将两个搜索过的顶点间的边自动选择（加入存在），我们知道一个图中，随着选择的顶点的数量的增加，自动选择的边的数量单调递增，那么选择V个顶点时，边的数量达到最大，可以知道这时最多能够选择E条边，如果存在回路的话那么就小于E条边（因为第2点，这条回路中的一条边不会被选择），所以时间复杂度为O(E)。 参考资料： 算法导论-第26章-最大流-Edmonds-Karp算法 [http://en.wikipedia.org/wiki/Edmonds%E2%80%93Karp_algorithm](http://en.wikipedia.org/wiki/Edmonds%E2%80%93Karp_algorithm)

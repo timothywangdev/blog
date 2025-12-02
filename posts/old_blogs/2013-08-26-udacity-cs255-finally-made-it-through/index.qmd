@@ -1,0 +1,8 @@
+---
+title: "Udacity CS255 finally made it through...."
+date: "2013-08-26"
+categories: [imported, notes]
+draft: false
+---
+
+[embed]/images/uploads/2013/08/certificate.pdf[/embed]   This course is horrible,literally.If I took this course as the first course at Udacity, I will never come back to it. btw, CS373 is awesome, questions and answers are quite clear.

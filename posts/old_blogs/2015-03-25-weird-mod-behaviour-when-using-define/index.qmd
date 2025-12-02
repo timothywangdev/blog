@@ -1,0 +1,42 @@
+---
+title: "Weird mod behaviour when using #define"
+date: "2015-03-25"
+categories: [imported, notes]
+draft: false
+---
+
+
+    #include<bits/stdc++.h>
+    using namespace std;
+    typedef long long LL
+    
+    #define MOD (LL)1e9+7
+    
+    int main(){
+      cout<<(LL)1%MOD<<endl;
+      return 0;
+    }
+    
+    --Output: 8
+
+It turns out that 
+    
+    
+    1%MOD
+
+becomes 
+    
+    
+    1%(LL)1e9+7
+
+which is 8. After changing 
+    
+    
+    (LL)1e9+7
+
+to 
+    
+    
+    (LL)(1e9+7)
+
+the problem will be resolved.

@@ -1,0 +1,8 @@
+---
+title: "tyvj 表达式计算 P1040"
+date: "2010-11-23"
+categories: [imported, notes]
+draft: false
+---
+
+[![](/images/uploads/2010/11/P1040.jpg)](/images/uploads/2010/11/P1040.jpg)

@@ -1,0 +1,8 @@
+---
+title: "贪心证明法"
+date: "2011-10-17"
+categories: [imported, notes]
+draft: false
+---
+
+[*[Image unavailable: QQ截图20111105192205.jpg]*](/images/uploads/2011/10/QQ截图20111105192205.jpg) [*[Image unavailable: QQ截图20111105192224.jpg]*](/images/uploads/2011/10/QQ截图20111105192224.jpg) [*[Image unavailable: QQ截图20111105192240.jpg]*](/images/uploads/2011/10/QQ截图20111105192240.jpg) [*[Image unavailable: QQ截图20111105192301.jpg]*](/images/uploads/2011/10/QQ截图20111105192301.jpg)   另一个偏门的证明方法：交换参数。 步骤： Step0: 给出贪心算法A的描述 Step1: 假设O是和A最相似(假设O和A的前k个步骤都相同，第k+1个开始不同，通常这个临界的元素最重要)的最优算法 Step2: [Key] 修改算法O(交换A和O中的一个元素)，得到新的算法O’ Step3: 证明O’ 是可行的，也就是O’是对的 Step4: 证明O’至少和O一样，即O’也是最优的 Step5: 得到矛盾，因为O’ 比O 更和A 相似。 证毕。

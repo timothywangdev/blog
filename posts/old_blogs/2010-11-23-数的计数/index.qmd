@@ -1,0 +1,8 @@
+---
+title: "数的计数"
+date: "2010-11-23"
+categories: [imported, notes]
+draft: false
+---
+
+var sum:integer; function num(x:integer):integer; var i,s:integer; begin if x=1 then num:=1 else begin s:=0; for i:=1 to (x div 2) do s:=s+num(i); num:=s+1 end end;{num} begin readln(a); writeln(num(a)); end. 

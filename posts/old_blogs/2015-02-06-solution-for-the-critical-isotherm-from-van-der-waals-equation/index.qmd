@@ -1,0 +1,8 @@
+---
+title: "Solution for the Critical Isotherm from Van Der Waals Equation"
+date: "2015-02-06"
+categories: [imported, notes]
+draft: false
+---
+
+At critical temperature $$T_c$$, and critical Pressure $$P_c$$, the Van Der Waals Equation has exactly one solution for the critical molar volume $$\bar{V}_c$$ $$ \Rightarrow \bar{V}_c-(b+\frac{RT_c}{P_c})\bar{{V}_c}^2+\frac{a}{p}\bar{V}_c-\frac{ab}{P_c}=(\bar{V}-\bar{V}_c)^3 \\ $$ $$\Rightarrow \bar{V}_c=3b, P_c=\frac{a}{27b^2}, T_c=\frac{8a}{27bR} $$  

@@ -1,0 +1,10 @@
+---
+title: "USACO 4.2 Job Processing analysis"
+date: "2012-12-27"
+categories: [algorithms, imported]
+draft: false
+---
+
+First we look at the first "A" machine problem: Suppose we got N jobs. Denote machine_delay[j] be the earliest time we can start a job on jth machine Denote C[i] be the complete time of the ith job. Denote T[j] be the processing time of the jth machine. Greedy rule:C[i]=min{machine_delay[j]+T[j]}($ 1<=i<=N,1<=j<=M$) then we can update machine_delay[j]=C[i](Suppose we have chose the jth machine for the ith job) At the starting point,all machine_delay[k]=0($ 1<=k<=M$)and C[i]=0($ 1<=i<=N$). Proof by induction: Let P be denoted by the proposition: p(i):The way we choose a machine for ith jobs which we can get the minimum cost of total time from the first job to the ith job. p(1):The way we choose a machine for the first job. which we can get the minimum cost of total time from the first job to the first job. Obviously,P(1) is true,because by the greedy rule,we have tried every choices. Assume P(k) is true,show that P(k+1) is true:It's similar to the proof of P(1). So P(N) is true $N \in \mathbb{N}$. We can regard "B" machine problem as the inverse version of "A" machine problem,or they are just the same if we look from the end of the finishing time to the earliest job which "B" machine processes. Then we can separate the question into two part--the "A" machine problem and the "B" machine problem . Proof of the overall optimum: First we prove that one of the optimal answer of the question contains an optimal answer of the "A" machine problem Suppose Q is the "A" part answer of the optimal answer to the question,and P is the optimal answer to the "A" machine problem. Then we sort P and Q in non-decreasing order. Denote Pt[i] be the time when ith job finished in already sorted P,and similarly Qt[i] for Q,Pt[i]≥Pt[i-1],Qt[i]≥Qt[i-1]and there are total n jobs. First we know that Pt[n]<=Qt[n] since P is optimal answer to the "A" machine problem. Assume Pt[i]>Qt[i] ($1 \le i$...
+
+*[Note: The rest of this post was lost during migration from the original WordPress blog.]*

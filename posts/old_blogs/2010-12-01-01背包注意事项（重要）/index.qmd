@@ -1,0 +1,8 @@
+---
+title: "0/1背包注意事项（重要）"
+date: "2010-12-01"
+categories: [imported, notes]
+draft: false
+---
+
+for i:=1 to n do for j:=0 to m do \不是 1 to m 因为 f[i,j]中w[i]可以等于j，表示在前i件物品中选取若干放入剩余空间为j的背包中，w[i]的重量可以为剩余空间总重量，这样将会调用f[i-1,0]。 ......

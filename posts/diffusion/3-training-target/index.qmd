@@ -1,0 +1,101 @@
+---
+title: "Constructing the Training Target"
+author: "Hujie Wang"
+date: "2025-11-27"
+categories: [diffusion, flow-matching, generative-models]
+toc: true
+---
+
+# Constructing the Training Target
+
+## Conditional Probability Path
+
+A conditional probability path is a set of distribution $\mathbf{p}_t(x | z)$ over $\mathbb{R}^d$ such that
+
+$$
+\begin{aligned}
+p_0(\cdot | z) = p_{init}, \quad
+p_1(\cdot | z) = \delta_z \quad \forall z \in \mathbb{R}^d
+\end{aligned}
+$$ {#eq-conditional-path}
+In other words, a conditional probability path interpolates between the initial distribution $p_{init}$ and a single data point from $p_{data}$.
+
+## Marginal Probability Path
+
+Every conditional probability path induces a **marginal probability path** $p_t(x)$. We obtain it by first sampling $z \sim p_{data}$ and then sampling $x \sim p_t(\cdot | z)$:
+
+$$
+\begin{aligned}
+&z \sim p_{data}, \quad x \sim p_t(\cdot | z) \\
+p_t(x) &= \int p_t(x, z) dz \\
+&= \int p_t(x | z) p_{data}(z) dz
+\end{aligned}
+$$
+
+We can verify that $p_t(x)$ interpolates between $p_{init}$ and $p_{data}$.
+
+**At $t=0$:** The conditional distribution equals the initial distribution for all $z$, so $p_{init}(x)$ factors out of the integral:
+
+$$
+\begin{aligned}
+p_0(x) &= \int p_0(x | z) p_{data}(z) dz \\
+&= \int p_{init}(x) p_{data}(z) dz && \text{(since } p_0(\cdot|z) = p_{init} \text{)} \\
+&= p_{init}(x) \int p_{data}(z) dz && \text{(factor out } p_{init}(x) \text{)} \\
+&= p_{init}(x) && \text{(probability integrates to 1)}
+\end{aligned}
+$$
+
+**At $t=1$:** The conditional distribution collapses to a point mass at $z$. To evaluate this integral, we use the **sifting property** of the Dirac delta:
+
+$$
+\int f(z) \delta_z(x) \, dz = f(x)
+$$
+
+To understand this, think of $\delta_z(x)$ as the limit of increasingly narrow, tall functions that integrate to 1 — for example, a Gaussian centered at $z$ with vanishing variance:
+
+$$
+\delta_{z,\epsilon}(x) = \frac{1}{\epsilon\sqrt{2\pi}} e^{-(x-z)^2/(2\epsilon^2)} \xrightarrow{\epsilon \to 0} \delta_z(x)
+$$
+
+As $\epsilon \to 0$, all the "mass" concentrates at $x = z$. So when we integrate $f(z)\delta_{z,\epsilon}(x)$ over $z$, only the value near $z = x$ contributes, giving $f(x)$. Applying this:
+
+$$
+\begin{aligned}
+p_1(x) &= \int p_1(x | z) p_{data}(z) dz \\
+&= \int \delta_z(x) p_{data}(z) dz && \text{(since } p_1(\cdot|z) = \delta_z \text{)} \\
+&= p_{data}(x) && \text{(sifting property)}
+\end{aligned}
+$$
+
+## Example: Gaussian probability paths
+
+A Gaussian probability path is a family of Gaussian distributions that are parameterized by a time-dependent mean and covariance matrix. The conditional Gaussian probability path is defined as:
+
+$$
+\mathbf{p}_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)
+$$
+
+where $\alpha_t$ and $\beta_t$ are noise schedulers, and they are continously, **monotonically** differentiable functions with the following conditions:
+
+$$
+\begin{aligned}
+\alpha_0 &= \beta_1 = 0 \\
+\beta_0 &= \alpha_1 = 1
+\end{aligned}
+$$
+
+which implies
+
+$$
+\begin{aligned}
+\mathbf{p}_0(\cdot | z) &= \mathcal{N}(0, I_d) \\
+\mathbf{p}_1(\cdot | z) &= \lim_{\beta \to 0} \mathcal{N}(z, \beta^2 I_d) = \delta_z
+\end{aligned}
+$$ {#eq-path-boundary}
+
+As the variance vanishes, the Gaussian concentrates all its mass at the mean $z$, converging (in distribution) to the Dirac delta $\delta_z$.
+
+Therefore, this Gaussian probability path satisfies ([-@eq-conditional-path]) and is a valid conditional probability path.
+
+Intuitively, given a data point $z$ at time $t=1$, we gradually add noise to it for lower t till $t=0$.
+

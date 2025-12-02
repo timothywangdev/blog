@@ -1,0 +1,8 @@
+---
+title: "扩展欧几里德算法"
+date: "2012-05-21"
+categories: [imported, notes]
+draft: false
+---
+
+计算满足d=gcd(a,b)=ax+by (a,b∈$\mathbb{N}$) 当b=0时： d=a=gcd(a,0)=ax+by,取x=1,y=0时满足。 当b≠0时： d=d'=gcd(b,a mod b)=bx'+(a mod b)y'=bx'+(a-[$a/b$]b)y' =ay'+b(x'-[$a/b$]y') 于是当x=y',y=x'-[$a/b$]y'满足等式ax+by=d。   参考资料：《信息学奥林匹克竞赛指导-2002竞赛试题解析》-第3章 数论类的例题-2.欧几里德定理与算法 第15页

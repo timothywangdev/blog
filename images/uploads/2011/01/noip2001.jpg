@@ -1,0 +1,44 @@
+var
+s1,s:string;
+f:array[1..200,1..200]of integer;
+sum:array[0..200,0..200]of integer;
+word:array[1..6]of string;
+l,i,j,k,p,max,n:integer;
+function find(p,l:integer):integer;
+var
+i,j,start:integer;
+can:boolean;
+begin
+find:=0;
+start:=p;
+can:=false;
+for i:=1 to n do
+ if length(word[i])<=l then
+  begin
+   for j:=1 to length(word[i]) do
+    if (s[start]<>word[i][j])then
+     can:=false;
+
+  if can then
+   find:=1
+  end
+end;{find}
+begin
+fillchar(f,sizeof(f),0);
+fillchar(sum,sizeof(sum),0);
+fillchar(word,sizeof(word),0);
+readln(p,k);
+for i:=1 to p do
+ begin
+ readln(s1);
+ s:=s+s1
+ end;
+readln(n);
+for i:=1 to n do
+ readln(word[i]);
+for i:=length(s) downto 1 do
+ for j:=i to length(s) do
+   if find(i,j-i+1)=1 then
+    sum[i,j]:=sum[i+1,j]+find(i,j-i+1);
+writeln(sum[1,4]);
+end.

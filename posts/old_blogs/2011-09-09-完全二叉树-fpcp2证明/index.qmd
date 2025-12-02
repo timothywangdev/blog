@@ -1,0 +1,24 @@
+---
+title: "完全二叉树 Fp=[Cp/2]证明"
+date: "2011-09-09"
+categories: [imported, notes]
+draft: false
+---
+
+完全二叉树 Fp=[Cp/2]
+
+设:Fi,F在Fi行第x个.
+
+Fp=2^(i-1)-1+x
+
+Cp1=2^i-1+2x-1=2(2^(i-1)-1+x)=2Fp
+
+Cp2=2^i-1+2x=2(2^(i-1)-0.5+x)=2(Fp+0.5)
+
+Fp=Cp/2
+
+Fp=Cp/2-0.5
+
+所以Fp=[Cp/2]
+
+完全二叉树 Fp=[Cp/2]设:Fi,F在Fi行第x个.Fp=2^(i-1)-1+xCp1=2^i-1+2x-1=2(2^(i-1)-1+x)=2FpCp2=2^i-1+2x=2(2^(i-1)-0.5+x)=2(Fp+0.5)Fp=Cp/2Fp=Cp/2-0.5所以Fp=[Cp/2] 

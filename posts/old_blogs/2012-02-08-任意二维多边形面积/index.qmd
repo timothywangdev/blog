@@ -1,0 +1,8 @@
+---
+title: "任意二维多边形面积"
+date: "2012-02-08"
+categories: [imported, notes]
+draft: false
+---
+
+[![](/images/uploads/2012/02/area-of-polygon.png)](/images/uploads/2012/02/area-of-polygon.png) 推导过程：设多边形有N个顶点。 去原点与个顶点连线，将多边形分为N个三角形，按顺序用叉积将有向三角形面积相加即可。（这里提一下：有向面积比无向面积更本质！) [*[Image unavailable: 推导.png]*](/images/uploads/2012/02/推导.png)

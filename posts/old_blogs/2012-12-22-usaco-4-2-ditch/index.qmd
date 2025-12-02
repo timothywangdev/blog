@@ -1,0 +1,148 @@
+---
+title: "USACO 4.2 Ditch"
+date: "2012-12-22"
+categories: [algorithms, imported]
+draft: false
+---
+
+I thought I must have flunked my final exams cause I did a really bad job in this term(always got up little,missed huge amount of classes,spent plenty of time playing badminton,etc),in fact,I was so lucky to see that the grades of my three major courses are all above 77.It's totally unbelievable for a lazy guy like me..... This is my first time writing usaco problems since I moved to Canada...it's like 3 months...feel pretty shame on myself...... Anyway,it's just a basic problem of network flow,it only changes little on it in order to make it harder,however,this little change in which I was stuck for a really long time,like 3 hours..... A simple way to solve this little problem is that we need to add all the capacities of ditches together if those ditches are lying between the same two intersections. I used relabel-to-front algorithm,the efficiency is really good--O($V^3$) and here is my code(It's ugly I know):  
+    
+    
+    /*
+    PROG:ditch
+    LANG:C++
+    */
+    
+    //#include "stdafx.h"
+    #include "string.h"
+    #include <fstream>
+    #include <list>
+    #include <vector>
+    #define INFINITY 1500000000;
+    using namespace std;
+    ifstream fin("ditch.in");
+    ofstream fout("ditch.out");
+    int f[200][200],cf[200][200],c[200][200],N,M,i,j;
+    list<int> L;
+    vector< list<int> > adjacent_list(200);
+    struct vector_type
+    {
+    int h,e;
+    };
+    vector_type v[200];
+    void update_cf(int p1,int p2)
+    {
+    cf[p1][p2]=c[p1][p2]-f[p1][p2];
+    }
+    void input()
+    {
+    int intersection_1,intersection_2,cap;
+    fin>>N>>M;
+    for(int i=0;i<N;i++)
+    {
+    fin>>intersection_1>>intersection_2>>cap;
+    intersection_1--;
+    intersection_2--;
+    c[intersection_1][intersection_2]+=cap;
+    }
+    }
+    void initialize_N(int u)
+    {
+    for(int j=0;j<M;j++)
+    if(c[u][j]>0||c[j][u]>0)
+    adjacent_list[u].push_back(j);
+    }
+    
+    void initialize_L()
+    {
+    for(int j=1;j<M-1;j++)
+    {
+    L.push_back(j);
+    initialize_N(j);
+    }
+    }
+    void initialize_preflow()
+    {
+    memset(f,0,sizeof(f));
+    memset(cf,0,sizeof(cf));
+    memset(v,0,sizeof(v));
+    memset(c,0,sizeof(c));
+    input();
+    v[0].h=M;
+    v[0].e=0;
+    for(j=0;j<M;j++)
+    if(c[0][j]>0)
+    {
+    f[0][j]=c[0][j];
+    f[j][0]=-f[0][j];
+    v[j].e=f[0][j];
+    v[0].e-=f[0][j];
+    }
+    for(i=0;i<M;i++)
+    for(j=0;j<M;j++)
+    update_cf(i,j);
+    initialize_L();
+    }
+    
+    void push(int p1,int p2)
+    {
+    int df=min<int>(v[p1].e,cf[p1][p2]);
+    f[p1][p2]+=df;
+    f[p2][p1]=-f[p1][p2];
+    v[p1].e-=df;
+    v[p2].e+=df;
+    update_cf(p1,p2);
+    update_cf(p2,p1);
+    }
+    void relabel(int u)
+    {
+    int min_height=INFINITY;
+    for(j=0;j<M;j++)
+    if(cf[u][j]>0)
+    min_height=min<int>(min_height,v[j].h);
+    v[u].h=min_height+1;
+    }
+    void discharge(int u)
+    {
+    list<int>::iterator current_v=adjacent_list[u].begin();
+    while(v[u].e>0)
+    {
+    if(current_v==adjacent_list[u].end())
+    {
+    relabel(u);
+    current_v=adjacent_list[u].begin();
+    }
+    else if((cf[u][*current_v]>0)&&(v[u].h-v[*current_v].h==1))
+    push(u,*current_v);
+    else
+    current_v++;
+    }
+    }
+    void relabel_to_front()
+    {
+    list<int>::iterator current_v=L.begin(),temp_v;
+    int old_height;
+    while(current_v!=L.end())
+    {
+    old_height=v[*current_v].h;
+    discharge(*current_v);
+    if(v[*current_v].h>old_height)
+    {
+    L.insert(L.begin(),*current_v);
+    L.erase(current_v);
+    current_v=L.begin();
+    }
+    current_v++;
+    }
+    }
+    
+    int main()
+    {
+    initialize_preflow();
+    relabel_to_front();
+    fout<<v[M-1].e<<endl;
+    return 0;
+    
+    }
+
+   

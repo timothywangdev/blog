@@ -1,0 +1,33 @@
+const
+maxlongint=2147483647;
+var
+map:array[1..200,1..200]of integer;
+f:array[1..200,1..200]of longint;
+i,j,k,m,n:integer;
+max:longint;
+begin
+fillchar(map,sizeof(map),0);
+fillchar(f,sizeof(f),0);
+readln(m,n);
+for i:=1 to m do
+ begin
+ for j:=1 to n do
+  read(map[i,j]);
+ readln
+ end;
+for i:=n div 2-1 to n div 2+3 do
+ f[m,i]:=map[m,i];
+for i:=m-1 downto 1 do
+ for j:=1 to n do
+  for k:=j-2 to j+2 do
+   if (k>=1)and (k<=n) then
+    if f[i+1,k]+map[i,j]>f[i,j] then
+     f[i,j]:=f[i+1,k]+map[i,j];
+max:=-maxlongint;
+for i:=1 to n do
+ if f[1,i]>max then
+  max:=f[1,i];
+writeln(max);
+end.
+
+

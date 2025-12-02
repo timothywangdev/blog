@@ -1,0 +1,27 @@
+---
+title: "裴蜀定理"
+date: "2012-05-21"
+categories: [imported, notes]
+draft: false
+---
+
+对任意两个[整数](http://zh.wikipedia.org/wiki/%E6%95%B4%E6%95%B8 "整数")![a](http://upload.wikimedia.org/wikipedia/zh/math/0/c/c/0cc175b9c0f1b6a831c399e269772661.png)、![b](http://upload.wikimedia.org/wikipedia/zh/math/9/2/e/92eb5ffee6ae2fec3ad71c777531578f.png)，设![d](http://upload.wikimedia.org/wikipedia/zh/math/8/2/7/8277e0910d750195b448797616e091ad.png)是它们的[最大公约数](http://zh.wikipedia.org/wiki/%E6%9C%80%E5%A4%A7%E5%85%AC%E7%BA%A6%E6%95%B0 "最大公约数")。那么关于未知数![x](http://upload.wikimedia.org/wikipedia/zh/math/9/d/d/9dd4e461268c8034f5c8564e155c67a6.png)和![y](http://upload.wikimedia.org/wikipedia/zh/math/4/1/5/415290769594460e2e485922904f345d.png)的[线性](http://zh.wikipedia.org/wiki/%E7%B7%9A%E6%80%A7%E6%96%B9%E7%A8%8B "线性方程")[丢番图方程](http://zh.wikipedia.org/wiki/%E4%B8%9F%E7%95%AA%E5%9C%96%E6%96%B9%E7%A8%8B "丢番图方程")（称为**裴蜀等式** ）： 
+
+    ![displaystyle ax+by=m](http://upload.wikimedia.org/wikipedia/zh/math/8/5/a/85a5f5d0f5ec25a70f28f539be85a695.png)
+有整数解(_x_ ,_y_) [当且仅当](http://zh.wikipedia.org/wiki/%E5%BD%93%E4%B8%94%E4%BB%85%E5%BD%93 "当且仅当") _m_ 是 _d_ 的[倍数](http://zh.wikipedia.org/wiki/%E5%80%8D%E6%95%B8 "倍数")。裴蜀等式有解时必然有无穷多个解。 证明： 如果 ![a](http://upload.wikimedia.org/wikipedia/zh/math/0/c/c/0cc175b9c0f1b6a831c399e269772661.png) 和 ![b](http://upload.wikimedia.org/wikipedia/zh/math/9/2/e/92eb5ffee6ae2fec3ad71c777531578f.png) 中有一个是0，比如![a=0](http://upload.wikimedia.org/wikipedia/zh/math/d/e/d/ded681eaa02d11064c9a469dd1b3e04c.png)，那么它们两个的最大公约数是![b](http://upload.wikimedia.org/wikipedia/zh/math/9/2/e/92eb5ffee6ae2fec3ad71c777531578f.png)。这时裴蜀等式变成![displaystyle by=m](http://upload.wikimedia.org/wikipedia/zh/math/2/c/0/2c0eb4017b74ac8c5e896dfd221a9671.png)，它有整数解(_x_ ,_y_) 当且仅当 _m_ 是 _d_ 的倍数，而且有解时必然有无穷多个解，因为![x](http://upload.wikimedia.org/wikipedia/zh/math/9/d/d/9dd4e461268c8034f5c8564e155c67a6.png) 可以是任何整数。定理成立。 以下设 ![a](http://upload.wikimedia.org/wikipedia/zh/math/0/c/c/0cc175b9c0f1b6a831c399e269772661.png)和 ![b](http://upload.wikimedia.org/wikipedia/zh/math/9/2/e/92eb5ffee6ae2fec3ad71c777531578f.png) 都不为0。 设![A = {xa+yb; \(x;y\) in Z^2}](http://upload.wikimedia.org/wikipedia/zh/math/1/a/3/1a3b1f80b292b3081b44af4b188d549b.png)，下面证明![A](http://upload.wikimedia.org/wikipedia/zh/math/7/f/c/7fc56270e7a70fa81a5935b72eacbe29.png)中的最小正元素是 ![a](http://upload.wikimedia.org/wikipedia/zh/math/0/c/c/0cc175b9c0f1b6a831c399e269772661.png) 与 ![b](http://upload.wikimedia.org/wikipedia/zh/math/9/2/e/92eb5ffee6ae2fec3ad71c777531578f.png) 的最大公约数。 这个证明复杂且怪异，个人推荐算导上的证明，详情请见：[http://localhost:8080/?p=581](http://localhost:8080/?p=581) 在方程![ax+by=m](http://upload.wikimedia.org/wikipedia/zh/math/b/0/f/b0f1f5bb52a9008981ab332de79772e7.png)中，如果 ![ m= m_0 d_0](http://upload.wikimedia.org/wikipedia/zh/math/3/4/a/34ae1f27d277baa651cf46cabdf06535.png)，那么方程显然有无穷多个解： 
+
+    这里附上通解公式：$(x_0-bt,y_0+at )$(t∈$\mathbb{Z}$) 
+    关于通解公式推导请见：[http://localhost:8080/?p=622](http://localhost:8080/?p=622)
+    
+    
+    个人认为这里的“显然”太简略，无穷性可根据通解公式得出。
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    参考资料：[http://zh.wikipedia.org/wiki/%E8%A3%B4%E8%9C%80%E5%AE%9A%E7%90%86](http://zh.wikipedia.org/wiki/%E8%A3%B4%E8%9C%80%E5%AE%9A%E7%90%86) 并加以修改

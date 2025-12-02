@@ -1,0 +1,8 @@
+---
+title: "在这吐槽下，USACO输出格式真是欠扁。。。！"
+date: "2012-01-02"
+categories: [imported, notes]
+draft: false
+---
+
+再次对这种无聊的固定长度表示强烈鄙视！害我一次过的变成十几次才过。。。囧。。。

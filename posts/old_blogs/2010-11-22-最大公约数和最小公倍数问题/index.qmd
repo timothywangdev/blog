@@ -1,0 +1,8 @@
+---
+title: "最大公约数和最小公倍数问题"
+date: "2010-11-22"
+categories: [imported, notes]
+draft: false
+---
+
+题目:最大公约数和最小公倍数问题 问题编号:304 题目描述 输入二个正整数x0,y0(2<=x0<100000,2<=y0<=1000000),求出满足下列条件的P,Q的个数 条件: 1.P,Q是正整数 2.要求P,Q以x0为最大公约数,以y0为最小公倍数. 试求:满足条件的所有可能的两个正整数的个数. 输入格式 第一行，两个整数，x0，y0 输出格式 满足条件的P,Q的个数 样例输入 3 60 样例输出 4 说明(不用输出)此时的 P Q 分别为: 3 60 15 12 12 15 60 3 所以:满足条件的所有可能的两个正整数的个数共4种. var x0,y0,t,tmp,i:longint; function gcd(x,y:longint):longint; var t:longint; begin if y=0 then begin gcd:=x; exit end; if x < y then begin t:=x; x:=y; y:=t end; gcd:=gcd(y,x mod y) end;{gcd} begin t:=0; readln(x0,y0); if y0 mod x0<>0 then begin writeln(0); exit end; if y0=x0 then begin writeln(1); exit end else begin tmp:=y0 div x0; for i:=1 to trunc(sqrt(tmp))+1 do if (tmp mod i=0)and(gcd(i,tmp div i)=1)then inc(t,2); writeln(t) end; end. 疑问(已解决）： 设n=1*(p1^l1)*(p2^l2)*...*(pk^lk) 当k=1时 1<=sqrt(n)<(p1^l1) 所以有k个 当k=2时 1*(p1^l1)<=sqrt(n)<(p2^l2)所以有k个 (所以t不用减一，因为当k<=2时，1点未算进去。） 当k>2时 1*(p1^l1)*(p2^l2)*...*(pk^lk)<=sqrt(n) 所以有k+1个 总结： 如果要根据结果求出质因子个数则： 如果t>2 则 k:=t-1 否则 k:=t 证明：当k=1时 (p1^l1)>√(p1^l1) 证毕。 证明：当k=2时 1*(p1^l1)<=sqrt(n)<(p2^l2) 设a=p1^l1,b=p2^l2. 由基本不等式 (a+b)/2>√(a*b) 得 -0---a------(a+b)/2-------b------ \--------------|( √(a*b)在此区间内） 又因为 a

@@ -1,0 +1,8 @@
+---
+title: "滑雪 tyvj P1004"
+date: "2010-11-29"
+categories: [imported, notes]
+draft: false
+---
+
+[![](/images/uploads/2010/11/huaxue.jpg)](/images/uploads/2010/11/huaxue.jpg) if (map[i-1,j]>map[i,j])and(f[i-1,j]>=m) then begin m:=f[i-1,j];judge:=true end; if (map[i+1,j]>map[i,j])and(f[i+1,j]>=m) then begin m:=f[i+1,j];judge:=true end; if (map[i,j+1]>map[i,j])and(f[i,j+1]>=m) then begin m:=f[i,j+1];judge:=true end; if (map[i,j-1]>map[i,j])and(f[i,j-1]>=m) then begin m:=f[i,j-1];judge:=true end; 注意m的重复赋植。需加m的赋植条件. 注意快排中 repeat while (map[sort[j,1],sort[j,2]]>map[t[1],t[2]])and(i<j)do j:=j-1; if(i<j)then begin sort[i,1]:=sort[j,1]; sort[i,2]:=sort[j,2]; inc(i) end; while (map[sort[i,1],sort[i,2]]<map[t[1],t[2]])and(i<j)do i:=i+1; if(i<j)then begin sort[j,1]:=sort[i,1]; sort[j,2]:=sort[i,2]; dec(j) end; until i>=j; inc(i),dec(j)勿写错,否则陷入死循环。

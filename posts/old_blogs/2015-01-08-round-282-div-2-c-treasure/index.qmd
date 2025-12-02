@@ -1,0 +1,8 @@
+---
+title: "Round #282 (Div. 2) C. Treasure"
+date: "2015-01-08"
+categories: [algorithms, imported]
+draft: false
+---
+
+Consider a string S consisting of '(' and ')' characters. Let left[i] be the number of '(' in S[0..i], right[i] be the number of ')' in S[0..i] for $$ 0 \leq i<n $$ Let f[i]=left[i]-right[i] for $$ 0 \leq i<n $$ S is beautiful iff $$\forall 0\leq i0$$ and f[n-1]=0 _Theorem_ If there is a solution, after removing ')' from a '#' which has more than 1 ')' in the solution and adding the removed ')' to the last '#', the modified S is a solution. **Proof** Let $$S=a_1...a_{i-1}a_ia_{i+1}...a_{j-1}a_ja_{j+1}...a_{n-1} $$be a solution and $$a_i, a_j$$,was transformed by changing a '#' with more than one ')', $$a_i, a_j$$ were not transformed by the same '#'. We now remove $$a_i$$ from position i and insert it into position k=j, and let the new string be S' $$ S'=a_1...a_{i-1}a_{i+1}...a_{j-1}a_ja_ia_{j+1}...a_{n-1} $$ Assume f[] has been re-calculated and let the new array be f'[].   First note that f[n-1]=0 since the number of ')' and '(" remains the same. Also note that $$\forall 0\leq k \leq i-1 \land j+1\leq k \leq n-1 : f'[k]=f[k]$$ $$\forall i\leq k\leq j-1 : f'[k]=f[k]+1$$ since a ')' is removed f'[j]=f'[j-1]-1 since $$a_i$$ or ')' was inserted at position j Therefore f'[j]=f'[j-1]-1=f[j-1]+1-1=f[j-1]>0 Thus S' is a solution. **Algorithm** After moving all removable ')' ( does not cause a '#' to have zero ')' ) to the last '#' in a solution string S, we have a newly constructed string S'' which is beautiful. First we construct S'', if S'' is beautiful, a solution exists, otherwise there is no solutions. **Solution** <https://github.com/hujiewang/Programming-Contests/blob/master/codeforces/%23282/c.cpp>
