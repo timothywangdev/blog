@@ -150,6 +150,16 @@ The marginalization trick is what makes flow matching **tractable**. Here's the 
 The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.
 :::
 
+## What's Next?
+
+We've now covered the complete flow matching framework — from vector fields to probability paths to the training loss. But remember from [Part 1](../1-intro/) that diffusion models take a different approach: they add **stochasticity** to the process.
+
+In the [next post](../5-diffusion-sde/), we'll see how **diffusion models** generalize flow matching by adding a noise term to the ODE, turning it into an SDE. We'll discover:
+
+- How to derive SDEs using **infinitesimal updates** instead of derivatives
+- Why the random term $\sigma_t dW_t$ enables new behaviors
+- The connection between Brownian motion and continuous randomness
+
 ## References
 
 1. Lipman, Y., et al. (2023). [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747). *ICLR*.
