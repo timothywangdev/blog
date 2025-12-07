@@ -26,3 +26,17 @@ format:
     code-overflow: wrap
     css: styles.css
     toc: true
+
+comments:
+  giscus:
+    repo: timothywangdev/blog
+    repo-id: MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=
+    category: Announcements
+    category-id: DIC_kwDOD6EIbM4CzgxQ
+    mapping: pathname
+    reactions-enabled: true
+    input-position: bottom
+    theme:
+      light: light
+      dark: dark_dimmed
+    loading: lazy
