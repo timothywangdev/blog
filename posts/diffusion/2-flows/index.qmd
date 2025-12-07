@@ -1,12 +1,24 @@
 ---
-title: "Flows Explained Simply: A Visual Guide"
+title: "Diffusion & Flow Matching Part 2: Understanding Flows"
 author: "Hujie Wang"
 date: "2025-11-30"
 categories: [diffusion, flow-matching, generative-models]
 toc: true
 ---
 
-# Flow
+::: {.callout-note appearance="simple"}
+
+## TL;DR
+
+- A **vector field** tells you which direction to move at each point in space
+- A **flow** is the map that shows where every point ends up after following the vector field
+- This is the mathematical foundation for flow matching: we'll learn a vector field that "flows" noise into data
+
+:::
+
+# Understanding Flows
+
+In flow matching, we learn a vector field that transports samples from noise to data. But what exactly *is* a vector field? And what does it mean to "follow" one? This post builds the intuition you'll need for everything that follows.
 
 ## Intuition: Think of a River
 
@@ -78,3 +90,13 @@ Think of it like Google Maps:
 - **Flow** = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up
 
 So: arrows (vector field) + "follow the arrows" (ODE) = everyone's destination (flow).
+
+## What's Next?
+
+We now understand how vector fields generate flows. But for generative modeling, we need flows that transform *probability distributions* — specifically, from noise to data.
+
+In the [next post](../3-probability-paths/), we'll see how to construct **probability paths** that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.
+
+## References
+
+1. Chen, R. T. Q., et al. (2018). [Neural Ordinary Differential Equations](https://arxiv.org/abs/1806.07366). *NeurIPS*.

@@ -1,120 +1,91 @@
 ---
-title: "Understanding Diffusion and Flow Matching Models"
+title: "Diffusion & Flow Matching Part 1: Introduction"
 author: "Timothy Wang"
 date: "2025-11-27"
 categories: [diffusion, flow-matching, generative-models]
 toc: true
 ---
 
-A deep dive into the mathematics behind diffusion models and flow matching, two powerful approaches to generative modeling.
+::: {.callout-note appearance="simple"}
+## TL;DR
 
-## Introduction
+- **Diffusion models** gradually add noise to data, then learn to reverse the process
+- **Flow matching** learns a velocity field that directly transports noise to data
+- Both achieve state-of-the-art results; flow matching is often simpler to train
+:::
 
-Diffusion models and flow matching have emerged as state-of-the-art approaches for generative modeling, powering systems like Stable Diffusion, DALL-E, and Flux. Despite their different formulations, both methods share a common goal: learning to transform noise into data.
+## Series Overview
 
-## Diffusion Models
+This multi-part series explores the theory behind modern generative models. Each post builds on the previous one:
 
-### The Forward Process
+| Part | Topic | What You'll Learn |
+|------|-------|-------------------|
+| **Part 1** | [Introduction](../1-intro/) (this post) | High-level overview of diffusion and flow matching |
+| **Part 2** | [Understanding Flows](../2-flows/) | Vector fields, trajectories, and flows — the foundation |
+| **Part 3** | [Probability Paths](../3-probability-paths/) | How we define paths from noise to data |
+| **Part 4** | [The Flow Matching Loss](../4-flow-matching-loss/) | The marginalization trick that makes training work |
+| *Part 5+* | *Coming soon* | Diffusion models deep dive, SDEs, and more |
 
-Diffusion models define a forward process that gradually adds Gaussian noise to data over $T$ timesteps. Given a data point $\mathbf{x}_0 \sim q(\mathbf{x})$, the forward process is defined as:
+## What Are We Building?
 
-$$
-q(\mathbf{x}_t | \mathbf{x}_{t-1}) = \mathcal{N}(\mathbf{x}_t; \sqrt{1 - \beta_t} \mathbf{x}_{t-1}, \beta_t \mathbf{I})
-$$
+Diffusion models and flow matching power today's best generative AI systems — Stable Diffusion, DALL-E, Midjourney, and Flux. Despite their different formulations, both solve the same fundamental problem:
 
-where $\beta_t$ is the noise schedule. A key insight is that we can sample $\mathbf{x}_t$ directly from $\mathbf{x}_0$:
+> **How do we learn to transform random noise into structured data?**
 
-$$
-q(\mathbf{x}_t | \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_t; \sqrt{\bar{\alpha}_t} \mathbf{x}_0, (1 - \bar{\alpha}_t) \mathbf{I})
-$$
+If we can do this, we can generate new images, audio, video, or any data type by starting with random noise and "flowing" toward realistic samples.
 
-where $\alpha_t = 1 - \beta_t$ and $\bar{\alpha}_t = \prod_{s=1}^{t} \alpha_s$.
+![Diffusion gradually adds noise then learns to reverse it; flow matching learns a direct velocity field from noise to data](diffusion-vs-flow.png)
 
-### The Reverse Process
+## Diffusion Models: The Noisy Path
 
-The reverse process learns to denoise:
+The key idea behind diffusion models is surprisingly simple:
 
-$$
-p_\theta(\mathbf{x}_{t-1} | \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1}; \boldsymbol{\mu}_\theta(\mathbf{x}_t, t), \sigma_t^2 \mathbf{I})
-$$
+1. **Forward process**: Take real data and gradually corrupt it with noise until it becomes pure random noise
+2. **Reverse process**: Train a neural network to undo this corruption step by step
 
-### Training Objective
+Think of it like this: if you slowly blur a photograph until it's unrecognizable static, the neural network learns to "unblur" it. At generation time, you start with pure static and apply the learned unblurring process to create a new image.
 
-The simplified training objective predicts the noise $\boldsymbol{\epsilon}$:
+The forward process is fixed (just adding noise), so the only thing we need to learn is how to reverse it. The network is trained to predict how much noise was added at each step.
 
-$$
-\mathcal{L}_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}} \left[ \| \boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t) \|^2 \right]
-$$
+## Flow Matching: The Direct Path
 
-where $\mathbf{x}_t = \sqrt{\bar{\alpha}_t} \mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t} \boldsymbol{\epsilon}$ and $\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$.
+Flow matching takes a more direct approach:
 
-## Flow Matching
+1. **Define a path**: Specify how to smoothly interpolate between noise and data
+2. **Learn the velocity**: Train a neural network to predict the direction of motion along this path
 
-Flow matching offers an elegant alternative by directly learning a velocity field that transports samples from noise to data.
+Imagine dropping a leaf into a river. The current (vector field) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the "noise region" will flow toward the "data region."
 
-### Continuous Normalizing Flows
+The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.
 
-We define a time-dependent vector field $\mathbf{v}_t: \mathbb{R}^d \rightarrow \mathbb{R}^d$ that generates a flow $\phi_t$ via the ODE:
-
-$$
-\frac{d\phi_t(\mathbf{x})}{dt} = \mathbf{v}_t(\phi_t(\mathbf{x}))
-$$
-
-with initial condition $\phi_0(\mathbf{x}) = \mathbf{x}$.
-
-### Optimal Transport Path
-
-The simplest interpolation between noise $\mathbf{x}_0 \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and data $\mathbf{x}_1 \sim q(\mathbf{x})$ is linear:
-
-$$
-\mathbf{x}_t = (1 - t) \mathbf{x}_0 + t \mathbf{x}_1
-$$
-
-The conditional velocity field for this path is simply:
-
-$$
-\mathbf{u}_t(\mathbf{x} | \mathbf{x}_1) = \mathbf{x}_1 - \mathbf{x}_0
-$$
-
-### Flow Matching Objective
-
-The training objective minimizes:
-
-$$
-\mathcal{L}_{\text{FM}} = \mathbb{E}_{t, q(\mathbf{x}_1), p(\mathbf{x}_0)} \left[ \| \mathbf{v}_\theta(\mathbf{x}_t, t) - (\mathbf{x}_1 - \mathbf{x}_0) \|^2 \right]
-$$
-
-This is remarkably simple compared to diffusion models!
-
-## Comparison
+## How Do They Compare?
 
 | Aspect | Diffusion | Flow Matching |
 |--------|-----------|---------------|
-| Path | Stochastic (SDE) | Deterministic (ODE) |
-| Training | Predict noise $\boldsymbol{\epsilon}$ | Predict velocity $\mathbf{v}$ |
-| Sampling | Iterative denoising | ODE integration |
-| Theory | Score matching | Optimal transport |
+| Corruption process | Gradual noise addition | Direct interpolation |
+| What the network learns | How much noise to remove | Which direction to move |
+| Sampling method | Iterative denoising | Following the learned flow |
+| Underlying theory | Score matching | Optimal transport |
+| Path type | Stochastic (random) | Deterministic (fixed) |
 
-## Connection Between the Two
+## The Deep Connection
 
-Interestingly, diffusion models can be viewed through the lens of flow matching. The probability flow ODE for diffusion is:
+Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent "probability flow" formulation that looks like flow matching. The score function (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.
 
-$$
-d\mathbf{x} = \left[ \mathbf{f}(\mathbf{x}, t) - \frac{1}{2} g(t)^2 \nabla_\mathbf{x} \log p_t(\mathbf{x}) \right] dt
-$$
+This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.
 
-where the score function $\nabla_\mathbf{x} \log p_t(\mathbf{x})$ relates to the noise prediction via:
+## What's Next?
 
-$$
-\nabla_\mathbf{x} \log p_t(\mathbf{x}) = -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}, t)}{\sqrt{1 - \bar{\alpha}_t}}
-$$
+In the following posts, we'll develop the mathematical machinery to understand these methods properly:
 
-## Conclusion
+- [**Part 2**](../2-flows/): We'll define what "flows" and "vector fields" actually mean
+- [**Part 3**](../3-probability-paths/): We'll see how to construct paths from noise to data
+- [**Part 4**](../4-flow-matching-loss/): We'll discover the clever trick that makes training tractable
 
-Both diffusion and flow matching provide powerful frameworks for generative modeling. While diffusion models were developed first and have a rich theoretical foundation in score matching, flow matching offers a simpler and often more efficient alternative based on optimal transport theory.
+By the end, you'll understand not just *what* these models do, but *why* they work.
 
 ## References
 
-1. Ho, J., Jain, A., & Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. *NeurIPS*.
-2. Lipman, Y., et al. (2023). Flow Matching for Generative Modeling. *ICLR*.
-3. Song, Y., et al. (2021). Score-Based Generative Modeling through Stochastic Differential Equations. *ICLR*.
+1. Ho, J., Jain, A., & Abbeel, P. (2020). [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239). *NeurIPS*.
+2. Lipman, Y., et al. (2023). [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747). *ICLR*.
+3. Song, Y., et al. (2021). [Score-Based Generative Modeling through Stochastic Differential Equations](https://arxiv.org/abs/2011.13456). *ICLR*.
