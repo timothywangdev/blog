@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Hujie Wang">
-<meta name="dcterms.date" content="2025-11-27">
+<meta name="dcterms.date" content="2025-11-28">
 
-<title>Constructing the Training Target – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -327,11 +327,16 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#constructing-the-training-target" id="toc-constructing-the-training-target" class="nav-link active" data-scroll-target="#constructing-the-training-target">Constructing the Training Target</a>
+  <li><a href="#the-flow-matching-loss-why-training-works" id="toc-the-flow-matching-loss-why-training-works" class="nav-link active" data-scroll-target="#the-flow-matching-loss-why-training-works">The Flow Matching Loss: Why Training Works</a>
   <ul class="collapse">
-  <li><a href="#conditional-probability-path" id="toc-conditional-probability-path" class="nav-link" data-scroll-target="#conditional-probability-path">Conditional Probability Path</a></li>
-  <li><a href="#marginal-probability-path" id="toc-marginal-probability-path" class="nav-link" data-scroll-target="#marginal-probability-path">Marginal Probability Path</a></li>
-  <li><a href="#example-gaussian-probability-paths" id="toc-example-gaussian-probability-paths" class="nav-link" data-scroll-target="#example-gaussian-probability-paths">Example: Gaussian probability paths</a></li>
+  <li><a href="#the-problem-were-solving" id="toc-the-problem-were-solving" class="nav-link" data-scroll-target="#the-problem-were-solving">The Problem We’re Solving</a></li>
+  <li><a href="#the-marginalization-trick" id="toc-the-marginalization-trick" class="nav-link" data-scroll-target="#the-marginalization-trick">The Marginalization Trick</a></li>
+  <li><a href="#the-continuity-equation" id="toc-the-continuity-equation" class="nav-link" data-scroll-target="#the-continuity-equation">The Continuity Equation</a>
+  <ul class="collapse">
+  <li><a href="#physics-background" id="toc-physics-background" class="nav-link" data-scroll-target="#physics-background">Physics Background</a></li>
+  </ul></li>
+  <li><a href="#proof-of-the-marginalization-trick" id="toc-proof-of-the-marginalization-trick" class="nav-link" data-scroll-target="#proof-of-the-marginalization-trick">Proof of the Marginalization Trick</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -342,7 +347,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Constructing the Training Target</h1>
+<h1 class="title">Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss</h1>
   <div class="quarto-categories">
     <div class="quarto-category">diffusion</div>
     <div class="quarto-category">flow-matching</div>
@@ -364,7 +369,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 27, 2025</p>
+      <p class="date">November 28, 2025</p>
     </div>
   </div>
   
@@ -376,78 +381,174 @@ window.Quarto = {
 </header>
 
 
-<section id="constructing-the-training-target" class="level1">
-<h1>Constructing the Training Target</h1>
-<section id="conditional-probability-path" class="level2">
-<h2 class="anchored" data-anchor-id="conditional-probability-path">Conditional Probability Path</h2>
-<p>A conditional probability path is a set of distribution <span class="math inline">\(\mathbf{p}_t(x | z)\)</span> over <span class="math inline">\(\mathbb{R}^d\)</span> such that</p>
-<p><span id="eq-conditional-path"><span class="math display">\[
-\begin{aligned}
-p_0(\cdot | z) = p_{init}, \quad
-p_1(\cdot | z) = \delta_z \quad \forall z \in \mathbb{R}^d
-\end{aligned}
-\tag{1}\]</span></span> In other words, a conditional probability path interpolates between the initial distribution <span class="math inline">\(p_{init}\)</span> and a single data point from <span class="math inline">\(p_{data}\)</span>.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>The problem</strong>: We have conditional vector fields <span class="math inline">\(u_t(x|z)\)</span>, but at generation time we don’t know <span class="math inline">\(z\)</span></li>
+<li><strong>The solution</strong>: The marginalization trick — training on conditional targets is <em>equivalent</em> to learning the marginal vector field</li>
+<li><strong>The loss</strong>: Simply <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span>, averaged over time <span class="math inline">\(t\)</span>, data <span class="math inline">\(z\)</span>, and noise <span class="math inline">\(x_0\)</span></li>
+<li><strong>Why it works</strong>: The continuity equation guarantees the marginal vector field follows the marginal probability path</li>
+</ul>
+</div>
+</div>
+<section id="the-flow-matching-loss-why-training-works" class="level1">
+<h1>The Flow Matching Loss: Why Training Works</h1>
+<p>In the <a href="../3-probability-paths/">previous post</a>, we constructed conditional probability paths and conditional vector fields. But there’s a fundamental problem: these are <em>conditional</em> on knowing the target data point <span class="math inline">\(z\)</span>. At generation time, we don’t know <span class="math inline">\(z\)</span> — that’s what we’re trying to generate!</p>
+<p>This post explains how the <strong>marginalization trick</strong> solves this problem.</p>
+<section id="the-problem-were-solving" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-were-solving">The Problem We’re Solving</h2>
+<p>Let’s step back and understand what we’re trying to achieve.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Our Goal
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Train a neural network <span class="math inline">\(u_t^\theta(x)\)</span> that can transform noise into samples from <span class="math inline">\(p_{data}\)</span>. To do this, we need a <strong>training target</strong> — a vector field that the network should learn to approximate.</p>
+</div>
+</div>
+<p><strong>The ideal target</strong> is the marginal vector field <span class="math inline">\(u_t^{target}(x)\)</span> that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>. If our network learns this, it can generate samples by:</p>
+<ol type="1">
+<li>Start with noise <span class="math inline">\(x_0 \sim p_{init}\)</span></li>
+<li>Follow the learned vector field: <span class="math inline">\(\frac{dx}{dt} = u_t^\theta(x)\)</span></li>
+<li>Arrive at a sample from <span class="math inline">\(p_{data}\)</span> at <span class="math inline">\(t=1\)</span></li>
+</ol>
+<p><strong>The problem</strong>: We can’t compute <span class="math inline">\(u_t^{target}(x)\)</span> directly! It would require integrating over the entire data distribution — intractable.</p>
+<p><strong>The solution</strong>: The marginalization trick. It tells us that:</p>
+<ol type="1">
+<li>We can design simple <strong>conditional</strong> vector fields <span class="math inline">\(u_t^{target}(x|z)\)</span> (one for each data point <span class="math inline">\(z\)</span>)</li>
+<li>Training on these conditional targets is <strong>equivalent</strong> to training on the marginal target</li>
+<li>The trained network will learn the marginal vector field — exactly what we need for generation</li>
+</ol>
+<p>This is why the marginalization trick is so powerful: it turns an intractable problem into a tractable one.</p>
 </section>
-<section id="marginal-probability-path" class="level2">
-<h2 class="anchored" data-anchor-id="marginal-probability-path">Marginal Probability Path</h2>
-<p>Every conditional probability path induces a <strong>marginal probability path</strong> <span class="math inline">\(p_t(x)\)</span>. We obtain it by first sampling <span class="math inline">\(z \sim p_{data}\)</span> and then sampling <span class="math inline">\(x \sim p_t(\cdot | z)\)</span>:</p>
+<section id="the-marginalization-trick" class="level2">
+<h2 class="anchored" data-anchor-id="the-marginalization-trick">The Marginalization Trick</h2>
+<p>Given a conditional vector field <span class="math inline">\(u_t^{target}(x | z)\)</span> that follows the conditional probability path <span class="math inline">\(p_t(\cdot | z)\)</span>, we can construct a marginal vector field <span class="math inline">\(u_t(x)\)</span> that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>:</p>
 <p><span class="math display">\[
-\begin{aligned}
-&amp;z \sim p_{data}, \quad x \sim p_t(\cdot | z) \\
-p_t(x) &amp;= \int p_t(x, z) dz \\
-&amp;= \int p_t(x | z) p_{data}(z) dz
-\end{aligned}
+u_t^{target}(x) = \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
 \]</span></p>
-<p>We can verify that <span class="math inline">\(p_t(x)\)</span> interpolates between <span class="math inline">\(p_{init}\)</span> and <span class="math inline">\(p_{data}\)</span>.</p>
-<p><strong>At <span class="math inline">\(t=0\)</span>:</strong> The conditional distribution equals the initial distribution for all <span class="math inline">\(z\)</span>, so <span class="math inline">\(p_{init}(x)\)</span> factors out of the integral:</p>
-<p><span class="math display">\[
-\begin{aligned}
-p_0(x) &amp;= \int p_0(x | z) p_{data}(z) dz \\
-&amp;= \int p_{init}(x) p_{data}(z) dz &amp;&amp; \text{(since } p_0(\cdot|z) = p_{init} \text{)} \\
-&amp;= p_{init}(x) \int p_{data}(z) dz &amp;&amp; \text{(factor out } p_{init}(x) \text{)} \\
-&amp;= p_{init}(x) &amp;&amp; \text{(probability integrates to 1)}
-\end{aligned}
-\]</span></p>
-<p><strong>At <span class="math inline">\(t=1\)</span>:</strong> The conditional distribution collapses to a point mass at <span class="math inline">\(z\)</span>. To evaluate this integral, we use the <strong>sifting property</strong> of the Dirac delta:</p>
-<p><span class="math display">\[
-\int f(z) \delta_z(x) \, dz = f(x)
-\]</span></p>
-<p>To understand this, think of <span class="math inline">\(\delta_z(x)\)</span> as the limit of increasingly narrow, tall functions that integrate to 1 — for example, a Gaussian centered at <span class="math inline">\(z\)</span> with vanishing variance:</p>
-<p><span class="math display">\[
-\delta_{z,\epsilon}(x) = \frac{1}{\epsilon\sqrt{2\pi}} e^{-(x-z)^2/(2\epsilon^2)} \xrightarrow{\epsilon \to 0} \delta_z(x)
-\]</span></p>
-<p>As <span class="math inline">\(\epsilon \to 0\)</span>, all the “mass” concentrates at <span class="math inline">\(x = z\)</span>. So when we integrate <span class="math inline">\(f(z)\delta_{z,\epsilon}(x)\)</span> over <span class="math inline">\(z\)</span>, only the value near <span class="math inline">\(z = x\)</span> contributes, giving <span class="math inline">\(f(x)\)</span>. Applying this:</p>
-<p><span class="math display">\[
-\begin{aligned}
-p_1(x) &amp;= \int p_1(x | z) p_{data}(z) dz \\
-&amp;= \int \delta_z(x) p_{data}(z) dz &amp;&amp; \text{(since } p_1(\cdot|z) = \delta_z \text{)} \\
-&amp;= p_{data}(x) &amp;&amp; \text{(sifting property)}
-\end{aligned}
-\]</span></p>
+<p>This is the marginalization trick. To prove it, we will use the continuity equation.</p>
 </section>
-<section id="example-gaussian-probability-paths" class="level2">
-<h2 class="anchored" data-anchor-id="example-gaussian-probability-paths">Example: Gaussian probability paths</h2>
-<p>A Gaussian probability path is a family of Gaussian distributions that are parameterized by a time-dependent mean and covariance matrix. The conditional Gaussian probability path is defined as:</p>
+<section id="the-continuity-equation" class="level2">
+<h2 class="anchored" data-anchor-id="the-continuity-equation">The Continuity Equation</h2>
+<div id="continuity-equation" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: Continuity Equation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Let us consider a flow model with vector field <span class="math inline">\(u_t^{target}\)</span> with <span class="math inline">\(X_0 \sim p_{init}\)</span>. Then <span class="math inline">\(X_t \sim p_t\)</span> for all <span class="math inline">\(0 \leq t \leq 1\)</span> if and only if</p>
 <p><span class="math display">\[
-\mathbf{p}_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)
+\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{target})(x) \quad \text{for all } x \in \mathbb{R}^d, 0 \leq t \leq 1
 \]</span></p>
-<p>where <span class="math inline">\(\alpha_t\)</span> and <span class="math inline">\(\beta_t\)</span> are noise schedulers, and they are continously, <strong>monotonically</strong> differentiable functions with the following conditions:</p>
+<p>where <span class="math inline">\(\partial_t p_t(x) = \frac{d}{dt} p_t(x)\)</span> denotes the time-derivative of <span class="math inline">\(p_t(x)\)</span>.</p>
+</div>
+</div>
+<p>We will skip the proof of the continuity equation.</p>
+<p><span class="math inline">\(\nabla \cdot\)</span> is the divergence operator in vector calculus, it’s input is a vector and output is a scalar.</p>
+<p>If the divergence is negative, it means that the vector field is pointing inwards towards this point.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="divergence-negative.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Negative divergence: arrows point inward (a “sink”)</figcaption>
+</figure>
+</div>
+<p>The divergence measures the net outflow of density from a point. And the negative divergence means the net inflow of density into this point.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="divergence-positive.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Positive divergence: arrows point outward (a “source”)</figcaption>
+</figure>
+</div>
+<p>If you are not familiar with this or vector calculus, I recommend you watch the <a href="https://www.youtube.com/watch?v=So7vlARGs68&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=4">The Divergence of a Vector Field: Sources and Sinks</a> by Steve Brunton. He also talks about the continuity equation in the context of fluid dynamics here: <a href="https://www.youtube.com/watch?v=Fk3X6o39KEI&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=7">The Continuity Equation: A PDE for Mass Conservation, from Gauss’s Divergence Theorem</a>.</p>
+<section id="physics-background" class="level3">
+<h3 class="anchored" data-anchor-id="physics-background">Physics Background</h3>
+<p>Let me briefly explain the continuity equation, it originates from physics:</p>
+<p><span class="math display">\[
+\frac{\partial \rho}{\partial t} + \nabla \cdot J = 0
+\]</span></p>
+<p>where <span class="math inline">\(\rho\)</span> is the mass density and <span class="math inline">\(J\)</span> is the mass flux. The equation was derived from Gauss’s Divergence Theorem, it’s also called mass conservation equation.</p>
+<p>The flux is defined as the product of mass density and the the velocity field <span class="math inline">\(F\)</span>:</p>
+<p><span class="math display">\[
+J = \rho F
+\]</span></p>
+<p>Intuitively, the flux measures the amount of mass flow rate per unit area through a surface.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="flux-diagram.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Flux: the rate of mass flowing through a surface</figcaption>
+</figure>
+</div>
+<p>The mass conservation equation states that the rate of change of mass in a volume is equal to the net outflow of mass through the surface of the volume. It’s a fundamental law that mass cannot be created or destroyed within a defined system.</p>
+<p>In the context of flow models, the mass density is the probability density and the velocity field is the vector field <span class="math inline">\(u_t(x)\)</span>. The continuity equation then becomes:</p>
+<p><span class="math display">\[
+\frac{d}{dt} p_t(x) = -\nabla \cdot (u_t p_t)(x)
+\]</span></p>
+<p>This is the continuity equation in the context of flow models.</p>
+</section>
+</section>
+<section id="proof-of-the-marginalization-trick" class="level2">
+<h2 class="anchored" data-anchor-id="proof-of-the-marginalization-trick">Proof of the Marginalization Trick</h2>
+<p>Now we can return to the marginalization trick, we just need to show that the marginal vector field <span class="math inline">\(u_t(x)\)</span> satisfies the continuity equation.</p>
 <p><span class="math display">\[
 \begin{aligned}
-\alpha_0 &amp;= \beta_1 = 0 \\
-\beta_0 &amp;= \alpha_1 = 1
+\partial_t p_t(x) &amp;= \partial_t \int p_t(x | z) p_{data}(z) dz \\
+&amp;= \int \partial_t p_t(x | z) p_{data}(z) dz \\
+&amp;= \int -\nabla \cdot (p_t(x | z) u_t^{target}(x | z)) p_{data}(z) dz \\
+&amp;\text{(we used the continuity equation for the conditional probability path $p_t(\cdot | z)$)} \\
+&amp;= - \nabla \cdot \left( \int p_t(x | z) u_t^{target}(x | z) p_{data}(z) dz \right)  \\
+&amp;\text{(linearity of the divergence operator)} \\
+&amp;= - \nabla \cdot \left( p_t(x) \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \right)  \\
+&amp;\text{(multiplied and divided by $p_t(x)$)} \\
+&amp;= - \nabla \cdot (u_t p_t)(x) \\
+&amp;\text{(definition of the marginal vector field $u_t(x)$)} \\
 \end{aligned}
 \]</span></p>
-<p>which implies</p>
-<p><span id="eq-path-boundary"><span class="math display">\[
-\begin{aligned}
-\mathbf{p}_0(\cdot | z) &amp;= \mathcal{N}(0, I_d) \\
-\mathbf{p}_1(\cdot | z) &amp;= \lim_{\beta \to 0} \mathcal{N}(z, \beta^2 I_d) = \delta_z
-\end{aligned}
-\tag{2}\]</span></span></p>
-<p>As the variance vanishes, the Gaussian concentrates all its mass at the mean <span class="math inline">\(z\)</span>, converging (in distribution) to the Dirac delta <span class="math inline">\(\delta_z\)</span>.</p>
-<p>Therefore, this Gaussian probability path satisfies (<a href="#eq-conditional-path" class="quarto-xref">1</a>) and is a valid conditional probability path.</p>
-<p>Intuitively, given a data point <span class="math inline">\(z\)</span> at time <span class="math inline">\(t=1\)</span>, we gradually add noise to it for lower t till <span class="math inline">\(t=0\)</span>.</p>
+<p>By the <a href="#continuity-equation">Continuity Equation</a>, we have shown that the marginal vector field <span class="math inline">\(u_t(x)\)</span> satisfies the continuity equation. Therefore, the marginal vector field <span class="math inline">\(u_t(x)\)</span> follows the marginal probability path <span class="math inline">\(p_t(x)\)</span> and we are done.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Key Takeaway
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The marginalization trick is what makes flow matching <strong>tractable</strong>. Here’s the practical workflow:</p>
+<ol type="1">
+<li><strong>Design</strong> a simple conditional vector field <span class="math inline">\(u_t^{target}(x|z)\)</span> (e.g., pointing from noise toward data point <span class="math inline">\(z\)</span>)</li>
+<li><strong>Train</strong> by sampling <span class="math inline">\((z, x)\)</span> pairs and minimizing <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span></li>
+<li><strong>Generate</strong> by following the learned <span class="math inline">\(u_t^\theta\)</span> from noise — it approximates the marginal vector field</li>
+</ol>
+<p>The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
+<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
+<li>Liu, X., Gong, C., &amp; Liu, Q. (2023). <a href="https://arxiv.org/abs/2209.03003">Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow</a>. <em>ICLR</em>.</li>
+</ol>
 
 
 </section>

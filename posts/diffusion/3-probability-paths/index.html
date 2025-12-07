@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Hujie Wang">
-<meta name="dcterms.date" content="2025-11-30">
+<meta name="dcterms.date" content="2025-11-27">
 
-<title>Diffusion &amp; Flow Matching Part 2: Understanding Flows – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 3: Probability Paths – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -327,13 +327,12 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#understanding-flows" id="toc-understanding-flows" class="nav-link active" data-scroll-target="#understanding-flows">Understanding Flows</a>
+  <li><a href="#probability-paths-from-noise-to-data" id="toc-probability-paths-from-noise-to-data" class="nav-link active" data-scroll-target="#probability-paths-from-noise-to-data">Probability Paths: From Noise to Data</a>
   <ul class="collapse">
-  <li><a href="#intuition-think-of-a-river" id="toc-intuition-think-of-a-river" class="nav-link" data-scroll-target="#intuition-think-of-a-river">Intuition: Think of a River</a></li>
-  <li><a href="#formal-definition" id="toc-formal-definition" class="nav-link" data-scroll-target="#formal-definition">Formal Definition</a></li>
-  <li><a href="#from-trajectory-to-flow" id="toc-from-trajectory-to-flow" class="nav-link" data-scroll-target="#from-trajectory-to-flow">From Trajectory to Flow</a></li>
-  <li><a href="#flow-equation" id="toc-flow-equation" class="nav-link" data-scroll-target="#flow-equation">Flow Equation</a></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#conditional-probability-path" id="toc-conditional-probability-path" class="nav-link" data-scroll-target="#conditional-probability-path">Conditional Probability Path</a></li>
+  <li><a href="#marginal-probability-path" id="toc-marginal-probability-path" class="nav-link" data-scroll-target="#marginal-probability-path">Marginal Probability Path</a></li>
+  <li><a href="#example-gaussian-probability-paths" id="toc-example-gaussian-probability-paths" class="nav-link" data-scroll-target="#example-gaussian-probability-paths">Example: Gaussian Probability Paths</a></li>
+  <li><a href="#conditional-vector-field-for-gaussian-paths" id="toc-conditional-vector-field-for-gaussian-paths" class="nav-link" data-scroll-target="#conditional-vector-field-for-gaussian-paths">Conditional Vector Field for Gaussian Paths</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
@@ -346,7 +345,7 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Diffusion &amp; Flow Matching Part 2: Understanding Flows</h1>
+<h1 class="title">Diffusion &amp; Flow Matching Part 3: Probability Paths</h1>
   <div class="quarto-categories">
     <div class="quarto-category">diffusion</div>
     <div class="quarto-category">flow-matching</div>
@@ -368,7 +367,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 30, 2025</p>
+      <p class="date">November 27, 2025</p>
     </div>
   </div>
   
@@ -391,128 +390,175 @@ window.Quarto = {
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li>A <strong>vector field</strong> tells you which direction to move at each point in space</li>
-<li>A <strong>flow</strong> is the map that shows where every point ends up after following the vector field</li>
-<li>This is the mathematical foundation for flow matching: we’ll learn a vector field that “flows” noise into data</li>
+<li>A <strong>probability path</strong> is a smooth interpolation between noise and data distributions</li>
+<li>We build it from <strong>conditional paths</strong> (one per data point), then marginalize to get the full path</li>
+<li>The <strong>Gaussian probability path</strong> <span class="math inline">\(p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I)\)</span> is the most common choice</li>
+<li>We derive the <strong>conditional vector field</strong> that generates this path — this becomes our training target</li>
 </ul>
 </div>
 </div>
-<section id="understanding-flows" class="level1">
-<h1>Understanding Flows</h1>
-<p>In flow matching, we learn a vector field that transports samples from noise to data. But what exactly <em>is</em> a vector field? And what does it mean to “follow” one? This post builds the intuition you’ll need for everything that follows.</p>
-<section id="intuition-think-of-a-river" class="level2">
-<h2 class="anchored" data-anchor-id="intuition-think-of-a-river">Intuition: Think of a River</h2>
-<p>Imagine a river with currents flowing in different directions at different locations.</p>
-<ul>
-<li><strong>Vector field</strong> <span class="math inline">\(u_t(x)\)</span>: The current at each point — it tells a particle “if you’re here, move in this direction”</li>
-<li><strong>Trajectory</strong> <span class="math inline">\(X_t\)</span>: Following one leaf dropped in the river — where is <em>that specific leaf</em> at time <span class="math inline">\(t\)</span>?</li>
-<li><strong>Flow</strong> <span class="math inline">\(\phi_t(x)\)</span>: A map that answers “where does <em>any</em> leaf end up at time <span class="math inline">\(t\)</span>, given it started at position <span class="math inline">\(x\)</span>?”</li>
-</ul>
-<p>The key insight: <span class="math inline">\(X_t\)</span> tracks one particle, while <span class="math inline">\(\phi_t\)</span> describes how the <em>entire space</em> transforms over time.</p>
-<div id="fig-single-trajectory" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="single-trajectory.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: A single trajectory following the vector field
-</figcaption>
+<section id="probability-paths-from-noise-to-data" class="level1">
+<h1>Probability Paths: From Noise to Data</h1>
+<p>In the <a href="../2-flows/">previous post</a>, we learned that vector fields generate flows. Now we need to design a flow that transforms <em>probability distributions</em> — specifically, one that turns noise into data.</p>
+<p>The key idea: instead of thinking about individual particles, we’ll think about how an entire <em>distribution</em> of particles evolves over time. This is what a <strong>probability path</strong> describes.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="conditional-vs-marginal.png" class="img-fluid figure-img"></p>
+<figcaption>Conditional paths each target a specific data point z, while the marginal path describes the overall transformation from noise to data</figcaption>
 </figure>
 </div>
-</section>
-<section id="formal-definition" class="level2">
-<h2 class="anchored" data-anchor-id="formal-definition">Formal Definition</h2>
-<p>Every ODE is defined by a vector field <span class="math inline">\(u_t(x)\)</span>. A solution <span class="math inline">\(X_t\)</span> starting from <span class="math inline">\(x_0\)</span> must satisfy:</p>
-<p><span id="eq-vector-field"><span class="math display">\[
+<section id="conditional-probability-path" class="level2">
+<h2 class="anchored" data-anchor-id="conditional-probability-path">Conditional Probability Path</h2>
+<p>Why “conditional”? Because it’s easier to think about one data point at a time. A <strong>conditional probability path</strong> <span class="math inline">\(p_t(x|z)\)</span> describes how probability mass moves from noise toward a <em>specific</em> target point <span class="math inline">\(z\)</span>.</p>
+<p>Formally, it’s a family of distributions over <span class="math inline">\(\mathbb{R}^d\)</span> such that</p>
+<p><span id="eq-conditional-path"><span class="math display">\[
 \begin{aligned}
-\frac{dX_t}{dt} &amp;= u_t(X_t) \\
-X_0 &amp;= x_0 \quad (\text{initial condition})
+p_0(\cdot | z) = p_{init}, \quad
+p_1(\cdot | z) = \delta_z \quad \forall z \in \mathbb{R}^d
 \end{aligned}
-\tag{1}\]</span></span></p>
-<p>In words: “your velocity equals whatever the vector field says at your current location.”</p>
+\tag{1}\]</span></span> In other words, a conditional probability path interpolates between the initial distribution <span class="math inline">\(p_{init}\)</span> and a single data point from <span class="math inline">\(p_{data}\)</span>.</p>
 </section>
-<section id="from-trajectory-to-flow" class="level2">
-<h2 class="anchored" data-anchor-id="from-trajectory-to-flow">From Trajectory to Flow</h2>
-<p>The trajectory <span class="math inline">\(X_t\)</span> answers: “where am I at time <span class="math inline">\(t\)</span>, given I started at <span class="math inline">\(x_0\)</span>?”</p>
-<p>But what if we want to know the answer for <em>any</em> starting point? That’s the <strong>flow</strong> <span class="math inline">\(\phi_t(x)\)</span>: a function that takes any starting position <span class="math inline">\(x\)</span> and returns where it ends up at time <span class="math inline">\(t\)</span>.</p>
+<section id="marginal-probability-path" class="level2">
+<h2 class="anchored" data-anchor-id="marginal-probability-path">Marginal Probability Path</h2>
+<p>Conditional paths are useful for construction, but what we really care about is the <strong>marginal probability path</strong> <span class="math inline">\(p_t(x)\)</span> — the distribution we’d see if we sampled many different target points <span class="math inline">\(z\)</span> from the data distribution and looked at where all the probability mass ends up.</p>
+<p>We obtain it by first sampling <span class="math inline">\(z \sim p_{data}\)</span> and then sampling <span class="math inline">\(x \sim p_t(\cdot | z)\)</span>:</p>
 <p><span class="math display">\[
-X_t = \phi_t(x_0)
+\begin{aligned}
+&amp;z \sim p_{data}, \quad x \sim p_t(\cdot | z) \\
+p_t(x) &amp;= \int p_t(x, z) dz \\
+&amp;= \int p_t(x | z) p_{data}(z) dz
+\end{aligned}
 \]</span></p>
-<p>For one specific starting point <span class="math inline">\(x_0\)</span>, the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.</p>
-<div id="fig-multiple-trajectories" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="multiple-trajectories.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting point ends up
-</figcaption>
+<p>We can verify that <span class="math inline">\(p_t(x)\)</span> interpolates between <span class="math inline">\(p_{init}\)</span> and <span class="math inline">\(p_{data}\)</span>.</p>
+<p><strong>At <span class="math inline">\(t=0\)</span>:</strong> The conditional distribution equals the initial distribution for all <span class="math inline">\(z\)</span>, so <span class="math inline">\(p_{init}(x)\)</span> factors out of the integral:</p>
+<p><span class="math display">\[
+\begin{aligned}
+p_0(x) &amp;= \int p_0(x | z) p_{data}(z) dz \\
+&amp;= \int p_{init}(x) p_{data}(z) dz &amp;&amp; \text{(since } p_0(\cdot|z) = p_{init} \text{)} \\
+&amp;= p_{init}(x) \int p_{data}(z) dz &amp;&amp; \text{(factor out } p_{init}(x) \text{)} \\
+&amp;= p_{init}(x) &amp;&amp; \text{(probability integrates to 1)}
+\end{aligned}
+\]</span></p>
+<p><strong>At <span class="math inline">\(t=1\)</span>:</strong> The conditional distribution collapses to a point mass at <span class="math inline">\(z\)</span>. To evaluate this integral, we use the <strong>sifting property</strong> of the Dirac delta:</p>
+<p><span class="math display">\[
+\int f(z) \delta_z(x) \, dz = f(x)
+\]</span></p>
+<p>To understand this, think of <span class="math inline">\(\delta_z(x)\)</span> as the limit of increasingly narrow, tall functions that integrate to 1 — for example, a Gaussian centered at <span class="math inline">\(z\)</span> with vanishing variance:</p>
+<p><span class="math display">\[
+\delta_{z,\epsilon}(x) = \frac{1}{\epsilon\sqrt{2\pi}} e^{-(x-z)^2/(2\epsilon^2)} \xrightarrow{\epsilon \to 0} \delta_z(x)
+\]</span></p>
+<p>As <span class="math inline">\(\epsilon \to 0\)</span>, all the “mass” concentrates at <span class="math inline">\(x = z\)</span>. So when we integrate <span class="math inline">\(f(z)\delta_{z,\epsilon}(x)\)</span> over <span class="math inline">\(z\)</span>, only the value near <span class="math inline">\(z = x\)</span> contributes, giving <span class="math inline">\(f(x)\)</span>. Applying this:</p>
+<p><span class="math display">\[
+\begin{aligned}
+p_1(x) &amp;= \int p_1(x | z) p_{data}(z) dz \\
+&amp;= \int \delta_z(x) p_{data}(z) dz &amp;&amp; \text{(since } p_1(\cdot|z) = \delta_z \text{)} \\
+&amp;= p_{data}(x) &amp;&amp; \text{(sifting property)}
+\end{aligned}
+\]</span></p>
+</section>
+<section id="example-gaussian-probability-paths" class="level2">
+<h2 class="anchored" data-anchor-id="example-gaussian-probability-paths">Example: Gaussian Probability Paths</h2>
+<p>The abstract definition is nice, but what does a probability path actually <em>look like</em>? The most common choice is a <strong>Gaussian probability path</strong>, where each <span class="math inline">\(p_t(x|z)\)</span> is a Gaussian whose mean drifts toward <span class="math inline">\(z\)</span> and whose variance shrinks over time.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="gaussian-path-evolution.png" class="img-fluid figure-img"></p>
+<figcaption>The Gaussian probability path: starting from a wide distribution at t=0, the mean shifts toward z while the variance shrinks, until at t=1 all mass concentrates at z</figcaption>
 </figure>
 </div>
-</section>
-<section id="flow-equation" class="level2">
-<h2 class="anchored" data-anchor-id="flow-equation">Flow Equation</h2>
-<p>Since the flow satisfies the ODE, we can substitute <span class="math inline">\(X_t = \phi_t(x_0)\)</span>:</p>
-<p><span id="eq-flow-ode"><span class="math display">\[
+<p>The conditional Gaussian probability path is defined as:</p>
+<p><span class="math display">\[
+\mathbf{p}_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)
+\]</span></p>
+<p>where <span class="math inline">\(\alpha_t\)</span> and <span class="math inline">\(\beta_t\)</span> are noise schedulers, and they are continously, <strong>monotonically</strong> differentiable functions with the following conditions:</p>
+<p><span class="math display">\[
 \begin{aligned}
-\frac{dX_t}{dt} &amp;= u_t(X_t) \implies \frac{d \phi_t(x_0)}{dt} = u_t(\phi_t(x_0)) \\
-X_0 &amp;= x_0 \implies \phi_0(x_0) = x_0
+\alpha_0 &amp;= \beta_1 = 0 \\
+\beta_0 &amp;= \alpha_1 = 1
+\end{aligned}
+\]</span></p>
+<p>which implies</p>
+<p><span id="eq-path-boundary"><span class="math display">\[
+\begin{aligned}
+\mathbf{p}_0(\cdot | z) &amp;= \mathcal{N}(0, I_d) \\
+\mathbf{p}_1(\cdot | z) &amp;= \lim_{\beta \to 0} \mathcal{N}(z, \beta^2 I_d) = \delta_z
 \end{aligned}
 \tag{2}\]</span></span></p>
-<p>The second line says: at <span class="math inline">\(t=0\)</span>, every point is where it started (the flow is the identity map).</p>
+<p>As the variance vanishes, the Gaussian concentrates all its mass at the mean <span class="math inline">\(z\)</span>, converging (in distribution) to the Dirac delta <span class="math inline">\(\delta_z\)</span>.</p>
+<p>Therefore, this Gaussian probability path satisfies (<a href="#eq-conditional-path" class="quarto-xref">1</a>) and is a valid conditional probability path.</p>
+<p>Intuitively, given a data point <span class="math inline">\(z\)</span> at time <span class="math inline">\(t=1\)</span>, we gradually add noise to it for lower t till <span class="math inline">\(t=0\)</span>.</p>
 </section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 27%">
-<col style="width: 47%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Concept</th>
-<th>Notation</th>
-<th>What it answers</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Vector field</td>
-<td><span class="math inline">\(u_t(x)\)</span></td>
-<td>“What direction should I move at position <span class="math inline">\(x\)</span>?”</td>
-</tr>
-<tr class="even">
-<td>Trajectory</td>
-<td><span class="math inline">\(X_t\)</span></td>
-<td>“Where is this one particle at time <span class="math inline">\(t\)</span>?”</td>
-</tr>
-<tr class="odd">
-<td>Flow</td>
-<td><span class="math inline">\(\phi_t(x)\)</span></td>
-<td>“Where does any point <span class="math inline">\(x\)</span> end up at time <span class="math inline">\(t\)</span>?”</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
-<p>Think of it like Google Maps:</p>
-<ul>
-<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
-<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
-<li><strong>Trajectory</strong> = The route YOUR car takes</li>
-<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
-</ul>
-<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
+<section id="conditional-vector-field-for-gaussian-paths" class="level2">
+<h2 class="anchored" data-anchor-id="conditional-vector-field-for-gaussian-paths">Conditional Vector Field for Gaussian Paths</h2>
+<p>We’ve defined a probability path — but remember from <a href="../2-flows/">Part 2</a>, flows are generated by <em>vector fields</em>. So what vector field generates our Gaussian probability path?</p>
+<p>This is the key question: if we can find this vector field, it becomes our <strong>training target</strong>. We’ll train a neural network to approximate it.</p>
+<p>Let us construct the conditional vector field:</p>
+<p><span class="math display">\[
+\begin{aligned}
+u_t^{\text{target}}(x | z) &amp;= (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x \\
+\end{aligned}
+\]</span></p>
+<p>We can show that this conditional vector field is valid in the sense that its ODE trajectories <span class="math inline">\(X_t\)</span> satisfies <span class="math display">\[
+\begin{aligned}
+X_t &amp;\sim p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d) \\
+X_0 &amp;\sim \mathcal{N}(0, I_d)
+\end{aligned}
+\]</span></p>
+<p>How do we prove this? Let us first construct a conditional flow model <span class="math inline">\(\phi_t^{target}(x_0 | z)\)</span></p>
+<p><span class="math display">\[
+\begin{aligned}
+\psi_t^{target}(x_0 | z) &amp;= \alpha_t z + \beta_t x_0 \\
+x_0 \sim \mathcal{N}(0, I_d)
+\end{aligned}
+\]</span></p>
+<p>We can show that the conditional flow model satisfies the conditional probability path:</p>
+<p><span class="math display">\[
+\begin{aligned}
+X_t &amp;= \psi_t^{target}(X_0 | z) \\
+&amp;= \alpha_t z + \beta_t X_0 \\
+&amp;\sim \mathcal{N}(\alpha_t z, \beta_t^2 I_d) &amp;&amp; \text{(since } X_0 \sim \mathcal{N}(0, I_d) \text{)}
+\end{aligned}
+\]</span></p>
+<p>here we have used the property of the Gaussian distribution: if <span class="math inline">\(X \sim \mathcal{N}(\mu, \sigma^2 I_d)\)</span>, then <span class="math inline">\(aX + b \sim \mathcal{N}(a\mu + b, a^2 \sigma^2 I_d)\)</span>.</p>
+<p>We conclude that the conditional flow model satisfies the conditional probability path.</p>
+<p>Then we use the definition of the conditional flow model to get the conditional vector field:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\frac{d}{dt} \psi_t^{target}(x_0 | z) &amp;= u_t^{target}(\psi_t^{target}(x_0 | z) | z) \\
+\iff \\
+\dot{\alpha}_t z + \dot{\beta}_t x_0 = u_t^{target}(\alpha_t z + \beta_t x_0 | z) \\
+\end{aligned}
+\]</span></p>
+<p>we know that</p>
+<p><span class="math display">\[
+x_t = \alpha_t z + \beta_t x_0
+\iff \\
+x_0 = \frac{x_t - \alpha_t z}{\beta_t}
+\]</span></p>
+<p>substituting <span class="math inline">\(x_0\)</span> with <span class="math inline">\(\frac{x_t - \alpha_t z}{\beta_t}\)</span> in the above equation, we get</p>
+<p><span class="math display">\[
+\begin{aligned}
+u_t^{target}(x_t | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x_t \\
+\end{aligned}
+\]</span></p>
+<p>Why do this? Because the vector filed must be written as <span class="math display">\[
+u_t(x | z)
+\]</span> where x is the current position at time t.</p>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>We now understand how vector fields generate flows. But for generative modeling, we need flows that transform <em>probability distributions</em> — specifically, from noise to data.</p>
-<p>In the <a href="../3-probability-paths/">next post</a>, we’ll see how to construct <strong>probability paths</strong> that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.</p>
+<p>We now have:</p>
+<ol type="1">
+<li><strong>Probability paths</strong> that interpolate from noise to data</li>
+<li><strong>Conditional vector fields</strong> that generate these paths</li>
+</ol>
+<p>But there’s a problem: these are <em>conditional</em> on knowing the target data point <span class="math inline">\(z\)</span>. At generation time, we don’t know <span class="math inline">\(z\)</span> — that’s what we’re trying to generate!</p>
+<p>In the <a href="../4-flow-matching-loss/">next post</a>, we’ll see how the <strong>marginalization trick</strong> solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing <span class="math inline">\(z\)</span>.</p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
 <ol type="1">
-<li>Chen, R. T. Q., et al.&nbsp;(2018). <a href="https://arxiv.org/abs/1806.07366">Neural Ordinary Differential Equations</a>. <em>NeurIPS</em>.</li>
+<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
+<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
 </ol>
 
 

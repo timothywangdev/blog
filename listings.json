@@ -3,8 +3,9 @@
     "listing": "/index.html",
     "items": [
       "/posts/diffusion/2-flows/index.html",
+      "/posts/diffusion/4-flow-matching-loss/index.html",
       "/posts/diffusion/1-intro/index.html",
-      "/posts/diffusion/3-training-target/index.html",
+      "/posts/diffusion/3-probability-paths/index.html",
       "/posts/welcome/index.html",
       "/posts/old_blogs/2015-03-28-srm-653-div-1-2/index.html",
       "/posts/old_blogs/2015-03-26-a-nice-trick-for-computing-modular-multiplicative-inverses-for-first-n-consecutive-numbers-in-linear-time/index.html",

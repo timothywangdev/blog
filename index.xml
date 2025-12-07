@@ -12,7 +12,7 @@
 <generator>quarto-1.8.26</generator>
 <lastBuildDate>Sun, 30 Nov 2025 00:00:00 GMT</lastBuildDate>
 <item>
-  <title>Flows Explained Simply: A Visual Guide</title>
+  <title>Diffusion &amp; Flow Matching Part 2: Understanding Flows</title>
   <dc:creator>Hujie Wang</dc:creator>
   <link>https://layernorm.dev/posts/diffusion/2-flows/</link>
   <description><![CDATA[ 
@@ -21,8 +21,26 @@
 
 
 
-<section id="flow" class="level1">
-<h1>Flow</h1>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>A <strong>vector field</strong> tells you which direction to move at each point in space</li>
+<li>A <strong>flow</strong> is the map that shows where every point ends up after following the vector field</li>
+<li>This is the mathematical foundation for flow matching: we’ll learn a vector field that “flows” noise into data</li>
+</ul>
+</div>
+</div>
+<section id="understanding-flows" class="level1">
+<h1>Understanding Flows</h1>
+<p>In flow matching, we learn a vector field that transports samples from noise to data. But what exactly <em>is</em> a vector field? And what does it mean to “follow” one? This post builds the intuition you’ll need for everything that follows.</p>
 <section id="intuition-think-of-a-river" class="level2">
 <h2 class="anchored" data-anchor-id="intuition-think-of-a-river">Intuition: Think of a River</h2>
 <p>Imagine a river with currents flowing in different directions at different locations.</p>
@@ -114,6 +132,17 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
 </ul>
 <p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>We now understand how vector fields generate flows. But for generative modeling, we need flows that transform <em>probability distributions</em> — specifically, from noise to data.</p>
+<p>In the <a href="../3-probability-paths/">next post</a>, we’ll see how to construct <strong>probability paths</strong> that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Chen, R. T. Q., et al.&nbsp;(2018). <a href="https://arxiv.org/abs/1806.07366">Neural Ordinary Differential Equations</a>. <em>NeurIPS</em>.</li>
+</ol>
 
 
 </section>
@@ -127,7 +156,174 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
   <pubDate>Sun, 30 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
-  <title>Understanding Diffusion and Flow Matching Models</title>
+  <title>Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/4-flow-matching-loss/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>The problem</strong>: We have conditional vector fields <img src="https://latex.codecogs.com/png.latex?u_t(x%7Cz)">, but at generation time we don’t know <img src="https://latex.codecogs.com/png.latex?z"></li>
+<li><strong>The solution</strong>: The marginalization trick — training on conditional targets is <em>equivalent</em> to learning the marginal vector field</li>
+<li><strong>The loss</strong>: Simply <img src="https://latex.codecogs.com/png.latex?%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x%7Cz)%5C%7C%5E2">, averaged over time <img src="https://latex.codecogs.com/png.latex?t">, data <img src="https://latex.codecogs.com/png.latex?z">, and noise <img src="https://latex.codecogs.com/png.latex?x_0"></li>
+<li><strong>Why it works</strong>: The continuity equation guarantees the marginal vector field follows the marginal probability path</li>
+</ul>
+</div>
+</div>
+<section id="the-flow-matching-loss-why-training-works" class="level1">
+<h1>The Flow Matching Loss: Why Training Works</h1>
+<p>In the <a href="../3-probability-paths/">previous post</a>, we constructed conditional probability paths and conditional vector fields. But there’s a fundamental problem: these are <em>conditional</em> on knowing the target data point <img src="https://latex.codecogs.com/png.latex?z">. At generation time, we don’t know <img src="https://latex.codecogs.com/png.latex?z"> — that’s what we’re trying to generate!</p>
+<p>This post explains how the <strong>marginalization trick</strong> solves this problem.</p>
+<section id="the-problem-were-solving" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-were-solving">The Problem We’re Solving</h2>
+<p>Let’s step back and understand what we’re trying to achieve.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Our Goal
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Train a neural network <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)"> that can transform noise into samples from <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">. To do this, we need a <strong>training target</strong> — a vector field that the network should learn to approximate.</p>
+</div>
+</div>
+<p><strong>The ideal target</strong> is the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> that follows the marginal probability path <img src="https://latex.codecogs.com/png.latex?p_t(x)">. If our network learns this, it can generate samples by:</p>
+<ol type="1">
+<li>Start with noise <img src="https://latex.codecogs.com/png.latex?x_0%20%5Csim%20p_%7Binit%7D"></li>
+<li>Follow the learned vector field: <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bdx%7D%7Bdt%7D%20=%20u_t%5E%5Ctheta(x)"></li>
+<li>Arrive at a sample from <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D"> at <img src="https://latex.codecogs.com/png.latex?t=1"></li>
+</ol>
+<p><strong>The problem</strong>: We can’t compute <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> directly! It would require integrating over the entire data distribution — intractable.</p>
+<p><strong>The solution</strong>: The marginalization trick. It tells us that:</p>
+<ol type="1">
+<li>We can design simple <strong>conditional</strong> vector fields <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)"> (one for each data point <img src="https://latex.codecogs.com/png.latex?z">)</li>
+<li>Training on these conditional targets is <strong>equivalent</strong> to training on the marginal target</li>
+<li>The trained network will learn the marginal vector field — exactly what we need for generation</li>
+</ol>
+<p>This is why the marginalization trick is so powerful: it turns an intractable problem into a tractable one.</p>
+</section>
+<section id="the-marginalization-trick" class="level2">
+<h2 class="anchored" data-anchor-id="the-marginalization-trick">The Marginalization Trick</h2>
+<p>Given a conditional vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> that follows the conditional probability path <img src="https://latex.codecogs.com/png.latex?p_t(%5Ccdot%20%7C%20z)">, we can construct a marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)"> that follows the marginal probability path <img src="https://latex.codecogs.com/png.latex?p_t(x)">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x)%20=%20%5Cint%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%0A"></p>
+<p>This is the marginalization trick. To prove it, we will use the continuity equation.</p>
+</section>
+<section id="the-continuity-equation" class="level2">
+<h2 class="anchored" data-anchor-id="the-continuity-equation">The Continuity Equation</h2>
+<div id="continuity-equation" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: Continuity Equation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Let us consider a flow model with vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D"> with <img src="https://latex.codecogs.com/png.latex?X_0%20%5Csim%20p_%7Binit%7D">. Then <img src="https://latex.codecogs.com/png.latex?X_t%20%5Csim%20p_t"> for all <img src="https://latex.codecogs.com/png.latex?0%20%5Cleq%20t%20%5Cleq%201"> if and only if</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cpartial_t%20p_t(x)%20=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%20%5Cquad%20%5Ctext%7Bfor%20all%20%7D%20x%20%5Cin%20%5Cmathbb%7BR%7D%5Ed,%200%20%5Cleq%20t%20%5Cleq%201%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cpartial_t%20p_t(x)%20=%20%5Cfrac%7Bd%7D%7Bdt%7D%20p_t(x)"> denotes the time-derivative of <img src="https://latex.codecogs.com/png.latex?p_t(x)">.</p>
+</div>
+</div>
+<p>We will skip the proof of the continuity equation.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Ccdot"> is the divergence operator in vector calculus, it’s input is a vector and output is a scalar.</p>
+<p>If the divergence is negative, it means that the vector field is pointing inwards towards this point.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/4-flow-matching-loss/divergence-negative.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Negative divergence: arrows point inward (a “sink”)</figcaption>
+</figure>
+</div>
+<p>The divergence measures the net outflow of density from a point. And the negative divergence means the net inflow of density into this point.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/4-flow-matching-loss/divergence-positive.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Positive divergence: arrows point outward (a “source”)</figcaption>
+</figure>
+</div>
+<p>If you are not familiar with this or vector calculus, I recommend you watch the <a href="https://www.youtube.com/watch?v=So7vlARGs68&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=4">The Divergence of a Vector Field: Sources and Sinks</a> by Steve Brunton. He also talks about the continuity equation in the context of fluid dynamics here: <a href="https://www.youtube.com/watch?v=Fk3X6o39KEI&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=7">The Continuity Equation: A PDE for Mass Conservation, from Gauss’s Divergence Theorem</a>.</p>
+<section id="physics-background" class="level3">
+<h3 class="anchored" data-anchor-id="physics-background">Physics Background</h3>
+<p>Let me briefly explain the continuity equation, it originates from physics:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cpartial%20%5Crho%7D%7B%5Cpartial%20t%7D%20+%20%5Cnabla%20%5Ccdot%20J%20=%200%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Crho"> is the mass density and <img src="https://latex.codecogs.com/png.latex?J"> is the mass flux. The equation was derived from Gauss’s Divergence Theorem, it’s also called mass conservation equation.</p>
+<p>The flux is defined as the product of mass density and the the velocity field <img src="https://latex.codecogs.com/png.latex?F">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AJ%20=%20%5Crho%20F%0A"></p>
+<p>Intuitively, the flux measures the amount of mass flow rate per unit area through a surface.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/4-flow-matching-loss/flux-diagram.png" class="img-fluid figure-img" style="width:60.0%"></p>
+<figcaption>Flux: the rate of mass flowing through a surface</figcaption>
+</figure>
+</div>
+<p>The mass conservation equation states that the rate of change of mass in a volume is equal to the net outflow of mass through the surface of the volume. It’s a fundamental law that mass cannot be created or destroyed within a defined system.</p>
+<p>In the context of flow models, the mass density is the probability density and the velocity field is the vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)">. The continuity equation then becomes:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%7D%7Bdt%7D%20p_t(x)%20=%20-%5Cnabla%20%5Ccdot%20(u_t%20p_t)(x)%0A"></p>
+<p>This is the continuity equation in the context of flow models.</p>
+</section>
+</section>
+<section id="proof-of-the-marginalization-trick" class="level2">
+<h2 class="anchored" data-anchor-id="proof-of-the-marginalization-trick">Proof of the Marginalization Trick</h2>
+<p>Now we can return to the marginalization trick, we just need to show that the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)"> satisfies the continuity equation.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cpartial_t%20p_t(x)%20&amp;=%20%5Cpartial_t%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20%5Cpartial_t%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20-%5Cnabla%20%5Ccdot%20(p_t(x%20%7C%20z)%20u_t%5E%7Btarget%7D(x%20%7C%20z))%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;%5Ctext%7B(we%20used%20the%20continuity%20equation%20for%20the%20conditional%20probability%20path%20$p_t(%5Ccdot%20%7C%20z)$)%7D%20%5C%5C%0A&amp;=%20-%20%5Cnabla%20%5Ccdot%20%5Cleft(%20%5Cint%20p_t(x%20%7C%20z)%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5Cright)%20%20%5C%5C%0A&amp;%5Ctext%7B(linearity%20of%20the%20divergence%20operator)%7D%20%5C%5C%0A&amp;=%20-%20%5Cnabla%20%5Ccdot%20%5Cleft(%20p_t(x)%20%5Cint%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20%5Cright)%20%20%5C%5C%0A&amp;%5Ctext%7B(multiplied%20and%20divided%20by%20$p_t(x)$)%7D%20%5C%5C%0A&amp;=%20-%20%5Cnabla%20%5Ccdot%20(u_t%20p_t)(x)%20%5C%5C%0A&amp;%5Ctext%7B(definition%20of%20the%20marginal%20vector%20field%20$u_t(x)$)%7D%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>By the Continuity Equation, we have shown that the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)"> satisfies the continuity equation. Therefore, the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)"> follows the marginal probability path <img src="https://latex.codecogs.com/png.latex?p_t(x)"> and we are done.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Key Takeaway
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The marginalization trick is what makes flow matching <strong>tractable</strong>. Here’s the practical workflow:</p>
+<ol type="1">
+<li><strong>Design</strong> a simple conditional vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)"> (e.g., pointing from noise toward data point <img src="https://latex.codecogs.com/png.latex?z">)</li>
+<li><strong>Train</strong> by sampling <img src="https://latex.codecogs.com/png.latex?(z,%20x)"> pairs and minimizing <img src="https://latex.codecogs.com/png.latex?%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x%7Cz)%5C%7C%5E2"></li>
+<li><strong>Generate</strong> by following the learned <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta"> from noise — it approximates the marginal vector field</li>
+</ol>
+<p>The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
+<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
+<li>Liu, X., Gong, C., &amp; Liu, Q. (2023). <a href="https://arxiv.org/abs/2209.03003">Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow</a>. <em>ICLR</em>.</li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <guid>https://layernorm.dev/posts/diffusion/4-flow-matching-loss/</guid>
+  <pubDate>Fri, 28 Nov 2025 00:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 1: Introduction</title>
   <dc:creator>Timothy Wang</dc:creator>
   <link>https://layernorm.dev/posts/diffusion/1-intro/</link>
   <description><![CDATA[ 
@@ -136,58 +332,99 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 
 
 
-<p>A deep dive into the mathematics behind diffusion models and flow matching, two powerful approaches to generative modeling.</p>
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Diffusion models and flow matching have emerged as state-of-the-art approaches for generative modeling, powering systems like Stable Diffusion, DALL-E, and Flux. Despite their different formulations, both methods share a common goal: learning to transform noise into data.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Diffusion models</strong> gradually add noise to data, then learn to reverse the process</li>
+<li><strong>Flow matching</strong> learns a velocity field that directly transports noise to data</li>
+<li>Both achieve state-of-the-art results; flow matching is often simpler to train</li>
+</ul>
+</div>
+</div>
+<section id="series-overview" class="level2">
+<h2 class="anchored" data-anchor-id="series-overview">Series Overview</h2>
+<p>This multi-part series explores the theory behind modern generative models. Each post builds on the previous one:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Part</th>
+<th>Topic</th>
+<th>What You’ll Learn</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Part 1</strong></td>
+<td><a href="../1-intro/">Introduction</a> (this post)</td>
+<td>High-level overview of diffusion and flow matching</td>
+</tr>
+<tr class="even">
+<td><strong>Part 2</strong></td>
+<td><a href="../2-flows/">Understanding Flows</a></td>
+<td>Vector fields, trajectories, and flows — the foundation</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 3</strong></td>
+<td><a href="../3-probability-paths/">Probability Paths</a></td>
+<td>How we define paths from noise to data</td>
+</tr>
+<tr class="even">
+<td><strong>Part 4</strong></td>
+<td><a href="../4-flow-matching-loss/">The Flow Matching Loss</a></td>
+<td>The marginalization trick that makes training work</td>
+</tr>
+<tr class="odd">
+<td><em>Part 5+</em></td>
+<td><em>Coming soon</em></td>
+<td>Diffusion models deep dive, SDEs, and more</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="diffusion-models" class="level2">
-<h2 class="anchored" data-anchor-id="diffusion-models">Diffusion Models</h2>
-<section id="the-forward-process" class="level3">
-<h3 class="anchored" data-anchor-id="the-forward-process">The Forward Process</h3>
-<p>Diffusion models define a forward process that gradually adds Gaussian noise to data over <img src="https://latex.codecogs.com/png.latex?T"> timesteps. Given a data point <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_0%20%5Csim%20q(%5Cmathbf%7Bx%7D)">, the forward process is defined as:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Aq(%5Cmathbf%7Bx%7D_t%20%7C%20%5Cmathbf%7Bx%7D_%7Bt-1%7D)%20=%20%5Cmathcal%7BN%7D(%5Cmathbf%7Bx%7D_t;%20%5Csqrt%7B1%20-%20%5Cbeta_t%7D%20%5Cmathbf%7Bx%7D_%7Bt-1%7D,%20%5Cbeta_t%20%5Cmathbf%7BI%7D)%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> is the noise schedule. A key insight is that we can sample <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_t"> directly from <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_0">:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Aq(%5Cmathbf%7Bx%7D_t%20%7C%20%5Cmathbf%7Bx%7D_0)%20=%20%5Cmathcal%7BN%7D(%5Cmathbf%7Bx%7D_t;%20%5Csqrt%7B%5Cbar%7B%5Calpha%7D_t%7D%20%5Cmathbf%7Bx%7D_0,%20(1%20-%20%5Cbar%7B%5Calpha%7D_t)%20%5Cmathbf%7BI%7D)%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?%5Calpha_t%20=%201%20-%20%5Cbeta_t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbar%7B%5Calpha%7D_t%20=%20%5Cprod_%7Bs=1%7D%5E%7Bt%7D%20%5Calpha_s">.</p>
+<section id="what-are-we-building" class="level2">
+<h2 class="anchored" data-anchor-id="what-are-we-building">What Are We Building?</h2>
+<p>Diffusion models and flow matching power today’s best generative AI systems — Stable Diffusion, DALL-E, Midjourney, and Flux. Despite their different formulations, both solve the same fundamental problem:</p>
+<blockquote class="blockquote">
+<p><strong>How do we learn to transform random noise into structured data?</strong></p>
+</blockquote>
+<p>If we can do this, we can generate new images, audio, video, or any data type by starting with random noise and “flowing” toward realistic samples.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/1-intro/diffusion-vs-flow.png" class="img-fluid figure-img"></p>
+<figcaption>Diffusion gradually adds noise then learns to reverse it; flow matching learns a direct velocity field from noise to data</figcaption>
+</figure>
+</div>
 </section>
-<section id="the-reverse-process" class="level3">
-<h3 class="anchored" data-anchor-id="the-reverse-process">The Reverse Process</h3>
-<p>The reverse process learns to denoise:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Ap_%5Ctheta(%5Cmathbf%7Bx%7D_%7Bt-1%7D%20%7C%20%5Cmathbf%7Bx%7D_t)%20=%20%5Cmathcal%7BN%7D(%5Cmathbf%7Bx%7D_%7Bt-1%7D;%20%5Cboldsymbol%7B%5Cmu%7D_%5Ctheta(%5Cmathbf%7Bx%7D_t,%20t),%20%5Csigma_t%5E2%20%5Cmathbf%7BI%7D)%0A"></p>
+<section id="diffusion-models-the-noisy-path" class="level2">
+<h2 class="anchored" data-anchor-id="diffusion-models-the-noisy-path">Diffusion Models: The Noisy Path</h2>
+<p>The key idea behind diffusion models is surprisingly simple:</p>
+<ol type="1">
+<li><strong>Forward process</strong>: Take real data and gradually corrupt it with noise until it becomes pure random noise</li>
+<li><strong>Reverse process</strong>: Train a neural network to undo this corruption step by step</li>
+</ol>
+<p>Think of it like this: if you slowly blur a photograph until it’s unrecognizable static, the neural network learns to “unblur” it. At generation time, you start with pure static and apply the learned unblurring process to create a new image.</p>
+<p>The forward process is fixed (just adding noise), so the only thing we need to learn is how to reverse it. The network is trained to predict how much noise was added at each step.</p>
 </section>
-<section id="training-objective" class="level3">
-<h3 class="anchored" data-anchor-id="training-objective">Training Objective</h3>
-<p>The simplified training objective predicts the noise <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cepsilon%7D">:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7B%5Ctext%7Bsimple%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20%5Cmathbf%7Bx%7D_0,%20%5Cboldsymbol%7B%5Cepsilon%7D%7D%20%5Cleft%5B%20%5C%7C%20%5Cboldsymbol%7B%5Cepsilon%7D%20-%20%5Cboldsymbol%7B%5Cepsilon%7D_%5Ctheta(%5Cmathbf%7Bx%7D_t,%20t)%20%5C%7C%5E2%20%5Cright%5D%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_t%20=%20%5Csqrt%7B%5Cbar%7B%5Calpha%7D_t%7D%20%5Cmathbf%7Bx%7D_0%20+%20%5Csqrt%7B1%20-%20%5Cbar%7B%5Calpha%7D_t%7D%20%5Cboldsymbol%7B%5Cepsilon%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cepsilon%7D%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmathbf%7B0%7D,%20%5Cmathbf%7BI%7D)">.</p>
+<section id="flow-matching-the-direct-path" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching-the-direct-path">Flow Matching: The Direct Path</h2>
+<p>Flow matching takes a more direct approach:</p>
+<ol type="1">
+<li><strong>Define a path</strong>: Specify how to smoothly interpolate between noise and data</li>
+<li><strong>Learn the velocity</strong>: Train a neural network to predict the direction of motion along this path</li>
+</ol>
+<p>Imagine dropping a leaf into a river. The current (vector field) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the “noise region” will flow toward the “data region.”</p>
+<p>The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.</p>
 </section>
-</section>
-<section id="flow-matching" class="level2">
-<h2 class="anchored" data-anchor-id="flow-matching">Flow Matching</h2>
-<p>Flow matching offers an elegant alternative by directly learning a velocity field that transports samples from noise to data.</p>
-<section id="continuous-normalizing-flows" class="level3">
-<h3 class="anchored" data-anchor-id="continuous-normalizing-flows">Continuous Normalizing Flows</h3>
-<p>We define a time-dependent vector field <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D_t:%20%5Cmathbb%7BR%7D%5Ed%20%5Crightarrow%20%5Cmathbb%7BR%7D%5Ed"> that generates a flow <img src="https://latex.codecogs.com/png.latex?%5Cphi_t"> via the ODE:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%5Cphi_t(%5Cmathbf%7Bx%7D)%7D%7Bdt%7D%20=%20%5Cmathbf%7Bv%7D_t(%5Cphi_t(%5Cmathbf%7Bx%7D))%0A"></p>
-<p>with initial condition <img src="https://latex.codecogs.com/png.latex?%5Cphi_0(%5Cmathbf%7Bx%7D)%20=%20%5Cmathbf%7Bx%7D">.</p>
-</section>
-<section id="optimal-transport-path" class="level3">
-<h3 class="anchored" data-anchor-id="optimal-transport-path">Optimal Transport Path</h3>
-<p>The simplest interpolation between noise <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_0%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmathbf%7B0%7D,%20%5Cmathbf%7BI%7D)"> and data <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bx%7D_1%20%5Csim%20q(%5Cmathbf%7Bx%7D)"> is linear:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bx%7D_t%20=%20(1%20-%20t)%20%5Cmathbf%7Bx%7D_0%20+%20t%20%5Cmathbf%7Bx%7D_1%0A"></p>
-<p>The conditional velocity field for this path is simply:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bu%7D_t(%5Cmathbf%7Bx%7D%20%7C%20%5Cmathbf%7Bx%7D_1)%20=%20%5Cmathbf%7Bx%7D_1%20-%20%5Cmathbf%7Bx%7D_0%0A"></p>
-</section>
-<section id="flow-matching-objective" class="level3">
-<h3 class="anchored" data-anchor-id="flow-matching-objective">Flow Matching Objective</h3>
-<p>The training objective minimizes:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7B%5Ctext%7BFM%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20q(%5Cmathbf%7Bx%7D_1),%20p(%5Cmathbf%7Bx%7D_0)%7D%20%5Cleft%5B%20%5C%7C%20%5Cmathbf%7Bv%7D_%5Ctheta(%5Cmathbf%7Bx%7D_t,%20t)%20-%20(%5Cmathbf%7Bx%7D_1%20-%20%5Cmathbf%7Bx%7D_0)%20%5C%7C%5E2%20%5Cright%5D%0A"></p>
-<p>This is remarkably simple compared to diffusion models!</p>
-</section>
-</section>
-<section id="comparison" class="level2">
-<h2 class="anchored" data-anchor-id="comparison">Comparison</h2>
+<section id="how-do-they-compare" class="level2">
+<h2 class="anchored" data-anchor-id="how-do-they-compare">How Do They Compare?</h2>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 23%">
@@ -203,45 +440,54 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 </thead>
 <tbody>
 <tr class="odd">
-<td>Path</td>
-<td>Stochastic (SDE)</td>
-<td>Deterministic (ODE)</td>
+<td>Corruption process</td>
+<td>Gradual noise addition</td>
+<td>Direct interpolation</td>
 </tr>
 <tr class="even">
-<td>Training</td>
-<td>Predict noise <img src="https://latex.codecogs.com/png.latex?%5Cboldsymbol%7B%5Cepsilon%7D"></td>
-<td>Predict velocity <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bv%7D"></td>
+<td>What the network learns</td>
+<td>How much noise to remove</td>
+<td>Which direction to move</td>
 </tr>
 <tr class="odd">
-<td>Sampling</td>
+<td>Sampling method</td>
 <td>Iterative denoising</td>
-<td>ODE integration</td>
+<td>Following the learned flow</td>
 </tr>
 <tr class="even">
-<td>Theory</td>
+<td>Underlying theory</td>
 <td>Score matching</td>
 <td>Optimal transport</td>
+</tr>
+<tr class="odd">
+<td>Path type</td>
+<td>Stochastic (random)</td>
+<td>Deterministic (fixed)</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="connection-between-the-two" class="level2">
-<h2 class="anchored" data-anchor-id="connection-between-the-two">Connection Between the Two</h2>
-<p>Interestingly, diffusion models can be viewed through the lens of flow matching. The probability flow ODE for diffusion is:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Ad%5Cmathbf%7Bx%7D%20=%20%5Cleft%5B%20%5Cmathbf%7Bf%7D(%5Cmathbf%7Bx%7D,%20t)%20-%20%5Cfrac%7B1%7D%7B2%7D%20g(t)%5E2%20%5Cnabla_%5Cmathbf%7Bx%7D%20%5Clog%20p_t(%5Cmathbf%7Bx%7D)%20%5Cright%5D%20dt%0A"></p>
-<p>where the score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla_%5Cmathbf%7Bx%7D%20%5Clog%20p_t(%5Cmathbf%7Bx%7D)"> relates to the noise prediction via:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_%5Cmathbf%7Bx%7D%20%5Clog%20p_t(%5Cmathbf%7Bx%7D)%20=%20-%5Cfrac%7B%5Cboldsymbol%7B%5Cepsilon%7D_%5Ctheta(%5Cmathbf%7Bx%7D,%20t)%7D%7B%5Csqrt%7B1%20-%20%5Cbar%7B%5Calpha%7D_t%7D%7D%0A"></p>
+<section id="the-deep-connection" class="level2">
+<h2 class="anchored" data-anchor-id="the-deep-connection">The Deep Connection</h2>
+<p>Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent “probability flow” formulation that looks like flow matching. The score function (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.</p>
+<p>This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.</p>
 </section>
-<section id="conclusion" class="level2">
-<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>Both diffusion and flow matching provide powerful frameworks for generative modeling. While diffusion models were developed first and have a rich theoretical foundation in score matching, flow matching offers a simpler and often more efficient alternative based on optimal transport theory.</p>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>In the following posts, we’ll develop the mathematical machinery to understand these methods properly:</p>
+<ul>
+<li><a href="../2-flows/"><strong>Part 2</strong></a>: We’ll define what “flows” and “vector fields” actually mean</li>
+<li><a href="../3-probability-paths/"><strong>Part 3</strong></a>: We’ll see how to construct paths from noise to data</li>
+<li><a href="../4-flow-matching-loss/"><strong>Part 4</strong></a>: We’ll discover the clever trick that makes training tractable</li>
+</ul>
+<p>By the end, you’ll understand not just <em>what</em> these models do, but <em>why</em> they work.</p>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
 <ol type="1">
-<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). Denoising Diffusion Probabilistic Models. <em>NeurIPS</em>.</li>
-<li>Lipman, Y., et al.&nbsp;(2023). Flow Matching for Generative Modeling. <em>ICLR</em>.</li>
-<li>Song, Y., et al.&nbsp;(2021). Score-Based Generative Modeling through Stochastic Differential Equations. <em>ICLR</em>.</li>
+<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS</em>.</li>
+<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
+<li>Song, Y., et al.&nbsp;(2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR</em>.</li>
 </ol>
 
 
@@ -255,25 +501,53 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
   <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
-  <title>Constructing the Training Target</title>
+  <title>Diffusion &amp; Flow Matching Part 3: Probability Paths</title>
   <dc:creator>Hujie Wang</dc:creator>
-  <link>https://layernorm.dev/posts/diffusion/3-training-target/</link>
+  <link>https://layernorm.dev/posts/diffusion/3-probability-paths/</link>
   <description><![CDATA[ 
 
 
 
 
 
-<section id="constructing-the-training-target" class="level1">
-<h1>Constructing the Training Target</h1>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>A <strong>probability path</strong> is a smooth interpolation between noise and data distributions</li>
+<li>We build it from <strong>conditional paths</strong> (one per data point), then marginalize to get the full path</li>
+<li>The <strong>Gaussian probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I)"> is the most common choice</li>
+<li>We derive the <strong>conditional vector field</strong> that generates this path — this becomes our training target</li>
+</ul>
+</div>
+</div>
+<section id="probability-paths-from-noise-to-data" class="level1">
+<h1>Probability Paths: From Noise to Data</h1>
+<p>In the <a href="../2-flows/">previous post</a>, we learned that vector fields generate flows. Now we need to design a flow that transforms <em>probability distributions</em> — specifically, one that turns noise into data.</p>
+<p>The key idea: instead of thinking about individual particles, we’ll think about how an entire <em>distribution</em> of particles evolves over time. This is what a <strong>probability path</strong> describes.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/3-probability-paths/conditional-vs-marginal.png" class="img-fluid figure-img"></p>
+<figcaption>Conditional paths each target a specific data point z, while the marginal path describes the overall transformation from noise to data</figcaption>
+</figure>
+</div>
 <section id="conditional-probability-path" class="level2">
 <h2 class="anchored" data-anchor-id="conditional-probability-path">Conditional Probability Path</h2>
-<p>A conditional probability path is a set of distribution <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bp%7D_t(x%20%7C%20z)"> over <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Ed"> such that</p>
+<p>Why “conditional”? Because it’s easier to think about one data point at a time. A <strong>conditional probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> describes how probability mass moves from noise toward a <em>specific</em> target point <img src="https://latex.codecogs.com/png.latex?z">.</p>
+<p>Formally, it’s a family of distributions over <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Ed"> such that</p>
 <p><span id="eq-conditional-path"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_0(%5Ccdot%20%7C%20z)%20=%20p_%7Binit%7D,%20%5Cquad%0Ap_1(%5Ccdot%20%7C%20z)%20=%20%5Cdelta_z%20%5Cquad%20%5Cforall%20z%20%5Cin%20%5Cmathbb%7BR%7D%5Ed%0A%5Cend%7Baligned%7D%0A%5Ctag%7B1%7D"></span> In other words, a conditional probability path interpolates between the initial distribution <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D"> and a single data point from <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">.</p>
 </section>
 <section id="marginal-probability-path" class="level2">
 <h2 class="anchored" data-anchor-id="marginal-probability-path">Marginal Probability Path</h2>
-<p>Every conditional probability path induces a <strong>marginal probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x)">. We obtain it by first sampling <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D"> and then sampling <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)">:</p>
+<p>Conditional paths are useful for construction, but what we really care about is the <strong>marginal probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x)"> — the distribution we’d see if we sampled many different target points <img src="https://latex.codecogs.com/png.latex?z"> from the data distribution and looked at where all the probability mass ends up.</p>
+<p>We obtain it by first sampling <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D"> and then sampling <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)">:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;z%20%5Csim%20p_%7Bdata%7D,%20%5Cquad%20x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)%20%5C%5C%0Ap_t(x)%20&amp;=%20%5Cint%20p_t(x,%20z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%0A%5Cend%7Baligned%7D%0A"></p>
 <p>We can verify that <img src="https://latex.codecogs.com/png.latex?p_t(x)"> interpolates between <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D"> and <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">.</p>
 <p><strong>At <img src="https://latex.codecogs.com/png.latex?t=0">:</strong> The conditional distribution equals the initial distribution for all <img src="https://latex.codecogs.com/png.latex?z">, so <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D(x)"> factors out of the integral:</p>
@@ -286,8 +560,15 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_1(x)%20&amp;=%20%5Cint%20p_1(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20%5Cdelta_z(x)%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20p_1(%5Ccdot%7Cz)%20=%20%5Cdelta_z%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Bdata%7D(x)%20&amp;&amp;%20%5Ctext%7B(sifting%20property)%7D%0A%5Cend%7Baligned%7D%0A"></p>
 </section>
 <section id="example-gaussian-probability-paths" class="level2">
-<h2 class="anchored" data-anchor-id="example-gaussian-probability-paths">Example: Gaussian probability paths</h2>
-<p>A Gaussian probability path is a family of Gaussian distributions that are parameterized by a time-dependent mean and covariance matrix. The conditional Gaussian probability path is defined as:</p>
+<h2 class="anchored" data-anchor-id="example-gaussian-probability-paths">Example: Gaussian Probability Paths</h2>
+<p>The abstract definition is nice, but what does a probability path actually <em>look like</em>? The most common choice is a <strong>Gaussian probability path</strong>, where each <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> is a Gaussian whose mean drifts toward <img src="https://latex.codecogs.com/png.latex?z"> and whose variance shrinks over time.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/3-probability-paths/gaussian-path-evolution.png" class="img-fluid figure-img"></p>
+<figcaption>The Gaussian probability path: starting from a wide distribution at t=0, the mean shifts toward z while the variance shrinks, until at t=1 all mass concentrates at z</figcaption>
+</figure>
+</div>
+<p>The conditional Gaussian probability path is defined as:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bp%7D_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%0A"></p>
 <p>where <img src="https://latex.codecogs.com/png.latex?%5Calpha_t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> are noise schedulers, and they are continously, <strong>monotonically</strong> differentiable functions with the following conditions:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Calpha_0%20&amp;=%20%5Cbeta_1%20=%200%20%5C%5C%0A%5Cbeta_0%20&amp;=%20%5Calpha_1%20=%201%0A%5Cend%7Baligned%7D%0A"></p>
@@ -296,6 +577,44 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <p>As the variance vanishes, the Gaussian concentrates all its mass at the mean <img src="https://latex.codecogs.com/png.latex?z">, converging (in distribution) to the Dirac delta <img src="https://latex.codecogs.com/png.latex?%5Cdelta_z">.</p>
 <p>Therefore, this Gaussian probability path satisfies (1) and is a valid conditional probability path.</p>
 <p>Intuitively, given a data point <img src="https://latex.codecogs.com/png.latex?z"> at time <img src="https://latex.codecogs.com/png.latex?t=1">, we gradually add noise to it for lower t till <img src="https://latex.codecogs.com/png.latex?t=0">.</p>
+</section>
+<section id="conditional-vector-field-for-gaussian-paths" class="level2">
+<h2 class="anchored" data-anchor-id="conditional-vector-field-for-gaussian-paths">Conditional Vector Field for Gaussian Paths</h2>
+<p>We’ve defined a probability path — but remember from <a href="../2-flows/">Part 2</a>, flows are generated by <em>vector fields</em>. So what vector field generates our Gaussian probability path?</p>
+<p>This is the key question: if we can find this vector field, it becomes our <strong>training target</strong>. We’ll train a neural network to approximate it.</p>
+<p>Let us construct the conditional vector field:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7B%5Ctext%7Btarget%7D%7D(x%20%7C%20z)%20&amp;=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>We can show that this conditional vector field is valid in the sense that its ODE trajectories <img src="https://latex.codecogs.com/png.latex?X_t"> satisfies <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_t%20&amp;%5Csim%20p_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20%5C%5C%0AX_0%20&amp;%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>How do we prove this? Let us first construct a conditional flow model <img src="https://latex.codecogs.com/png.latex?%5Cphi_t%5E%7Btarget%7D(x_0%20%7C%20z)"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20&amp;=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%20%5C%5C%0Ax_0%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>We can show that the conditional flow model satisfies the conditional probability path:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_t%20&amp;=%20%5Cpsi_t%5E%7Btarget%7D(X_0%20%7C%20z)%20%5C%5C%0A&amp;=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20X_0%20%5C%5C%0A&amp;%5Csim%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20X_0%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%20%5Ctext%7B)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>here we have used the property of the Gaussian distribution: if <img src="https://latex.codecogs.com/png.latex?X%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmu,%20%5Csigma%5E2%20I_d)">, then <img src="https://latex.codecogs.com/png.latex?aX%20+%20b%20%5Csim%20%5Cmathcal%7BN%7D(a%5Cmu%20+%20b,%20a%5E2%20%5Csigma%5E2%20I_d)">.</p>
+<p>We conclude that the conditional flow model satisfies the conditional probability path.</p>
+<p>Then we use the definition of the conditional flow model to get the conditional vector field:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdt%7D%20%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20&amp;=%20u_t%5E%7Btarget%7D(%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20%7C%20z)%20%5C%5C%0A%5Ciff%20%5C%5C%0A%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20x_0%20=%20u_t%5E%7Btarget%7D(%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%20%7C%20z)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>we know that</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ax_t%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%0A%5Ciff%20%5C%5C%0Ax_0%20=%20%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D%0A"></p>
+<p>substituting <img src="https://latex.codecogs.com/png.latex?x_0"> with <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D"> in the above equation, we get</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x_t%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Why do this? Because the vector filed must be written as <img src="https://latex.codecogs.com/png.latex?%0Au_t(x%20%7C%20z)%0A"> where x is the current position at time t.</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>We now have:</p>
+<ol type="1">
+<li><strong>Probability paths</strong> that interpolate from noise to data</li>
+<li><strong>Conditional vector fields</strong> that generate these paths</li>
+</ol>
+<p>But there’s a problem: these are <em>conditional</em> on knowing the target data point <img src="https://latex.codecogs.com/png.latex?z">. At generation time, we don’t know <img src="https://latex.codecogs.com/png.latex?z"> — that’s what we’re trying to generate!</p>
+<p>In the <a href="../4-flow-matching-loss/">next post</a>, we’ll see how the <strong>marginalization trick</strong> solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing <img src="https://latex.codecogs.com/png.latex?z">.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
+<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
+</ol>
 
 
 </section>
@@ -305,7 +624,7 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
   <category>diffusion</category>
   <category>flow-matching</category>
   <category>generative-models</category>
-  <guid>https://layernorm.dev/posts/diffusion/3-training-target/</guid>
+  <guid>https://layernorm.dev/posts/diffusion/3-probability-paths/</guid>
   <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
@@ -837,517 +1156,6 @@ public:
   <category>imported</category>
   <guid>https://layernorm.dev/posts/old_blogs/2014-12-21-beta-round-1-c-ancient-berland-circus/</guid>
   <pubDate>Sun, 21 Dec 2014 00:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Some Segment Tree problems</title>
-  <link>https://layernorm.dev/posts/old_blogs/2014-04-24-first-time-writing-segment-tree/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<p>UVA 11235 just do a normal range search on frequency table. Here is the code:</p>
-<pre><code>#include &lt;iostream&gt;
-#include &lt;vector&gt;
-#include &lt;algorithm&gt;
-using namespace std;
-vector&lt;int&gt; ori,freq;
-int N,Q,t;
-//#define DEBUG
-#include &lt;fstream&gt;
-#ifdef DEBUG
-ifstream fin("uva11235.in");
-ofstream fout("uva11235.out");
-#endif
-void redirect(){
-#ifdef DEBUG
-    std::streambuf *cinbuf = std::cin.rdbuf(); 
-    std::cin.rdbuf(fin.rdbuf()); 
-    std::streambuf *coutbuf = std::cout.rdbuf(); 
-    std::cout.rdbuf(fout.rdbuf()); 
-#endif
-}
-class SegmentTree{
-private:
-    int st[800001];
-    int left(int p){return p&lt;&lt;1;}
-    int right(int p){return (p&lt;&lt;1)+1;};
-    void build(int p,int L,int R){
-        if(L==R){
-            st[p]=L;
-        }
-        else{
-            build(left(p),L,(L+R)/2);
-            build(right(p),(L+R)/2+1,R);
-            int l=st[left(p)];
-            int r=st[right(p)];
-            st[p]=(freq[l]&lt;=freq[r])?r:l;
-        }
-    }
-    int rmq(int p,int L,int R,int i,int j){
-        if(i&gt;R||j&lt;L)
-            return -1;
-        if(i&lt;=L&amp;&amp;R&lt;=j){
-            return st[p];
-        }
-        int l=rmq(left(p),L,(L+R)/2,i,j);
-        int r=rmq(right(p),(L+R)/2+1,R,i,j);
-        if(l==-1)return r;
-        if(r==-1)return l;
-        return (freq[l]&lt;=freq[r])?r:l;
-    }
-    bool checkBoundary(int targetPos,int result,bool left){
-        if(left){
-            if(targetPos-1&gt;=0)
-                return ori[targetPos-1]!=result;
-            else
-                return false;
-        }
-        else{
-            if(targetPos+1&lt;freq.size())
-                return ori[targetPos+1]!=result;
-            else
-                return false;
-        }
-
-    }
-public:
-    void buildTree(){
-        build(1,0,freq.size()-1);
-    }
-    int query(int left,int right){
-        if(left==right)
-            return 1;
-        int pos=rmq(1,0,freq.size()-1,left,right);
-        int k=freq[pos];
-        int leftCount=0;
-        int rightCount=0;
-        if(!checkBoundary(left,ori[pos],true)){
-            for(int i=left;i&lt;=right;i++){
-                if(ori[i]!=ori[pos]){
-                    break;
-                }
-                else{
-                    leftCount++;
-                }
-            }
-        }
-        if(!checkBoundary(right,ori[pos],false)){
-            for(int i=right;i&gt;=left;i--){
-                if(ori[i]!=ori[pos]){
-                    break;
-                }
-                else{
-                    rightCount++;
-                }
-            }
-        }
-        if(leftCount&amp;&amp;rightCount){
-            return right-left+1;
-        }
-        else if(leftCount&amp;&amp;!rightCount){
-            if(leftCount==right-left+1)
-                return leftCount;
-            return max(leftCount,query(left+leftCount,right));
-        }
-        else if(!leftCount&amp;&amp;rightCount){
-            if(rightCount==right-left+1)
-                return rightCount;
-            return max(query(left,right-rightCount),rightCount);
-        }
-        else{
-            return k;
-        }
-    }
-};
-SegmentTree st;
-int a,b;
-void pushToFreq(int frequence){
-    for(int i=0;i&lt;frequence;i++)
-        freq.push_back(frequence);
-}
-void translateToFreq(){
-    int last=0;
-    int count=0;
-    bool first=true;
-    for(int i=0;i&lt;ori.size();i++){
-        if(first){
-          last=ori[i];
-            count=1;
-            first=false;
-            continue;
-        }
-        if(last==ori[i]){
-           count++;
-        }
-        else{
-            pushToFreq(count);
-            last=ori[i];
-            count=1;
-        }
-    }
-    pushToFreq(count);
-}
-int main(){
-    redirect();
-    while(cin&gt;&gt;N){
-        if(!N)
-            break;
-        cin&gt;&gt;Q;
-        ori.clear();
-        freq.clear();
-        for(int i=0;i&lt;N;i++){
-            cin&gt;&gt;t;
-            ori.push_back(t);
-        }
-        translateToFreq();
-        st.buildTree();
-        for(int j=0;j&lt;Q;j++){
-            cin&gt;&gt;a&gt;&gt;b;
-            cout&lt;&lt;st.query(a-1,b-1)&lt;&lt;endl;
-        }
-    }
-    return 0;
-}</code></pre>
-<p>UVA 11402 This problem is quite tricky, if you write an unoptimized segment tree, you will definitely get TLE. The trick is that we need to use lazy-update for the segment tree.</p>
-<pre><code>#include &lt;iostream&gt;
-#include &lt;string&gt;
-#include &lt;vector&gt;
-#define SET 1
-#define CLEAR 2
-#define FLIP 3
-using namespace std;
-
-//#define DEBUG
-#include &lt;fstream&gt;
-#ifdef DEBUG
-ifstream fin("uva11402.in");
-ofstream fout("uva11402.out");
-#endif
-void redirect(){
-#ifdef DEBUG
-    std::streambuf *cinbuf = std::cin.rdbuf(); 
-    std::cin.rdbuf(fin.rdbuf()); 
-    std::streambuf *coutbuf = std::cout.rdbuf(); 
-    std::cout.rdbuf(fout.rdbuf()); 
-#endif
-}
-
-bool pirates[40960010];
-int U[4096001];
-int position[10240000];
-int N;
-vector&lt;int&gt; changeList;
-class SegmentTree{
-private:
-    int st[4096001];
-    int left(int p){return p&lt;&lt;1;}
-    int right(int p){return (p&lt;&lt;1)+1;};
-    void build(int p,int L,int R){
-        U[p]=0;
-        if(L==R){
-            st[p]=pirates[L];
-        }
-        else{
-            build(left(p),L,(L+R)/2);
-            build(right(p),(L+R)/2+1,R);
-            int l=st[left(p)];
-            int r=st[right(p)];
-            st[p]=l+r;
-        }
-    }
-    int rmq(int p,int L,int R,int i,int j){
-        if(i&gt;R||j&lt;L)
-            return -1;
-        propagate(p,L,R);
-        if(i&lt;=L&amp;&amp;R&lt;=j){
-            return st[p];
-        }
-        int l=rmq(left(p),L,(L+R)/2,i,j);
-        int r=rmq(right(p),(L+R)/2+1,R,i,j);
-        if(l==-1)return r;
-        if(r==-1)return l;
-        return l+r;
-    }
-    int flip(int sign){
-        if(sign==SET)
-            return CLEAR;
-        if(sign==CLEAR)
-            return SET;
-        if(sign==FLIP)
-            return 0;
-        if(sign==0)
-            return FLIP;
-    }
-    void propagate(int p,int L,int R){
-        if(U[p]==SET){
-            st[p]=R-L+1;
-            if(L!=R){
-                U[left(p)]=SET;
-                U[right(p)]=SET;
-            }
-        }
-        else if(U[p]==CLEAR){
-            st[p]=0;
-            if(L!=R){
-                U[left(p)]=CLEAR;
-                U[right(p)]=CLEAR;
-            }
-        }
-        else if(U[p]==FLIP){
-            st[p]=R-L+1-st[p];
-            if(L!=R){
-                U[left(p)]=flip(U[left(p)]);
-                U[right(p)]=flip(U[right(p)]);
-            }
-        }
-
-        U[p]=0;
-    }
-public:
-    void rangeSet(int p,int L,int R,int i,int j){
-        propagate(p,L,R);
-        if(R&lt;i||L&gt;j)
-            return;
-        if(L==R){
-            st[p]=1;
-            return;
-        }
-        if(i&lt;=L&amp;&amp;R&lt;=j){
-            st[p]=R-L+1;
-            U[left(p)]=SET;
-            U[right(p)]=SET;
-            return;
-        }
-        rangeSet(left(p),L,(L+R)/2,i,j);
-        rangeSet(right(p),(L+R)/2+1,R,i,j);
-        st[p]=st[left(p)]+st[right(p)];
-    }
-    void rangeClear(int p,int L,int R,int i,int j){
-        propagate(p,L,R);
-        if(R&lt;i||L&gt;j)
-            return;
-        if(L==R){
-            st[p]=0;
-            U[p]=0;
-            return;
-        }
-        if(i&lt;=L&amp;&amp;R&lt;=j){
-            st[p]=0;
-            U[left(p)]=CLEAR;
-            U[right(p)]=CLEAR;
-            return;
-        }
-        rangeClear(left(p),L,(L+R)/2,i,j);
-        rangeClear(right(p),(L+R)/2+1,R,i,j);
-        st[p]=st[left(p)]+st[right(p)];
-    }
-    void rangeFlip(int p,int L,int R,int i,int j){
-        propagate(p,L,R);
-        if(R&lt;i||L&gt;j)
-            return;
-        if(L==R){
-            st[p]=(st[p]==1)?0:1;
-            return;
-        }
-        if(i&lt;=L&amp;&amp;R&lt;=j){
-            st[p]=R-L+1-st[p];
-            U[left(p)]=flip(U[left(p)]);
-            U[right(p)]=flip(U[right(p)]);
-            return;
-        }
-        rangeFlip(left(p),L,(L+R)/2,i,j);
-        rangeFlip(right(p),(L+R)/2+1,R,i,j);
-        st[p]=st[left(p)]+st[right(p)];
-    }
-
-    void buildTree(){
-        build(1,0,N-1);
-    }
-    int query(int left,int right){
-        return rmq(1,0,N-1,left,right); 
-    }
-};
-SegmentTree st;
-int T,P,M,a,b;
-char ch;
-string s;
-void concatenate(int n,string s){
-    for(int i=0;i&lt;n;i++)
-        for(int j=0;j&lt;s.size();j++){
-            N++;
-            pirates[N]=(s[j]=='1');
-        }
-}
-void toBuccaneer(int left,int right){
-    //for(int i=left;i&lt;=right;i++){
-    //if(!pirates[i])
-    //  changeList.push_back(i);
-    //pirates[i]=true;
-    //}
-    st.rangeSet(1,0,N-1,left,right);
-}
-void toBarbary(int left,int right){
-    //for(int i=left;i&lt;=right;i++){
-    //if(pirates[i])
-    //  changeList.push_back(i);
-    //pirates[i]=false;
-    //}
-    st.rangeClear(1,0,N-1,left,right);
-}
-void inverse(int left,int right){
-    //for(int i=left;i&lt;=right;i++){
-    //changeList.push_back(i);
-    //  pirates[i]=1-pirates[i];
-    //}
-    st.rangeFlip(1,0,N-1,left,right);
-}
-int main(){
-    redirect();
-    cin&gt;&gt;T;
-    for(int t=0;t&lt;T;t++){
-        N=-1;
-        cout&lt;&lt;"Case "&lt;&lt;t+1&lt;&lt;":"&lt;&lt;endl;
-        cin&gt;&gt;P;
-        for(int i=0;i&lt;P;i++){
-            cin&gt;&gt;a&gt;&gt;s;
-            concatenate(a,s);
-        }
-        N++;
-        st.buildTree();
-        cin&gt;&gt;M;
-        int counter=0;
-        for(int i=0;i&lt;M;i++){
-            cin&gt;&gt;ch&gt;&gt;a&gt;&gt;b;
-            if(ch=='F')
-                toBuccaneer(a,b);
-            else if(ch=='E')
-                toBarbary(a,b);
-            else if(ch=='I')
-                inverse(a,b);
-            else{
-                counter++;
-                cout&lt;&lt;"Q"&lt;&lt;counter&lt;&lt;": "&lt;&lt;st.query(a,b)&lt;&lt;endl;
-            }
-        }
-    }
-    return 0;
-}</code></pre>
-<p>UVA 12532 easy problem, an optimized segment tree is enough to pass it.</p>
-<pre><code>#include &lt;iostream&gt;
-using namespace std;
-#define INFINITY 2147483647
-//#define DEBUG
-#include &lt;fstream&gt;
-#ifdef DEBUG
-ifstream fin("uva12532.in");
-ofstream fout("uva12532.out");
-#endif
-void redirect(){
-#ifdef DEBUG
-    std::streambuf *cinbuf = std::cin.rdbuf(); 
-    std::cin.rdbuf(fin.rdbuf()); 
-    std::streambuf *coutbuf = std::cout.rdbuf(); 
-    std::cout.rdbuf(fout.rdbuf()); 
-#endif
-}
-int v[100000];
-int N,K,a,b;
-char ch;
-class SegmentTree{
-private:
-    short st[400001];
-    int left(int p){return p&lt;&lt;1;}
-    int right(int p){return (p&lt;&lt;1)+1;};
-    void build(int p,int L,int R){
-        if(L==R){
-            if(v[L]&gt;0)
-             st[p]=1;
-            else if(v[L]&lt;0)
-             st[p]=-1;
-            else
-             st[p]=0;
-        }
-        else{
-            build(left(p),L,(L+R)/2);
-            build(right(p),(L+R)/2+1,R);
-            int l=st[left(p)];
-            int r=st[right(p)];
-            st[p]=l*r;
-        }
-    }
-    int rmq(int p,int L,int R,int i,int j){
-        if(i&gt;R||j&lt;L)
-            return -INFINITY;
-        if(i&lt;=L&amp;&amp;R&lt;=j){
-            return st[p];
-        }
-        int l=rmq(left(p),L,(L+R)/2,i,j);
-        int r=rmq(right(p),(L+R)/2+1,R,i,j);
-        if(l==-INFINITY)return r;
-        if(r==-INFINITY)return l;
-        return l*r;
-    }
-public:
-    char query(int i,int j){
-        int k=rmq(1,0,N-1,i,j);
-        if(k&gt;0)
-            return '+';
-        else if(k&lt;0)
-            return '-';
-        else
-            return '0';
-    }
-    void update(int p,int L,int R,int i){
-        if(!(L&lt;=i&amp;&amp;i&lt;=R))
-            return;
-        if(L==R){
-            if(v[L]&gt;0)
-             st[p]=1;
-            else if(v[L]&lt;0)
-             st[p]=-1;
-            else
-             st[p]=0;
-            return;
-        }
-        update(left(p),L,(L+R)/2,i);
-        update(right(p),(L+R)/2+1,R,i);
-        st[p]=st[left(p)]*st[right(p)];
-    }
-    void buildTree(){
-        build(1,0,N-1);
-    }
-};
-SegmentTree st;
-int main(){
-    redirect();
-    while(cin&gt;&gt;N&gt;&gt;K){
-        for(int i=0;i&lt;N;i++)
-            cin&gt;&gt;v[i];
-        st.buildTree();
-        for(int i=0;i&lt;K;i++){
-            cin&gt;&gt;ch&gt;&gt;a&gt;&gt;b;
-            if(ch=='C'){
-                v[a-1]=b;
-                st.update(1,0,N-1,a-1);
-            }
-            else{
-                cout&lt;&lt;st.query(a-1,b-1);
-            }
-        }
-        cout&lt;&lt;endl;
-    }
-    return 0;
-}</code></pre>
-
-
-
- ]]></description>
-  <category>algorithms</category>
-  <category>imported</category>
-  <guid>https://layernorm.dev/posts/old_blogs/2014-04-24-first-time-writing-segment-tree/</guid>
-  <pubDate>Thu, 24 Apr 2014 00:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
