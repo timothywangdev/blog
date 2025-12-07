@@ -1,7 +1,9 @@
 ---
 title: "AI Models Blog"
 listing:
-  contents: posts
+  contents:
+    - posts
+    - "!posts/old_blogs"
   sort: "date desc"
   type: default
   categories: true
