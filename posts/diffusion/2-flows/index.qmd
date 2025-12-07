@@ -1,7 +1,7 @@
 ---
 title: "Diffusion & Flow Matching Part 2: Understanding Flows"
 author: "Hujie Wang"
-date: "2025-11-30"
+date: "2025-11-28"
 categories: [diffusion, flow-matching, generative-models]
 toc: true
 ---

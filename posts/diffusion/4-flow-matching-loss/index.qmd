@@ -1,7 +1,7 @@
 ---
 title: "Diffusion & Flow Matching Part 4: The Flow Matching Loss"
 author: "Hujie Wang"
-date: "2025-11-28"
+date: "2025-11-30"
 categories: [diffusion, flow-matching, generative-models]
 toc: true
 ---
