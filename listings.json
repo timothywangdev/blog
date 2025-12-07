@@ -3,10 +3,10 @@
     "listing": "/index.html",
     "items": [
       "/posts/diffusion/5-diffusion-sde/index.html",
-      "/posts/diffusion/2-flows/index.html",
       "/posts/diffusion/4-flow-matching-loss/index.html",
-      "/posts/diffusion/1-intro/index.html",
       "/posts/diffusion/3-probability-paths/index.html",
+      "/posts/diffusion/2-flows/index.html",
+      "/posts/diffusion/1-intro/index.html",
       "/posts/welcome/index.html"
     ]
   }

@@ -284,150 +284,6 @@
   <pubDate>Mon, 01 Dec 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
-  <title>Diffusion &amp; Flow Matching Part 2: Understanding Flows</title>
-  <dc:creator>Hujie Wang</dc:creator>
-  <link>https://layernorm.dev/posts/diffusion/2-flows/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>TL;DR
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ul>
-<li>A <strong>vector field</strong> tells you which direction to move at each point in space</li>
-<li>A <strong>flow</strong> is the map that shows where every point ends up after following the vector field</li>
-<li>This is the mathematical foundation for flow matching: we’ll learn a vector field that “flows” noise into data</li>
-</ul>
-</div>
-</div>
-<section id="understanding-flows" class="level1">
-<h1>Understanding Flows</h1>
-<p>In flow matching, we learn a vector field that transports samples from noise to data. But what exactly <em>is</em> a vector field? And what does it mean to “follow” one? This post builds the intuition you’ll need for everything that follows.</p>
-<section id="intuition-think-of-a-river" class="level2">
-<h2 class="anchored" data-anchor-id="intuition-think-of-a-river">Intuition: Think of a River</h2>
-<p>Imagine a river with currents flowing in different directions at different locations.</p>
-<ul>
-<li><strong>Vector field</strong> <img src="https://latex.codecogs.com/png.latex?u_t(x)">: The current at each point — it tells a particle “if you’re here, move in this direction”</li>
-<li><strong>Trajectory</strong> <img src="https://latex.codecogs.com/png.latex?X_t">: Following one leaf dropped in the river — where is <em>that specific leaf</em> at time <img src="https://latex.codecogs.com/png.latex?t">?</li>
-<li><strong>Flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)">: A map that answers “where does <em>any</em> leaf end up at time <img src="https://latex.codecogs.com/png.latex?t">, given it started at position <img src="https://latex.codecogs.com/png.latex?x">?”</li>
-</ul>
-<p>The key insight: <img src="https://latex.codecogs.com/png.latex?X_t"> tracks one particle, while <img src="https://latex.codecogs.com/png.latex?%5Cphi_t"> describes how the <em>entire space</em> transforms over time.</p>
-<div id="fig-single-trajectory" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/diffusion/2-flows/single-trajectory.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: A single trajectory following the vector field
-</figcaption>
-</figure>
-</div>
-</section>
-<section id="formal-definition" class="level2">
-<h2 class="anchored" data-anchor-id="formal-definition">Formal Definition</h2>
-<p>Every ODE is defined by a vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)">. A solution <img src="https://latex.codecogs.com/png.latex?X_t"> starting from <img src="https://latex.codecogs.com/png.latex?x_0"> must satisfy:</p>
-<p><span id="eq-vector-field"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cquad%20(%5Ctext%7Binitial%20condition%7D)%0A%5Cend%7Baligned%7D%0A%5Ctag%7B1%7D"></span></p>
-<p>In words: “your velocity equals whatever the vector field says at your current location.”</p>
-</section>
-<section id="from-trajectory-to-flow" class="level2">
-<h2 class="anchored" data-anchor-id="from-trajectory-to-flow">From Trajectory to Flow</h2>
-<p>The trajectory <img src="https://latex.codecogs.com/png.latex?X_t"> answers: “where am I at time <img src="https://latex.codecogs.com/png.latex?t">, given I started at <img src="https://latex.codecogs.com/png.latex?x_0">?”</p>
-<p>But what if we want to know the answer for <em>any</em> starting point? That’s the <strong>flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)">: a function that takes any starting position <img src="https://latex.codecogs.com/png.latex?x"> and returns where it ends up at time <img src="https://latex.codecogs.com/png.latex?t">.</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AX_t%20=%20%5Cphi_t(x_0)%0A"></p>
-<p>For one specific starting point <img src="https://latex.codecogs.com/png.latex?x_0">, the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.</p>
-<div id="fig-multiple-trajectories" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/diffusion/2-flows/multiple-trajectories.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting point ends up
-</figcaption>
-</figure>
-</div>
-</section>
-<section id="flow-equation" class="level2">
-<h2 class="anchored" data-anchor-id="flow-equation">Flow Equation</h2>
-<p>Since the flow satisfies the ODE, we can substitute <img src="https://latex.codecogs.com/png.latex?X_t%20=%20%5Cphi_t(x_0)">:</p>
-<p><span id="eq-flow-ode"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5Cimplies%20%5Cfrac%7Bd%20%5Cphi_t(x_0)%7D%7Bdt%7D%20=%20u_t(%5Cphi_t(x_0))%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cimplies%20%5Cphi_0(x_0)%20=%20x_0%0A%5Cend%7Baligned%7D%0A%5Ctag%7B2%7D"></span></p>
-<p>The second line says: at <img src="https://latex.codecogs.com/png.latex?t=0">, every point is where it started (the flow is the identity map).</p>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 27%">
-<col style="width: 47%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Concept</th>
-<th>Notation</th>
-<th>What it answers</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Vector field</td>
-<td><img src="https://latex.codecogs.com/png.latex?u_t(x)"></td>
-<td>“What direction should I move at position <img src="https://latex.codecogs.com/png.latex?x">?”</td>
-</tr>
-<tr class="even">
-<td>Trajectory</td>
-<td><img src="https://latex.codecogs.com/png.latex?X_t"></td>
-<td>“Where is this one particle at time <img src="https://latex.codecogs.com/png.latex?t">?”</td>
-</tr>
-<tr class="odd">
-<td>Flow</td>
-<td><img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)"></td>
-<td>“Where does any point <img src="https://latex.codecogs.com/png.latex?x"> end up at time <img src="https://latex.codecogs.com/png.latex?t">?”</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
-<p>Think of it like Google Maps:</p>
-<ul>
-<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
-<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
-<li><strong>Trajectory</strong> = The route YOUR car takes</li>
-<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
-</ul>
-<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
-</section>
-<section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>We now understand how vector fields generate flows. But for generative modeling, we need flows that transform <em>probability distributions</em> — specifically, from noise to data.</p>
-<p>In the <a href="../3-probability-paths/">next post</a>, we’ll see how to construct <strong>probability paths</strong> that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Chen, R. T. Q., et al.&nbsp;(2018). <a href="https://arxiv.org/abs/1806.07366">Neural Ordinary Differential Equations</a>. <em>NeurIPS</em>.</li>
-</ol>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>diffusion</category>
-  <category>flow-matching</category>
-  <category>generative-models</category>
-  <guid>https://layernorm.dev/posts/diffusion/2-flows/</guid>
-  <pubDate>Sun, 30 Nov 2025 00:00:00 GMT</pubDate>
-</item>
-<item>
   <title>Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss</title>
   <dc:creator>Hujie Wang</dc:creator>
   <link>https://layernorm.dev/posts/diffusion/4-flow-matching-loss/</link>
@@ -602,6 +458,277 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
   <category>flow-matching</category>
   <category>generative-models</category>
   <guid>https://layernorm.dev/posts/diffusion/4-flow-matching-loss/</guid>
+  <pubDate>Sun, 30 Nov 2025 00:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 3: Probability Paths</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/3-probability-paths/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>A <strong>probability path</strong> is a smooth interpolation between noise and data distributions</li>
+<li>We build it from <strong>conditional paths</strong> (one per data point), then marginalize to get the full path</li>
+<li>The <strong>Gaussian probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I)"> is the most common choice</li>
+<li>We derive the <strong>conditional vector field</strong> that generates this path — this becomes our training target</li>
+</ul>
+</div>
+</div>
+<section id="probability-paths-from-noise-to-data" class="level1">
+<h1>Probability Paths: From Noise to Data</h1>
+<p>In the <a href="../2-flows/">previous post</a>, we learned that vector fields generate flows. Now we need to design a flow that transforms <em>probability distributions</em> — specifically, one that turns noise into data.</p>
+<p>The key idea: instead of thinking about individual particles, we’ll think about how an entire <em>distribution</em> of particles evolves over time. This is what a <strong>probability path</strong> describes.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/3-probability-paths/conditional-vs-marginal.png" class="img-fluid figure-img"></p>
+<figcaption>Conditional paths each target a specific data point z, while the marginal path describes the overall transformation from noise to data</figcaption>
+</figure>
+</div>
+<section id="conditional-probability-path" class="level2">
+<h2 class="anchored" data-anchor-id="conditional-probability-path">Conditional Probability Path</h2>
+<p>Why “conditional”? Because it’s easier to think about one data point at a time. A <strong>conditional probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> describes how probability mass moves from noise toward a <em>specific</em> target point <img src="https://latex.codecogs.com/png.latex?z">.</p>
+<p>Formally, it’s a family of distributions over <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Ed"> such that</p>
+<p><span id="eq-conditional-path"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_0(%5Ccdot%20%7C%20z)%20=%20p_%7Binit%7D,%20%5Cquad%0Ap_1(%5Ccdot%20%7C%20z)%20=%20%5Cdelta_z%20%5Cquad%20%5Cforall%20z%20%5Cin%20%5Cmathbb%7BR%7D%5Ed%0A%5Cend%7Baligned%7D%0A%5Ctag%7B1%7D"></span> In other words, a conditional probability path interpolates between the initial distribution <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D"> and a single data point from <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">.</p>
+</section>
+<section id="marginal-probability-path" class="level2">
+<h2 class="anchored" data-anchor-id="marginal-probability-path">Marginal Probability Path</h2>
+<p>Conditional paths are useful for construction, but what we really care about is the <strong>marginal probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x)"> — the distribution we’d see if we sampled many different target points <img src="https://latex.codecogs.com/png.latex?z"> from the data distribution and looked at where all the probability mass ends up.</p>
+<p>We obtain it by first sampling <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D"> and then sampling <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;z%20%5Csim%20p_%7Bdata%7D,%20%5Cquad%20x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)%20%5C%5C%0Ap_t(x)%20&amp;=%20%5Cint%20p_t(x,%20z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%0A%5Cend%7Baligned%7D%0A"></p>
+<p>We can verify that <img src="https://latex.codecogs.com/png.latex?p_t(x)"> interpolates between <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D"> and <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">.</p>
+<p><strong>At <img src="https://latex.codecogs.com/png.latex?t=0">:</strong> The conditional distribution equals the initial distribution for all <img src="https://latex.codecogs.com/png.latex?z">, so <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D(x)"> factors out of the integral:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_0(x)%20&amp;=%20%5Cint%20p_0(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20p_%7Binit%7D(x)%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20p_0(%5Ccdot%7Cz)%20=%20p_%7Binit%7D%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Binit%7D(x)%20%5Cint%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(factor%20out%20%7D%20p_%7Binit%7D(x)%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Binit%7D(x)%20&amp;&amp;%20%5Ctext%7B(probability%20integrates%20to%201)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p><strong>At <img src="https://latex.codecogs.com/png.latex?t=1">:</strong> The conditional distribution collapses to a point mass at <img src="https://latex.codecogs.com/png.latex?z">. To evaluate this integral, we use the <strong>sifting property</strong> of the Dirac delta:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cint%20f(z)%20%5Cdelta_z(x)%20%5C,%20dz%20=%20f(x)%0A"></p>
+<p>To understand this, think of <img src="https://latex.codecogs.com/png.latex?%5Cdelta_z(x)"> as the limit of increasingly narrow, tall functions that integrate to 1 — for example, a Gaussian centered at <img src="https://latex.codecogs.com/png.latex?z"> with vanishing variance:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cdelta_%7Bz,%5Cepsilon%7D(x)%20=%20%5Cfrac%7B1%7D%7B%5Cepsilon%5Csqrt%7B2%5Cpi%7D%7D%20e%5E%7B-(x-z)%5E2/(2%5Cepsilon%5E2)%7D%20%5Cxrightarrow%7B%5Cepsilon%20%5Cto%200%7D%20%5Cdelta_z(x)%0A"></p>
+<p>As <img src="https://latex.codecogs.com/png.latex?%5Cepsilon%20%5Cto%200">, all the “mass” concentrates at <img src="https://latex.codecogs.com/png.latex?x%20=%20z">. So when we integrate <img src="https://latex.codecogs.com/png.latex?f(z)%5Cdelta_%7Bz,%5Cepsilon%7D(x)"> over <img src="https://latex.codecogs.com/png.latex?z">, only the value near <img src="https://latex.codecogs.com/png.latex?z%20=%20x"> contributes, giving <img src="https://latex.codecogs.com/png.latex?f(x)">. Applying this:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_1(x)%20&amp;=%20%5Cint%20p_1(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20%5Cdelta_z(x)%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20p_1(%5Ccdot%7Cz)%20=%20%5Cdelta_z%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Bdata%7D(x)%20&amp;&amp;%20%5Ctext%7B(sifting%20property)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+</section>
+<section id="example-gaussian-probability-paths" class="level2">
+<h2 class="anchored" data-anchor-id="example-gaussian-probability-paths">Example: Gaussian Probability Paths</h2>
+<p>The abstract definition is nice, but what does a probability path actually <em>look like</em>? The most common choice is a <strong>Gaussian probability path</strong>, where each <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> is a Gaussian whose mean drifts toward <img src="https://latex.codecogs.com/png.latex?z"> and whose variance shrinks over time.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/3-probability-paths/gaussian-path-evolution.png" class="img-fluid figure-img"></p>
+<figcaption>The Gaussian probability path: starting from a wide distribution at t=0, the mean shifts toward z while the variance shrinks, until at t=1 all mass concentrates at z</figcaption>
+</figure>
+</div>
+<p>The conditional Gaussian probability path is defined as:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bp%7D_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Calpha_t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> are noise schedulers, and they are continously, <strong>monotonically</strong> differentiable functions with the following conditions:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Calpha_0%20&amp;=%20%5Cbeta_1%20=%200%20%5C%5C%0A%5Cbeta_0%20&amp;=%20%5Calpha_1%20=%201%0A%5Cend%7Baligned%7D%0A"></p>
+<p>which implies</p>
+<p><span id="eq-path-boundary"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bp%7D_0(%5Ccdot%20%7C%20z)%20&amp;=%20%5Cmathcal%7BN%7D(0,%20I_d)%20%5C%5C%0A%5Cmathbf%7Bp%7D_1(%5Ccdot%20%7C%20z)%20&amp;=%20%5Clim_%7B%5Cbeta%20%5Cto%200%7D%20%5Cmathcal%7BN%7D(z,%20%5Cbeta%5E2%20I_d)%20=%20%5Cdelta_z%0A%5Cend%7Baligned%7D%0A%5Ctag%7B2%7D"></span></p>
+<p>As the variance vanishes, the Gaussian concentrates all its mass at the mean <img src="https://latex.codecogs.com/png.latex?z">, converging (in distribution) to the Dirac delta <img src="https://latex.codecogs.com/png.latex?%5Cdelta_z">.</p>
+<p>Therefore, this Gaussian probability path satisfies (1) and is a valid conditional probability path.</p>
+<p>Intuitively, given a data point <img src="https://latex.codecogs.com/png.latex?z"> at time <img src="https://latex.codecogs.com/png.latex?t=1">, we gradually add noise to it for lower t till <img src="https://latex.codecogs.com/png.latex?t=0">.</p>
+</section>
+<section id="conditional-vector-field-for-gaussian-paths" class="level2">
+<h2 class="anchored" data-anchor-id="conditional-vector-field-for-gaussian-paths">Conditional Vector Field for Gaussian Paths</h2>
+<p>We’ve defined a probability path — but remember from <a href="../2-flows/">Part 2</a>, flows are generated by <em>vector fields</em>. So what vector field generates our Gaussian probability path?</p>
+<p>This is the key question: if we can find this vector field, it becomes our <strong>training target</strong>. We’ll train a neural network to approximate it.</p>
+<p>Let us construct the conditional vector field:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7B%5Ctext%7Btarget%7D%7D(x%20%7C%20z)%20&amp;=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>We can show that this conditional vector field is valid in the sense that its ODE trajectories <img src="https://latex.codecogs.com/png.latex?X_t"> satisfies <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_t%20&amp;%5Csim%20p_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20%5C%5C%0AX_0%20&amp;%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>How do we prove this? Let us first construct a conditional flow model <img src="https://latex.codecogs.com/png.latex?%5Cphi_t%5E%7Btarget%7D(x_0%20%7C%20z)"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20&amp;=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%20%5C%5C%0Ax_0%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>We can show that the conditional flow model satisfies the conditional probability path:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_t%20&amp;=%20%5Cpsi_t%5E%7Btarget%7D(X_0%20%7C%20z)%20%5C%5C%0A&amp;=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20X_0%20%5C%5C%0A&amp;%5Csim%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20X_0%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%20%5Ctext%7B)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>here we have used the property of the Gaussian distribution: if <img src="https://latex.codecogs.com/png.latex?X%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmu,%20%5Csigma%5E2%20I_d)">, then <img src="https://latex.codecogs.com/png.latex?aX%20+%20b%20%5Csim%20%5Cmathcal%7BN%7D(a%5Cmu%20+%20b,%20a%5E2%20%5Csigma%5E2%20I_d)">.</p>
+<p>We conclude that the conditional flow model satisfies the conditional probability path.</p>
+<p>Then we use the definition of the conditional flow model to get the conditional vector field:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdt%7D%20%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20&amp;=%20u_t%5E%7Btarget%7D(%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20%7C%20z)%20%5C%5C%0A%5Ciff%20%5C%5C%0A%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20x_0%20=%20u_t%5E%7Btarget%7D(%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%20%7C%20z)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>we know that</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ax_t%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%0A%5Ciff%20%5C%5C%0Ax_0%20=%20%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D%0A"></p>
+<p>substituting <img src="https://latex.codecogs.com/png.latex?x_0"> with <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D"> in the above equation, we get</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x_t%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Why do this? Because the vector filed must be written as <img src="https://latex.codecogs.com/png.latex?%0Au_t(x%20%7C%20z)%0A"> where x is the current position at time t.</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>We now have:</p>
+<ol type="1">
+<li><strong>Probability paths</strong> that interpolate from noise to data</li>
+<li><strong>Conditional vector fields</strong> that generate these paths</li>
+</ol>
+<p>But there’s a problem: these are <em>conditional</em> on knowing the target data point <img src="https://latex.codecogs.com/png.latex?z">. At generation time, we don’t know <img src="https://latex.codecogs.com/png.latex?z"> — that’s what we’re trying to generate!</p>
+<p>In the <a href="../4-flow-matching-loss/">next post</a>, we’ll see how the <strong>marginalization trick</strong> solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing <img src="https://latex.codecogs.com/png.latex?z">.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
+<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <guid>https://layernorm.dev/posts/diffusion/3-probability-paths/</guid>
+  <pubDate>Sat, 29 Nov 2025 00:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 2: Understanding Flows</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/2-flows/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>A <strong>vector field</strong> tells you which direction to move at each point in space</li>
+<li>A <strong>flow</strong> is the map that shows where every point ends up after following the vector field</li>
+<li>This is the mathematical foundation for flow matching: we’ll learn a vector field that “flows” noise into data</li>
+</ul>
+</div>
+</div>
+<section id="understanding-flows" class="level1">
+<h1>Understanding Flows</h1>
+<p>In flow matching, we learn a vector field that transports samples from noise to data. But what exactly <em>is</em> a vector field? And what does it mean to “follow” one? This post builds the intuition you’ll need for everything that follows.</p>
+<section id="intuition-think-of-a-river" class="level2">
+<h2 class="anchored" data-anchor-id="intuition-think-of-a-river">Intuition: Think of a River</h2>
+<p>Imagine a river with currents flowing in different directions at different locations.</p>
+<ul>
+<li><strong>Vector field</strong> <img src="https://latex.codecogs.com/png.latex?u_t(x)">: The current at each point — it tells a particle “if you’re here, move in this direction”</li>
+<li><strong>Trajectory</strong> <img src="https://latex.codecogs.com/png.latex?X_t">: Following one leaf dropped in the river — where is <em>that specific leaf</em> at time <img src="https://latex.codecogs.com/png.latex?t">?</li>
+<li><strong>Flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)">: A map that answers “where does <em>any</em> leaf end up at time <img src="https://latex.codecogs.com/png.latex?t">, given it started at position <img src="https://latex.codecogs.com/png.latex?x">?”</li>
+</ul>
+<p>The key insight: <img src="https://latex.codecogs.com/png.latex?X_t"> tracks one particle, while <img src="https://latex.codecogs.com/png.latex?%5Cphi_t"> describes how the <em>entire space</em> transforms over time.</p>
+<div id="fig-single-trajectory" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/2-flows/single-trajectory.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-single-trajectory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: A single trajectory following the vector field
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="formal-definition" class="level2">
+<h2 class="anchored" data-anchor-id="formal-definition">Formal Definition</h2>
+<p>Every ODE is defined by a vector field <img src="https://latex.codecogs.com/png.latex?u_t(x)">. A solution <img src="https://latex.codecogs.com/png.latex?X_t"> starting from <img src="https://latex.codecogs.com/png.latex?x_0"> must satisfy:</p>
+<p><span id="eq-vector-field"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cquad%20(%5Ctext%7Binitial%20condition%7D)%0A%5Cend%7Baligned%7D%0A%5Ctag%7B1%7D"></span></p>
+<p>In words: “your velocity equals whatever the vector field says at your current location.”</p>
+</section>
+<section id="from-trajectory-to-flow" class="level2">
+<h2 class="anchored" data-anchor-id="from-trajectory-to-flow">From Trajectory to Flow</h2>
+<p>The trajectory <img src="https://latex.codecogs.com/png.latex?X_t"> answers: “where am I at time <img src="https://latex.codecogs.com/png.latex?t">, given I started at <img src="https://latex.codecogs.com/png.latex?x_0">?”</p>
+<p>But what if we want to know the answer for <em>any</em> starting point? That’s the <strong>flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)">: a function that takes any starting position <img src="https://latex.codecogs.com/png.latex?x"> and returns where it ends up at time <img src="https://latex.codecogs.com/png.latex?t">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AX_t%20=%20%5Cphi_t(x_0)%0A"></p>
+<p>For one specific starting point <img src="https://latex.codecogs.com/png.latex?x_0">, the trajectory and flow give the same answer. But the flow is more general — it’s the entire “transformation rule” for all points.</p>
+<div id="fig-multiple-trajectories" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/2-flows/multiple-trajectories.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multiple-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting point ends up
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="flow-equation" class="level2">
+<h2 class="anchored" data-anchor-id="flow-equation">Flow Equation</h2>
+<p>Since the flow satisfies the ODE, we can substitute <img src="https://latex.codecogs.com/png.latex?X_t%20=%20%5Cphi_t(x_0)">:</p>
+<p><span id="eq-flow-ode"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5Cimplies%20%5Cfrac%7Bd%20%5Cphi_t(x_0)%7D%7Bdt%7D%20=%20u_t(%5Cphi_t(x_0))%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cimplies%20%5Cphi_0(x_0)%20=%20x_0%0A%5Cend%7Baligned%7D%0A%5Ctag%7B2%7D"></span></p>
+<p>The second line says: at <img src="https://latex.codecogs.com/png.latex?t=0">, every point is where it started (the flow is the identity map).</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 27%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Notation</th>
+<th>What it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Vector field</td>
+<td><img src="https://latex.codecogs.com/png.latex?u_t(x)"></td>
+<td>“What direction should I move at position <img src="https://latex.codecogs.com/png.latex?x">?”</td>
+</tr>
+<tr class="even">
+<td>Trajectory</td>
+<td><img src="https://latex.codecogs.com/png.latex?X_t"></td>
+<td>“Where is this one particle at time <img src="https://latex.codecogs.com/png.latex?t">?”</td>
+</tr>
+<tr class="odd">
+<td>Flow</td>
+<td><img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)"></td>
+<td>“Where does any point <img src="https://latex.codecogs.com/png.latex?x"> end up at time <img src="https://latex.codecogs.com/png.latex?t">?”</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
+<p>Think of it like Google Maps:</p>
+<ul>
+<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
+<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
+<li><strong>Trajectory</strong> = The route YOUR car takes</li>
+<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
+</ul>
+<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>We now understand how vector fields generate flows. But for generative modeling, we need flows that transform <em>probability distributions</em> — specifically, from noise to data.</p>
+<p>In the <a href="../3-probability-paths/">next post</a>, we’ll see how to construct <strong>probability paths</strong> that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Chen, R. T. Q., et al.&nbsp;(2018). <a href="https://arxiv.org/abs/1806.07366">Neural Ordinary Differential Equations</a>. <em>NeurIPS</em>.</li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <guid>https://layernorm.dev/posts/diffusion/2-flows/</guid>
   <pubDate>Fri, 28 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
@@ -787,133 +914,6 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
   <category>flow-matching</category>
   <category>generative-models</category>
   <guid>https://layernorm.dev/posts/diffusion/1-intro/</guid>
-  <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Diffusion &amp; Flow Matching Part 3: Probability Paths</title>
-  <dc:creator>Hujie Wang</dc:creator>
-  <link>https://layernorm.dev/posts/diffusion/3-probability-paths/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>TL;DR
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ul>
-<li>A <strong>probability path</strong> is a smooth interpolation between noise and data distributions</li>
-<li>We build it from <strong>conditional paths</strong> (one per data point), then marginalize to get the full path</li>
-<li>The <strong>Gaussian probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I)"> is the most common choice</li>
-<li>We derive the <strong>conditional vector field</strong> that generates this path — this becomes our training target</li>
-</ul>
-</div>
-</div>
-<section id="probability-paths-from-noise-to-data" class="level1">
-<h1>Probability Paths: From Noise to Data</h1>
-<p>In the <a href="../2-flows/">previous post</a>, we learned that vector fields generate flows. Now we need to design a flow that transforms <em>probability distributions</em> — specifically, one that turns noise into data.</p>
-<p>The key idea: instead of thinking about individual particles, we’ll think about how an entire <em>distribution</em> of particles evolves over time. This is what a <strong>probability path</strong> describes.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://layernorm.dev/posts/diffusion/3-probability-paths/conditional-vs-marginal.png" class="img-fluid figure-img"></p>
-<figcaption>Conditional paths each target a specific data point z, while the marginal path describes the overall transformation from noise to data</figcaption>
-</figure>
-</div>
-<section id="conditional-probability-path" class="level2">
-<h2 class="anchored" data-anchor-id="conditional-probability-path">Conditional Probability Path</h2>
-<p>Why “conditional”? Because it’s easier to think about one data point at a time. A <strong>conditional probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> describes how probability mass moves from noise toward a <em>specific</em> target point <img src="https://latex.codecogs.com/png.latex?z">.</p>
-<p>Formally, it’s a family of distributions over <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BR%7D%5Ed"> such that</p>
-<p><span id="eq-conditional-path"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_0(%5Ccdot%20%7C%20z)%20=%20p_%7Binit%7D,%20%5Cquad%0Ap_1(%5Ccdot%20%7C%20z)%20=%20%5Cdelta_z%20%5Cquad%20%5Cforall%20z%20%5Cin%20%5Cmathbb%7BR%7D%5Ed%0A%5Cend%7Baligned%7D%0A%5Ctag%7B1%7D"></span> In other words, a conditional probability path interpolates between the initial distribution <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D"> and a single data point from <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">.</p>
-</section>
-<section id="marginal-probability-path" class="level2">
-<h2 class="anchored" data-anchor-id="marginal-probability-path">Marginal Probability Path</h2>
-<p>Conditional paths are useful for construction, but what we really care about is the <strong>marginal probability path</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x)"> — the distribution we’d see if we sampled many different target points <img src="https://latex.codecogs.com/png.latex?z"> from the data distribution and looked at where all the probability mass ends up.</p>
-<p>We obtain it by first sampling <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D"> and then sampling <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)">:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;z%20%5Csim%20p_%7Bdata%7D,%20%5Cquad%20x%20%5Csim%20p_t(%5Ccdot%20%7C%20z)%20%5C%5C%0Ap_t(x)%20&amp;=%20%5Cint%20p_t(x,%20z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%0A%5Cend%7Baligned%7D%0A"></p>
-<p>We can verify that <img src="https://latex.codecogs.com/png.latex?p_t(x)"> interpolates between <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D"> and <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D">.</p>
-<p><strong>At <img src="https://latex.codecogs.com/png.latex?t=0">:</strong> The conditional distribution equals the initial distribution for all <img src="https://latex.codecogs.com/png.latex?z">, so <img src="https://latex.codecogs.com/png.latex?p_%7Binit%7D(x)"> factors out of the integral:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_0(x)%20&amp;=%20%5Cint%20p_0(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20p_%7Binit%7D(x)%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20p_0(%5Ccdot%7Cz)%20=%20p_%7Binit%7D%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Binit%7D(x)%20%5Cint%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(factor%20out%20%7D%20p_%7Binit%7D(x)%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Binit%7D(x)%20&amp;&amp;%20%5Ctext%7B(probability%20integrates%20to%201)%7D%0A%5Cend%7Baligned%7D%0A"></p>
-<p><strong>At <img src="https://latex.codecogs.com/png.latex?t=1">:</strong> The conditional distribution collapses to a point mass at <img src="https://latex.codecogs.com/png.latex?z">. To evaluate this integral, we use the <strong>sifting property</strong> of the Dirac delta:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cint%20f(z)%20%5Cdelta_z(x)%20%5C,%20dz%20=%20f(x)%0A"></p>
-<p>To understand this, think of <img src="https://latex.codecogs.com/png.latex?%5Cdelta_z(x)"> as the limit of increasingly narrow, tall functions that integrate to 1 — for example, a Gaussian centered at <img src="https://latex.codecogs.com/png.latex?z"> with vanishing variance:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cdelta_%7Bz,%5Cepsilon%7D(x)%20=%20%5Cfrac%7B1%7D%7B%5Cepsilon%5Csqrt%7B2%5Cpi%7D%7D%20e%5E%7B-(x-z)%5E2/(2%5Cepsilon%5E2)%7D%20%5Cxrightarrow%7B%5Cepsilon%20%5Cto%200%7D%20%5Cdelta_z(x)%0A"></p>
-<p>As <img src="https://latex.codecogs.com/png.latex?%5Cepsilon%20%5Cto%200">, all the “mass” concentrates at <img src="https://latex.codecogs.com/png.latex?x%20=%20z">. So when we integrate <img src="https://latex.codecogs.com/png.latex?f(z)%5Cdelta_%7Bz,%5Cepsilon%7D(x)"> over <img src="https://latex.codecogs.com/png.latex?z">, only the value near <img src="https://latex.codecogs.com/png.latex?z%20=%20x"> contributes, giving <img src="https://latex.codecogs.com/png.latex?f(x)">. Applying this:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Ap_1(x)%20&amp;=%20%5Cint%20p_1(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%20%5C%5C%0A&amp;=%20%5Cint%20%5Cdelta_z(x)%20p_%7Bdata%7D(z)%20dz%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20p_1(%5Ccdot%7Cz)%20=%20%5Cdelta_z%20%5Ctext%7B)%7D%20%5C%5C%0A&amp;=%20p_%7Bdata%7D(x)%20&amp;&amp;%20%5Ctext%7B(sifting%20property)%7D%0A%5Cend%7Baligned%7D%0A"></p>
-</section>
-<section id="example-gaussian-probability-paths" class="level2">
-<h2 class="anchored" data-anchor-id="example-gaussian-probability-paths">Example: Gaussian Probability Paths</h2>
-<p>The abstract definition is nice, but what does a probability path actually <em>look like</em>? The most common choice is a <strong>Gaussian probability path</strong>, where each <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> is a Gaussian whose mean drifts toward <img src="https://latex.codecogs.com/png.latex?z"> and whose variance shrinks over time.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://layernorm.dev/posts/diffusion/3-probability-paths/gaussian-path-evolution.png" class="img-fluid figure-img"></p>
-<figcaption>The Gaussian probability path: starting from a wide distribution at t=0, the mean shifts toward z while the variance shrinks, until at t=1 all mass concentrates at z</figcaption>
-</figure>
-</div>
-<p>The conditional Gaussian probability path is defined as:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbf%7Bp%7D_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?%5Calpha_t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> are noise schedulers, and they are continously, <strong>monotonically</strong> differentiable functions with the following conditions:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Calpha_0%20&amp;=%20%5Cbeta_1%20=%200%20%5C%5C%0A%5Cbeta_0%20&amp;=%20%5Calpha_1%20=%201%0A%5Cend%7Baligned%7D%0A"></p>
-<p>which implies</p>
-<p><span id="eq-path-boundary"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathbf%7Bp%7D_0(%5Ccdot%20%7C%20z)%20&amp;=%20%5Cmathcal%7BN%7D(0,%20I_d)%20%5C%5C%0A%5Cmathbf%7Bp%7D_1(%5Ccdot%20%7C%20z)%20&amp;=%20%5Clim_%7B%5Cbeta%20%5Cto%200%7D%20%5Cmathcal%7BN%7D(z,%20%5Cbeta%5E2%20I_d)%20=%20%5Cdelta_z%0A%5Cend%7Baligned%7D%0A%5Ctag%7B2%7D"></span></p>
-<p>As the variance vanishes, the Gaussian concentrates all its mass at the mean <img src="https://latex.codecogs.com/png.latex?z">, converging (in distribution) to the Dirac delta <img src="https://latex.codecogs.com/png.latex?%5Cdelta_z">.</p>
-<p>Therefore, this Gaussian probability path satisfies (1) and is a valid conditional probability path.</p>
-<p>Intuitively, given a data point <img src="https://latex.codecogs.com/png.latex?z"> at time <img src="https://latex.codecogs.com/png.latex?t=1">, we gradually add noise to it for lower t till <img src="https://latex.codecogs.com/png.latex?t=0">.</p>
-</section>
-<section id="conditional-vector-field-for-gaussian-paths" class="level2">
-<h2 class="anchored" data-anchor-id="conditional-vector-field-for-gaussian-paths">Conditional Vector Field for Gaussian Paths</h2>
-<p>We’ve defined a probability path — but remember from <a href="../2-flows/">Part 2</a>, flows are generated by <em>vector fields</em>. So what vector field generates our Gaussian probability path?</p>
-<p>This is the key question: if we can find this vector field, it becomes our <strong>training target</strong>. We’ll train a neural network to approximate it.</p>
-<p>Let us construct the conditional vector field:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7B%5Ctext%7Btarget%7D%7D(x%20%7C%20z)%20&amp;=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
-<p>We can show that this conditional vector field is valid in the sense that its ODE trajectories <img src="https://latex.codecogs.com/png.latex?X_t"> satisfies <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_t%20&amp;%5Csim%20p_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20%5C%5C%0AX_0%20&amp;%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%0A%5Cend%7Baligned%7D%0A"></p>
-<p>How do we prove this? Let us first construct a conditional flow model <img src="https://latex.codecogs.com/png.latex?%5Cphi_t%5E%7Btarget%7D(x_0%20%7C%20z)"></p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20&amp;=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%20%5C%5C%0Ax_0%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%0A%5Cend%7Baligned%7D%0A"></p>
-<p>We can show that the conditional flow model satisfies the conditional probability path:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_t%20&amp;=%20%5Cpsi_t%5E%7Btarget%7D(X_0%20%7C%20z)%20%5C%5C%0A&amp;=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20X_0%20%5C%5C%0A&amp;%5Csim%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20&amp;&amp;%20%5Ctext%7B(since%20%7D%20X_0%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%20%5Ctext%7B)%7D%0A%5Cend%7Baligned%7D%0A"></p>
-<p>here we have used the property of the Gaussian distribution: if <img src="https://latex.codecogs.com/png.latex?X%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmu,%20%5Csigma%5E2%20I_d)">, then <img src="https://latex.codecogs.com/png.latex?aX%20+%20b%20%5Csim%20%5Cmathcal%7BN%7D(a%5Cmu%20+%20b,%20a%5E2%20%5Csigma%5E2%20I_d)">.</p>
-<p>We conclude that the conditional flow model satisfies the conditional probability path.</p>
-<p>Then we use the definition of the conditional flow model to get the conditional vector field:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7Bd%7D%7Bdt%7D%20%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20&amp;=%20u_t%5E%7Btarget%7D(%5Cpsi_t%5E%7Btarget%7D(x_0%20%7C%20z)%20%7C%20z)%20%5C%5C%0A%5Ciff%20%5C%5C%0A%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20x_0%20=%20u_t%5E%7Btarget%7D(%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%20%7C%20z)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
-<p>we know that</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Ax_t%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20x_0%0A%5Ciff%20%5C%5C%0Ax_0%20=%20%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D%0A"></p>
-<p>substituting <img src="https://latex.codecogs.com/png.latex?x_0"> with <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D"> in the above equation, we get</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x_t%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
-<p>Why do this? Because the vector filed must be written as <img src="https://latex.codecogs.com/png.latex?%0Au_t(x%20%7C%20z)%0A"> where x is the current position at time t.</p>
-</section>
-<section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>We now have:</p>
-<ol type="1">
-<li><strong>Probability paths</strong> that interpolate from noise to data</li>
-<li><strong>Conditional vector fields</strong> that generate these paths</li>
-</ol>
-<p>But there’s a problem: these are <em>conditional</em> on knowing the target data point <img src="https://latex.codecogs.com/png.latex?z">. At generation time, we don’t know <img src="https://latex.codecogs.com/png.latex?z"> — that’s what we’re trying to generate!</p>
-<p>In the <a href="../4-flow-matching-loss/">next post</a>, we’ll see how the <strong>marginalization trick</strong> solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing <img src="https://latex.codecogs.com/png.latex?z">.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
-<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
-</ol>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>diffusion</category>
-  <category>flow-matching</category>
-  <category>generative-models</category>
-  <guid>https://layernorm.dev/posts/diffusion/3-probability-paths/</guid>
   <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
