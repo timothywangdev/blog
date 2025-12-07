@@ -7,9 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Hujie Wang">
-<meta name="dcterms.date" content="2025-11-28">
+<meta name="dcterms.date" content="2025-12-01">
 
-<title>Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 5: Diffusion Models and SDEs – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -327,15 +327,15 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-flow-matching-loss-why-training-works" id="toc-the-flow-matching-loss-why-training-works" class="nav-link active" data-scroll-target="#the-flow-matching-loss-why-training-works">The Flow Matching Loss: Why Training Works</a>
+  <li><a href="#diffusion-models-adding-stochasticity" id="toc-diffusion-models-adding-stochasticity" class="nav-link active" data-scroll-target="#diffusion-models-adding-stochasticity">Diffusion Models: Adding Stochasticity</a>
   <ul class="collapse">
-  <li><a href="#the-problem-were-solving" id="toc-the-problem-were-solving" class="nav-link" data-scroll-target="#the-problem-were-solving">The Problem We’re Solving</a></li>
-  <li><a href="#the-marginalization-trick" id="toc-the-marginalization-trick" class="nav-link" data-scroll-target="#the-marginalization-trick">The Marginalization Trick</a></li>
-  <li><a href="#the-continuity-equation" id="toc-the-continuity-equation" class="nav-link" data-scroll-target="#the-continuity-equation">The Continuity Equation</a>
-  <ul class="collapse">
-  <li><a href="#physics-background" id="toc-physics-background" class="nav-link" data-scroll-target="#physics-background">Physics Background</a></li>
-  </ul></li>
-  <li><a href="#proof-of-the-marginalization-trick" id="toc-proof-of-the-marginalization-trick" class="nav-link" data-scroll-target="#proof-of-the-marginalization-trick">Proof of the Marginalization Trick</a></li>
+  <li><a href="#the-problem-with-derivatives" id="toc-the-problem-with-derivatives" class="nav-link" data-scroll-target="#the-problem-with-derivatives">The Problem with Derivatives</a></li>
+  <li><a href="#from-derivatives-to-infinitesimal-updates" id="toc-from-derivatives-to-infinitesimal-updates" class="nav-link" data-scroll-target="#from-derivatives-to-infinitesimal-updates">From Derivatives to Infinitesimal Updates</a></li>
+  <li><a href="#adding-stochasticity-the-sde" id="toc-adding-stochasticity-the-sde" class="nav-link" data-scroll-target="#adding-stochasticity-the-sde">Adding Stochasticity: The SDE</a></li>
+  <li><a href="#what-is-brownian-motion" id="toc-what-is-brownian-motion" class="nav-link" data-scroll-target="#what-is-brownian-motion">What is Brownian Motion?</a></li>
+  <li><a href="#the-diffusion-coefficient" id="toc-the-diffusion-coefficient" class="nav-link" data-scroll-target="#the-diffusion-coefficient">The Diffusion Coefficient</a></li>
+  <li><a href="#forward-and-reverse-processes" id="toc-forward-and-reverse-processes" class="nav-link" data-scroll-target="#forward-and-reverse-processes">Forward and Reverse Processes</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
@@ -348,11 +348,12 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss</h1>
+<h1 class="title">Diffusion &amp; Flow Matching Part 5: Diffusion Models and SDEs</h1>
   <div class="quarto-categories">
     <div class="quarto-category">diffusion</div>
     <div class="quarto-category">flow-matching</div>
     <div class="quarto-category">generative-models</div>
+    <div class="quarto-category">sde</div>
   </div>
   </div>
 
@@ -370,7 +371,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 28, 2025</p>
+      <p class="date">December 1, 2025</p>
     </div>
   </div>
   
@@ -393,172 +394,257 @@ window.Quarto = {
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>The problem</strong>: We have conditional vector fields <span class="math inline">\(u_t(x|z)\)</span>, but at generation time we don’t know <span class="math inline">\(z\)</span></li>
-<li><strong>The solution</strong>: The marginalization trick — training on conditional targets is <em>equivalent</em> to learning the marginal vector field</li>
-<li><strong>The loss</strong>: Simply <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span>, averaged over time <span class="math inline">\(t\)</span>, data <span class="math inline">\(z\)</span>, and noise <span class="math inline">\(x_0\)</span></li>
-<li><strong>Why it works</strong>: The continuity equation guarantees the marginal vector field follows the marginal probability path</li>
+<li><strong>Diffusion models</strong> add stochasticity to the ODE: <span class="math inline">\(dX_t = u_t(X_t)dt + \sigma_t dW_t\)</span></li>
+<li><strong>Key insight</strong>: We derive SDEs by thinking in terms of <em>infinitesimal updates</em> rather than derivatives</li>
+<li>The <strong>Brownian motion</strong> term <span class="math inline">\(dW_t\)</span> represents continuous random perturbations</li>
+<li>Setting <span class="math inline">\(\sigma_t = 0\)</span> recovers the deterministic ODE from flow matching</li>
 </ul>
 </div>
 </div>
-<section id="the-flow-matching-loss-why-training-works" class="level1">
-<h1>The Flow Matching Loss: Why Training Works</h1>
-<p>In the <a href="../3-probability-paths/">previous post</a>, we constructed conditional probability paths and conditional vector fields. But there’s a fundamental problem: these are <em>conditional</em> on knowing the target data point <span class="math inline">\(z\)</span>. At generation time, we don’t know <span class="math inline">\(z\)</span> — that’s what we’re trying to generate!</p>
-<p>This post explains how the <strong>marginalization trick</strong> solves this problem.</p>
-<section id="the-problem-were-solving" class="level2">
-<h2 class="anchored" data-anchor-id="the-problem-were-solving">The Problem We’re Solving</h2>
-<p>Let’s step back and understand what we’re trying to achieve.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
+<section id="diffusion-models-adding-stochasticity" class="level1">
+<h1>Diffusion Models: Adding Stochasticity</h1>
+<p>In <a href="../2-flows/">Parts 2-4</a>, we developed flow matching — a framework where a neural network learns a vector field <span class="math inline">\(u_t^\theta(x)\)</span> that transports noise to data via an ODE:</p>
+<p><span class="math display">\[
+dX_t = u_t^\theta(X_t) \, dt
+\]</span></p>
+<p>This is elegant, but there’s another approach that dominated generative modeling before flow matching emerged: <strong>diffusion models</strong>. Instead of following a deterministic path, diffusion models add randomness at each step.</p>
+<p>Why would we want randomness? It turns out that stochasticity can help exploration during sampling, improve sample diversity, and connects to a rich mathematical theory. Let’s see how.</p>
+<section id="the-problem-with-derivatives" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-with-derivatives">The Problem with Derivatives</h2>
+<p>Before we add stochasticity, let’s revisit how we think about ODEs. The standard formulation uses derivatives:</p>
+<p><span class="math display">\[
+\frac{d}{dt} X_t = u_t(X_t)
+\]</span></p>
+<p>This says: “the instantaneous rate of change of <span class="math inline">\(X_t\)</span> equals the vector field <span class="math inline">\(u_t\)</span> evaluated at <span class="math inline">\(X_t\)</span>.”</p>
+<div class="callout callout-style-simple callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Our Goal
+<span class="screen-reader-only">Warning</span>The Challenge
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Train a neural network <span class="math inline">\(u_t^\theta(x)\)</span> that can transform noise into samples from <span class="math inline">\(p_{data}\)</span>. To do this, we need a <strong>training target</strong> — a vector field that the network should learn to approximate.</p>
+<p>Derivatives are elegant for deterministic systems, but they become problematic when we want to add randomness. A random process doesn’t have a well-defined derivative in the classical sense — the path is too “jagged” due to the random perturbations.</p>
 </div>
 </div>
-<p><strong>The ideal target</strong> is the marginal vector field <span class="math inline">\(u_t^{target}(x)\)</span> that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>. If our network learns this, it can generate samples by:</p>
-<ol type="1">
-<li>Start with noise <span class="math inline">\(x_0 \sim p_{init}\)</span></li>
-<li>Follow the learned vector field: <span class="math inline">\(\frac{dx}{dt} = u_t^\theta(x)\)</span></li>
-<li>Arrive at a sample from <span class="math inline">\(p_{data}\)</span> at <span class="math inline">\(t=1\)</span></li>
-</ol>
-<p><strong>The problem</strong>: We can’t compute <span class="math inline">\(u_t^{target}(x)\)</span> directly! It would require integrating over the entire data distribution — intractable.</p>
-<p><strong>The solution</strong>: The marginalization trick. It tells us that:</p>
-<ol type="1">
-<li>We can design simple <strong>conditional</strong> vector fields <span class="math inline">\(u_t^{target}(x|z)\)</span> (one for each data point <span class="math inline">\(z\)</span>)</li>
-<li>Training on these conditional targets is <strong>equivalent</strong> to training on the marginal target</li>
-<li>The trained network will learn the marginal vector field — exactly what we need for generation</li>
-</ol>
-<p>This is why the marginalization trick is so powerful: it turns an intractable problem into a tractable one.</p>
+<p>To add stochasticity properly, we need a different way to think about dynamics — one that doesn’t rely on taking derivatives.</p>
 </section>
-<section id="the-marginalization-trick" class="level2">
-<h2 class="anchored" data-anchor-id="the-marginalization-trick">The Marginalization Trick</h2>
-<p>Given a conditional vector field <span class="math inline">\(u_t^{target}(x | z)\)</span> that follows the conditional probability path <span class="math inline">\(p_t(\cdot | z)\)</span>, we can construct a marginal vector field <span class="math inline">\(u_t(x)\)</span> that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>:</p>
+<section id="from-derivatives-to-infinitesimal-updates" class="level2">
+<h2 class="anchored" data-anchor-id="from-derivatives-to-infinitesimal-updates">From Derivatives to Infinitesimal Updates</h2>
+<p>Instead of asking “what is the derivative?”, we can ask: “what happens over a small time step <span class="math inline">\(h\)</span>?”</p>
+<p>Starting from the ODE, we can write:</p>
 <p><span class="math display">\[
-u_t^{target}(x) = \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
+\frac{1}{h}(X_{t+h} - X_t) = u_t(X_t) + R_t(h)
 \]</span></p>
-<p>This is the marginalization trick. To prove it, we will use the continuity equation.</p>
-</section>
-<section id="the-continuity-equation" class="level2">
-<h2 class="anchored" data-anchor-id="the-continuity-equation">The Continuity Equation</h2>
-<div id="continuity-equation" class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Theorem: Continuity Equation
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Let us consider a flow model with vector field <span class="math inline">\(u_t^{target}\)</span> with <span class="math inline">\(X_0 \sim p_{init}\)</span>. Then <span class="math inline">\(X_t \sim p_t\)</span> for all <span class="math inline">\(0 \leq t \leq 1\)</span> if and only if</p>
+<p>where <span class="math inline">\(R_t(h)\)</span> is an error term that goes to zero as <span class="math inline">\(h \to 0\)</span>. Rearranging:</p>
 <p><span class="math display">\[
-\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{target})(x) \quad \text{for all } x \in \mathbb{R}^d, 0 \leq t \leq 1
+X_{t+h} = X_t + h \cdot u_t(X_t) + h \cdot R_t(h)
 \]</span></p>
-<p>where <span class="math inline">\(\partial_t p_t(x) = \frac{d}{dt} p_t(x)\)</span> denotes the time-derivative of <span class="math inline">\(p_t(x)\)</span>.</p>
-</div>
-</div>
-<p>We will skip the proof of the continuity equation.</p>
-<p><span class="math inline">\(\nabla \cdot\)</span> is the divergence operator in vector calculus, it’s input is a vector and output is a scalar.</p>
-<p>If the divergence is negative, it means that the vector field is pointing inwards towards this point.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="divergence-negative.png" class="img-fluid figure-img" style="width:60.0%"></p>
-<figcaption>Negative divergence: arrows point inward (a “sink”)</figcaption>
-</figure>
-</div>
-<p>The divergence measures the net outflow of density from a point. And the negative divergence means the net inflow of density into this point.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="divergence-positive.png" class="img-fluid figure-img" style="width:60.0%"></p>
-<figcaption>Positive divergence: arrows point outward (a “source”)</figcaption>
-</figure>
-</div>
-<p>If you are not familiar with this or vector calculus, I recommend you watch the <a href="https://www.youtube.com/watch?v=So7vlARGs68&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=4">The Divergence of a Vector Field: Sources and Sinks</a> by Steve Brunton. He also talks about the continuity equation in the context of fluid dynamics here: <a href="https://www.youtube.com/watch?v=Fk3X6o39KEI&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=7">The Continuity Equation: A PDE for Mass Conservation, from Gauss’s Divergence Theorem</a>.</p>
-<section id="physics-background" class="level3">
-<h3 class="anchored" data-anchor-id="physics-background">Physics Background</h3>
-<p>Let me briefly explain the continuity equation, it originates from physics:</p>
-<p><span class="math display">\[
-\frac{\partial \rho}{\partial t} + \nabla \cdot J = 0
-\]</span></p>
-<p>where <span class="math inline">\(\rho\)</span> is the mass density and <span class="math inline">\(J\)</span> is the mass flux. The equation was derived from Gauss’s Divergence Theorem, it’s also called mass conservation equation.</p>
-<p>The flux is defined as the product of mass density and the the velocity field <span class="math inline">\(F\)</span>:</p>
-<p><span class="math display">\[
-J = \rho F
-\]</span></p>
-<p>Intuitively, the flux measures the amount of mass flow rate per unit area through a surface.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="flux-diagram.png" class="img-fluid figure-img" style="width:60.0%"></p>
-<figcaption>Flux: the rate of mass flowing through a surface</figcaption>
-</figure>
-</div>
-<p>The mass conservation equation states that the rate of change of mass in a volume is equal to the net outflow of mass through the surface of the volume. It’s a fundamental law that mass cannot be created or destroyed within a defined system.</p>
-<p>In the context of flow models, the mass density is the probability density and the velocity field is the vector field <span class="math inline">\(u_t(x)\)</span>. The continuity equation then becomes:</p>
-<p><span class="math display">\[
-\frac{d}{dt} p_t(x) = -\nabla \cdot (u_t p_t)(x)
-\]</span></p>
-<p>This is the continuity equation in the context of flow models.</p>
-</section>
-</section>
-<section id="proof-of-the-marginalization-trick" class="level2">
-<h2 class="anchored" data-anchor-id="proof-of-the-marginalization-trick">Proof of the Marginalization Trick</h2>
-<p>Now we can return to the marginalization trick, we just need to show that the marginal vector field <span class="math inline">\(u_t(x)\)</span> satisfies the continuity equation.</p>
-<p><span class="math display">\[
-\begin{aligned}
-\partial_t p_t(x) &amp;= \partial_t \int p_t(x | z) p_{data}(z) dz \\
-&amp;= \int \partial_t p_t(x | z) p_{data}(z) dz \\
-&amp;= \int -\nabla \cdot (p_t(x | z) u_t^{target}(x | z)) p_{data}(z) dz \\
-&amp;\text{(we used the continuity equation for the conditional probability path $p_t(\cdot | z)$)} \\
-&amp;= - \nabla \cdot \left( \int p_t(x | z) u_t^{target}(x | z) p_{data}(z) dz \right)  \\
-&amp;\text{(linearity of the divergence operator)} \\
-&amp;= - \nabla \cdot \left( p_t(x) \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \right)  \\
-&amp;\text{(multiplied and divided by $p_t(x)$)} \\
-&amp;= - \nabla \cdot (u_t p_t)(x) \\
-&amp;\text{(definition of the marginal vector field $u_t(x)$)} \\
-\end{aligned}
-\]</span></p>
-<p>By the <a href="#continuity-equation">Continuity Equation</a>, we have shown that the marginal vector field <span class="math inline">\(u_t(x)\)</span> satisfies the continuity equation. Therefore, the marginal vector field <span class="math inline">\(u_t(x)\)</span> follows the marginal probability path <span class="math inline">\(p_t(x)\)</span> and we are done.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Key Takeaway
+<span class="screen-reader-only">Tip</span>Intuition
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The marginalization trick is what makes flow matching <strong>tractable</strong>. Here’s the practical workflow:</p>
+<p>This says: “where you end up = where you started + (small step) × (direction) + (small error)”. As <span class="math inline">\(h \to 0\)</span>, the error term vanishes and we recover the ODE behavior.</p>
+</div>
+</div>
+<p>This <strong>infinitesimal update</strong> formulation is exactly what we need. It describes the dynamics without ever taking a derivative — we just describe how the state changes over small time intervals.</p>
+</section>
+<section id="adding-stochasticity-the-sde" class="level2">
+<h2 class="anchored" data-anchor-id="adding-stochasticity-the-sde">Adding Stochasticity: The SDE</h2>
+<p>Now we can add randomness naturally. At each small time step, we add a random perturbation:</p>
+<p><span class="math display">\[
+X_{t+h} = X_t + \underbrace{h \cdot u_t(X_t)}_{\text{deterministic drift}} + \underbrace{\sigma_t (W_{t+h} - W_t)}_{\text{random perturbation}} + \underbrace{h \cdot R_t(h)}_{\text{error term}}
+\]</span></p>
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(u_t(X_t)\)</span> is the <strong>drift</strong> — the deterministic direction (same as in flow matching)</li>
+<li><span class="math inline">\(\sigma_t\)</span> is the <strong>diffusion coefficient</strong> — controls how much randomness we add</li>
+<li><span class="math inline">\(W_t\)</span> is <strong>Brownian motion</strong> — a mathematical model of continuous random motion</li>
+<li><span class="math inline">\(W_{t+h} - W_t\)</span> is the random increment over the time interval <span class="math inline">\([t, t+h]\)</span></li>
+</ul>
+<p>As <span class="math inline">\(h \to 0\)</span>, we write this compactly as the <strong>stochastic differential equation (SDE)</strong>:</p>
+<p><span id="eq-sde"><span class="math display">\[
+dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+\tag{1}\]</span></span></p>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Key Point
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Notice that we never took a derivative of the random process! The SDE notation <span class="math inline">\(dX_t\)</span> is shorthand for the infinitesimal update, not an actual derivative. This is why SDEs can describe processes with random, non-differentiable paths.</p>
+</div>
+</div>
+<p>When <span class="math inline">\(\sigma_t = 0\)</span>, the SDE reduces to an ODE, and we recover flow matching.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="ode-vs-sde.png" class="img-fluid figure-img"></p>
+<figcaption>ODE (flow matching) follows a single deterministic path; SDE (diffusion) follows stochastic paths with the same general direction</figcaption>
+</figure>
+</div>
+</section>
+<section id="what-is-brownian-motion" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-brownian-motion">What is Brownian Motion?</h2>
+<p><strong>Brownian motion</strong> <span class="math inline">\(W_t\)</span> (also called a Wiener process) is the canonical model of continuous random motion. You can think of it as:</p>
+<ul>
+<li>At each infinitesimal time step <span class="math inline">\(dt\)</span>, we add a random displacement</li>
+<li>This displacement is Gaussian with mean 0 and variance <span class="math inline">\(dt\)</span></li>
+<li>Displacements at different times are independent</li>
+</ul>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine tracking a pollen grain in water under a microscope. It jiggles randomly due to molecular collisions — that’s Brownian motion. The <span class="math inline">\(dW_t\)</span> term captures this “pure randomness” mathematically.</p>
+</div>
+</div>
+<p>The key property is that <span class="math inline">\(W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)\)</span>. So over a small time step:</p>
+<p><span class="math display">\[
+X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\]</span></p>
+<p>This is the <strong>Euler-Maruyama</strong> discretization — the simplest way to simulate an SDE numerically. Notice how the noise scales with <span class="math inline">\(\sqrt{h}\)</span>, not <span class="math inline">\(h\)</span> — this is a fundamental property of Brownian motion.</p>
+</section>
+<section id="the-diffusion-coefficient" class="level2">
+<h2 class="anchored" data-anchor-id="the-diffusion-coefficient">The Diffusion Coefficient</h2>
+<p>The diffusion coefficient <span class="math inline">\(\sigma_t\)</span> controls the “temperature” of the random noise:</p>
+<ul>
+<li><strong>Large <span class="math inline">\(\sigma_t\)</span></strong>: More exploration, paths spread out quickly</li>
+<li><strong>Small <span class="math inline">\(\sigma_t\)</span></strong>: More deterministic, paths stay close to the drift</li>
+<li><strong><span class="math inline">\(\sigma_t = 0\)</span></strong>: Pure ODE (flow matching)</li>
+</ul>
+<p>In diffusion models, <span class="math inline">\(\sigma_t\)</span> is typically a <strong>schedule</strong> that varies with time. Common choices:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 38%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Schedule</th>
+<th><span class="math inline">\(\sigma_t\)</span></th>
+<th>Used in</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Variance Preserving (VP)</td>
+<td><span class="math inline">\(\sqrt{\beta_t}\)</span></td>
+<td>DDPM</td>
+</tr>
+<tr class="even">
+<td>Variance Exploding (VE)</td>
+<td><span class="math inline">\(\sqrt{\frac{d[\sigma^2(t)]}{dt}}\)</span></td>
+<td>NCSN/NCSNv2</td>
+</tr>
+<tr class="odd">
+<td>Sub-VP</td>
+<td>Interpolation</td>
+<td>Score SDE</td>
+</tr>
+</tbody>
+</table>
+<p>The choice of schedule affects sample quality, training stability, and generation speed.</p>
+</section>
+<section id="forward-and-reverse-processes" class="level2">
+<h2 class="anchored" data-anchor-id="forward-and-reverse-processes">Forward and Reverse Processes</h2>
+<p>In diffusion models, we typically define:</p>
 <ol type="1">
-<li><strong>Design</strong> a simple conditional vector field <span class="math inline">\(u_t^{target}(x|z)\)</span> (e.g., pointing from noise toward data point <span class="math inline">\(z\)</span>)</li>
-<li><strong>Train</strong> by sampling <span class="math inline">\((z, x)\)</span> pairs and minimizing <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span></li>
-<li><strong>Generate</strong> by following the learned <span class="math inline">\(u_t^\theta\)</span> from noise — it approximates the marginal vector field</li>
+<li><strong>Forward process</strong>: An SDE that gradually adds noise to data until it becomes pure noise</li>
+<li><strong>Reverse process</strong>: An SDE that removes noise, going from noise back to data</li>
 </ol>
-<p>The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.</p>
+<p>The forward process is usually simple and fixed (e.g., just adding Gaussian noise). The challenge is learning to reverse it.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Key Question
 </div>
 </div>
+<div class="callout-body-container callout-body">
+<p>Given the forward SDE that corrupts data into noise, what is the reverse SDE that transforms noise back into data?</p>
+</div>
+</div>
+<p>It turns out there’s a beautiful mathematical result: the reverse SDE depends on something called the <strong>score function</strong> — the gradient of the log probability density. But how do we learn this score function? That’s the subject of the next post.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>We’ve now extended flow matching to handle stochasticity:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 44%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Flow Matching (ODE)</th>
+<th>Diffusion (SDE)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dynamics</td>
+<td><span class="math inline">\(dX_t = u_t(X_t) dt\)</span></td>
+<td><span class="math inline">\(dX_t = u_t(X_t) dt + \sigma_t dW_t\)</span></td>
+</tr>
+<tr class="even">
+<td>Paths</td>
+<td>Deterministic</td>
+<td>Stochastic</td>
+</tr>
+<tr class="odd">
+<td>Key idea</td>
+<td>Learn vector field</td>
+<td>Learn vector field + add noise</td>
+</tr>
+<tr class="even">
+<td>Derivation</td>
+<td>Via derivatives</td>
+<td>Via infinitesimal updates</td>
+</tr>
+</tbody>
+</table>
+<p>The key insight: <strong>we derive SDEs through infinitesimal updates, not derivatives</strong>. This lets us naturally incorporate randomness into the dynamics.</p>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>We’ve now covered the complete flow matching framework — from vector fields to probability paths to the training loss. But remember from <a href="../1-intro/">Part 1</a> that diffusion models take a different approach: they add <strong>stochasticity</strong> to the process.</p>
-<p>In the <a href="../5-diffusion-sde/">next post</a>, we’ll see how <strong>diffusion models</strong> generalize flow matching by adding a noise term to the ODE, turning it into an SDE. We’ll discover:</p>
+<p>We’ve seen how to add stochasticity to get an SDE, but we haven’t yet addressed the core challenge: <strong>how do we train a neural network to reverse the diffusion process?</strong></p>
+<p>In <a href="../6-score-matching/">Part 6</a>, we’ll discover:</p>
 <ul>
-<li>How to derive SDEs using <strong>infinitesimal updates</strong> instead of derivatives</li>
-<li>Why the random term <span class="math inline">\(\sigma_t dW_t\)</span> enables new behaviors</li>
-<li>The connection between Brownian motion and continuous randomness</li>
+<li>The <strong>score function</strong> <span class="math inline">\(\nabla_x \log p_t(x)\)</span> and why it’s central to diffusion models</li>
+<li><strong>Denoising score matching</strong> — the clever trick that makes training tractable</li>
+<li>The <strong>probability flow ODE</strong> — how every SDE has an equivalent deterministic formulation</li>
+<li>How this connects diffusion models back to flow matching</li>
 </ul>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
 <ol type="1">
-<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
-<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
-<li>Liu, X., Gong, C., &amp; Liu, Q. (2023). <a href="https://arxiv.org/abs/2209.03003">Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow</a>. <em>ICLR</em>.</li>
+<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS</em>.</li>
+<li>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR</em>.</li>
+<li>Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., &amp; Ganguli, S. (2015). <a href="https://arxiv.org/abs/1503.03585">Deep Unsupervised Learning using Nonequilibrium Thermodynamics</a>. <em>ICML</em>.</li>
 </ol>
 
 

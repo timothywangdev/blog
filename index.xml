@@ -10,7 +10,279 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.26</generator>
-<lastBuildDate>Sun, 30 Nov 2025 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 01 Dec 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 5: Diffusion Models and SDEs</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/5-diffusion-sde/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Diffusion models</strong> add stochasticity to the ODE: <img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t(X_t)dt%20+%20%5Csigma_t%20dW_t"></li>
+<li><strong>Key insight</strong>: We derive SDEs by thinking in terms of <em>infinitesimal updates</em> rather than derivatives</li>
+<li>The <strong>Brownian motion</strong> term <img src="https://latex.codecogs.com/png.latex?dW_t"> represents continuous random perturbations</li>
+<li>Setting <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200"> recovers the deterministic ODE from flow matching</li>
+</ul>
+</div>
+</div>
+<section id="diffusion-models-adding-stochasticity" class="level1">
+<h1>Diffusion Models: Adding Stochasticity</h1>
+<p>In <a href="../2-flows/">Parts 2-4</a>, we developed flow matching — a framework where a neural network learns a vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)"> that transports noise to data via an ODE:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AdX_t%20=%20u_t%5E%5Ctheta(X_t)%20%5C,%20dt%0A"></p>
+<p>This is elegant, but there’s another approach that dominated generative modeling before flow matching emerged: <strong>diffusion models</strong>. Instead of following a deterministic path, diffusion models add randomness at each step.</p>
+<p>Why would we want randomness? It turns out that stochasticity can help exploration during sampling, improve sample diversity, and connects to a rich mathematical theory. Let’s see how.</p>
+<section id="the-problem-with-derivatives" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-with-derivatives">The Problem with Derivatives</h2>
+<p>Before we add stochasticity, let’s revisit how we think about ODEs. The standard formulation uses derivatives:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%7D%7Bdt%7D%20X_t%20=%20u_t(X_t)%0A"></p>
+<p>This says: “the instantaneous rate of change of <img src="https://latex.codecogs.com/png.latex?X_t"> equals the vector field <img src="https://latex.codecogs.com/png.latex?u_t"> evaluated at <img src="https://latex.codecogs.com/png.latex?X_t">.”</p>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>The Challenge
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Derivatives are elegant for deterministic systems, but they become problematic when we want to add randomness. A random process doesn’t have a well-defined derivative in the classical sense — the path is too “jagged” due to the random perturbations.</p>
+</div>
+</div>
+<p>To add stochasticity properly, we need a different way to think about dynamics — one that doesn’t rely on taking derivatives.</p>
+</section>
+<section id="from-derivatives-to-infinitesimal-updates" class="level2">
+<h2 class="anchored" data-anchor-id="from-derivatives-to-infinitesimal-updates">From Derivatives to Infinitesimal Updates</h2>
+<p>Instead of asking “what is the derivative?”, we can ask: “what happens over a small time step <img src="https://latex.codecogs.com/png.latex?h">?”</p>
+<p>Starting from the ODE, we can write:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B1%7D%7Bh%7D(X_%7Bt+h%7D%20-%20X_t)%20=%20u_t(X_t)%20+%20R_t(h)%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?R_t(h)"> is an error term that goes to zero as <img src="https://latex.codecogs.com/png.latex?h%20%5Cto%200">. Rearranging:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20=%20X_t%20+%20h%20%5Ccdot%20u_t(X_t)%20+%20h%20%5Ccdot%20R_t(h)%0A"></p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This says: “where you end up = where you started + (small step) × (direction) + (small error)”. As <img src="https://latex.codecogs.com/png.latex?h%20%5Cto%200">, the error term vanishes and we recover the ODE behavior.</p>
+</div>
+</div>
+<p>This <strong>infinitesimal update</strong> formulation is exactly what we need. It describes the dynamics without ever taking a derivative — we just describe how the state changes over small time intervals.</p>
+</section>
+<section id="adding-stochasticity-the-sde" class="level2">
+<h2 class="anchored" data-anchor-id="adding-stochasticity-the-sde">Adding Stochasticity: The SDE</h2>
+<p>Now we can add randomness naturally. At each small time step, we add a random perturbation:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20=%20X_t%20+%20%5Cunderbrace%7Bh%20%5Ccdot%20u_t(X_t)%7D_%7B%5Ctext%7Bdeterministic%20drift%7D%7D%20+%20%5Cunderbrace%7B%5Csigma_t%20(W_%7Bt+h%7D%20-%20W_t)%7D_%7B%5Ctext%7Brandom%20perturbation%7D%7D%20+%20%5Cunderbrace%7Bh%20%5Ccdot%20R_t(h)%7D_%7B%5Ctext%7Berror%20term%7D%7D%0A"></p>
+<p>Here:</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?u_t(X_t)"> is the <strong>drift</strong> — the deterministic direction (same as in flow matching)</li>
+<li><img src="https://latex.codecogs.com/png.latex?%5Csigma_t"> is the <strong>diffusion coefficient</strong> — controls how much randomness we add</li>
+<li><img src="https://latex.codecogs.com/png.latex?W_t"> is <strong>Brownian motion</strong> — a mathematical model of continuous random motion</li>
+<li><img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t"> is the random increment over the time interval <img src="https://latex.codecogs.com/png.latex?%5Bt,%20t+h%5D"></li>
+</ul>
+<p>As <img src="https://latex.codecogs.com/png.latex?h%20%5Cto%200">, we write this compactly as the <strong>stochastic differential equation (SDE)</strong>:</p>
+<p><span id="eq-sde"><img src="https://latex.codecogs.com/png.latex?%0AdX_t%20=%20u_t(X_t)%20%5C,%20dt%20+%20%5Csigma_t%20%5C,%20dW_t%0A%5Ctag%7B1%7D"></span></p>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Key Point
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Notice that we never took a derivative of the random process! The SDE notation <img src="https://latex.codecogs.com/png.latex?dX_t"> is shorthand for the infinitesimal update, not an actual derivative. This is why SDEs can describe processes with random, non-differentiable paths.</p>
+</div>
+</div>
+<p>When <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200">, the SDE reduces to an ODE, and we recover flow matching.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/5-diffusion-sde/ode-vs-sde.png" class="img-fluid figure-img"></p>
+<figcaption>ODE (flow matching) follows a single deterministic path; SDE (diffusion) follows stochastic paths with the same general direction</figcaption>
+</figure>
+</div>
+</section>
+<section id="what-is-brownian-motion" class="level2">
+<h2 class="anchored" data-anchor-id="what-is-brownian-motion">What is Brownian Motion?</h2>
+<p><strong>Brownian motion</strong> <img src="https://latex.codecogs.com/png.latex?W_t"> (also called a Wiener process) is the canonical model of continuous random motion. You can think of it as:</p>
+<ul>
+<li>At each infinitesimal time step <img src="https://latex.codecogs.com/png.latex?dt">, we add a random displacement</li>
+<li>This displacement is Gaussian with mean 0 and variance <img src="https://latex.codecogs.com/png.latex?dt"></li>
+<li>Displacements at different times are independent</li>
+</ul>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine tracking a pollen grain in water under a microscope. It jiggles randomly due to molecular collisions — that’s Brownian motion. The <img src="https://latex.codecogs.com/png.latex?dW_t"> term captures this “pure randomness” mathematically.</p>
+</div>
+</div>
+<p>The key property is that <img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t%20%5Csim%20%5Cmathcal%7BN%7D(0,%20h%20%5Ccdot%20I)">. So over a small time step:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20%5Capprox%20X_t%20+%20u_t(X_t)%20%5Ccdot%20h%20+%20%5Csigma_t%20%5Csqrt%7Bh%7D%20%5Ccdot%20%5Cepsilon,%20%5Cquad%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)%0A"></p>
+<p>This is the <strong>Euler-Maruyama</strong> discretization — the simplest way to simulate an SDE numerically. Notice how the noise scales with <img src="https://latex.codecogs.com/png.latex?%5Csqrt%7Bh%7D">, not <img src="https://latex.codecogs.com/png.latex?h"> — this is a fundamental property of Brownian motion.</p>
+</section>
+<section id="the-diffusion-coefficient" class="level2">
+<h2 class="anchored" data-anchor-id="the-diffusion-coefficient">The Diffusion Coefficient</h2>
+<p>The diffusion coefficient <img src="https://latex.codecogs.com/png.latex?%5Csigma_t"> controls the “temperature” of the random noise:</p>
+<ul>
+<li><strong>Large <img src="https://latex.codecogs.com/png.latex?%5Csigma_t"></strong>: More exploration, paths spread out quickly</li>
+<li><strong>Small <img src="https://latex.codecogs.com/png.latex?%5Csigma_t"></strong>: More deterministic, paths stay close to the drift</li>
+<li><strong><img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200"></strong>: Pure ODE (flow matching)</li>
+</ul>
+<p>In diffusion models, <img src="https://latex.codecogs.com/png.latex?%5Csigma_t"> is typically a <strong>schedule</strong> that varies with time. Common choices:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 38%">
+<col style="width: 29%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Schedule</th>
+<th><img src="https://latex.codecogs.com/png.latex?%5Csigma_t"></th>
+<th>Used in</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Variance Preserving (VP)</td>
+<td><img src="https://latex.codecogs.com/png.latex?%5Csqrt%7B%5Cbeta_t%7D"></td>
+<td>DDPM</td>
+</tr>
+<tr class="even">
+<td>Variance Exploding (VE)</td>
+<td><img src="https://latex.codecogs.com/png.latex?%5Csqrt%7B%5Cfrac%7Bd%5B%5Csigma%5E2(t)%5D%7D%7Bdt%7D%7D"></td>
+<td>NCSN/NCSNv2</td>
+</tr>
+<tr class="odd">
+<td>Sub-VP</td>
+<td>Interpolation</td>
+<td>Score SDE</td>
+</tr>
+</tbody>
+</table>
+<p>The choice of schedule affects sample quality, training stability, and generation speed.</p>
+</section>
+<section id="forward-and-reverse-processes" class="level2">
+<h2 class="anchored" data-anchor-id="forward-and-reverse-processes">Forward and Reverse Processes</h2>
+<p>In diffusion models, we typically define:</p>
+<ol type="1">
+<li><strong>Forward process</strong>: An SDE that gradually adds noise to data until it becomes pure noise</li>
+<li><strong>Reverse process</strong>: An SDE that removes noise, going from noise back to data</li>
+</ol>
+<p>The forward process is usually simple and fixed (e.g., just adding Gaussian noise). The challenge is learning to reverse it.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Key Question
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Given the forward SDE that corrupts data into noise, what is the reverse SDE that transforms noise back into data?</p>
+</div>
+</div>
+<p>It turns out there’s a beautiful mathematical result: the reverse SDE depends on something called the <strong>score function</strong> — the gradient of the log probability density. But how do we learn this score function? That’s the subject of the next post.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>We’ve now extended flow matching to handle stochasticity:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 44%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Concept</th>
+<th>Flow Matching (ODE)</th>
+<th>Diffusion (SDE)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Dynamics</td>
+<td><img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t(X_t)%20dt"></td>
+<td><img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t(X_t)%20dt%20+%20%5Csigma_t%20dW_t"></td>
+</tr>
+<tr class="even">
+<td>Paths</td>
+<td>Deterministic</td>
+<td>Stochastic</td>
+</tr>
+<tr class="odd">
+<td>Key idea</td>
+<td>Learn vector field</td>
+<td>Learn vector field + add noise</td>
+</tr>
+<tr class="even">
+<td>Derivation</td>
+<td>Via derivatives</td>
+<td>Via infinitesimal updates</td>
+</tr>
+</tbody>
+</table>
+<p>The key insight: <strong>we derive SDEs through infinitesimal updates, not derivatives</strong>. This lets us naturally incorporate randomness into the dynamics.</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>We’ve seen how to add stochasticity to get an SDE, but we haven’t yet addressed the core challenge: <strong>how do we train a neural network to reverse the diffusion process?</strong></p>
+<p>In <a href="../6-score-matching/">Part 6</a>, we’ll discover:</p>
+<ul>
+<li>The <strong>score function</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5Clog%20p_t(x)"> and why it’s central to diffusion models</li>
+<li><strong>Denoising score matching</strong> — the clever trick that makes training tractable</li>
+<li>The <strong>probability flow ODE</strong> — how every SDE has an equivalent deterministic formulation</li>
+<li>How this connects diffusion models back to flow matching</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS</em>.</li>
+<li>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR</em>.</li>
+<li>Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., &amp; Ganguli, S. (2015). <a href="https://arxiv.org/abs/1503.03585">Deep Unsupervised Learning using Nonequilibrium Thermodynamics</a>. <em>ICML</em>.</li>
+</ol>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>sde</category>
+  <guid>https://layernorm.dev/posts/diffusion/5-diffusion-sde/</guid>
+  <pubDate>Mon, 01 Dec 2025 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Diffusion &amp; Flow Matching Part 2: Understanding Flows</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -303,6 +575,16 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 </div>
 </div>
 </section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>We’ve now covered the complete flow matching framework — from vector fields to probability paths to the training loss. But remember from <a href="../1-intro/">Part 1</a> that diffusion models take a different approach: they add <strong>stochasticity</strong> to the process.</p>
+<p>In the <a href="../5-diffusion-sde/">next post</a>, we’ll see how <strong>diffusion models</strong> generalize flow matching by adding a noise term to the ODE, turning it into an SDE. We’ll discover:</p>
+<ul>
+<li>How to derive SDEs using <strong>infinitesimal updates</strong> instead of derivatives</li>
+<li>Why the random term <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20dW_t"> enables new behaviors</li>
+<li>The connection between Brownian motion and continuous randomness</li>
+</ul>
+</section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
 <ol type="1">
@@ -382,9 +664,14 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <td>The marginalization trick that makes training work</td>
 </tr>
 <tr class="odd">
-<td><em>Part 5+</em></td>
-<td><em>Coming soon</em></td>
-<td>Diffusion models deep dive, SDEs, and more</td>
+<td><strong>Part 5</strong></td>
+<td><a href="../5-diffusion-sde/">Diffusion Models &amp; SDEs</a></td>
+<td>Stochastic differential equations and Brownian motion</td>
+</tr>
+<tr class="even">
+<td><strong>Part 6</strong></td>
+<td><a href="../6-score-matching/">Score Matching</a></td>
+<td>The score function, probability flow ODE, and the connection</td>
 </tr>
 </tbody>
 </table>
@@ -479,6 +766,8 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <li><a href="../2-flows/"><strong>Part 2</strong></a>: We’ll define what “flows” and “vector fields” actually mean</li>
 <li><a href="../3-probability-paths/"><strong>Part 3</strong></a>: We’ll see how to construct paths from noise to data</li>
 <li><a href="../4-flow-matching-loss/"><strong>Part 4</strong></a>: We’ll discover the clever trick that makes training tractable</li>
+<li><a href="../5-diffusion-sde/"><strong>Part 5</strong></a>: We’ll add stochasticity to get SDEs and understand Brownian motion</li>
+<li><a href="../6-score-matching/"><strong>Part 6</strong></a>: We’ll learn score matching and connect diffusion to flow matching</li>
 </ul>
 <p>By the end, you’ll understand not just <em>what</em> these models do, but <em>why</em> they work.</p>
 </section>
@@ -1137,25 +1426,6 @@ public:
   <category>imported</category>
   <guid>https://layernorm.dev/posts/old_blogs/2015-01-06-round-283-div-2-d-tennis-game/</guid>
   <pubDate>Tue, 06 Jan 2015 00:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Beta Round #1 C. Ancient Berland Circus</title>
-  <link>https://layernorm.dev/posts/old_blogs/2014-12-21-beta-round-1-c-ancient-berland-circus/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<p><strong>Finding a regular polygon with smallest area given three corner points A,B and C.</strong> (The Following angles are represented in radians.) First we need to find the radius of the circumscribed circle of the regular polygon, this can be done by calculating the radius of the circumscribed circle of the triangle(A,B,C). <img src="https://latex.codecogs.com/png.latex?R=(AB*BC*AC)/(4*area(A,B,C))"> Suppose d is the size of each angle of the optimal regular polygon. Let A,B,C be the angles of AOB,BOC,AOC where O is the center point of the circumscribed circle , we know that <img src="https://latex.codecogs.com/png.latex?A=k_1*d"> <img src="https://latex.codecogs.com/png.latex?B=k_2*d"> <img src="https://latex.codecogs.com/png.latex?B=k_3*d"> for <img src="https://latex.codecogs.com/png.latex?k1,k2,k3%20%5Cin%20%5Cmathbb%7BN%7D"> Note that we need d to be as large as possible in order to reduce the size of the polygon with the same circumscribed circle, which implies that d=gcd(A,B,C). Now we prove that gcd(A,B,C) is a valid solution for d.&nbsp;Case 1: <img src="https://latex.codecogs.com/png.latex?gcd(k_1,k_2,k_3)=1"> In the case, d=gcd(A,B,C) Case 2: <img src="https://latex.codecogs.com/png.latex?gcd(k_1,k_2,k_3)=k%3E1"> We can prove that d=gcd(A,B,C) is still a valid size of each angle of a regular polygon. Let n be the number of sizes of the polygon. <img src="https://latex.codecogs.com/png.latex?k*%20%5Cfrac%7B2%5Cpi%7D%7Bn%7D=%5Cfrac%7B2%5Cpi%7D%7Bn-t%7D%20"> <img src="https://latex.codecogs.com/png.latex?%20%5CRightarrow%20%5Cfrac%7Bk%7D%7Bn%7D=%5Cfrac%7B1%7D%7Bn-t%7D%20"> <img src="https://latex.codecogs.com/png.latex?%20%5CRightarrow%20t=n-%5Cfrac%7Bn%7D%7Bk%7D%20"> We need to prove that t is an integer. Note that <img src="https://latex.codecogs.com/png.latex?k_1=k*p_1,k_2=k*p_1,k_3=k*p_1%20"> for <img src="https://latex.codecogs.com/png.latex?p1,p2,p3%20%5Cin%20%5Cmathbb%7BN%7D"> Then <img src="https://latex.codecogs.com/png.latex?d(k_1+k_2+k_3)=2%5Cpi"> <img src="https://latex.codecogs.com/png.latex?%20%5CRightarrow%20%5Cfrac%7B2%5Cpi%7D%7Bn%7D(k_1+k_2+k_3)%20=%202%5Cpi"> <img src="https://latex.codecogs.com/png.latex?%20%5CRightarrow%20k_1+k_2+k_3=n%20"> <img src="https://latex.codecogs.com/png.latex?%20%5CRightarrow%20k(p_1+p_2+p_3)=n%20"> <img src="https://latex.codecogs.com/png.latex?%20%5CRightarrow%20%5Cfrac%7Bn%7D%7Bk%7D=p_1+p_2+p_3%20"> Thereforce <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bn%7D%7Bk%7D"> is an integer. Since n is an integer, <img src="https://latex.codecogs.com/png.latex?t=n-%20%5Cfrac%7Bn%7D%7Bk%7D"> is an integer. In this case, we have found a d’ which is even larger than d, which implies that we should choose d’ since the area of the polygon is smaller. Now we have found d, the only thing left is to calculate the area of the regular polygon <img src="https://latex.codecogs.com/png.latex?%20polygon%20area=%5Cfrac%7B%7BR%5E2%7D*n*sin(d)%7D%7B2%7D%20"> where <img src="https://latex.codecogs.com/png.latex?n=%5Cfrac%7B2%5Cpi%7D%7Bd%7D"> and we are done.</p>
-
-
-
- ]]></description>
-  <category>algorithms</category>
-  <category>imported</category>
-  <guid>https://layernorm.dev/posts/old_blogs/2014-12-21-beta-round-1-c-ancient-berland-circus/</guid>
-  <pubDate>Sun, 21 Dec 2014 00:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
