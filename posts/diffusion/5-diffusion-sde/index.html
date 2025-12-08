@@ -439,7 +439,35 @@ dX_t = u_t^\theta(X_t) \, dt
 <p><span class="math display">\[
 \frac{1}{h}(X_{t+h} - X_t) = u_t(X_t) + R_t(h)
 \]</span></p>
-<p>where <span class="math inline">\(R_t(h)\)</span> is an error term that goes to zero as <span class="math inline">\(h \to 0\)</span>. Rearranging:</p>
+<p>where <span class="math inline">\(R_t(h)\)</span> is an error term that goes to zero as <span class="math inline">\(h \to 0\)</span>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where does the error term come from?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The error term comes from the definition of the derivative itself. The derivative is defined as a limit: <span class="math display">\[
+\frac{dX_t}{dt} = \lim_{h \to 0} \frac{X_{t+h} - X_t}{h}
+\]</span></p>
+<p>When <span class="math inline">\(h\)</span> is small but not zero, the finite difference is only an <em>approximation</em> to the true derivative: <span class="math display">\[
+\frac{X_{t+h} - X_t}{h} = \frac{dX_t}{dt} + R_t(h)
+\]</span></p>
+<p>Since the ODE says <span class="math inline">\(\frac{dX_t}{dt} = u_t(X_t)\)</span>, we get the equation above. The key property is that <span class="math inline">\(R_t(h) \to 0\)</span> as <span class="math inline">\(h \to 0\)</span>, which is exactly what the limit definition guarantees.</p>
+<p><strong>What about SDEs?</strong> When we add stochasticity, <span class="math inline">\(X_t\)</span> becomes a random variable, which means the error <span class="math inline">\(R_t(h)\)</span> is also random. We can no longer simply say “<span class="math inline">\(R_t(h) \to 0\)</span>” — we need to specify <em>in what sense</em> a random quantity vanishes.</p>
+<p>The rigorous statement uses <strong>mean square convergence</strong>: <span class="math display">\[
+\mathbb{E}[\|R_t(h)\|^2]^{1/2} \to 0 \quad \text{as } h \to 0
+\]</span></p>
+<p>This says the <em>typical size</em> of the error (measured by root-mean-square) goes to zero. Think of it as: “on average, the error becomes negligible.”</p>
+</div>
+</div>
+</div>
+<p>Rearranging:</p>
 <p><span class="math display">\[
 X_{t+h} = X_t + h \cdot u_t(X_t) + h \cdot R_t(h)
 \]</span></p>
@@ -489,39 +517,91 @@ dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
 </div>
 </div>
 <p>When <span class="math inline">\(\sigma_t = 0\)</span>, the SDE reduces to an ODE, and we recover flow matching.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Definition: Diffusion Model
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A <strong>diffusion model</strong> is defined by: <span class="math display">\[
+\begin{aligned}
+dX_t &amp;= u_t^\theta(X_t) \, dt + \sigma_t \, dW_t &amp;&amp; \text{(SDE dynamics)} \\
+X_0 &amp;\sim p_{\text{init}} &amp;&amp; \text{(random initialization)}
+\end{aligned}
+\]</span></p>
+<p>The drift <span class="math inline">\(u_t^\theta\)</span> is parameterized by a neural network, and <span class="math inline">\(p_{\text{init}}\)</span> is typically a simple distribution like <span class="math inline">\(\mathcal{N}(0, I)\)</span>. Compare this to flow matching, which has the same structure but with <span class="math inline">\(\sigma_t = 0\)</span> (no stochasticity).</p>
+</div>
+</div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="ode-vs-sde.png" class="img-fluid figure-img"></p>
 <figcaption>ODE (flow matching) follows a single deterministic path; SDE (diffusion) follows stochastic paths with the same general direction</figcaption>
 </figure>
 </div>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>No Flow Map for SDEs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Recall that for ODEs, we had a <strong>flow map</strong> <span class="math inline">\(\phi_t\)</span> that deterministically mapped initial points to their positions at time <span class="math inline">\(t\)</span>. SDEs don’t have this! Given a starting point <span class="math inline">\(X_0\)</span>, the value <span class="math inline">\(X_t\)</span> is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.</p>
+</div>
+</div>
 </section>
 <section id="what-is-brownian-motion" class="level2">
 <h2 class="anchored" data-anchor-id="what-is-brownian-motion">What is Brownian Motion?</h2>
-<p><strong>Brownian motion</strong> <span class="math inline">\(W_t\)</span> (also called a Wiener process) is the canonical model of continuous random motion. You can think of it as:</p>
-<ul>
-<li>At each infinitesimal time step <span class="math inline">\(dt\)</span>, we add a random displacement</li>
-<li>This displacement is Gaussian with mean 0 and variance <span class="math inline">\(dt\)</span></li>
-<li>Displacements at different times are independent</li>
-</ul>
+<p><strong>Brownian motion</strong> <span class="math inline">\(W_t\)</span> (also called a Wiener process) is the mathematical model of “pure randomness” evolving continuously in time.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Intuition
+<span class="screen-reader-only">Tip</span>Intuition: From Random Walk to Brownian Motion
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Imagine tracking a pollen grain in water under a microscope. It jiggles randomly due to molecular collisions — that’s Brownian motion. The <span class="math inline">\(dW_t\)</span> term captures this “pure randomness” mathematically.</p>
+<p>Start with something familiar: a <strong>random walk</strong>. At each step, flip a coin and move +1 or -1. After <span class="math inline">\(n\)</span> steps, your position is the sum of <span class="math inline">\(n\)</span> random <span class="math inline">\(\pm 1\)</span>’s.</p>
+<p>Now speed this up: take smaller steps more frequently. If you take <span class="math inline">\(n\)</span> steps of size <span class="math inline">\(1/\sqrt{n}\)</span> per unit time, something magical happens as <span class="math inline">\(n \to \infty\)</span> — you get Brownian motion. The <span class="math inline">\(\sqrt{n}\)</span> scaling is crucial: it ensures the variance grows linearly with time (not too fast, not too slow).</p>
+<p>The result is a continuous path that:</p>
+<ul>
+<li>Never stops jiggling (infinitely many tiny steps)</li>
+<li>Has no preferred direction (mean 0)</li>
+<li>Accumulates uncertainty over time (variance = time elapsed)</li>
+</ul>
 </div>
 </div>
-<p>The key property is that <span class="math inline">\(W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)\)</span>. So over a small time step:</p>
-<p><span class="math display">\[
+<p>Formally, Brownian motion has these properties:</p>
+<ul>
+<li><strong>Starts at zero</strong>: <span class="math inline">\(W_0 = 0\)</span></li>
+<li><strong>Independent increments</strong>: <span class="math inline">\(W_{t+h} - W_t\)</span> is independent of everything up to time <span class="math inline">\(t\)</span></li>
+<li><strong>Gaussian increments</strong>: <span class="math inline">\(W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)\)</span></li>
+<li><strong>Continuous paths</strong>: <span class="math inline">\(W_t\)</span> is continuous in <span class="math inline">\(t\)</span> (but nowhere differentiable!)</li>
+</ul>
+<p>Using these properties, we can simulate an SDE over a small time step. Starting from the SDE: <span class="math display">\[
+dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+\]</span></p>
+<p>Over a finite step of size <span class="math inline">\(h\)</span>:</p>
+<ul>
+<li><span class="math inline">\(dt\)</span> becomes the step size <span class="math inline">\(h\)</span></li>
+<li><span class="math inline">\(dW_t\)</span> becomes the increment <span class="math inline">\(W_{t+h} - W_t\)</span></li>
+</ul>
+<p>By the Gaussian increments property, <span class="math inline">\(W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)\)</span>. We can sample from this distribution using the <strong>reparameterization trick</strong>: <span class="math display">\[
+W_{t+h} - W_t = \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\]</span></p>
+<p>This works because scaling a <span class="math inline">\(\mathcal{N}(0, I)\)</span> sample by <span class="math inline">\(\sqrt{h}\)</span> gives variance <span class="math inline">\(h\)</span> (since <span class="math inline">\(\text{Var}(\sqrt{h} \cdot \epsilon) = h \cdot \text{Var}(\epsilon) = h\)</span>).</p>
+<p>Putting it together, we get the <strong>Euler-Maruyama</strong> discretization: <span class="math display">\[
 X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
 \]</span></p>
-<p>This is the <strong>Euler-Maruyama</strong> discretization — the simplest way to simulate an SDE numerically. Notice how the noise scales with <span class="math inline">\(\sqrt{h}\)</span>, not <span class="math inline">\(h\)</span> — this is a fundamental property of Brownian motion.</p>
+<p>This is the simplest way to simulate an SDE numerically. Notice how the noise scales with <span class="math inline">\(\sqrt{h}\)</span>, not <span class="math inline">\(h\)</span> — this is a fundamental property of Brownian motion.</p>
 </section>
 <section id="the-diffusion-coefficient" class="level2">
 <h2 class="anchored" data-anchor-id="the-diffusion-coefficient">The Diffusion Coefficient</h2>

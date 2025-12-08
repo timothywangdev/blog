@@ -10,7 +10,88 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.26</generator>
-<lastBuildDate>Mon, 01 Dec 2025 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 02 Dec 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/6-score-functions/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>We have constructed the training target for the flow matching model, now we will extend this reasoning to SDEs.</p>
+<p>Let us start with the SDE extension trick.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: SDE Extension Trick
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Define the conditional and marginal vector fields <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> and <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> as before. For diffusion coefficient <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20%5Cgeq%200">, we can construct an SDE that follows the marginal probability path <img src="https://latex.codecogs.com/png.latex?p_t(x)">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AdX_t%20&amp;=%20%5Bu_t%5E%7Btarget%7D(X_t)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t(X_t)%5D%20%5C,%20dt%20+%20%5Csigma_t%20%5C,%20dW_t%20%5C%5C%0AX_0%20&amp;%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20%5C%5C%0A%5Cimplies%20X_t%20&amp;%5Csim%20p_t%20%5Cquad%20%5Ctext%7Bfor%20all%20%7D%200%20%5Cleq%20t%20%5Cleq%201%0A%5Cend%7Baligned%7D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> is the <strong>marginal score function</strong> of <img src="https://latex.codecogs.com/png.latex?p_t">.</p>
+<p>The same identity holds if we replace the marginal probability <img src="https://latex.codecogs.com/png.latex?p_t(x)"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> with the conditional probability <img src="https://latex.codecogs.com/png.latex?p_t(x%20%7C%20z)"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)">:</p>
+</div>
+</div>
+<p>We can express the marginal score function via the <strong>conditional score function</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cnabla%20%5Clog%20p_t(x)%20&amp;=%20%5Cfrac%7B%5Cnabla%20p_t(x)%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(definition%20of%20%7D%20%5Cnabla%20%5Clog)%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cfrac%7B%5Cnabla%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(marginalization)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cfrac%7B%5Cint%20%5Cnabla%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(Leibniz%20rule%7D%5E*%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cint%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20&amp;&amp;%20%5Ctext%7B(see%20below)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%5E*"> Swapping <img src="https://latex.codecogs.com/png.latex?%5Cnabla"> and <img src="https://latex.codecogs.com/png.latex?%5Cint"> requires regularity conditions (the Leibniz integral rule). This holds when the integrand is smooth and its derivative is bounded by an integrable function — standard assumptions for “nice” probability densities.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Derivation of the last step
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The key is to rewrite <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20p_t(x%7Cz)"> using the chain rule. For gradients, the chain rule gives us: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_x%20%5Clog%20f(x)%20=%20%5Cfrac%7B1%7D%7Bf(x)%7D%20%5Cnabla_x%20f(x)%0A"> (This is the multivariate version of <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdx%7D%5Clog%20f%20=%20%5Cfrac%7B1%7D%7Bf%7D%5Cfrac%7Bdf%7D%7Bdx%7D">.)</p>
+<p>Rearranging: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20p_t(x%7Cz)%20=%20p_t(x%7Cz)%20%5Ccdot%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%0A"></p>
+<p>Substituting this into the integral: <img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cint%20%5Cnabla%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20=%20%5Cfrac%7B%5Cint%20p_t(x%7Cz)%20%5Ccdot%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Ccdot%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%0A"></p>
+<p>Since <img src="https://latex.codecogs.com/png.latex?p_t(x)"> doesn’t depend on <img src="https://latex.codecogs.com/png.latex?z">, we can move it inside the integral: <img src="https://latex.codecogs.com/png.latex?%0A=%20%5Cint%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Ccdot%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%0A"></p>
+</div>
+</div>
+</div>
+<p>Notice that <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20=%20p(z%20%7C%20x,%20t)"> by Bayes’ theorem, so this is an <strong>expectation over the posterior</strong>: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%20%7C%20x,%20t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%5D%0A"></p>
+<p>The conditional score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)"> is usually something we can calculate analytically (e.g., for Gaussian conditionals).</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Example: Gaussian Conditional Score Function
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For a Gaussian conditional <img src="https://latex.codecogs.com/png.latex?p_t(x%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(x;%20%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)"> where <img src="https://latex.codecogs.com/png.latex?x%20%5Cin%20%5Cmathbb%7BR%7D%5Ed">, the conditional score function is: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
+<p><strong>Derivation:</strong> The multivariate Gaussian PDF with mean <img src="https://latex.codecogs.com/png.latex?%5Cmu"> and covariance <img src="https://latex.codecogs.com/png.latex?%5CSigma"> is: <img src="https://latex.codecogs.com/png.latex?%0Ap(x)%20=%20%5Cfrac%7B1%7D%7B(2%5Cpi)%5E%7Bd/2%7D%20%7C%5CSigma%7C%5E%7B1/2%7D%7D%20%5Cexp%5Cleft(-%5Cfrac%7B1%7D%7B2%7D(x%20-%20%5Cmu)%5ET%20%5CSigma%5E%7B-1%7D%20(x%20-%20%5Cmu)%5Cright)%0A"></p>
+<p>For isotropic covariance <img src="https://latex.codecogs.com/png.latex?%5CSigma%20=%20%5Cbeta_t%5E2%20I_d">, we have <img src="https://latex.codecogs.com/png.latex?%7C%5CSigma%7C%5E%7B1/2%7D%20=%20%5Cbeta_t%5Ed"> and <img src="https://latex.codecogs.com/png.latex?%5CSigma%5E%7B-1%7D%20=%20%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7DI_d">, so: <img src="https://latex.codecogs.com/png.latex?%0Ap_t(x%20%7C%20z)%20=%20%5Cfrac%7B1%7D%7B(2%5Cpi%20%5Cbeta_t%5E2)%5E%7Bd/2%7D%7D%20%5Cexp%5Cleft(-%5Cfrac%7B%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%7D%7B2%5Cbeta_t%5E2%7D%5Cright)%0A"></p>
+<p>Taking the log: <img src="https://latex.codecogs.com/png.latex?%0A%5Clog%20p_t(x%20%7C%20z)%20=%20%5Cunderbrace%7B-%5Cfrac%7Bd%7D%7B2%7D%5Clog(2%5Cpi%20%5Cbeta_t%5E2)%7D_%7B%5Ctext%7Bconstant%20in%20%7D%20x%7D%20-%20%5Cfrac%7B%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%7D%7B2%5Cbeta_t%5E2%7D%0A"></p>
+<p>Taking the gradient with respect to <img src="https://latex.codecogs.com/png.latex?x%20%5Cin%20%5Cmathbb%7BR%7D%5Ed"> (the constant term vanishes): <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7B1%7D%7B2%5Cbeta_t%5E2%7D%20%5Cnabla_x%20%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%20=%20-%5Cfrac%7B1%7D%7B2%5Cbeta_t%5E2%7D%20%5Ccdot%202(x%20-%20%5Calpha_t%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
+<p>(We used <img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5C%7Cx%20-%20a%5C%7C%5E2%20=%202(x%20-%20a)">, which follows from <img src="https://latex.codecogs.com/png.latex?%5C%7Cx-a%5C%7C%5E2%20=%20(x-a)%5ET(x-a)">.)</p>
+</div>
+</div>
+
+
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>score-function</category>
+  <guid>https://layernorm.dev/posts/diffusion/6-score-functions/</guid>
+  <pubDate>Tue, 02 Dec 2025 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Diffusion &amp; Flow Matching Part 5: Diffusion Models and SDEs</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -70,7 +151,29 @@
 <p>Instead of asking “what is the derivative?”, we can ask: “what happens over a small time step <img src="https://latex.codecogs.com/png.latex?h">?”</p>
 <p>Starting from the ODE, we can write:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B1%7D%7Bh%7D(X_%7Bt+h%7D%20-%20X_t)%20=%20u_t(X_t)%20+%20R_t(h)%0A"></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?R_t(h)"> is an error term that goes to zero as <img src="https://latex.codecogs.com/png.latex?h%20%5Cto%200">. Rearranging:</p>
+<p>where <img src="https://latex.codecogs.com/png.latex?R_t(h)"> is an error term that goes to zero as <img src="https://latex.codecogs.com/png.latex?h%20%5Cto%200">.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Where does the error term come from?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The error term comes from the definition of the derivative itself. The derivative is defined as a limit: <img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20=%20%5Clim_%7Bh%20%5Cto%200%7D%20%5Cfrac%7BX_%7Bt+h%7D%20-%20X_t%7D%7Bh%7D%0A"></p>
+<p>When <img src="https://latex.codecogs.com/png.latex?h"> is small but not zero, the finite difference is only an <em>approximation</em> to the true derivative: <img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7BX_%7Bt+h%7D%20-%20X_t%7D%7Bh%7D%20=%20%5Cfrac%7BdX_t%7D%7Bdt%7D%20+%20R_t(h)%0A"></p>
+<p>Since the ODE says <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7BdX_t%7D%7Bdt%7D%20=%20u_t(X_t)">, we get the equation above. The key property is that <img src="https://latex.codecogs.com/png.latex?R_t(h)%20%5Cto%200"> as <img src="https://latex.codecogs.com/png.latex?h%20%5Cto%200">, which is exactly what the limit definition guarantees.</p>
+<p><strong>What about SDEs?</strong> When we add stochasticity, <img src="https://latex.codecogs.com/png.latex?X_t"> becomes a random variable, which means the error <img src="https://latex.codecogs.com/png.latex?R_t(h)"> is also random. We can no longer simply say “<img src="https://latex.codecogs.com/png.latex?R_t(h)%20%5Cto%200">” — we need to specify <em>in what sense</em> a random quantity vanishes.</p>
+<p>The rigorous statement uses <strong>mean square convergence</strong>: <img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbb%7BE%7D%5B%5C%7CR_t(h)%5C%7C%5E2%5D%5E%7B1/2%7D%20%5Cto%200%20%5Cquad%20%5Ctext%7Bas%20%7D%20h%20%5Cto%200%0A"></p>
+<p>This says the <em>typical size</em> of the error (measured by root-mean-square) goes to zero. Think of it as: “on average, the error becomes negligible.”</p>
+</div>
+</div>
+</div>
+<p>Rearranging:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20=%20X_t%20+%20h%20%5Ccdot%20u_t(X_t)%20+%20h%20%5Ccdot%20R_t(h)%0A"></p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -114,37 +217,80 @@
 </div>
 </div>
 <p>When <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200">, the SDE reduces to an ODE, and we recover flow matching.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Definition: Diffusion Model
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A <strong>diffusion model</strong> is defined by: <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AdX_t%20&amp;=%20u_t%5E%5Ctheta(X_t)%20%5C,%20dt%20+%20%5Csigma_t%20%5C,%20dW_t%20&amp;&amp;%20%5Ctext%7B(SDE%20dynamics)%7D%20%5C%5C%0AX_0%20&amp;%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20&amp;&amp;%20%5Ctext%7B(random%20initialization)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>The drift <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta"> is parameterized by a neural network, and <img src="https://latex.codecogs.com/png.latex?p_%7B%5Ctext%7Binit%7D%7D"> is typically a simple distribution like <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BN%7D(0,%20I)">. Compare this to flow matching, which has the same structure but with <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200"> (no stochasticity).</p>
+</div>
+</div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="https://layernorm.dev/posts/diffusion/5-diffusion-sde/ode-vs-sde.png" class="img-fluid figure-img"></p>
 <figcaption>ODE (flow matching) follows a single deterministic path; SDE (diffusion) follows stochastic paths with the same general direction</figcaption>
 </figure>
 </div>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>No Flow Map for SDEs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Recall that for ODEs, we had a <strong>flow map</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t"> that deterministically mapped initial points to their positions at time <img src="https://latex.codecogs.com/png.latex?t">. SDEs don’t have this! Given a starting point <img src="https://latex.codecogs.com/png.latex?X_0">, the value <img src="https://latex.codecogs.com/png.latex?X_t"> is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.</p>
+</div>
+</div>
 </section>
 <section id="what-is-brownian-motion" class="level2">
 <h2 class="anchored" data-anchor-id="what-is-brownian-motion">What is Brownian Motion?</h2>
-<p><strong>Brownian motion</strong> <img src="https://latex.codecogs.com/png.latex?W_t"> (also called a Wiener process) is the canonical model of continuous random motion. You can think of it as:</p>
-<ul>
-<li>At each infinitesimal time step <img src="https://latex.codecogs.com/png.latex?dt">, we add a random displacement</li>
-<li>This displacement is Gaussian with mean 0 and variance <img src="https://latex.codecogs.com/png.latex?dt"></li>
-<li>Displacements at different times are independent</li>
-</ul>
+<p><strong>Brownian motion</strong> <img src="https://latex.codecogs.com/png.latex?W_t"> (also called a Wiener process) is the mathematical model of “pure randomness” evolving continuously in time.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Intuition
+<span class="screen-reader-only">Tip</span>Intuition: From Random Walk to Brownian Motion
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Imagine tracking a pollen grain in water under a microscope. It jiggles randomly due to molecular collisions — that’s Brownian motion. The <img src="https://latex.codecogs.com/png.latex?dW_t"> term captures this “pure randomness” mathematically.</p>
+<p>Start with something familiar: a <strong>random walk</strong>. At each step, flip a coin and move +1 or -1. After <img src="https://latex.codecogs.com/png.latex?n"> steps, your position is the sum of <img src="https://latex.codecogs.com/png.latex?n"> random <img src="https://latex.codecogs.com/png.latex?%5Cpm%201">’s.</p>
+<p>Now speed this up: take smaller steps more frequently. If you take <img src="https://latex.codecogs.com/png.latex?n"> steps of size <img src="https://latex.codecogs.com/png.latex?1/%5Csqrt%7Bn%7D"> per unit time, something magical happens as <img src="https://latex.codecogs.com/png.latex?n%20%5Cto%20%5Cinfty"> — you get Brownian motion. The <img src="https://latex.codecogs.com/png.latex?%5Csqrt%7Bn%7D"> scaling is crucial: it ensures the variance grows linearly with time (not too fast, not too slow).</p>
+<p>The result is a continuous path that:</p>
+<ul>
+<li>Never stops jiggling (infinitely many tiny steps)</li>
+<li>Has no preferred direction (mean 0)</li>
+<li>Accumulates uncertainty over time (variance = time elapsed)</li>
+</ul>
 </div>
 </div>
-<p>The key property is that <img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t%20%5Csim%20%5Cmathcal%7BN%7D(0,%20h%20%5Ccdot%20I)">. So over a small time step:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20%5Capprox%20X_t%20+%20u_t(X_t)%20%5Ccdot%20h%20+%20%5Csigma_t%20%5Csqrt%7Bh%7D%20%5Ccdot%20%5Cepsilon,%20%5Cquad%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)%0A"></p>
-<p>This is the <strong>Euler-Maruyama</strong> discretization — the simplest way to simulate an SDE numerically. Notice how the noise scales with <img src="https://latex.codecogs.com/png.latex?%5Csqrt%7Bh%7D">, not <img src="https://latex.codecogs.com/png.latex?h"> — this is a fundamental property of Brownian motion.</p>
+<p>Formally, Brownian motion has these properties:</p>
+<ul>
+<li><strong>Starts at zero</strong>: <img src="https://latex.codecogs.com/png.latex?W_0%20=%200"></li>
+<li><strong>Independent increments</strong>: <img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t"> is independent of everything up to time <img src="https://latex.codecogs.com/png.latex?t"></li>
+<li><strong>Gaussian increments</strong>: <img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t%20%5Csim%20%5Cmathcal%7BN%7D(0,%20h%20%5Ccdot%20I)"></li>
+<li><strong>Continuous paths</strong>: <img src="https://latex.codecogs.com/png.latex?W_t"> is continuous in <img src="https://latex.codecogs.com/png.latex?t"> (but nowhere differentiable!)</li>
+</ul>
+<p>Using these properties, we can simulate an SDE over a small time step. Starting from the SDE: <img src="https://latex.codecogs.com/png.latex?%0AdX_t%20=%20u_t(X_t)%20%5C,%20dt%20+%20%5Csigma_t%20%5C,%20dW_t%0A"></p>
+<p>Over a finite step of size <img src="https://latex.codecogs.com/png.latex?h">:</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?dt"> becomes the step size <img src="https://latex.codecogs.com/png.latex?h"></li>
+<li><img src="https://latex.codecogs.com/png.latex?dW_t"> becomes the increment <img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t"></li>
+</ul>
+<p>By the Gaussian increments property, <img src="https://latex.codecogs.com/png.latex?W_%7Bt+h%7D%20-%20W_t%20%5Csim%20%5Cmathcal%7BN%7D(0,%20h%20%5Ccdot%20I)">. We can sample from this distribution using the <strong>reparameterization trick</strong>: <img src="https://latex.codecogs.com/png.latex?%0AW_%7Bt+h%7D%20-%20W_t%20=%20%5Csqrt%7Bh%7D%20%5Ccdot%20%5Cepsilon,%20%5Cquad%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)%0A"></p>
+<p>This works because scaling a <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BN%7D(0,%20I)"> sample by <img src="https://latex.codecogs.com/png.latex?%5Csqrt%7Bh%7D"> gives variance <img src="https://latex.codecogs.com/png.latex?h"> (since <img src="https://latex.codecogs.com/png.latex?%5Ctext%7BVar%7D(%5Csqrt%7Bh%7D%20%5Ccdot%20%5Cepsilon)%20=%20h%20%5Ccdot%20%5Ctext%7BVar%7D(%5Cepsilon)%20=%20h">).</p>
+<p>Putting it together, we get the <strong>Euler-Maruyama</strong> discretization: <img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20%5Capprox%20X_t%20+%20u_t(X_t)%20%5Ccdot%20h%20+%20%5Csigma_t%20%5Csqrt%7Bh%7D%20%5Ccdot%20%5Cepsilon,%20%5Cquad%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)%0A"></p>
+<p>This is the simplest way to simulate an SDE numerically. Notice how the noise scales with <img src="https://latex.codecogs.com/png.latex?%5Csqrt%7Bh%7D">, not <img src="https://latex.codecogs.com/png.latex?h"> — this is a fundamental property of Brownian motion.</p>
 </section>
 <section id="the-diffusion-coefficient" class="level2">
 <h2 class="anchored" data-anchor-id="the-diffusion-coefficient">The Diffusion Coefficient</h2>

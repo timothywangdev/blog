@@ -6,8 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2025-12-02">
 
-<title>AI Models Blog – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,31 +25,29 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<link href="./favicon.png" rel="icon" type="image/png">
-<script src="site_libs/quarto-listing/list.min.js"></script>
-<script src="site_libs/quarto-listing/quarto-listing.js"></script>
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-5fa770aa67c23ef3364642465cd873db.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
-<link href="site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../favicon.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-5fa770aa67c23ef3364642465cd873db.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-ac1a48248070c8bfbae4244efd7728e4.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -75,35 +75,6 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
-
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
 <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
 
 <script type="text/javascript">
@@ -144,8 +115,8 @@ window.Quarto = {
 };
 </script>
 
-<link rel="stylesheet" href="styles.css">
-<link rel="alternate" type="application/rss+xml" title="LayerNorm" href="index.xml" data-external="1"></head>
+<link rel="stylesheet" href="../../../styles.css">
+</head>
 
 <body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
     const toggleBodyColorMode = (bsSheetEl) => {
@@ -316,7 +287,7 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../../index.html">
     <span class="navbar-title">LayerNorm</span>
     </a>
   </div>
@@ -327,7 +298,7 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./about.html"> 
+    <a class="nav-link" href="../../../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item compact">
@@ -336,7 +307,7 @@ window.Quarto = {
 <span class="menu-text"></span></a>
   </li>  
   <li class="nav-item compact">
-    <a class="nav-link" href="./index.xml"> <i class="bi bi-rss" role="img">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
 </i> 
 <span class="menu-text"></span></a>
   </li>  
@@ -352,23 +323,41 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(7)</span></div><div class="category" data-category="ZGlmZnVzaW9u">diffusion <span class="quarto-category-count">(6)</span></div><div class="category" data-category="Zmxvdy1tYXRjaGluZw==">flow-matching <span class="quarto-category-count">(6)</span></div><div class="category" data-category="Z2VuZXJhdGl2ZS1tb2RlbHM=">generative-models <span class="quarto-category-count">(6)</span></div><div class="category" data-category="aW50cm9kdWN0aW9u">introduction <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bmV3cw==">news <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2NvcmUtZnVuY3Rpb24=">score-function <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2Rl">sde <span class="quarto-category-count">(1)</span></div></div></div>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">AI Models Blog</h1>
-</div>
+<h1 class="title">Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">diffusion</div>
+    <div class="quarto-category">flow-matching</div>
+    <div class="quarto-category">generative-models</div>
+    <div class="quarto-category">score-function</div>
+  </div>
+  </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
     
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 2, 2025</p>
+    </div>
+  </div>
   
     
   </div>
@@ -378,255 +367,103 @@ window.Quarto = {
 </header>
 
 
-
-
-
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2NvcmUtZnVuY3Rpb24=" data-listing-date-sort="1764633600000" data-listing-file-modified-sort="1765171233346" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="521">
-<div class="thumbnail"><a href="./posts/diffusion/6-score-functions/index.html" class="no-external">
-
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/6-score-functions/index.html" class="no-external">Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('c2NvcmUtZnVuY3Rpb24='); return false;">score-function</div>
-
+<p>We have constructed the training target for the flow matching model, now we will extend this reasoning to SDEs.</p>
+<p>Let us start with the SDE extension trick.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<div class="delink listing-description"><a href="./posts/diffusion/6-score-functions/index.html" class="no-external">
-We have constructed the training target for the flow matching model, now we will extend this reasoning to SDEs.
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/6-score-functions/index.html" class="no-external">
-<div class="listing-date">
-Dec 2, 2025
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: SDE Extension Trick
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2Rl" data-listing-date-sort="1764547200000" data-listing-file-modified-sort="1765171233344" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1591">
-<div class="thumbnail"><a href="./posts/diffusion/5-diffusion-sde/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/5-diffusion-sde/ode-vs-sde.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/5-diffusion-sde/index.html" class="no-external">Diffusion &amp; Flow Matching Part 5: Diffusion Models and SDEs</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('c2Rl'); return false;">sde</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion/5-diffusion-sde/index.html" class="no-external">
-In Parts 2-4, we developed flow matching — a framework where a neural network learns a vector field <span class="math inline">\(u_t^\theta(x)\)</span> that transports noise to data via an ODE:
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/5-diffusion-sde/index.html" class="no-external">
-<div class="listing-date">
-Dec 1, 2025
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
+<div class="callout-body-container callout-body">
+<p>Define the conditional and marginal vector fields <span class="math inline">\(u_t^{target}(x | z)\)</span> and <span class="math inline">\(u_t^{target}(x)\)</span> as before. For diffusion coefficient <span class="math inline">\(\sigma_t \geq 0\)</span>, we can construct an SDE that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+dX_t &amp;= [u_t^{target}(X_t) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t)] \, dt + \sigma_t \, dW_t \\
+X_0 &amp;\sim p_{\text{init}} \\
+\implies X_t &amp;\sim p_t \quad \text{for all } 0 \leq t \leq 1
+\end{aligned}
+\]</span></p>
+<p>where <span class="math inline">\(\nabla \log p_t(x)\)</span> is the <strong>marginal score function</strong> of <span class="math inline">\(p_t\)</span>.</p>
+<p>The same identity holds if we replace the marginal probability <span class="math inline">\(p_t(x)\)</span> and vector field <span class="math inline">\(u_t^{target}(x)\)</span> with the conditional probability <span class="math inline">\(p_t(x | z)\)</span> and vector field <span class="math inline">\(u_t^{target}(x | z)\)</span>:</p>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764460800000" data-listing-file-modified-sort="1765171233344" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1105">
-<div class="thumbnail"><a href="./posts/diffusion/4-flow-matching-loss/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/4-flow-matching-loss/divergence-negative.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/4-flow-matching-loss/index.html" class="no-external">Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
+<p>We can express the marginal score function via the <strong>conditional score function</strong> <span class="math inline">\(\nabla \log p_t(x | z)\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\nabla \log p_t(x) &amp;= \frac{\nabla p_t(x)}{p_t(x)} &amp;&amp; \text{(definition of } \nabla \log) \\[0.5em]
+&amp; = \frac{\nabla \int p_t(x | z) p_{data}(z) dz}{p_t(x)} &amp;&amp; \text{(marginalization)} \\[0.5em]
+&amp; = \frac{\int \nabla p_t(x | z) p_{data}(z) dz}{p_t(x)} &amp;&amp; \text{(Leibniz rule}^* \text{)} \\[0.5em]
+&amp; = \int \nabla \log p_t(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz &amp;&amp; \text{(see below)}
+\end{aligned}
+\]</span></p>
+<p><span class="math inline">\(^*\)</span> Swapping <span class="math inline">\(\nabla\)</span> and <span class="math inline">\(\int\)</span> requires regularity conditions (the Leibniz integral rule). This holds when the integrand is smooth and its derivative is bounded by an integrable function — standard assumptions for “nice” probability densities.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<div class="delink listing-description"><a href="./posts/diffusion/4-flow-matching-loss/index.html" class="no-external">
-In the previous post, we constructed conditional probability paths and conditional vector fields. But there’s a fundamental problem: these are <em>conditional</em> on knowing the…<span class="math inline"></span><span class="math inline"></span>
-</a></div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Derivation of the last step
 </div>
-<div class="metadata">
-<a href="./posts/diffusion/4-flow-matching-loss/index.html" class="no-external">
-<div class="listing-date">
-Nov 30, 2025
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764374400000" data-listing-file-modified-sort="1765171233340" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1072">
-<div class="thumbnail"><a href="./posts/diffusion/3-probability-paths/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/3-probability-paths/conditional-vs-marginal.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/3-probability-paths/index.html" class="no-external">Diffusion &amp; Flow Matching Part 3: Probability Paths</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion/3-probability-paths/index.html" class="no-external">
-In the previous post, we learned that vector fields generate flows. Now we need to design a flow that transforms <em>probability distributions</em> — specifically, one that turns…
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/3-probability-paths/index.html" class="no-external">
-<div class="listing-date">
-Nov 29, 2025
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="4" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764288000000" data-listing-file-modified-sort="1765171233332" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="561">
-<div class="thumbnail"><a href="./posts/diffusion/2-flows/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/2-flows/single-trajectory.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/2-flows/index.html" class="no-external">Diffusion &amp; Flow Matching Part 2: Understanding Flows</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion/2-flows/index.html" class="no-external">
-In flow matching, we learn a vector field that transports samples from noise to data. But what exactly <em>is</em> a vector field? And what does it mean to “follow” one? This post…
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/2-flows/index.html" class="no-external">
-<div class="listing-date">
-Nov 28, 2025
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="5" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1765171233332" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="717">
-<div class="thumbnail"><a href="./posts/diffusion/1-intro/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/1-intro/diffusion-vs-flow.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/1-intro/index.html" class="no-external">Diffusion &amp; Flow Matching Part 1: Introduction</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion/1-intro/index.html" class="no-external">
-This multi-part series explores the theory behind modern generative models. Each post builds on the previous one:
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/1-intro/index.html" class="no-external">
-<div class="listing-date">
-Nov 27, 2025
-</div>
-<div class="listing-author">
-Timothy Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="6" data-categories="bmV3cyUyQ2ludHJvZHVjdGlvbg==" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1765171233355" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="90">
-<div class="thumbnail"><a href="./posts/welcome/index.html" class="no-external">
-
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/welcome/index.html" class="no-external">Welcome to My AI Blog</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('bmV3cw=='); return false;">news</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('aW50cm9kdWN0aW9u'); return false;">introduction</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/welcome/index.html" class="no-external">
-Welcome to my blog! This is where I’ll be sharing my thoughts and explorations on AI models.
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/welcome/index.html" class="no-external">
-<div class="listing-date">
-Nov 27, 2025
-</div>
-<div class="listing-author">
-Timothy Wang
-</div>
-</a>
+<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The key is to rewrite <span class="math inline">\(\nabla p_t(x|z)\)</span> using the chain rule. For gradients, the chain rule gives us: <span class="math display">\[
+\nabla_x \log f(x) = \frac{1}{f(x)} \nabla_x f(x)
+\]</span> (This is the multivariate version of <span class="math inline">\(\frac{d}{dx}\log f = \frac{1}{f}\frac{df}{dx}\)</span>.)</p>
+<p>Rearranging: <span class="math display">\[
+\nabla p_t(x|z) = p_t(x|z) \cdot \nabla \log p_t(x|z)
+\]</span></p>
+<p>Substituting this into the integral: <span class="math display">\[
+\frac{\int \nabla p_t(x | z) p_{data}(z) dz}{p_t(x)} = \frac{\int p_t(x|z) \cdot \nabla \log p_t(x | z) \cdot p_{data}(z) dz}{p_t(x)}
+\]</span></p>
+<p>Since <span class="math inline">\(p_t(x)\)</span> doesn’t depend on <span class="math inline">\(z\)</span>, we can move it inside the integral: <span class="math display">\[
+= \int \nabla \log p_t(x | z) \cdot \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
+\]</span></p>
 </div>
 </div>
 </div>
-<div class="listing-no-matching d-none">No matching items</div>
-</div></main> <!-- /main -->
+<p>Notice that <span class="math inline">\(\frac{p_t(x | z) p_{data}(z)}{p_t(x)} = p(z | x, t)\)</span> by Bayes’ theorem, so this is an <strong>expectation over the posterior</strong>: <span class="math display">\[
+\nabla \log p_t(x) = \mathbb{E}_{z \sim p(z | x, t)}[\nabla \log p_t(x | z)]
+\]</span></p>
+<p>The conditional score function <span class="math inline">\(\nabla \log p_t(x | z)\)</span> is usually something we can calculate analytically (e.g., for Gaussian conditionals).</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Example: Gaussian Conditional Score Function
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>For a Gaussian conditional <span class="math inline">\(p_t(x | z) = \mathcal{N}(x; \alpha_t z, \beta_t^2 I_d)\)</span> where <span class="math inline">\(x \in \mathbb{R}^d\)</span>, the conditional score function is: <span class="math display">\[
+\nabla_x \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
+\]</span></p>
+<p><strong>Derivation:</strong> The multivariate Gaussian PDF with mean <span class="math inline">\(\mu\)</span> and covariance <span class="math inline">\(\Sigma\)</span> is: <span class="math display">\[
+p(x) = \frac{1}{(2\pi)^{d/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x - \mu)^T \Sigma^{-1} (x - \mu)\right)
+\]</span></p>
+<p>For isotropic covariance <span class="math inline">\(\Sigma = \beta_t^2 I_d\)</span>, we have <span class="math inline">\(|\Sigma|^{1/2} = \beta_t^d\)</span> and <span class="math inline">\(\Sigma^{-1} = \frac{1}{\beta_t^2}I_d\)</span>, so: <span class="math display">\[
+p_t(x | z) = \frac{1}{(2\pi \beta_t^2)^{d/2}} \exp\left(-\frac{\|x - \alpha_t z\|^2}{2\beta_t^2}\right)
+\]</span></p>
+<p>Taking the log: <span class="math display">\[
+\log p_t(x | z) = \underbrace{-\frac{d}{2}\log(2\pi \beta_t^2)}_{\text{constant in } x} - \frac{\|x - \alpha_t z\|^2}{2\beta_t^2}
+\]</span></p>
+<p>Taking the gradient with respect to <span class="math inline">\(x \in \mathbb{R}^d\)</span> (the constant term vanishes): <span class="math display">\[
+\nabla_x \log p_t(x | z) = -\frac{1}{2\beta_t^2} \nabla_x \|x - \alpha_t z\|^2 = -\frac{1}{2\beta_t^2} \cdot 2(x - \alpha_t z) = -\frac{x - \alpha_t z}{\beta_t^2}
+\]</span></p>
+<p>(We used <span class="math inline">\(\nabla_x \|x - a\|^2 = 2(x - a)\)</span>, which follows from <span class="math inline">\(\|x-a\|^2 = (x-a)^T(x-a)\)</span>.)</p>
+</div>
+</div>
+
+
+
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
   window.document.addEventListener("DOMContentLoaded", function (event) {
     // Ensure there is a toggle, if there isn't float one in the top right
