@@ -56,7 +56,33 @@ $$
 \frac{1}{h}(X_{t+h} - X_t) = u_t(X_t) + R_t(h)
 $$
 
-where $R_t(h)$ is an error term that goes to zero as $h \to 0$. Rearranging:
+where $R_t(h)$ is an error term that goes to zero as $h \to 0$.
+
+::: {.callout-note collapse="true"}
+## Where does the error term come from?
+The error term comes from the definition of the derivative itself. The derivative is defined as a limit:
+$$
+\frac{dX_t}{dt} = \lim_{h \to 0} \frac{X_{t+h} - X_t}{h}
+$$
+
+When $h$ is small but not zero, the finite difference is only an *approximation* to the true derivative:
+$$
+\frac{X_{t+h} - X_t}{h} = \frac{dX_t}{dt} + R_t(h)
+$$
+
+Since the ODE says $\frac{dX_t}{dt} = u_t(X_t)$, we get the equation above. The key property is that $R_t(h) \to 0$ as $h \to 0$, which is exactly what the limit definition guarantees.
+
+**What about SDEs?** When we add stochasticity, $X_t$ becomes a random variable, which means the error $R_t(h)$ is also random. We can no longer simply say "$R_t(h) \to 0$" — we need to specify *in what sense* a random quantity vanishes.
+
+The rigorous statement uses **mean square convergence**:
+$$
+\mathbb{E}[\|R_t(h)\|^2]^{1/2} \to 0 \quad \text{as } h \to 0
+$$
+
+This says the *typical size* of the error (measured by root-mean-square) goes to zero. Think of it as: "on average, the error becomes negligible."
+:::
+
+Rearranging:
 
 $$
 X_{t+h} = X_t + h \cdot u_t(X_t) + h \cdot R_t(h)
@@ -97,28 +123,73 @@ Notice that we never took a derivative of the random process! The SDE notation $
 
 When $\sigma_t = 0$, the SDE reduces to an ODE, and we recover flow matching.
 
+::: {.callout-note appearance="simple"}
+## Definition: Diffusion Model
+A **diffusion model** is defined by:
+$$
+\begin{aligned}
+dX_t &= u_t^\theta(X_t) \, dt + \sigma_t \, dW_t && \text{(SDE dynamics)} \\
+X_0 &\sim p_{\text{init}} && \text{(random initialization)}
+\end{aligned}
+$$
+
+The drift $u_t^\theta$ is parameterized by a neural network, and $p_{\text{init}}$ is typically a simple distribution like $\mathcal{N}(0, I)$. Compare this to flow matching, which has the same structure but with $\sigma_t = 0$ (no stochasticity).
+:::
+
 ![ODE (flow matching) follows a single deterministic path; SDE (diffusion) follows stochastic paths with the same general direction](ode-vs-sde.png)
+
+::: {.callout-warning appearance="simple"}
+## No Flow Map for SDEs
+Recall that for ODEs, we had a **flow map** $\phi_t$ that deterministically mapped initial points to their positions at time $t$. SDEs don't have this! Given a starting point $X_0$, the value $X_t$ is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.
+:::
 
 ## What is Brownian Motion?
 
-**Brownian motion** $W_t$ (also called a Wiener process) is the canonical model of continuous random motion. You can think of it as:
-
-- At each infinitesimal time step $dt$, we add a random displacement
-- This displacement is Gaussian with mean 0 and variance $dt$
-- Displacements at different times are independent
+**Brownian motion** $W_t$ (also called a Wiener process) is the mathematical model of "pure randomness" evolving continuously in time.
 
 ::: {.callout-tip appearance="simple"}
-## Intuition
-Imagine tracking a pollen grain in water under a microscope. It jiggles randomly due to molecular collisions — that's Brownian motion. The $dW_t$ term captures this "pure randomness" mathematically.
+## Intuition: From Random Walk to Brownian Motion
+Start with something familiar: a **random walk**. At each step, flip a coin and move +1 or -1. After $n$ steps, your position is the sum of $n$ random $\pm 1$'s.
+
+Now speed this up: take smaller steps more frequently. If you take $n$ steps of size $1/\sqrt{n}$ per unit time, something magical happens as $n \to \infty$ — you get Brownian motion. The $\sqrt{n}$ scaling is crucial: it ensures the variance grows linearly with time (not too fast, not too slow).
+
+The result is a continuous path that:
+
+- Never stops jiggling (infinitely many tiny steps)
+- Has no preferred direction (mean 0)
+- Accumulates uncertainty over time (variance = time elapsed)
 :::
 
-The key property is that $W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)$. So over a small time step:
+Formally, Brownian motion has these properties:
 
+- **Starts at zero**: $W_0 = 0$
+- **Independent increments**: $W_{t+h} - W_t$ is independent of everything up to time $t$
+- **Gaussian increments**: $W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)$
+- **Continuous paths**: $W_t$ is continuous in $t$ (but nowhere differentiable!)
+
+Using these properties, we can simulate an SDE over a small time step. Starting from the SDE:
+$$
+dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+$$
+
+Over a finite step of size $h$:
+
+- $dt$ becomes the step size $h$
+- $dW_t$ becomes the increment $W_{t+h} - W_t$
+
+By the Gaussian increments property, $W_{t+h} - W_t \sim \mathcal{N}(0, h \cdot I)$. We can sample from this distribution using the **reparameterization trick**:
+$$
+W_{t+h} - W_t = \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+$$
+
+This works because scaling a $\mathcal{N}(0, I)$ sample by $\sqrt{h}$ gives variance $h$ (since $\text{Var}(\sqrt{h} \cdot \epsilon) = h \cdot \text{Var}(\epsilon) = h$).
+
+Putting it together, we get the **Euler-Maruyama** discretization:
 $$
 X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
 $$
 
-This is the **Euler-Maruyama** discretization — the simplest way to simulate an SDE numerically. Notice how the noise scales with $\sqrt{h}$, not $h$ — this is a fundamental property of Brownian motion.
+This is the simplest way to simulate an SDE numerically. Notice how the noise scales with $\sqrt{h}$, not $h$ — this is a fundamental property of Brownian motion.
 
 ## The Diffusion Coefficient
 
