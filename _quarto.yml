@@ -5,6 +5,7 @@ website:
   title: "LayerNorm"
   description: "Exploring state-of-the-art AI models"
   site-url: https://layernorm.dev
+  favicon: favicon.png
   google-analytics: "G-1RBJ1WWR89"
   navbar:
     right:
