@@ -130,7 +130,7 @@ We've defined a probability path — but remember from [Part 2](../2-flows/), fl
 
 This is the key question: if we can find this vector field, it becomes our **training target**. We'll train a neural network to approximate it.
 
-Let us construct the conditional vector field:
+Let us construct the conditional vector field (where $\dot{\alpha}_t = \frac{\partial \alpha_t}{\partial t}$ and $\dot{\beta}_t = \frac{\partial \beta_t}{\partial t}$ denote time derivatives):
 
 $$
 \begin{aligned}
