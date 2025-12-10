@@ -1,1 +1,14 @@
 /* Custom styles for AI Models Blog */
+
+/* Allow horizontal scrolling for wide equations */
+.math-display,
+mjx-container[jax="CHTML"][display="true"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+/* Add some padding so scrollbar doesn't overlap content */
+mjx-container[jax="CHTML"][display="true"] {
+  padding: 0.5em 0;
+}

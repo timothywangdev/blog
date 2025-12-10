@@ -25,7 +25,7 @@ This multi-part series explores the theory behind modern generative models. Each
 | **Part 3** | [Probability Paths](../3-probability-paths/) | How we define paths from noise to data |
 | **Part 4** | [The Flow Matching Loss](../4-flow-matching-loss/) | The marginalization trick that makes training work |
 | **Part 5** | [Diffusion Models & SDEs](../5-diffusion-sde/) | Stochastic differential equations and Brownian motion |
-| **Part 6** | [Score Matching](../6-score-matching/) | The score function, probability flow ODE, and the connection |
+| **Part 6** | [Score Functions](../6-score-functions/) | Conditional and marginal scores, the training trick |
 
 ## What Are We Building?
 
@@ -83,7 +83,7 @@ In the following posts, we'll develop the mathematical machinery to understand t
 - [**Part 3**](../3-probability-paths/): We'll see how to construct paths from noise to data
 - [**Part 4**](../4-flow-matching-loss/): We'll discover the clever trick that makes training tractable
 - [**Part 5**](../5-diffusion-sde/): We'll add stochasticity to get SDEs and understand Brownian motion
-- [**Part 6**](../6-score-matching/): We'll learn score matching and connect diffusion to flow matching
+- [**Part 6**](../6-score-functions/): We'll learn about score functions and the training trick
 
 By the end, you'll understand not just *what* these models do, but *why* they work.
 

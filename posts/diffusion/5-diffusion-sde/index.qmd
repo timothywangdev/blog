@@ -242,7 +242,7 @@ The key insight: **we derive SDEs through infinitesimal updates, not derivatives
 
 We've seen how to add stochasticity to get an SDE, but we haven't yet addressed the core challenge: **how do we train a neural network to reverse the diffusion process?**
 
-In [Part 6](../6-score-matching/), we'll discover:
+In [Part 6](../6-score-functions/), we'll discover:
 
 - The **score function** $\nabla_x \log p_t(x)$ and why it's central to diffusion models
 - **Denoising score matching** — the clever trick that makes training tractable
