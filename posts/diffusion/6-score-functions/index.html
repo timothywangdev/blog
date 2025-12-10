@@ -8,6 +8,7 @@
 
 <meta name="author" content="Hujie Wang">
 <meta name="dcterms.date" content="2025-12-02">
+<meta name="description" content="How score functions connect ODEs to SDEs, and the elegant training trick that avoids intractable integrals">
 
 <title>Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions – LayerNorm</title>
 <style>
@@ -323,8 +324,22 @@ window.Quarto = {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-        
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#from-marginal-to-conditional-scores" id="toc-from-marginal-to-conditional-scores" class="nav-link active" data-scroll-target="#from-marginal-to-conditional-scores">From Marginal to Conditional Scores</a></li>
+  <li><a href="#proving-the-sde-extension-trick" id="toc-proving-the-sde-extension-trick" class="nav-link" data-scroll-target="#proving-the-sde-extension-trick">Proving the SDE Extension Trick</a>
+  <ul class="collapse">
+  <li><a href="#intuition-the-drunken-marching-band" id="toc-intuition-the-drunken-marching-band" class="nav-link" data-scroll-target="#intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#how-training-actually-works" id="toc-how-training-actually-works" class="nav-link" data-scroll-target="#how-training-actually-works">How Training Actually Works</a></li>
+  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -338,9 +353,16 @@ window.Quarto = {
     <div class="quarto-category">flow-matching</div>
     <div class="quarto-category">generative-models</div>
     <div class="quarto-category">score-function</div>
+    <div class="quarto-category">score-matching</div>
+    <div class="quarto-category">fokker-planck</div>
   </div>
   </div>
 
+<div>
+  <div class="description">
+    How score functions connect ODEs to SDEs, and the elegant training trick that avoids intractable integrals
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -367,8 +389,33 @@ window.Quarto = {
 </header>
 
 
-<p>We have constructed the training target for the flow matching model, now we will extend this reasoning to SDEs.</p>
-<p>Let us start with the SDE extension trick.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>The <strong>score function</strong> <span class="math inline">\(\nabla \log p_t(x)\)</span> tells us which direction increases probability — it’s the key to extending flow matching to SDEs</li>
+<li>We can’t compute the marginal score directly, but we can express it as an expectation of <strong>conditional scores</strong> (which we <em>can</em> compute analytically)</li>
+<li>The magic of training: least-squares regression automatically computes the right expectation — no intractable integrals required!</li>
+<li><strong>Real-world impact</strong>: This is how Stable Diffusion, DALL-E, and Sora learn to denoise images</li>
+</ul>
+</div>
+</div>
+<p>In the previous post, we constructed the training target for flow matching models. Now we face a new challenge: <strong>how do we extend this to SDEs?</strong></p>
+<p>The answer involves a beautiful mathematical object called the <strong>score function</strong> — the gradient of log probability. This post shows how score functions connect ODEs to SDEs, and reveals the elegant trick that makes training tractable.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="score-function-vector-field.png" class="img-fluid figure-img"></p>
+<figcaption>The score function <span class="math inline">\(\nabla \log p(x)\)</span> is a vector field pointing toward high-probability regions. Arrows are longer where the gradient is steeper.</figcaption>
+</figure>
+</div>
+<p>Let’s start with the key theorem that bridges these two worlds.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -379,7 +426,8 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Define the conditional and marginal vector fields <span class="math inline">\(u_t^{target}(x | z)\)</span> and <span class="math inline">\(u_t^{target}(x)\)</span> as before. For diffusion coefficient <span class="math inline">\(\sigma_t \geq 0\)</span>, we can construct an SDE that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>:</p>
+<p>Let <span class="math inline">\(u_t^{target}(x)\)</span> be the flow matching vector field that generates the probability path <span class="math inline">\(p_t\)</span> via the ODE (i.e., the ODE <span class="math inline">\(dX_t = u_t^{target}(X_t)dt\)</span> with <span class="math inline">\(X_0 \sim p_{init}\)</span> satisfies <span class="math inline">\(X_t \sim p_t\)</span>).</p>
+<p>For any diffusion coefficient <span class="math inline">\(\sigma_t \geq 0\)</span>, we can construct an <strong>SDE</strong> that follows the same probability path <span class="math inline">\(p_t\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
 dX_t &amp;= [u_t^{target}(X_t) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t)] \, dt + \sigma_t \, dW_t \\
@@ -388,21 +436,43 @@ X_0 &amp;\sim p_{\text{init}} \\
 \end{aligned}
 \]</span></p>
 <p>where <span class="math inline">\(\nabla \log p_t(x)\)</span> is the <strong>marginal score function</strong> of <span class="math inline">\(p_t\)</span>.</p>
-<p>The same identity holds if we replace the marginal probability <span class="math inline">\(p_t(x)\)</span> and vector field <span class="math inline">\(u_t^{target}(x)\)</span> with the conditional probability <span class="math inline">\(p_t(x | z)\)</span> and vector field <span class="math inline">\(u_t^{target}(x | z)\)</span>:</p>
+<p>The same identity holds if we replace the marginal probability <span class="math inline">\(p_t(x)\)</span> and vector field <span class="math inline">\(u_t^{target}(x)\)</span> with the conditional probability <span class="math inline">\(p_t(x | z)\)</span> and vector field <span class="math inline">\(u_t^{target}(x | z)\)</span>.</p>
 </div>
 </div>
-<p>We can express the marginal score function via the <strong>conditional score function</strong> <span class="math inline">\(\nabla \log p_t(x | z)\)</span>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="ode-vs-sde-trajectories.png" class="img-fluid figure-img"></p>
+<figcaption>ODE trajectories are smooth and deterministic. SDE trajectories are noisy but — with the score correction — follow the same probability distribution.</figcaption>
+</figure>
+</div>
+<section id="from-marginal-to-conditional-scores" class="level2">
+<h2 class="anchored" data-anchor-id="from-marginal-to-conditional-scores">From Marginal to Conditional Scores</h2>
+<p>The theorem above requires the <strong>marginal score</strong> <span class="math inline">\(\nabla \log p_t(x)\)</span>. But there’s a problem: computing this directly requires integrating over all possible data points <span class="math inline">\(z\)</span> — computationally intractable!</p>
+<p>The solution is to express the marginal score as an expectation of <strong>conditional scores</strong> <span class="math inline">\(\nabla \log p_t(x|z)\)</span>, which we <em>can</em> compute analytically.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="marginal-vs-conditional.png" class="img-fluid figure-img"></p>
+<figcaption>The marginal score at <span class="math inline">\(x\)</span> is a weighted average of conditional scores from different data points <span class="math inline">\(z_1, z_2, z_3\)</span>.</figcaption>
+</figure>
+</div>
 <p><span class="math display">\[
 \begin{aligned}
-\nabla \log p_t(x) &amp;= \frac{\nabla p_t(x)}{p_t(x)} &amp;&amp; \text{(definition of } \nabla \log) \\[0.5em]
+\nabla \log p_t(x) &amp;= \frac{\nabla p_t(x)}{p_t(x)} &amp;&amp; \text{(chain rule)} \\[0.5em]
 &amp; = \frac{\nabla \int p_t(x | z) p_{data}(z) dz}{p_t(x)} &amp;&amp; \text{(marginalization)} \\[0.5em]
 &amp; = \frac{\int \nabla p_t(x | z) p_{data}(z) dz}{p_t(x)} &amp;&amp; \text{(Leibniz rule}^* \text{)} \\[0.5em]
 &amp; = \int \nabla \log p_t(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz &amp;&amp; \text{(see below)}
 \end{aligned}
 \]</span></p>
+<p><strong>Step-by-step reasoning:</strong></p>
+<ol type="1">
+<li><strong>Chain rule</strong>: <span class="math inline">\(\nabla \log f = \frac{\nabla f}{f}\)</span></li>
+<li><strong>Marginalization</strong>: <span class="math inline">\(p_t(x) = \int p_t(x|z) p_{data}(z) dz\)</span> (law of total probability)</li>
+<li><strong>Leibniz rule</strong><span class="math inline">\(^*\)</span>: swap <span class="math inline">\(\nabla_x\)</span> and <span class="math inline">\(\int_z\)</span></li>
+<li><strong>Rewrite</strong> using <span class="math inline">\(\nabla p = p \nabla \log p\)</span> (derived below)</li>
+</ol>
 <p><span class="math inline">\(^*\)</span> Swapping <span class="math inline">\(\nabla\)</span> and <span class="math inline">\(\int\)</span> requires regularity conditions (the Leibniz integral rule). This holds when the integrand is smooth and its derivative is bounded by an integrable function — standard assumptions for “nice” probability densities.</p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -411,11 +481,11 @@ X_0 &amp;\sim p_{\text{init}} \\
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The key is to rewrite <span class="math inline">\(\nabla p_t(x|z)\)</span> using the chain rule. For gradients, the chain rule gives us: <span class="math display">\[
-\nabla_x \log f(x) = \frac{1}{f(x)} \nabla_x f(x)
-\]</span> (This is the multivariate version of <span class="math inline">\(\frac{d}{dx}\log f = \frac{1}{f}\frac{df}{dx}\)</span>.)</p>
+<p>The key is to rewrite <span class="math inline">\(\nabla p_t(x|z)\)</span> using the <strong>chain rule for logarithms</strong>.</p>
+<p><strong>Chain rule for <span class="math inline">\(\log\)</span>:</strong> If <span class="math inline">\(f(x) &gt; 0\)</span>, then <span class="math inline">\(\nabla_x \log f(x) = \frac{1}{f(x)} \nabla_x f(x)\)</span></p>
+<p>(This is the multivariate generalization of <span class="math inline">\(\frac{d}{dx}\log f = \frac{1}{f}\frac{df}{dx}\)</span> from single-variable calculus.)</p>
 <p>Rearranging: <span class="math display">\[
 \nabla p_t(x|z) = p_t(x|z) \cdot \nabla \log p_t(x|z)
 \]</span></p>
@@ -428,7 +498,7 @@ X_0 &amp;\sim p_{\text{init}} \\
 </div>
 </div>
 </div>
-<p>Notice that <span class="math inline">\(\frac{p_t(x | z) p_{data}(z)}{p_t(x)} = p(z | x, t)\)</span> by Bayes’ theorem, so this is an <strong>expectation over the posterior</strong>: <span class="math display">\[
+<p>Notice that <span class="math inline">\(\frac{p_t(x | z) p_{data}(z)}{p_t(x)} = p(z | x, t)\)</span> by <strong>Bayes’ theorem</strong> (since <span class="math inline">\(p_t(x,z) = p_t(x|z) p_{data}(z) = p(z|x,t) p_t(x)\)</span>), so this is an <strong>expectation over the posterior</strong>: <span class="math display">\[
 \nabla \log p_t(x) = \mathbb{E}_{z \sim p(z | x, t)}[\nabla \log p_t(x | z)]
 \]</span></p>
 <p>The conditional score function <span class="math inline">\(\nabla \log p_t(x | z)\)</span> is usually something we can calculate analytically (e.g., for Gaussian conditionals).</p>
@@ -448,20 +518,245 @@ X_0 &amp;\sim p_{\text{init}} \\
 <p><strong>Derivation:</strong> The multivariate Gaussian PDF with mean <span class="math inline">\(\mu\)</span> and covariance <span class="math inline">\(\Sigma\)</span> is: <span class="math display">\[
 p(x) = \frac{1}{(2\pi)^{d/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x - \mu)^T \Sigma^{-1} (x - \mu)\right)
 \]</span></p>
-<p>For isotropic covariance <span class="math inline">\(\Sigma = \beta_t^2 I_d\)</span>, we have <span class="math inline">\(|\Sigma|^{1/2} = \beta_t^d\)</span> and <span class="math inline">\(\Sigma^{-1} = \frac{1}{\beta_t^2}I_d\)</span>, so: <span class="math display">\[
+<p>For isotropic covariance <span class="math inline">\(\Sigma = \beta_t^2 I_d\)</span> (a diagonal matrix with <span class="math inline">\(\beta_t^2\)</span> on every diagonal):</p>
+<ul>
+<li><strong>Determinant:</strong> <span class="math inline">\(|\Sigma| = (\beta_t^2)^d\)</span> (product of diagonal entries), so <span class="math inline">\(|\Sigma|^{1/2} = \beta_t^d\)</span></li>
+<li><strong>Inverse:</strong> <span class="math inline">\((cI)^{-1} = \frac{1}{c}I\)</span>, so <span class="math inline">\(\Sigma^{-1} = \frac{1}{\beta_t^2}I_d\)</span></li>
+</ul>
+<p>Substituting into the Gaussian PDF: <span class="math display">\[
 p_t(x | z) = \frac{1}{(2\pi \beta_t^2)^{d/2}} \exp\left(-\frac{\|x - \alpha_t z\|^2}{2\beta_t^2}\right)
 \]</span></p>
 <p>Taking the log: <span class="math display">\[
 \log p_t(x | z) = \underbrace{-\frac{d}{2}\log(2\pi \beta_t^2)}_{\text{constant in } x} - \frac{\|x - \alpha_t z\|^2}{2\beta_t^2}
 \]</span></p>
 <p>Taking the gradient with respect to <span class="math inline">\(x \in \mathbb{R}^d\)</span> (the constant term vanishes): <span class="math display">\[
-\nabla_x \log p_t(x | z) = -\frac{1}{2\beta_t^2} \nabla_x \|x - \alpha_t z\|^2 = -\frac{1}{2\beta_t^2} \cdot 2(x - \alpha_t z) = -\frac{x - \alpha_t z}{\beta_t^2}
+\begin{aligned}
+\nabla_x \log p_t(x | z) &amp;= -\frac{1}{2\beta_t^2} \nabla_x \|x - \alpha_t z\|^2 &amp;&amp; \text{(gradient of constant is 0)} \\[0.5em]
+&amp;= -\frac{1}{2\beta_t^2} \cdot 2(x - \alpha_t z) &amp;&amp; \text{(chain rule: } \nabla_x \|x-a\|^2 = 2(x-a) \text{)} \\[0.5em]
+&amp;= -\frac{x - \alpha_t z}{\beta_t^2} &amp;&amp; \text{(cancel } \frac{1}{2} \cdot 2 = 1 \text{)}
+\end{aligned}
 \]</span></p>
 <p>(We used <span class="math inline">\(\nabla_x \|x - a\|^2 = 2(x - a)\)</span>, which follows from <span class="math inline">\(\|x-a\|^2 = (x-a)^T(x-a)\)</span>.)</p>
 </div>
 </div>
+</section>
+<section id="proving-the-sde-extension-trick" class="level2">
+<h2 class="anchored" data-anchor-id="proving-the-sde-extension-trick">Proving the SDE Extension Trick</h2>
+<p>Now that we understand conditional scores, let’s prove why the SDE Extension Trick works. The key tool is the <strong>Fokker-Planck equation</strong>, which extends the continuity equation (from Part 4) to handle SDEs.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: Fokker-Planck Equation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Consider an SDE: <span class="math display">\[
+\begin{aligned}
+&amp;X_0 \sim p_{\text{init}} \\
+&amp;dX_t = u_t(X_t) dt + \sigma_t dW_t \\
+\end{aligned}
+\]</span></p>
+<p>Then <span class="math inline">\(X_t \sim p_t(x)\)</span> for all <span class="math inline">\(0 \leq t \leq 1\)</span> iff the Fokker-Planck equation holds:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\partial_t p_t(x) = -\nabla \cdot (p_t u_t)(x) + \frac{\sigma_t^2}{2} \Delta p_t(x) \\
+\end{aligned}
+\]</span></p>
+<p>where <span class="math inline">\(\Delta\)</span> is the Laplacian operator <span class="math display">\[
+\Delta w_t(x) = \nabla \cdot (\nabla w_t)(x)
+\]</span></p>
+</div>
+</div>
+<p>We know that <span class="math inline">\(u_t^{target}(x)\)</span> is a valid vector field that follows the probability path <span class="math inline">\(p_t\)</span> for the ODE, then it must satisfy the continuity equation:</p>
+<p><span class="math display">\[
+\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{target})(x)
+\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why can we start with the continuity equation?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This may seem circular: we’re proving something about SDEs, but we start with the continuity equation (which is for ODEs). Here’s why this works:</p>
+<ol type="1">
+<li><strong>We already have</strong> a probability path <span class="math inline">\(p_t\)</span> and vector field <span class="math inline">\(u_t^{target}\)</span> from flow matching</li>
+<li><strong>By construction</strong>, <span class="math inline">\(u_t^{target}\)</span> was defined so that the ODE <span class="math inline">\(dX_t = u_t^{target}(X_t)dt\)</span> follows <span class="math inline">\(p_t\)</span></li>
+<li><strong>Therefore</strong>, the continuity equation above holds — this is just restating what we already know</li>
+</ol>
+<p>The question is: <strong>given this <span class="math inline">\(p_t\)</span>, can we find an SDE drift that also follows <span class="math inline">\(p_t\)</span>?</strong> We substitute the continuity equation (a known fact) into the Fokker-Planck equation and solve for what the SDE drift must be.</p>
+</div>
+</div>
+</div>
+<p>Our goal is to find an SDE drift term <span class="math inline">\(u_t^{sde}\)</span> that satisfies the Fokker-Planck equation.</p>
+<p>It turns out we can algebraically derive the SDE drift term <span class="math inline">\(u_t^{sde}\)</span> from the continuity equation:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\partial_t p_t(x) &amp;= -\nabla \cdot (p_t u_t^{target})(x) &amp;&amp; \text{(continuity equation from Part 4)} \\[0.5em]
+&amp;= \underbrace{-\nabla \cdot (p_t u_t^{target})(x) - \frac{\sigma_t^2}{2} \Delta p_t(x)}_{\text{will become } -\nabla \cdot (p_t u_t^{sde})} + \underbrace{\frac{\sigma_t^2}{2} \Delta p_t(x)}_{\text{diffusion term}} &amp;&amp; \text{(add \&amp; subtract } \frac{\sigma_t^2}{2} \Delta p_t \text{)}
+\end{aligned}
+\]</span></p>
+<p>Note that we already have the last term in the Fokker-Planck equation, now we just need to manipulate the first two terms to match the Fokker-Planck equation.</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;-\nabla \cdot (p_t u_t^{target})(x) - \frac{\sigma_t^2}{2} \Delta p_t(x) \\[0.5em]
+&amp;= -\nabla \cdot (p_t u_t^{target})(x) - \frac{\sigma_t^2}{2} \nabla \cdot (\nabla p_t)(x) &amp;&amp; \text{(Laplacian definition: } \Delta f = \nabla \cdot \nabla f \text{)} \\[0.5em]
+&amp;= -\nabla \cdot (p_t u_t^{target})(x) -  \nabla \cdot \left(\frac{\sigma_t^2}{2}\nabla p_t\right)(x) &amp;&amp; \text{(linearity: } \nabla \cdot (c \mathbf{v}) = c \nabla \cdot \mathbf{v} \text{)} \\[0.5em]
+&amp;=- \nabla \cdot \left (p_t u_t^{target} + \frac{\sigma_t^2}{2} \nabla p_t \right)(x) &amp;&amp; \text{(linearity: } \nabla \cdot \mathbf{u} + \nabla \cdot \mathbf{v} = \nabla \cdot (\mathbf{u} + \mathbf{v}) \text{)} \\[0.5em]
+&amp;=- \nabla \cdot \left (p_t u_t^{target} + \frac{\sigma_t^2}{2} p_t \nabla \log p_t \right)(x) &amp;&amp; \text{(chain rule: } \nabla p = p \nabla \log p \text{)} \\[0.5em]
+&amp;=- \nabla \cdot \left (p_t \big [u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t \big ] \right)(x) &amp;&amp; \text{(factor out } p_t \text{)}
+\end{aligned}
+\]</span></p>
+<p>Therefore, if we set <span class="math display">\[
+u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
+\]</span></p>
+<p>then it satisfies the Fokker-Planck equation.</p>
+<p><span class="math display">\[
+\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{sde})(x) + \frac{\sigma_t^2}{2} \Delta p_t(x)
+\]</span></p>
+<p>To understand this intuitively, the SDE can be seen as follows: <span class="math display">\[
+\begin{aligned}
+dX_t = [\underbrace{u_t^{target}(X_t)}_{\text{ODE drift}} + \underbrace{\frac{\sigma_t^2}{2} \nabla \log p_t(X_t)}_{\text{score correction}}] dt + \underbrace{\sigma_t dW_t}_{\text{noise}}
+\end{aligned}
+\]</span></p>
+<section id="intuition-the-drunken-marching-band" class="level3">
+<h3 class="anchored" data-anchor-id="intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="drunken-marching-band.png" class="img-fluid figure-img"></p>
+<figcaption>The sober band (ODE) keeps perfect formation. The drunk band without correction disperses. The drunk band with correction maintains formation despite individual randomness.</figcaption>
+</figure>
+</div>
+<p>Imagine a marching band trying to move from one end of a football field to the other in perfect formation.</p>
+<p><strong>The ODE (The Sober Band)</strong></p>
+<ul>
+<li>Every band member walks in a straight, precalculated line (<span class="math inline">\(u_t^{target}\)</span>)</li>
+<li>From the sky, the ‘A’ shape moves smoothly across the field (<span class="math inline">\(p_t\)</span>)</li>
+</ul>
+<p><strong>The SDE (The Drunken Band)</strong></p>
+<p>Now imagine we force every band member to be drunk. They stumble randomly (<span class="math inline">\(\sigma_t dW_t\)</span>).</p>
+<p>The problem: If they try to walk the same path as the sober band plus the stumbling, they will wander off. The ‘A’ shape will get fuzzy and eventually dissolve into a blob. The “probability path” is ruined.</p>
+<p><strong>The “Forcing” (The Drift Correction)</strong></p>
+<p>To fix this, we have to cheat. We have to “force” the SDE to match the ODE’s shape.</p>
+<ul>
+<li>The solution: We tell band members: “Since you are drunk and stumbling outward, you must strictly aim slightly inward to compensate”.</li>
+</ul>
+<p>If the stumbling pushes them away from the formation, we add an extra “Pull” (correction drift) pointing back towards the center of the formation.</p>
+<ul>
+<li>The result: individual band members are stumbling like crazy (stochastic), but because we added the extra “inward pull”, the macro shape (helicopter view, i.e., the probability distribution) looks identical to the sober band.</li>
+</ul>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>We first find the marginal vector field <span class="math inline">\(u_t^{target}\)</span> that follows the probability path <span class="math inline">\(p_t\)</span> for the ODE, then we can construct an SDE vector field <span class="math inline">\(u_t^{sde}\)</span> that follows the same probability path <span class="math inline">\(p_t\)</span> by making it satisfy the Fokker-Planck equation.</p>
+<p><span class="math display">\[
+u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
+\]</span></p>
+<p>And this is our training target. Because we cannot compute the marginal score function <span class="math inline">\(\nabla \log p_t\)</span> analytically, we will convert it to the conditional score function <span class="math inline">\(\nabla \log p_t(x | z)\)</span> instead</p>
+<p><span class="math display">\[
+\nabla \log p_t(x) = \mathbb{E}_{z \sim p(z | x, t)}[\nabla \log p_t(x | z)]
+\]</span></p>
+</section>
+<section id="how-training-actually-works" class="level2">
+<h2 class="anchored" data-anchor-id="how-training-actually-works">How Training Actually Works</h2>
+<p>You might wonder: “I know how to compute <span class="math inline">\(\nabla \log p_t(x|z)\)</span> for a given <span class="math inline">\(z\)</span>, but what about the other terms? How do I compute the expectation over <span class="math inline">\(p(z|x,t)\)</span>?”</p>
+<p>The key insight is that <strong>we don’t compute the integral explicitly</strong>. Instead, we use a clever sampling trick.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="training-trick.png" class="img-fluid figure-img"></p>
+<figcaption>The training trick: instead of the hard direction (finding which <span class="math inline">\(z\)</span> produced <span class="math inline">\(x\)</span>), we sample in the easy direction (adding noise to <span class="math inline">\(z\)</span> to get <span class="math inline">\(x\)</span>).</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The Training Trick: Reverse the Sampling Order
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The expectation is over the posterior <span class="math inline">\(p(z|x,t)\)</span>, which is hard to sample from. But we can <strong>reverse the sampling order</strong>:</p>
+<ol type="1">
+<li>Sample <span class="math inline">\(z \sim p_{data}(z)\)</span> — pick a data point</li>
+<li>Sample <span class="math inline">\(x \sim p_t(x|z)\)</span> — generate its noisy version at time <span class="math inline">\(t\)</span></li>
+<li>Compute <span class="math inline">\(\nabla \log p_t(x|z)\)</span> — this we know analytically!</li>
+<li>Train <span class="math inline">\(s_\theta(x, t)\)</span> to predict this value</li>
+</ol>
+<p><strong>Why this works:</strong> When we sample <span class="math inline">\((z, x)\)</span> this way, we’re sampling from the joint distribution <span class="math inline">\(p_t(x, z) = p_t(x|z) \cdot p_{data}(z)\)</span>.</p>
+</div>
+</div>
+<p>The training loss becomes: <span class="math display">\[
+\mathcal{L}(\theta) = \mathbb{E}_{t \sim \text{Uniform}[0,1]} \mathbb{E}_{z \sim p_{data}} \mathbb{E}_{x \sim p_t(x|z)} \left[ \|s_\theta(x, t) - \nabla_x \log p_t(x|z)\|^2 \right]
+\]</span></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why does this give us the marginal score?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This is the <strong>score matching identity</strong>. When we minimize the loss above, the optimal <span class="math inline">\(s_\theta^*(x,t)\)</span> satisfies: <span class="math display">\[
+s_\theta^*(x, t) = \mathbb{E}_{z \sim p(z|x,t)}[\nabla \log p_t(x|z)] = \nabla \log p_t(x)
+\]</span></p>
+<p>Intuitively: for a given <span class="math inline">\(x\)</span>, different <span class="math inline">\(z\)</span>’s could have produced it. The network learns to average over all possible <span class="math inline">\(z\)</span>’s, weighted by how likely each <span class="math inline">\(z\)</span> was to produce this <span class="math inline">\(x\)</span> — which is exactly the posterior <span class="math inline">\(p(z|x,t)\)</span>.</p>
+<p><strong>But wait — where did the normalization <span class="math inline">\(p_t(x)\)</span> go?</strong></p>
+<p>Recall from earlier that the marginal score involves <span class="math inline">\(\frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span>. The denominator <span class="math inline">\(p_t(x)\)</span> is intractable (it’s a marginal over all possible <span class="math inline">\(z\)</span>’s). So how can training work without computing it?</p>
+<p>The answer lies in a fundamental property of <strong>least-squares regression</strong>:</p>
+<blockquote class="blockquote">
+<p>When you minimize squared error over samples from a joint distribution <span class="math inline">\(p(x, z)\)</span>, the optimal predictor <span class="math inline">\(f^*(x)\)</span> equals the <strong>conditional expectation</strong> <span class="math inline">\(\mathbb{E}_{z|x}[g(x,z)]\)</span>.</p>
+</blockquote>
+<p>Mathematically, if we minimize: <span class="math display">\[
+\min_f \mathbb{E}_{(x,z) \sim p(x,z)} \left[ \|f(x) - g(x,z)\|^2 \right]
+\]</span></p>
+<p>then the optimal solution is <span class="math inline">\(f^*(x) = \mathbb{E}_{z \sim p(z|x)}[g(x,z)]\)</span>.</p>
+<p><strong>Applied to our training:</strong></p>
+<ul>
+<li>We sample <span class="math inline">\((z, x)\)</span> from the joint <span class="math inline">\(p_t(x, z) = p_t(x|z) \cdot p_{data}(z)\)</span></li>
+<li>We regress <span class="math inline">\(s_\theta(x, t)\)</span> onto <span class="math inline">\(g(x,z) = \nabla \log p_t(x|z)\)</span></li>
+<li>The optimal <span class="math inline">\(s_\theta^*\)</span> automatically becomes <span class="math inline">\(\mathbb{E}_{z|x}[\nabla \log p_t(x|z)]\)</span></li>
+</ul>
+<p>The posterior weighting <span class="math inline">\(p(z|x,t) = \frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span> emerges implicitly from the <strong>sampling frequencies</strong>: data points <span class="math inline">\(z\)</span> that are more likely to produce a given <span class="math inline">\(x\)</span> will appear more often in our training batches at that <span class="math inline">\(x\)</span>. The neural network learns this weighting through gradient descent — we never need to compute <span class="math inline">\(p_t(x)\)</span> explicitly!</p>
+</div>
+</div>
+</div>
+<p><strong>In practice, you never compute <span class="math inline">\(\frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span></strong> — you just sample and regress! The neural network implicitly learns to marginalize over <span class="math inline">\(z\)</span>.</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next</h2>
+<p>We’ve established the theoretical foundation: we know <em>what</em> to train (the score function) and <em>why</em> the training procedure works (least-squares regression gives us the conditional expectation).</p>
+<p>In the next two posts, we’ll dive into the practical details:</p>
+<ul>
+<li><strong>Part 7</strong>: The complete training algorithm — how to implement score matching in practice</li>
+<li><strong>Part 8</strong>: Sampling and inference — how to generate new samples from the trained model</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li><p>Hyvärinen, A. (2005). <a href="https://jmlr.org/papers/v6/hyvarinen05a.html">Estimation of Non-Normalized Statistical Models by Score Matching</a>. <em>Journal of Machine Learning Research, 6</em>, 695–709. — The original score matching paper.</p></li>
+<li><p>Vincent, P. (2011). <a href="https://direct.mit.edu/neco/article/23/7/1661/7677/A-Connection-Between-Score-Matching-and-Denoising">A Connection Between Score Matching and Denoising Autoencoders</a>. <em>Neural Computation, 23</em>(7), 1661–1674. — Shows that denoising is equivalent to score matching.</p></li>
+<li><p>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR 2021 (Outstanding Paper Award)</em>. — The SDE framework unifying score-based models.</p></li>
+<li><p>Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>. — The flow matching framework connecting to our exposition.</p></li>
+</ul>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

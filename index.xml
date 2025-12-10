@@ -21,8 +21,33 @@
 
 
 
-<p>We have constructed the training target for the flow matching model, now we will extend this reasoning to SDEs.</p>
-<p>Let us start with the SDE extension trick.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>The <strong>score function</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> tells us which direction increases probability — it’s the key to extending flow matching to SDEs</li>
+<li>We can’t compute the marginal score directly, but we can express it as an expectation of <strong>conditional scores</strong> (which we <em>can</em> compute analytically)</li>
+<li>The magic of training: least-squares regression automatically computes the right expectation — no intractable integrals required!</li>
+<li><strong>Real-world impact</strong>: This is how Stable Diffusion, DALL-E, and Sora learn to denoise images</li>
+</ul>
+</div>
+</div>
+<p>In the previous post, we constructed the training target for flow matching models. Now we face a new challenge: <strong>how do we extend this to SDEs?</strong></p>
+<p>The answer involves a beautiful mathematical object called the <strong>score function</strong> — the gradient of log probability. This post shows how score functions connect ODEs to SDEs, and reveals the elegant trick that makes training tractable.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/6-score-functions/score-function-vector-field.png" class="img-fluid figure-img"></p>
+<figcaption>The score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p(x)"> is a vector field pointing toward high-probability regions. Arrows are longer where the gradient is steeper.</figcaption>
+</figure>
+</div>
+<p>Let’s start with the key theorem that bridges these two worlds.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -33,17 +58,40 @@
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Define the conditional and marginal vector fields <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> and <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> as before. For diffusion coefficient <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20%5Cgeq%200">, we can construct an SDE that follows the marginal probability path <img src="https://latex.codecogs.com/png.latex?p_t(x)">:</p>
+<p>Let <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> be the flow matching vector field that generates the probability path <img src="https://latex.codecogs.com/png.latex?p_t"> via the ODE (i.e., the ODE <img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t%5E%7Btarget%7D(X_t)dt"> with <img src="https://latex.codecogs.com/png.latex?X_0%20%5Csim%20p_%7Binit%7D"> satisfies <img src="https://latex.codecogs.com/png.latex?X_t%20%5Csim%20p_t">).</p>
+<p>For any diffusion coefficient <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20%5Cgeq%200">, we can construct an <strong>SDE</strong> that follows the same probability path <img src="https://latex.codecogs.com/png.latex?p_t">:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AdX_t%20&amp;=%20%5Bu_t%5E%7Btarget%7D(X_t)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t(X_t)%5D%20%5C,%20dt%20+%20%5Csigma_t%20%5C,%20dW_t%20%5C%5C%0AX_0%20&amp;%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20%5C%5C%0A%5Cimplies%20X_t%20&amp;%5Csim%20p_t%20%5Cquad%20%5Ctext%7Bfor%20all%20%7D%200%20%5Cleq%20t%20%5Cleq%201%0A%5Cend%7Baligned%7D%0A"></p>
 <p>where <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> is the <strong>marginal score function</strong> of <img src="https://latex.codecogs.com/png.latex?p_t">.</p>
-<p>The same identity holds if we replace the marginal probability <img src="https://latex.codecogs.com/png.latex?p_t(x)"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> with the conditional probability <img src="https://latex.codecogs.com/png.latex?p_t(x%20%7C%20z)"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)">:</p>
+<p>The same identity holds if we replace the marginal probability <img src="https://latex.codecogs.com/png.latex?p_t(x)"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> with the conditional probability <img src="https://latex.codecogs.com/png.latex?p_t(x%20%7C%20z)"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)">.</p>
 </div>
 </div>
-<p>We can express the marginal score function via the <strong>conditional score function</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)">:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cnabla%20%5Clog%20p_t(x)%20&amp;=%20%5Cfrac%7B%5Cnabla%20p_t(x)%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(definition%20of%20%7D%20%5Cnabla%20%5Clog)%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cfrac%7B%5Cnabla%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(marginalization)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cfrac%7B%5Cint%20%5Cnabla%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(Leibniz%20rule%7D%5E*%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cint%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20&amp;&amp;%20%5Ctext%7B(see%20below)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/6-score-functions/ode-vs-sde-trajectories.png" class="img-fluid figure-img"></p>
+<figcaption>ODE trajectories are smooth and deterministic. SDE trajectories are noisy but — with the score correction — follow the same probability distribution.</figcaption>
+</figure>
+</div>
+<section id="from-marginal-to-conditional-scores" class="level2">
+<h2 class="anchored" data-anchor-id="from-marginal-to-conditional-scores">From Marginal to Conditional Scores</h2>
+<p>The theorem above requires the <strong>marginal score</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)">. But there’s a problem: computing this directly requires integrating over all possible data points <img src="https://latex.codecogs.com/png.latex?z"> — computationally intractable!</p>
+<p>The solution is to express the marginal score as an expectation of <strong>conditional scores</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%7Cz)">, which we <em>can</em> compute analytically.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/6-score-functions/marginal-vs-conditional.png" class="img-fluid figure-img"></p>
+<figcaption>The marginal score at <img src="https://latex.codecogs.com/png.latex?x"> is a weighted average of conditional scores from different data points <img src="https://latex.codecogs.com/png.latex?z_1,%20z_2,%20z_3">.</figcaption>
+</figure>
+</div>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cnabla%20%5Clog%20p_t(x)%20&amp;=%20%5Cfrac%7B%5Cnabla%20p_t(x)%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(chain%20rule)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cfrac%7B%5Cnabla%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(marginalization)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cfrac%7B%5Cint%20%5Cnabla%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20&amp;&amp;%20%5Ctext%7B(Leibniz%20rule%7D%5E*%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;%20=%20%5Cint%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20&amp;&amp;%20%5Ctext%7B(see%20below)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p><strong>Step-by-step reasoning:</strong></p>
+<ol type="1">
+<li><strong>Chain rule</strong>: <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20f%20=%20%5Cfrac%7B%5Cnabla%20f%7D%7Bf%7D"></li>
+<li><strong>Marginalization</strong>: <img src="https://latex.codecogs.com/png.latex?p_t(x)%20=%20%5Cint%20p_t(x%7Cz)%20p_%7Bdata%7D(z)%20dz"> (law of total probability)</li>
+<li><strong>Leibniz rule</strong><img src="https://latex.codecogs.com/png.latex?%5E*">: swap <img src="https://latex.codecogs.com/png.latex?%5Cnabla_x"> and <img src="https://latex.codecogs.com/png.latex?%5Cint_z"></li>
+<li><strong>Rewrite</strong> using <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20p%20=%20p%20%5Cnabla%20%5Clog%20p"> (derived below)</li>
+</ol>
 <p><img src="https://latex.codecogs.com/png.latex?%5E*"> Swapping <img src="https://latex.codecogs.com/png.latex?%5Cnabla"> and <img src="https://latex.codecogs.com/png.latex?%5Cint"> requires regularity conditions (the Leibniz integral rule). This holds when the integrand is smooth and its derivative is bounded by an integrable function — standard assumptions for “nice” probability densities.</p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-2-contents" aria-controls="callout-2" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -52,16 +100,18 @@
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-2" class="callout-2-contents callout-collapse collapse">
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The key is to rewrite <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20p_t(x%7Cz)"> using the chain rule. For gradients, the chain rule gives us: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_x%20%5Clog%20f(x)%20=%20%5Cfrac%7B1%7D%7Bf(x)%7D%20%5Cnabla_x%20f(x)%0A"> (This is the multivariate version of <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdx%7D%5Clog%20f%20=%20%5Cfrac%7B1%7D%7Bf%7D%5Cfrac%7Bdf%7D%7Bdx%7D">.)</p>
+<p>The key is to rewrite <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20p_t(x%7Cz)"> using the <strong>chain rule for logarithms</strong>.</p>
+<p><strong>Chain rule for <img src="https://latex.codecogs.com/png.latex?%5Clog">:</strong> If <img src="https://latex.codecogs.com/png.latex?f(x)%20%3E%200">, then <img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5Clog%20f(x)%20=%20%5Cfrac%7B1%7D%7Bf(x)%7D%20%5Cnabla_x%20f(x)"></p>
+<p>(This is the multivariate generalization of <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bd%7D%7Bdx%7D%5Clog%20f%20=%20%5Cfrac%7B1%7D%7Bf%7D%5Cfrac%7Bdf%7D%7Bdx%7D"> from single-variable calculus.)</p>
 <p>Rearranging: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20p_t(x%7Cz)%20=%20p_t(x%7Cz)%20%5Ccdot%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%0A"></p>
 <p>Substituting this into the integral: <img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7B%5Cint%20%5Cnabla%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%20=%20%5Cfrac%7B%5Cint%20p_t(x%7Cz)%20%5Ccdot%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Ccdot%20p_%7Bdata%7D(z)%20dz%7D%7Bp_t(x)%7D%0A"></p>
 <p>Since <img src="https://latex.codecogs.com/png.latex?p_t(x)"> doesn’t depend on <img src="https://latex.codecogs.com/png.latex?z">, we can move it inside the integral: <img src="https://latex.codecogs.com/png.latex?%0A=%20%5Cint%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Ccdot%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%0A"></p>
 </div>
 </div>
 </div>
-<p>Notice that <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20=%20p(z%20%7C%20x,%20t)"> by Bayes’ theorem, so this is an <strong>expectation over the posterior</strong>: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%20%7C%20x,%20t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%5D%0A"></p>
+<p>Notice that <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20=%20p(z%20%7C%20x,%20t)"> by <strong>Bayes’ theorem</strong> (since <img src="https://latex.codecogs.com/png.latex?p_t(x,z)%20=%20p_t(x%7Cz)%20p_%7Bdata%7D(z)%20=%20p(z%7Cx,t)%20p_t(x)">), so this is an <strong>expectation over the posterior</strong>: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%20%7C%20x,%20t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%5D%0A"></p>
 <p>The conditional score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)"> is usually something we can calculate analytically (e.g., for Gaussian conditionals).</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -75,20 +125,198 @@
 <div class="callout-body-container callout-body">
 <p>For a Gaussian conditional <img src="https://latex.codecogs.com/png.latex?p_t(x%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(x;%20%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)"> where <img src="https://latex.codecogs.com/png.latex?x%20%5Cin%20%5Cmathbb%7BR%7D%5Ed">, the conditional score function is: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
 <p><strong>Derivation:</strong> The multivariate Gaussian PDF with mean <img src="https://latex.codecogs.com/png.latex?%5Cmu"> and covariance <img src="https://latex.codecogs.com/png.latex?%5CSigma"> is: <img src="https://latex.codecogs.com/png.latex?%0Ap(x)%20=%20%5Cfrac%7B1%7D%7B(2%5Cpi)%5E%7Bd/2%7D%20%7C%5CSigma%7C%5E%7B1/2%7D%7D%20%5Cexp%5Cleft(-%5Cfrac%7B1%7D%7B2%7D(x%20-%20%5Cmu)%5ET%20%5CSigma%5E%7B-1%7D%20(x%20-%20%5Cmu)%5Cright)%0A"></p>
-<p>For isotropic covariance <img src="https://latex.codecogs.com/png.latex?%5CSigma%20=%20%5Cbeta_t%5E2%20I_d">, we have <img src="https://latex.codecogs.com/png.latex?%7C%5CSigma%7C%5E%7B1/2%7D%20=%20%5Cbeta_t%5Ed"> and <img src="https://latex.codecogs.com/png.latex?%5CSigma%5E%7B-1%7D%20=%20%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7DI_d">, so: <img src="https://latex.codecogs.com/png.latex?%0Ap_t(x%20%7C%20z)%20=%20%5Cfrac%7B1%7D%7B(2%5Cpi%20%5Cbeta_t%5E2)%5E%7Bd/2%7D%7D%20%5Cexp%5Cleft(-%5Cfrac%7B%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%7D%7B2%5Cbeta_t%5E2%7D%5Cright)%0A"></p>
+<p>For isotropic covariance <img src="https://latex.codecogs.com/png.latex?%5CSigma%20=%20%5Cbeta_t%5E2%20I_d"> (a diagonal matrix with <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%5E2"> on every diagonal):</p>
+<ul>
+<li><strong>Determinant:</strong> <img src="https://latex.codecogs.com/png.latex?%7C%5CSigma%7C%20=%20(%5Cbeta_t%5E2)%5Ed"> (product of diagonal entries), so <img src="https://latex.codecogs.com/png.latex?%7C%5CSigma%7C%5E%7B1/2%7D%20=%20%5Cbeta_t%5Ed"></li>
+<li><strong>Inverse:</strong> <img src="https://latex.codecogs.com/png.latex?(cI)%5E%7B-1%7D%20=%20%5Cfrac%7B1%7D%7Bc%7DI">, so <img src="https://latex.codecogs.com/png.latex?%5CSigma%5E%7B-1%7D%20=%20%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7DI_d"></li>
+</ul>
+<p>Substituting into the Gaussian PDF: <img src="https://latex.codecogs.com/png.latex?%0Ap_t(x%20%7C%20z)%20=%20%5Cfrac%7B1%7D%7B(2%5Cpi%20%5Cbeta_t%5E2)%5E%7Bd/2%7D%7D%20%5Cexp%5Cleft(-%5Cfrac%7B%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%7D%7B2%5Cbeta_t%5E2%7D%5Cright)%0A"></p>
 <p>Taking the log: <img src="https://latex.codecogs.com/png.latex?%0A%5Clog%20p_t(x%20%7C%20z)%20=%20%5Cunderbrace%7B-%5Cfrac%7Bd%7D%7B2%7D%5Clog(2%5Cpi%20%5Cbeta_t%5E2)%7D_%7B%5Ctext%7Bconstant%20in%20%7D%20x%7D%20-%20%5Cfrac%7B%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%7D%7B2%5Cbeta_t%5E2%7D%0A"></p>
-<p>Taking the gradient with respect to <img src="https://latex.codecogs.com/png.latex?x%20%5Cin%20%5Cmathbb%7BR%7D%5Ed"> (the constant term vanishes): <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7B1%7D%7B2%5Cbeta_t%5E2%7D%20%5Cnabla_x%20%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%20=%20-%5Cfrac%7B1%7D%7B2%5Cbeta_t%5E2%7D%20%5Ccdot%202(x%20-%20%5Calpha_t%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
+<p>Taking the gradient with respect to <img src="https://latex.codecogs.com/png.latex?x%20%5Cin%20%5Cmathbb%7BR%7D%5Ed"> (the constant term vanishes): <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20z)%20&amp;=%20-%5Cfrac%7B1%7D%7B2%5Cbeta_t%5E2%7D%20%5Cnabla_x%20%5C%7Cx%20-%20%5Calpha_t%20z%5C%7C%5E2%20&amp;&amp;%20%5Ctext%7B(gradient%20of%20constant%20is%200)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=%20-%5Cfrac%7B1%7D%7B2%5Cbeta_t%5E2%7D%20%5Ccdot%202(x%20-%20%5Calpha_t%20z)%20&amp;&amp;%20%5Ctext%7B(chain%20rule:%20%7D%20%5Cnabla_x%20%5C%7Cx-a%5C%7C%5E2%20=%202(x-a)%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%20&amp;&amp;%20%5Ctext%7B(cancel%20%7D%20%5Cfrac%7B1%7D%7B2%7D%20%5Ccdot%202%20=%201%20%5Ctext%7B)%7D%0A%5Cend%7Baligned%7D%0A"></p>
 <p>(We used <img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5C%7Cx%20-%20a%5C%7C%5E2%20=%202(x%20-%20a)">, which follows from <img src="https://latex.codecogs.com/png.latex?%5C%7Cx-a%5C%7C%5E2%20=%20(x-a)%5ET(x-a)">.)</p>
 </div>
 </div>
+</section>
+<section id="proving-the-sde-extension-trick" class="level2">
+<h2 class="anchored" data-anchor-id="proving-the-sde-extension-trick">Proving the SDE Extension Trick</h2>
+<p>Now that we understand conditional scores, let’s prove why the SDE Extension Trick works. The key tool is the <strong>Fokker-Planck equation</strong>, which extends the continuity equation (from Part 4) to handle SDEs.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: Fokker-Planck Equation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Consider an SDE: <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;X_0%20%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20%5C%5C%0A&amp;dX_t%20=%20u_t(X_t)%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Then <img src="https://latex.codecogs.com/png.latex?X_t%20%5Csim%20p_t(x)"> for all <img src="https://latex.codecogs.com/png.latex?0%20%5Cleq%20t%20%5Cleq%201"> iff the Fokker-Planck equation holds:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cpartial_t%20p_t(x)%20=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t)(x)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5CDelta%20p_t(x)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5CDelta"> is the Laplacian operator <img src="https://latex.codecogs.com/png.latex?%0A%5CDelta%20w_t(x)%20=%20%5Cnabla%20%5Ccdot%20(%5Cnabla%20w_t)(x)%0A"></p>
+</div>
+</div>
+<p>We know that <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> is a valid vector field that follows the probability path <img src="https://latex.codecogs.com/png.latex?p_t"> for the ODE, then it must satisfy the continuity equation:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cpartial_t%20p_t(x)%20=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%0A"></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why can we start with the continuity equation?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This may seem circular: we’re proving something about SDEs, but we start with the continuity equation (which is for ODEs). Here’s why this works:</p>
+<ol type="1">
+<li><strong>We already have</strong> a probability path <img src="https://latex.codecogs.com/png.latex?p_t"> and vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D"> from flow matching</li>
+<li><strong>By construction</strong>, <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D"> was defined so that the ODE <img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t%5E%7Btarget%7D(X_t)dt"> follows <img src="https://latex.codecogs.com/png.latex?p_t"></li>
+<li><strong>Therefore</strong>, the continuity equation above holds — this is just restating what we already know</li>
+</ol>
+<p>The question is: <strong>given this <img src="https://latex.codecogs.com/png.latex?p_t">, can we find an SDE drift that also follows <img src="https://latex.codecogs.com/png.latex?p_t">?</strong> We substitute the continuity equation (a known fact) into the Fokker-Planck equation and solve for what the SDE drift must be.</p>
+</div>
+</div>
+</div>
+<p>Our goal is to find an SDE drift term <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Bsde%7D"> that satisfies the Fokker-Planck equation.</p>
+<p>It turns out we can algebraically derive the SDE drift term <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Bsde%7D"> from the continuity equation:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cpartial_t%20p_t(x)%20&amp;=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%20&amp;&amp;%20%5Ctext%7B(continuity%20equation%20from%20Part%204)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=%20%5Cunderbrace%7B-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%20-%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5CDelta%20p_t(x)%7D_%7B%5Ctext%7Bwill%20become%20%7D%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Bsde%7D)%7D%20+%20%5Cunderbrace%7B%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5CDelta%20p_t(x)%7D_%7B%5Ctext%7Bdiffusion%20term%7D%7D%20&amp;&amp;%20%5Ctext%7B(add%20%5C&amp;%20subtract%20%7D%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5CDelta%20p_t%20%5Ctext%7B)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Note that we already have the last term in the Fokker-Planck equation, now we just need to manipulate the first two terms to match the Fokker-Planck equation.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%20-%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5CDelta%20p_t(x)%20%5C%5C%5B0.5em%5D%0A&amp;=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%20-%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Ccdot%20(%5Cnabla%20p_t)(x)%20&amp;&amp;%20%5Ctext%7B(Laplacian%20definition:%20%7D%20%5CDelta%20f%20=%20%5Cnabla%20%5Ccdot%20%5Cnabla%20f%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Btarget%7D)(x)%20-%20%20%5Cnabla%20%5Ccdot%20%5Cleft(%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%5Cnabla%20p_t%5Cright)(x)%20&amp;&amp;%20%5Ctext%7B(linearity:%20%7D%20%5Cnabla%20%5Ccdot%20(c%20%5Cmathbf%7Bv%7D)%20=%20c%20%5Cnabla%20%5Ccdot%20%5Cmathbf%7Bv%7D%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=-%20%5Cnabla%20%5Ccdot%20%5Cleft%20(p_t%20u_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20p_t%20%5Cright)(x)%20&amp;&amp;%20%5Ctext%7B(linearity:%20%7D%20%5Cnabla%20%5Ccdot%20%5Cmathbf%7Bu%7D%20+%20%5Cnabla%20%5Ccdot%20%5Cmathbf%7Bv%7D%20=%20%5Cnabla%20%5Ccdot%20(%5Cmathbf%7Bu%7D%20+%20%5Cmathbf%7Bv%7D)%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=-%20%5Cnabla%20%5Ccdot%20%5Cleft%20(p_t%20u_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20p_t%20%5Cnabla%20%5Clog%20p_t%20%5Cright)(x)%20&amp;&amp;%20%5Ctext%7B(chain%20rule:%20%7D%20%5Cnabla%20p%20=%20p%20%5Cnabla%20%5Clog%20p%20%5Ctext%7B)%7D%20%5C%5C%5B0.5em%5D%0A&amp;=-%20%5Cnabla%20%5Ccdot%20%5Cleft%20(p_t%20%5Cbig%20%5Bu_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t%20%5Cbig%20%5D%20%5Cright)(x)%20&amp;&amp;%20%5Ctext%7B(factor%20out%20%7D%20p_t%20%5Ctext%7B)%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Therefore, if we set <img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Bsde%7D%20=%20u_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t%0A"></p>
+<p>then it satisfies the Fokker-Planck equation.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cpartial_t%20p_t(x)%20=%20-%5Cnabla%20%5Ccdot%20(p_t%20u_t%5E%7Bsde%7D)(x)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5CDelta%20p_t(x)%0A"></p>
+<p>To understand this intuitively, the SDE can be seen as follows: <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AdX_t%20=%20%5B%5Cunderbrace%7Bu_t%5E%7Btarget%7D(X_t)%7D_%7B%5Ctext%7BODE%20drift%7D%7D%20+%20%5Cunderbrace%7B%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t(X_t)%7D_%7B%5Ctext%7Bscore%20correction%7D%7D%5D%20dt%20+%20%5Cunderbrace%7B%5Csigma_t%20dW_t%7D_%7B%5Ctext%7Bnoise%7D%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<section id="intuition-the-drunken-marching-band" class="level3">
+<h3 class="anchored" data-anchor-id="intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</h3>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/6-score-functions/drunken-marching-band.png" class="img-fluid figure-img"></p>
+<figcaption>The sober band (ODE) keeps perfect formation. The drunk band without correction disperses. The drunk band with correction maintains formation despite individual randomness.</figcaption>
+</figure>
+</div>
+<p>Imagine a marching band trying to move from one end of a football field to the other in perfect formation.</p>
+<p><strong>The ODE (The Sober Band)</strong></p>
+<ul>
+<li>Every band member walks in a straight, precalculated line (<img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D">)</li>
+<li>From the sky, the ‘A’ shape moves smoothly across the field (<img src="https://latex.codecogs.com/png.latex?p_t">)</li>
+</ul>
+<p><strong>The SDE (The Drunken Band)</strong></p>
+<p>Now imagine we force every band member to be drunk. They stumble randomly (<img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20dW_t">).</p>
+<p>The problem: If they try to walk the same path as the sober band plus the stumbling, they will wander off. The ‘A’ shape will get fuzzy and eventually dissolve into a blob. The “probability path” is ruined.</p>
+<p><strong>The “Forcing” (The Drift Correction)</strong></p>
+<p>To fix this, we have to cheat. We have to “force” the SDE to match the ODE’s shape.</p>
+<ul>
+<li>The solution: We tell band members: “Since you are drunk and stumbling outward, you must strictly aim slightly inward to compensate”.</li>
+</ul>
+<p>If the stumbling pushes them away from the formation, we add an extra “Pull” (correction drift) pointing back towards the center of the formation.</p>
+<ul>
+<li>The result: individual band members are stumbling like crazy (stochastic), but because we added the extra “inward pull”, the macro shape (helicopter view, i.e., the probability distribution) looks identical to the sober band.</li>
+</ul>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>We first find the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D"> that follows the probability path <img src="https://latex.codecogs.com/png.latex?p_t"> for the ODE, then we can construct an SDE vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Bsde%7D"> that follows the same probability path <img src="https://latex.codecogs.com/png.latex?p_t"> by making it satisfy the Fokker-Planck equation.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Bsde%7D%20=%20u_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t%0A"></p>
+<p>And this is our training target. Because we cannot compute the marginal score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t"> analytically, we will convert it to the conditional score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)"> instead</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%20%7C%20x,%20t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%5D%0A"></p>
+</section>
+<section id="how-training-actually-works" class="level2">
+<h2 class="anchored" data-anchor-id="how-training-actually-works">How Training Actually Works</h2>
+<p>You might wonder: “I know how to compute <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%7Cz)"> for a given <img src="https://latex.codecogs.com/png.latex?z">, but what about the other terms? How do I compute the expectation over <img src="https://latex.codecogs.com/png.latex?p(z%7Cx,t)">?”</p>
+<p>The key insight is that <strong>we don’t compute the integral explicitly</strong>. Instead, we use a clever sampling trick.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/6-score-functions/training-trick.png" class="img-fluid figure-img"></p>
+<figcaption>The training trick: instead of the hard direction (finding which <img src="https://latex.codecogs.com/png.latex?z"> produced <img src="https://latex.codecogs.com/png.latex?x">), we sample in the easy direction (adding noise to <img src="https://latex.codecogs.com/png.latex?z"> to get <img src="https://latex.codecogs.com/png.latex?x">).</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The Training Trick: Reverse the Sampling Order
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The expectation is over the posterior <img src="https://latex.codecogs.com/png.latex?p(z%7Cx,t)">, which is hard to sample from. But we can <strong>reverse the sampling order</strong>:</p>
+<ol type="1">
+<li>Sample <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D(z)"> — pick a data point</li>
+<li>Sample <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(x%7Cz)"> — generate its noisy version at time <img src="https://latex.codecogs.com/png.latex?t"></li>
+<li>Compute <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%7Cz)"> — this we know analytically!</li>
+<li>Train <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta(x,%20t)"> to predict this value</li>
+</ol>
+<p><strong>Why this works:</strong> When we sample <img src="https://latex.codecogs.com/png.latex?(z,%20x)"> this way, we’re sampling from the joint distribution <img src="https://latex.codecogs.com/png.latex?p_t(x,%20z)%20=%20p_t(x%7Cz)%20%5Ccdot%20p_%7Bdata%7D(z)">.</p>
+</div>
+</div>
+<p>The training loss becomes: <img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt%20%5Csim%20%5Ctext%7BUniform%7D%5B0,1%5D%7D%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p_%7Bdata%7D%7D%20%5Cmathbb%7BE%7D_%7Bx%20%5Csim%20p_t(x%7Cz)%7D%20%5Cleft%5B%20%5C%7Cs_%5Ctheta(x,%20t)%20-%20%5Cnabla_x%20%5Clog%20p_t(x%7Cz)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why does this give us the marginal score?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This is the <strong>score matching identity</strong>. When we minimize the loss above, the optimal <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta%5E*(x,t)"> satisfies: <img src="https://latex.codecogs.com/png.latex?%0As_%5Ctheta%5E*(x,%20t)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%7Cx,t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%7Cz)%5D%20=%20%5Cnabla%20%5Clog%20p_t(x)%0A"></p>
+<p>Intuitively: for a given <img src="https://latex.codecogs.com/png.latex?x">, different <img src="https://latex.codecogs.com/png.latex?z">’s could have produced it. The network learns to average over all possible <img src="https://latex.codecogs.com/png.latex?z">’s, weighted by how likely each <img src="https://latex.codecogs.com/png.latex?z"> was to produce this <img src="https://latex.codecogs.com/png.latex?x"> — which is exactly the posterior <img src="https://latex.codecogs.com/png.latex?p(z%7Cx,t)">.</p>
+<p><strong>But wait — where did the normalization <img src="https://latex.codecogs.com/png.latex?p_t(x)"> go?</strong></p>
+<p>Recall from earlier that the marginal score involves <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bp_t(x%7Cz)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D">. The denominator <img src="https://latex.codecogs.com/png.latex?p_t(x)"> is intractable (it’s a marginal over all possible <img src="https://latex.codecogs.com/png.latex?z">’s). So how can training work without computing it?</p>
+<p>The answer lies in a fundamental property of <strong>least-squares regression</strong>:</p>
+<blockquote class="blockquote">
+<p>When you minimize squared error over samples from a joint distribution <img src="https://latex.codecogs.com/png.latex?p(x,%20z)">, the optimal predictor <img src="https://latex.codecogs.com/png.latex?f%5E*(x)"> equals the <strong>conditional expectation</strong> <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BE%7D_%7Bz%7Cx%7D%5Bg(x,z)%5D">.</p>
+</blockquote>
+<p>Mathematically, if we minimize: <img src="https://latex.codecogs.com/png.latex?%0A%5Cmin_f%20%5Cmathbb%7BE%7D_%7B(x,z)%20%5Csim%20p(x,z)%7D%20%5Cleft%5B%20%5C%7Cf(x)%20-%20g(x,z)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>then the optimal solution is <img src="https://latex.codecogs.com/png.latex?f%5E*(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%7Cx)%7D%5Bg(x,z)%5D">.</p>
+<p><strong>Applied to our training:</strong></p>
+<ul>
+<li>We sample <img src="https://latex.codecogs.com/png.latex?(z,%20x)"> from the joint <img src="https://latex.codecogs.com/png.latex?p_t(x,%20z)%20=%20p_t(x%7Cz)%20%5Ccdot%20p_%7Bdata%7D(z)"></li>
+<li>We regress <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta(x,%20t)"> onto <img src="https://latex.codecogs.com/png.latex?g(x,z)%20=%20%5Cnabla%20%5Clog%20p_t(x%7Cz)"></li>
+<li>The optimal <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta%5E*"> automatically becomes <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BE%7D_%7Bz%7Cx%7D%5B%5Cnabla%20%5Clog%20p_t(x%7Cz)%5D"></li>
+</ul>
+<p>The posterior weighting <img src="https://latex.codecogs.com/png.latex?p(z%7Cx,t)%20=%20%5Cfrac%7Bp_t(x%7Cz)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D"> emerges implicitly from the <strong>sampling frequencies</strong>: data points <img src="https://latex.codecogs.com/png.latex?z"> that are more likely to produce a given <img src="https://latex.codecogs.com/png.latex?x"> will appear more often in our training batches at that <img src="https://latex.codecogs.com/png.latex?x">. The neural network learns this weighting through gradient descent — we never need to compute <img src="https://latex.codecogs.com/png.latex?p_t(x)"> explicitly!</p>
+</div>
+</div>
+</div>
+<p><strong>In practice, you never compute <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bp_t(x%7Cz)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D"></strong> — you just sample and regress! The neural network implicitly learns to marginalize over <img src="https://latex.codecogs.com/png.latex?z">.</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next</h2>
+<p>We’ve established the theoretical foundation: we know <em>what</em> to train (the score function) and <em>why</em> the training procedure works (least-squares regression gives us the conditional expectation).</p>
+<p>In the next two posts, we’ll dive into the practical details:</p>
+<ul>
+<li><strong>Part 7</strong>: The complete training algorithm — how to implement score matching in practice</li>
+<li><strong>Part 8</strong>: Sampling and inference — how to generate new samples from the trained model</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li><p>Hyvärinen, A. (2005). <a href="https://jmlr.org/papers/v6/hyvarinen05a.html">Estimation of Non-Normalized Statistical Models by Score Matching</a>. <em>Journal of Machine Learning Research, 6</em>, 695–709. — The original score matching paper.</p></li>
+<li><p>Vincent, P. (2011). <a href="https://direct.mit.edu/neco/article/23/7/1661/7677/A-Connection-Between-Score-Matching-and-Denoising">A Connection Between Score Matching and Denoising Autoencoders</a>. <em>Neural Computation, 23</em>(7), 1661–1674. — Shows that denoising is equivalent to score matching.</p></li>
+<li><p>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR 2021 (Outstanding Paper Award)</em>. — The SDE framework unifying score-based models.</p></li>
+<li><p>Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>. — The flow matching framework connecting to our exposition.</p></li>
+</ul>
 
 
+</section>
 
  ]]></description>
   <category>diffusion</category>
   <category>flow-matching</category>
   <category>generative-models</category>
   <category>score-function</category>
+  <category>score-matching</category>
+  <category>fokker-planck</category>
   <guid>https://layernorm.dev/posts/diffusion/6-score-functions/</guid>
   <pubDate>Tue, 02 Dec 2025 00:00:00 GMT</pubDate>
 </item>
@@ -401,7 +629,7 @@
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
 <p>We’ve seen how to add stochasticity to get an SDE, but we haven’t yet addressed the core challenge: <strong>how do we train a neural network to reverse the diffusion process?</strong></p>
-<p>In <a href="../6-score-matching/">Part 6</a>, we’ll discover:</p>
+<p>In <a href="../6-score-functions/">Part 6</a>, we’ll discover:</p>
 <ul>
 <li>The <strong>score function</strong> <img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5Clog%20p_t(x)"> and why it’s central to diffusion models</li>
 <li><strong>Denoising score matching</strong> — the clever trick that makes training tractable</li>
@@ -943,8 +1171,8 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 </tr>
 <tr class="even">
 <td><strong>Part 6</strong></td>
-<td><a href="../6-score-matching/">Score Matching</a></td>
-<td>The score function, probability flow ODE, and the connection</td>
+<td><a href="../6-score-functions/">Score Functions</a></td>
+<td>Conditional and marginal scores, the training trick</td>
 </tr>
 </tbody>
 </table>
@@ -1040,7 +1268,7 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <li><a href="../3-probability-paths/"><strong>Part 3</strong></a>: We’ll see how to construct paths from noise to data</li>
 <li><a href="../4-flow-matching-loss/"><strong>Part 4</strong></a>: We’ll discover the clever trick that makes training tractable</li>
 <li><a href="../5-diffusion-sde/"><strong>Part 5</strong></a>: We’ll add stochasticity to get SDEs and understand Brownian motion</li>
-<li><a href="../6-score-matching/"><strong>Part 6</strong></a>: We’ll learn score matching and connect diffusion to flow matching</li>
+<li><a href="../6-score-functions/"><strong>Part 6</strong></a>: We’ll learn about score functions and the training trick</li>
 </ul>
 <p>By the end, you’ll understand not just <em>what</em> these models do, but <em>why</em> they work.</p>
 </section>
