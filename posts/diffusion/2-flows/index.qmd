@@ -72,7 +72,10 @@ $$ {#eq-flow-ode}
 
 The second line says: at $t=0$, every point is where it started (the flow is the identity map).
 
+::: {.callout-note appearance="simple"}
 ## Summary
+
+We established the core vocabulary: a **vector field** $u_t(x)$ assigns directions to points in space, a **trajectory** $X_t$ follows those directions from a single starting point, and a **flow** $\phi_t(x)$ describes where *all* points end up. The relationship: $X_t = \phi_t(x_0)$.
 
 | Concept | Notation | What it answers |
 |---------|----------|-----------------|
@@ -80,16 +83,8 @@ The second line says: at $t=0$, every point is where it started (the flow is the
 | Trajectory | $X_t$ | "Where is this one particle at time $t$?" |
 | Flow | $\phi_t(x)$ | "Where does any point $x$ end up at time $t$?" |
 
-**Vector fields define ODEs whose solutions are flows.**
-
-Think of it like Google Maps:
-
-- **Vector field** = Traffic directions at every location ("turn left here", "go straight there")
-- **ODE** = The instruction "just follow the GPS"
-- **Trajectory** = The route YOUR car takes
-- **Flow** = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up
-
-So: arrows (vector field) + "follow the arrows" (ODE) = everyone's destination (flow).
+This is the foundation for everything that follows. In the next post, we'll use flows to transform *probability distributions* — the key to generative modeling.
+:::
 
 ## What's Next?
 
@@ -97,6 +92,3 @@ We now understand how vector fields generate flows. But for generative modeling,
 
 In the [next post](../3-probability-paths/), we'll see how to construct **probability paths** that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.
 
-## References
-
-1. Chen, R. T. Q., et al. (2018). [Neural Ordinary Differential Equations](https://arxiv.org/abs/1806.07366). *NeurIPS*.

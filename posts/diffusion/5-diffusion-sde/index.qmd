@@ -225,18 +225,24 @@ Given the forward SDE that corrupts data into noise, what is the reverse SDE tha
 
 It turns out there's a beautiful mathematical result: the reverse SDE depends on something called the **score function** — the gradient of the log probability density. But how do we learn this score function? That's the subject of the next post.
 
+::: {.callout-note appearance="simple"}
 ## Summary
 
-We've now extended flow matching to handle stochasticity:
+We extended flow matching to SDEs by thinking in terms of **infinitesimal updates** rather than derivatives:
+$$
+X_{t+h} = X_t + h \cdot u_t(X_t) + \sigma_t(W_{t+h} - W_t)
+$$
 
-| Concept | Flow Matching (ODE) | Diffusion (SDE) |
-|---------|---------------------|-----------------|
-| Dynamics | $dX_t = u_t(X_t) dt$ | $dX_t = u_t(X_t) dt + \sigma_t dW_t$ |
-| Paths | Deterministic | Stochastic |
-| Key idea | Learn vector field | Learn vector field + add noise |
-| Derivation | Via derivatives | Via infinitesimal updates |
+The Brownian motion term $W_t$ models continuous randomness — Gaussian increments with variance proportional to time elapsed. Setting $\sigma_t = 0$ recovers the deterministic ODE.
 
-The key insight: **we derive SDEs through infinitesimal updates, not derivatives**. This lets us naturally incorporate randomness into the dynamics.
+| ODE (Flow Matching) | SDE (Diffusion) |
+|---------------------|-----------------|
+| $dX_t = u_t dt$ | $dX_t = u_t dt + \sigma_t dW_t$ |
+| Deterministic paths | Stochastic paths |
+| One trajectory per $x_0$ | Distribution of trajectories |
+
+The open question: how do we train a network to reverse the SDE? The answer involves the **score function**.
+:::
 
 ## What's Next?
 
@@ -249,8 +255,3 @@ In [Part 6](../6-score-functions/), we'll discover:
 - The **probability flow ODE** — how every SDE has an equivalent deterministic formulation
 - How this connects diffusion models back to flow matching
 
-## References
-
-1. Ho, J., Jain, A., & Abbeel, P. (2020). [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239). *NeurIPS*.
-2. Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., & Poole, B. (2021). [Score-Based Generative Modeling through Stochastic Differential Equations](https://arxiv.org/abs/2011.13456). *ICLR*.
-3. Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., & Ganguli, S. (2015). [Deep Unsupervised Learning using Nonequilibrium Thermodynamics](https://arxiv.org/abs/1503.03585). *ICML*.

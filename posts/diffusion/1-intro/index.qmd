@@ -26,6 +26,7 @@ This multi-part series explores the theory behind modern generative models. Each
 | **Part 4** | [The Flow Matching Loss](../4-flow-matching-loss/) | The marginalization trick that makes training work |
 | **Part 5** | [Diffusion Models & SDEs](../5-diffusion-sde/) | Stochastic differential equations and Brownian motion |
 | **Part 6** | [Score Functions](../6-score-functions/) | Conditional and marginal scores, the training trick |
+| **Part 7** | [Training Algorithms](../7-training/) | CFM, DDPM, and the conversion formulas |
 
 ## What Are We Building?
 
@@ -75,6 +76,14 @@ Despite their different presentations, diffusion and flow matching are deeply re
 
 This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.
 
+::: {.callout-note appearance="simple"}
+## Summary
+
+We've seen two paradigms for generative modeling: **diffusion** (add noise, learn to denoise) and **flow matching** (learn a velocity field that transports noise to data). Despite their different motivations, they share deep mathematical structure — every diffusion model has an equivalent ODE formulation.
+
+This series will make these connections precise. We'll build up the theory piece by piece: first understanding what flows are (Part 2), then constructing probability paths (Part 3), deriving training losses (Part 4), adding stochasticity (Part 5), and finally connecting everything through score functions (Parts 6-7).
+:::
+
 ## What's Next?
 
 In the following posts, we'll develop the mathematical machinery to understand these methods properly:
@@ -87,8 +96,3 @@ In the following posts, we'll develop the mathematical machinery to understand t
 
 By the end, you'll understand not just *what* these models do, but *why* they work.
 
-## References
-
-1. Ho, J., Jain, A., & Abbeel, P. (2020). [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239). *NeurIPS*.
-2. Lipman, Y., et al. (2023). [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747). *ICLR*.
-3. Song, Y., et al. (2021). [Score-Based Generative Modeling through Stochastic Differential Equations](https://arxiv.org/abs/2011.13456). *ICLR*.

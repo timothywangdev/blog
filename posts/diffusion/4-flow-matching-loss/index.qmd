@@ -150,6 +150,19 @@ The marginalization trick is what makes flow matching **tractable**. Here's the 
 The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.
 :::
 
+::: {.callout-note appearance="simple"}
+## Summary
+
+We proved the **marginalization trick**: training on conditional targets $u_t^{target}(x|z)$ is mathematically equivalent to training on the intractable marginal $u_t^{target}(x)$. The key step was showing that the cross-term $\mathbb{E}[u_t^\theta \cdot u_t^{target}]$ simplifies when we expand the marginal definition — the intractable $p_t(x)$ cancels.
+
+This gives us the **Conditional Flow Matching (CFM) loss**:
+$$
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x}[\|u_t^\theta(x) - u_t^{target}(x|z)\|^2]
+$$
+
+The flow matching framework is now complete for deterministic sampling. Next, we'll add stochasticity to get diffusion models.
+:::
+
 ## What's Next?
 
 We've now covered the complete flow matching framework — from vector fields to probability paths to the training loss. But remember from [Part 1](../1-intro/) that diffusion models take a different approach: they add **stochasticity** to the process.
@@ -160,8 +173,3 @@ In the [next post](../5-diffusion-sde/), we'll see how **diffusion models** gene
 - Why the random term $\sigma_t dW_t$ enables new behaviors
 - The connection between Brownian motion and continuous randomness
 
-## References
-
-1. Lipman, Y., et al. (2023). [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747). *ICLR*.
-2. Albergo, M. S., & Vanden-Eijnden, E. (2023). [Building Normalizing Flows with Stochastic Interpolants](https://arxiv.org/abs/2209.15571). *ICLR*.
-3. Liu, X., Gong, C., & Liu, Q. (2023). [Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow](https://arxiv.org/abs/2209.03003). *ICLR*.

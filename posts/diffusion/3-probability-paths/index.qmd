@@ -202,6 +202,19 @@ u_t(x | z)
 $$
 where x is the current position at time t.
 
+::: {.callout-note appearance="simple"}
+## Summary
+
+We constructed **probability paths** that interpolate from noise to data. The key insight: build the marginal path $p_t(x)$ from simpler **conditional paths** $p_t(x|z)$, each targeting a specific data point.
+
+For Gaussian paths $p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I)$, we derived the conditional vector field:
+$$
+u_t^{target}(x|z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+$$
+
+This is our training target — but there's a catch: it depends on $z$, which we don't know at generation time. The next post resolves this with the marginalization trick.
+:::
+
 ## What's Next?
 
 We now have:
@@ -213,7 +226,3 @@ But there's a problem: these are *conditional* on knowing the target data point 
 
 In the [next post](../4-flow-matching-loss/), we'll see how the **marginalization trick** solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing $z$.
 
-## References
-
-1. Lipman, Y., et al. (2023). [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747). *ICLR*.
-2. Albergo, M. S., & Vanden-Eijnden, E. (2023). [Building Normalizing Flows with Stochastic Interpolants](https://arxiv.org/abs/2209.15571). *ICLR*.
