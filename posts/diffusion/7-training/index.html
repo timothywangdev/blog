@@ -7,9 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Hujie Wang">
-<meta name="dcterms.date" content="2025-11-30">
+<meta name="dcterms.date" content="2025-12-14">
+<meta name="description" content="The complete training algorithms for flow matching and diffusion models, including the DDPM loss and conversion formulas">
 
-<title>Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 7: Training Targets and Algorithms – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -328,17 +329,8 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-flow-matching-loss-why-training-works" id="toc-the-flow-matching-loss-why-training-works" class="nav-link active" data-scroll-target="#the-flow-matching-loss-why-training-works">The Flow Matching Loss: Why Training Works</a>
-  <ul class="collapse">
-  <li><a href="#the-problem-were-solving" id="toc-the-problem-were-solving" class="nav-link" data-scroll-target="#the-problem-were-solving">The Problem We’re Solving</a></li>
-  <li><a href="#the-marginalization-trick" id="toc-the-marginalization-trick" class="nav-link" data-scroll-target="#the-marginalization-trick">The Marginalization Trick</a></li>
-  <li><a href="#the-continuity-equation" id="toc-the-continuity-equation" class="nav-link" data-scroll-target="#the-continuity-equation">The Continuity Equation</a>
-  <ul class="collapse">
-  <li><a href="#physics-background" id="toc-physics-background" class="nav-link" data-scroll-target="#physics-background">Physics Background</a></li>
-  </ul></li>
-  <li><a href="#proof-of-the-marginalization-trick" id="toc-proof-of-the-marginalization-trick" class="nav-link" data-scroll-target="#proof-of-the-marginalization-trick">Proof of the Marginalization Trick</a></li>
-  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
-  </ul></li>
+  <li><a href="#flow-matching" id="toc-flow-matching" class="nav-link active" data-scroll-target="#flow-matching">Flow Matching</a></li>
+  <li><a href="#score-matching" id="toc-score-matching" class="nav-link" data-scroll-target="#score-matching">Score Matching</a></li>
   </ul>
 </nav>
     </div>
@@ -348,14 +340,21 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Diffusion &amp; Flow Matching Part 4: The Flow Matching Loss</h1>
+<h1 class="title">Diffusion &amp; Flow Matching Part 7: Training Targets and Algorithms</h1>
   <div class="quarto-categories">
     <div class="quarto-category">diffusion</div>
     <div class="quarto-category">flow-matching</div>
     <div class="quarto-category">generative-models</div>
+    <div class="quarto-category">score-matching</div>
+    <div class="quarto-category">training</div>
   </div>
   </div>
 
+<div>
+  <div class="description">
+    The complete training algorithms for flow matching and diffusion models, including the DDPM loss and conversion formulas
+  </div>
+</div>
 
 
 <div class="quarto-title-meta">
@@ -370,7 +369,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 30, 2025</p>
+      <p class="date">December 14, 2025</p>
     </div>
   </div>
   
@@ -393,155 +392,380 @@ window.Quarto = {
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>The problem</strong>: We have conditional vector fields <span class="math inline">\(u_t(x|z)\)</span>, but at generation time we don’t know <span class="math inline">\(z\)</span></li>
-<li><strong>The solution</strong>: The marginalization trick — training on conditional targets is <em>equivalent</em> to learning the marginal vector field</li>
-<li><strong>The loss</strong>: Simply <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span>, averaged over time <span class="math inline">\(t\)</span>, data <span class="math inline">\(z\)</span>, and noise <span class="math inline">\(x_0\)</span></li>
-<li><strong>Why it works</strong>: The continuity equation guarantees the marginal vector field follows the marginal probability path</li>
+<li><strong>Flow matching training</strong>: Regress against the conditional vector field <span class="math inline">\(u_t^{target}(x|z)\)</span> — mathematically equivalent to the intractable marginal loss</li>
+<li><strong>Score matching training</strong>: Same trick works for <span class="math inline">\(\nabla \log p_t(x|z)\)</span> — this is how DDPM and Stable Diffusion are trained</li>
+<li><strong>DDPM simplification</strong>: Reparameterize to predict noise <span class="math inline">\(\epsilon\)</span> instead of score, and drop the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting</li>
+<li><strong>Conversion formula</strong>: For Gaussian paths, you can convert between vector field, score, and noise prediction networks</li>
 </ul>
 </div>
 </div>
-<section id="the-flow-matching-loss-why-training-works" class="level1">
-<h1>The Flow Matching Loss: Why Training Works</h1>
-<p>In the <a href="../3-probability-paths/">previous post</a>, we constructed conditional probability paths and conditional vector fields. But there’s a fundamental problem: these are <em>conditional</em> on knowing the target data point <span class="math inline">\(z\)</span>. At generation time, we don’t know <span class="math inline">\(z\)</span> — that’s what we’re trying to generate!</p>
-<p>This post explains how the <strong>marginalization trick</strong> solves this problem.</p>
-<section id="the-problem-were-solving" class="level2">
-<h2 class="anchored" data-anchor-id="the-problem-were-solving">The Problem We’re Solving</h2>
-<p>Let’s step back and understand what we’re trying to achieve.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Our Goal
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Train a neural network <span class="math inline">\(u_t^\theta(x)\)</span> that can transform noise into samples from <span class="math inline">\(p_{data}\)</span>. To do this, we need a <strong>training target</strong> — a vector field that the network should learn to approximate.</p>
-</div>
-</div>
-<p><strong>The ideal target</strong> is the marginal vector field <span class="math inline">\(u_t^{target}(x)\)</span> that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>. If our network learns this, it can generate samples by:</p>
+<p>In the <a href="../6-score-functions/">previous posts</a>, we derived the target vector field <span class="math inline">\(u_t^{target}(x)\)</span> for flow matching and extended it to SDEs via score functions. Now we face the practical question: <strong>how do we actually train a neural network?</strong></p>
+<section id="flow-matching" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching">Flow Matching</h2>
+<p>Recall from <a href="../2-flows/">Part 2</a> that flow matching generates samples via an ODE:</p>
+<p><span class="math display">\[
+dX_t = u_t^\theta(X_t) dt, \quad
+X_0 \sim p_{init}
+\]</span></p>
+<p>We want to train the neural network <span class="math inline">\(u_t^\theta(x)\)</span> to approximate the target vector field <span class="math inline">\(u_t^{target}(x)\)</span> that we derived in <a href="../4-flow-matching-loss/">Part 4</a>. In other words, we want to find the parameters <span class="math inline">\(\theta\)</span> such that <span class="math inline">\(u_t^\theta(x) \approx u_t^{target}(x)\)</span>.</p>
+<p>An intuitive way to do this is to minimize the squared error between <span class="math inline">\(u_t^\theta(x)\)</span> and <span class="math inline">\(u_t^{target}(x)\)</span>. In the following, we denote <span class="math inline">\(\text{Unif}\)</span> as the uniform distribution on <span class="math inline">\([0,1]\)</span>.</p>
+<p><span class="math display">\[
+\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t \sim \text{Unif}, x \sim p_t(x)} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
+\]</span></p>
+<p>But how do we sample <span class="math inline">\(x \sim p_t(x)\)</span>? Recall the marginal is defined as:</p>
+<p><span class="math display">\[
+p_t(x) = \int p_t(x | z) p_{data}(z) dz
+\]</span></p>
+<p>This integral tells us that <span class="math inline">\(p_t(x)\)</span> is the marginal of the joint distribution <span class="math inline">\(p_t(x, z) = p_t(x|z) p_{data}(z)\)</span>. So sampling <span class="math inline">\(x \sim p_t(x)\)</span> is equivalent to <strong>ancestral sampling</strong> from the joint:</p>
 <ol type="1">
-<li>Start with noise <span class="math inline">\(x_0 \sim p_{init}\)</span></li>
-<li>Follow the learned vector field: <span class="math inline">\(\frac{dx}{dt} = u_t^\theta(x)\)</span></li>
-<li>Arrive at a sample from <span class="math inline">\(p_{data}\)</span> at <span class="math inline">\(t=1\)</span></li>
+<li>Sample <span class="math inline">\(z \sim p_{data}(z)\)</span></li>
+<li>Sample <span class="math inline">\(x \sim p_t(x | z)\)</span></li>
+<li>Discard <span class="math inline">\(z\)</span>, keep <span class="math inline">\(x\)</span></li>
 </ol>
-<p><strong>The problem</strong>: We can’t compute <span class="math inline">\(u_t^{target}(x)\)</span> directly! It would require integrating over the entire data distribution — intractable.</p>
-<p><strong>The solution</strong>: The marginalization trick. It tells us that:</p>
-<ol type="1">
-<li>We can design simple <strong>conditional</strong> vector fields <span class="math inline">\(u_t^{target}(x|z)\)</span> (one for each data point <span class="math inline">\(z\)</span>)</li>
-<li>Training on these conditional targets is <strong>equivalent</strong> to training on the marginal target</li>
-<li>The trained network will learn the marginal vector field — exactly what we need for generation</li>
-</ol>
-<p>This is why the marginalization trick is so powerful: it turns an intractable problem into a tractable one.</p>
-</section>
-<section id="the-marginalization-trick" class="level2">
-<h2 class="anchored" data-anchor-id="the-marginalization-trick">The Marginalization Trick</h2>
-<p>Given a conditional vector field <span class="math inline">\(u_t^{target}(x | z)\)</span> that follows the conditional probability path <span class="math inline">\(p_t(\cdot | z)\)</span>, we can construct a marginal vector field <span class="math inline">\(u_t(x)\)</span> that follows the marginal probability path <span class="math inline">\(p_t(x)\)</span>:</p>
+<p>This means any expectation over <span class="math inline">\(p_t(x)\)</span> can be rewritten as an expectation over the joint:</p>
+<p><span class="math display">\[
+\mathbb{E}_{x \sim p_t(x)}[f(x)] = \mathbb{E}_{z \sim p_{data}, x \sim p_t(x|z)}[f(x)]
+\]</span></p>
+<p><strong>Notation</strong>: Since we always sample via the joint, we’ll use the shorthand:</p>
+<p><span class="math display">\[
+\mathbb{E}_{t,z,x}[\cdot] := \mathbb{E}_{t \sim \text{Unif}, z \sim p_{data}, x \sim p_t(x|z)}[\cdot]
+\]</span></p>
+<p>Applying this to our loss:</p>
+<p><span class="math display">\[
+\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
+\]</span></p>
+<p>We are not done here. While we do know the formula for <span class="math inline">\(u_t^{target}(x)\)</span></p>
 <p><span class="math display">\[
 u_t^{target}(x) = \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
 \]</span></p>
-<p>This is the marginalization trick. To prove it, we will use the continuity equation.</p>
-</section>
-<section id="the-continuity-equation" class="level2">
-<h2 class="anchored" data-anchor-id="the-continuity-equation">The Continuity Equation</h2>
-<div id="continuity-equation" class="callout callout-style-default callout-tip callout-titled">
+<p>but the integral itself is intractable. However, we can exploit the fact that the conditional vector field <span class="math inline">\(u_t^{target}(x | z)\)</span> is tractable. Let us define the conditional flow matching loss as</p>
+<p><span class="math display">\[
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x | z)\|^2 \right]
+\]</span></p>
+<p>Now I will prove that by explictly regressing against the conditional vector field, we are implicitly regressing against the marginal vector field.</p>
+<div id="cfm-proof" class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Theorem: Continuity Equation
+<span class="screen-reader-only">Tip</span>Theorem: The marginal flow matching loss equals the conditional flow matching loss up to a constant
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Let us consider a flow model with vector field <span class="math inline">\(u_t^{target}\)</span> with <span class="math inline">\(X_0 \sim p_{init}\)</span>. Then <span class="math inline">\(X_t \sim p_t\)</span> for all <span class="math inline">\(0 \leq t \leq 1\)</span> if and only if</p>
 <p><span class="math display">\[
-\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{target})(x) \quad \text{for all } x \in \mathbb{R}^d, 0 \leq t \leq 1
+\mathcal{L}_{FM}(\theta) = \mathcal{L}_{CFM}(\theta) + \mathcal{C}
 \]</span></p>
-<p>where <span class="math inline">\(\partial_t p_t(x) = \frac{d}{dt} p_t(x)\)</span> denotes the time-derivative of <span class="math inline">\(p_t(x)\)</span>.</p>
-</div>
-</div>
-<p>We will skip the proof of the continuity equation.</p>
-<p><span class="math inline">\(\nabla \cdot\)</span> is the divergence operator in vector calculus, it’s input is a vector and output is a scalar.</p>
-<p>If the divergence is negative, it means that the vector field is pointing inwards towards this point.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="divergence-negative.png" class="img-fluid figure-img" style="width:60.0%"></p>
-<figcaption>Negative divergence: arrows point inward (a “sink”)</figcaption>
-</figure>
-</div>
-<p>The divergence measures the net outflow of density from a point. And the negative divergence means the net inflow of density into this point.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="divergence-positive.png" class="img-fluid figure-img" style="width:60.0%"></p>
-<figcaption>Positive divergence: arrows point outward (a “source”)</figcaption>
-</figure>
-</div>
-<p>If you are not familiar with this or vector calculus, I recommend you watch the <a href="https://www.youtube.com/watch?v=So7vlARGs68&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=4">The Divergence of a Vector Field: Sources and Sinks</a> by Steve Brunton. He also talks about the continuity equation in the context of fluid dynamics here: <a href="https://www.youtube.com/watch?v=Fk3X6o39KEI&amp;list=PLMrJAkhIeNNQromC4WswpU1krLOq5Ro6S&amp;index=7">The Continuity Equation: A PDE for Mass Conservation, from Gauss’s Divergence Theorem</a>.</p>
-<section id="physics-background" class="level3">
-<h3 class="anchored" data-anchor-id="physics-background">Physics Background</h3>
-<p>Let me briefly explain the continuity equation, it originates from physics:</p>
+<p>where <span class="math inline">\(\mathcal{C}\)</span> is independent of <span class="math inline">\(\theta\)</span>. Their gradients are the same:</p>
 <p><span class="math display">\[
-\frac{\partial \rho}{\partial t} + \nabla \cdot J = 0
+\nabla_{\theta} \mathcal{L}_{FM}(\theta) = \nabla_{\theta} \mathcal{L}_{CFM}(\theta)
 \]</span></p>
-<p>where <span class="math inline">\(\rho\)</span> is the mass density and <span class="math inline">\(J\)</span> is the mass flux. The equation was derived from Gauss’s Divergence Theorem, it’s also called mass conservation equation.</p>
-<p>The flux is defined as the product of mass density and the the velocity field <span class="math inline">\(F\)</span>:</p>
-<p><span class="math display">\[
-J = \rho F
-\]</span></p>
-<p>Intuitively, the flux measures the amount of mass flow rate per unit area through a surface.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="flux-diagram.png" class="img-fluid figure-img" style="width:60.0%"></p>
-<figcaption>Flux: the rate of mass flowing through a surface</figcaption>
-</figure>
+<p>Hence, minimizing <span class="math inline">\(\mathcal{L}_{CFM}(\theta)\)</span> is equivalent to minimizing <span class="math inline">\(\mathcal{L}_{FM}(\theta)\)</span>. In particular, for the minimizer <span class="math inline">\(\theta^*\)</span>, it will hold that <span class="math inline">\(u_t^{\theta^*} = u_t^{target}\)</span></p>
 </div>
-<p>The mass conservation equation states that the rate of change of mass in a volume is equal to the net outflow of mass through the surface of the volume. It’s a fundamental law that mass cannot be created or destroyed within a defined system.</p>
-<p>In the context of flow models, the mass density is the probability density and the velocity field is the vector field <span class="math inline">\(u_t(x)\)</span>. The continuity equation then becomes:</p>
-<p><span class="math display">\[
-\frac{d}{dt} p_t(x) = -\nabla \cdot (u_t p_t)(x)
-\]</span></p>
-<p>This is the continuity equation in the context of flow models.</p>
-</section>
-</section>
-<section id="proof-of-the-marginalization-trick" class="level2">
-<h2 class="anchored" data-anchor-id="proof-of-the-marginalization-trick">Proof of the Marginalization Trick</h2>
-<p>Now we can return to the marginalization trick, we just need to show that the marginal vector field <span class="math inline">\(u_t(x)\)</span> satisfies the continuity equation.</p>
+</div>
+<p>Proof:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\partial_t p_t(x) &amp;= \partial_t \int p_t(x | z) p_{data}(z) dz \\
-&amp;= \int \partial_t p_t(x | z) p_{data}(z) dz \\
-&amp;= \int -\nabla \cdot (p_t(x | z) u_t^{target}(x | z)) p_{data}(z) dz \\
-&amp;\text{(we used the continuity equation for the conditional probability path $p_t(\cdot | z)$)} \\
-&amp;= - \nabla \cdot \left( \int p_t(x | z) u_t^{target}(x | z) p_{data}(z) dz \right)  \\
-&amp;\text{(linearity of the divergence operator)} \\
-&amp;= - \nabla \cdot \left( p_t(x) \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \right)  \\
-&amp;\text{(multiplied and divided by $p_t(x)$)} \\
-&amp;= - \nabla \cdot (u_t p_t)(x) \\
-&amp;\text{(definition of the marginal vector field $u_t(x)$)} \\
+\mathcal{L}_{FM}(\theta) &amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 - 2  u_t^\theta(x)^T u_t^{target}(x)  + \|u_t^{target}(x)\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 \right] - 2 \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] + \underbrace{\mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x)\|^2 \right]}_{=\mathcal{C_1}} \\
 \end{aligned}
 \]</span></p>
-<p>By the <a href="#continuity-equation">Continuity Equation</a>, we have shown that the marginal vector field <span class="math inline">\(u_t(x)\)</span> satisfies the continuity equation. Therefore, the marginal vector field <span class="math inline">\(u_t(x)\)</span> follows the marginal probability path <span class="math inline">\(p_t(x)\)</span> and we are done.</p>
-<div class="callout callout-style-simple callout-tip callout-titled">
+<p>The last term does not depend on <span class="math inline">\(\theta\)</span>. The key step is showing that the cross term simplifies. Note that <span class="math inline">\(u_t^{target}(x)\)</span> doesn’t depend on <span class="math inline">\(z\)</span>, so we can write:</p>
+<p><span class="math display">\[
+\mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] = \mathbb{E}_{t,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right]
+\]</span></p>
+<p>Now substitute the definition of <span class="math inline">\(u_t^{target}(x)\)</span> and write out the integral:</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp; \mathbb{E}_{t,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] \\
+&amp;= \int_t \int_x p_t(x) \cdot u_t^\theta(x)^T \underbrace{\left[ \int_z u_t^{target}(x|z) \frac{p_t(x|z) p_{data}(z)}{p_t(x)} dz \right]}_{u_t^{target}(x)} dx \, dt \\
+&amp;= \int_t \int_x \int_z u_t^\theta(x)^T u_t^{target}(x|z) \cdot \cancel{p_t(x)} \cdot \frac{p_t(x|z) p_{data}(z)}{\cancel{p_t(x)}} \, dz \, dx \, dt \\
+&amp;= \int_t \int_x \int_z u_t^\theta(x)^T u_t^{target}(x|z) \cdot p_t(x|z) p_{data}(z) \, dz \, dx \, dt \\
+&amp;= \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x|z) \right]
+\end{aligned}
+\]</span></p>
+<p>The intractable <span class="math inline">\(p_t(x)\)</span> cancels! This is why conditional flow matching works.</p>
+<p>Plugging this result back into our expansion of <span class="math inline">\(\mathcal{L}_{FM}\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathcal{L}_{FM}(\theta) &amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 \right] - 2 \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x | z) \right] + \mathcal{C_1}
+\end{aligned}
+\]</span></p>
+<p>We want to complete the square to get <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span>. Add and subtract <span class="math inline">\(\|u_t^{target}(x|z)\|^2\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 - 2 u_t^\theta(x)^T u_t^{target}(x | z) + \|u_t^{target}(x | z)\|^2 \right] - \mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x | z)\|^2 \right] + \mathcal{C_1}
+\end{aligned}
+\]</span></p>
+<p>The first expectation is now a perfect square <span class="math inline">\(\|a - b\|^2 = \|a\|^2 - 2a^T b + \|b\|^2\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) - u_t^{target}(x | z)\|^2 \right] - \underbrace{\mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x | z)\|^2 \right]}_{=\mathcal{C_2}} + \mathcal{C_1} \\
+&amp;= \mathcal{L}_{CFM}(\theta) + \underbrace{(\mathcal{C_1} - \mathcal{C_2})}_{=\mathcal{C}}
+\end{aligned}
+\]</span></p>
+<p>Both <span class="math inline">\(\mathcal{C_1}\)</span> and <span class="math inline">\(\mathcal{C_2}\)</span> are independent of <span class="math inline">\(\theta\)</span>, so their difference <span class="math inline">\(\mathcal{C}\)</span> is also independent of <span class="math inline">\(\theta\)</span>. ∎</p>
+<div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Key Takeaway
+<span class="screen-reader-only">Tip</span>Example: Flow Matching for Gaussian Conditional Probability Paths
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The marginalization trick is what makes flow matching <strong>tractable</strong>. Here’s the practical workflow:</p>
+<p>Consider the Gaussian conditional probability path from <a href="../3-probability-paths/">Part 3</a>: <span class="math inline">\(p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)\)</span>, where we sample via</p>
+<p><span class="math display">\[
+\epsilon \sim \mathcal{N}(0, I_d) \implies x = \alpha_t z + \beta_t \epsilon \sim \mathcal{N}(\alpha_t z, \beta_t^2 I_d) = p_t(\cdot | z)
+\]</span></p>
+<p>As we derived before, the conditional vector field is given by</p>
+<p><span class="math display">\[
+u_t^{target}(x | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+\]</span></p>
+<p>Therefore, the conditional flow matching loss is</p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp; \mathcal{L}_{CFM}(\theta) \\
+&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x | z)\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,x} \left[ \left\| u_t^\theta(x) - (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z - \frac{\dot{\beta}_t}{\beta_t} x \right\|^2 \right]
+\quad \text{(replace x with $\alpha_t z + \beta_t \epsilon$)} \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z - \frac{\dot{\beta}_t}{\beta_t} (\alpha_t z + \beta_t \epsilon) \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - \dot{\alpha}_t z + \cancel{\frac{\dot{\beta}_t \alpha_t}{\beta_t} z} - \cancel{\frac{\dot{\beta}_t \alpha_t}{\beta_t} z} - \dot{\beta}_t \epsilon \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t z + \dot{\beta}_t \epsilon) \right\|^2 \right] \\
+\end{aligned}
+\]</span></p>
+<p>Special case: <span class="math inline">\(\alpha_t = t\)</span> and <span class="math inline">\(\beta_t = 1-t\)</span>, so <span class="math inline">\(\dot{\alpha}_t = 1\)</span> and <span class="math inline">\(\dot{\beta}_t = -1\)</span>, commonly referred as <strong>Gaussian CondOT probability path</strong></p>
+<p><span class="math display">\[
+\begin{aligned}
+&amp; \mathcal{L}_{CFM}(\theta) \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t z + \dot{\beta}_t \epsilon) \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(tz + (1-t) \epsilon) - (z - \epsilon) \right\|^2 \right] \\
+\end{aligned}
+\]</span></p>
+<p>Famous SOTA models like Stable Difussion 3, Meta’s Movie Gen Video use this simple yet effective procedure.</p>
+</div>
+</div>
+<p>Now, let us derive the training algorithm for flow matching for the <strong>Gaussian CondOT probability path</strong>:</p>
+<p><span class="math display">\[
+\begin{array}{l}
+\hline
+\textbf{Algorithm: } \text{Flow Matching Training (Gaussian CondOT path } p_t(x|z) = \mathcal{N}(tz, (1-t)^2 I_d) \text{)} \\
+\hline
+\textbf{Require: } \text{A dataset of samples } z \sim p_{\text{data}}, \text{ neural network } u_t^\theta \\
+\text{1: } \textbf{for } \text{each mini-batch of data } \textbf{do} \\
+\text{2: } \quad \text{Sample a data example } z \text{ from the dataset.} \\
+\text{3: } \quad \text{Sample a random time } t \sim \text{Unif}_{[0,1]}. \\
+\text{4: } \quad \text{Sample noise } \epsilon \sim \mathcal{N}(0, I_d). \\
+\text{5: } \quad \text{Set } x = tz + (1-t)\epsilon \hfill \text{(General: } x \sim p_t(\cdot|z) \text{)} \\
+\text{6: } \quad \text{Compute loss } \mathcal{L}(\theta) = \|u_t^\theta(x) - (z - \epsilon)\|^2 \hfill \text{(General: } \|u_t^\theta(x) - u_t^{\text{target}}(x|z)\|^2 \text{)} \\
+\text{7: } \quad \text{Update } \theta \text{ via gradient descent on } \mathcal{L}(\theta). \\
+\text{8: } \textbf{end for} \\
+\hline
+\end{array}
+\]</span></p>
+</section>
+<section id="score-matching" class="level2">
+<h2 class="anchored" data-anchor-id="score-matching">Score Matching</h2>
+<p>Now let’s turn to training diffusion models. Recall from <a href="../5-diffusion-sde/">Part 5</a> that diffusion models use an SDE:</p>
+<p><span class="math display">\[
+\begin{aligned}
+dX_t &amp;= [u_t^{target}(X_t) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t)] dt + \sigma_t dW_t \\
+X_0 &amp;\sim p_{\text{init}}  \\
+\implies X_t \sim p_t
+\end{aligned}
+\]</span></p>
+<p>and as we showed in <a href="../6-score-functions/">Part 6</a>, the marginal score function is calculated as <span class="math display">\[
+\nabla \log p_t(x) = \int \nabla \log p_t(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
+\]</span></p>
+<p>To approximate <span class="math inline">\(\nabla \log p_t\)</span>, we can use a neural network called <strong>score network</strong> <span class="math inline">\(s_t^\theta(x)\)</span> to regress against the marginal score function.</p>
+<p>Similarly, we can design a score matching loss and a conditional score matching loss:</p>
+<p><span class="math display">\[
+\mathcal{L}_{SM}(\theta) = \mathbb{E}_{t,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x) \right\|^2 \right]
+\]</span></p>
+<p><span class="math display">\[
+\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x | z) \right\|^2 \right]
+\]</span></p>
+<p>Again, <span class="math inline">\(\nabla \log p_t(x)\)</span> is intractable, but <span class="math inline">\(\nabla \log p_t(x | z)\)</span> is tractable.</p>
+<div id="sm-proof" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: The marginal score matching loss equals the conditional score matching loss up to a constant
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><span class="math display">\[
+\mathcal{L}_{SM}(\theta) = \mathcal{L}_{CSM}(\theta) + \mathcal{C}
+\]</span></p>
+<p>where <span class="math inline">\(\mathcal{C}\)</span> is independent of <span class="math inline">\(\theta\)</span>. Their gradients are the same:</p>
+<p><span class="math display">\[
+\nabla_{\theta} \mathcal{L}_{SM}(\theta) = \nabla_{\theta} \mathcal{L}_{CSM}(\theta)
+\]</span></p>
+<p>In particular, for the minimizer <span class="math inline">\(\theta^*\)</span>, it will hold that <span class="math inline">\(s_t^{\theta^*} = \nabla \log p_t\)</span></p>
+</div>
+</div>
+<p>The proof is identical to the flow matching proof, as you can just replace <span class="math inline">\(u_t^{target}(x)\)</span> with <span class="math inline">\(\nabla \log p_t(x)\)</span> and <span class="math inline">\(u_t^{target}(x | z)\)</span> with <span class="math inline">\(\nabla \log p_t(x | z)\)</span>.</p>
+<p>After training, we can choose an arbitrary diffusion coefficient <span class="math inline">\(\sigma_t\)</span> and simulate the SDE to generate <span class="math inline">\(X_1 \sim p_{data}\)</span></p>
+<p><span class="math display">\[
+\begin{aligned}
+X_0 &amp;\sim p_{\text{init}} \\
+dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
+\end{aligned}
+\]</span></p>
+<p>In practice, we encounter two types of errors:</p>
 <ol type="1">
-<li><strong>Design</strong> a simple conditional vector field <span class="math inline">\(u_t^{target}(x|z)\)</span> (e.g., pointing from noise toward data point <span class="math inline">\(z\)</span>)</li>
-<li><strong>Train</strong> by sampling <span class="math inline">\((z, x)\)</span> pairs and minimizing <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span></li>
-<li><strong>Generate</strong> by following the learned <span class="math inline">\(u_t^\theta\)</span> from noise — it approximates the marginal vector field</li>
+<li>Numerical errors from discretizing the SDE</li>
+<li>Approximation errors: <span class="math inline">\(u_t^\theta(X_t) \neq u_t^{target}(X_t)\)</span></li>
 </ol>
-<p>The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.</p>
+<p>It may seem a disadvantage to learn both <span class="math inline">\(u_t^\theta\)</span> and <span class="math inline">\(s_t^\theta\)</span> for a diffusion model as opposed to a flow model. However, we can often directly learn both <span class="math inline">\(u_t^\theta\)</span> and <span class="math inline">\(s_t^\theta\)</span> in a single neural network with two outputs. Further, as we will see for a special case of Gaussian probability path, <span class="math inline">\(u_t^\theta\)</span> and <span class="math inline">\(s_t^\theta\)</span> can be converted into one another</p>
+<div id="unified-training" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Example: Denoising Diffusion Models: Score Matching
 </div>
 </div>
+<div class="callout-body-container callout-body">
+<p>As a remark, the term “denoising diffusion models” are simply diffusion models with Gaussian probability path <span class="math inline">\(p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)\)</span>.</p>
+<p>As before, the conditional score is</p>
+<p><span class="math display">\[
+\nabla \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
+\]</span></p>
+<p>Plugging into <span class="math inline">\(\mathcal{L}_{CSM}(\theta)\)</span> we get</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathcal{L}_{CSM}(\theta) &amp;= \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x | z) \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) + \frac{x - \alpha_t z}{\beta_t^2} \right\|^2 \right] \\
+&amp; \text{(replace x with $\alpha_t z + \beta_t \epsilon$)} \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| s_t^\theta(\alpha_t z + \beta_t \epsilon) + \frac{\alpha_t z + \beta_t \epsilon - \alpha_t z}{\beta_t^2} \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| s_t^\theta(\alpha_t z + \beta_t \epsilon) + \frac{\epsilon}{\beta_t} \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| \frac{1}{\beta_t} (\beta_t s_t^\theta(\alpha_t z + \beta_t \epsilon) + \epsilon) \right\|^2 \right] \\
+&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \frac{1}{\beta_t^2} \left\|  (\beta_t s_t^\theta(\alpha_t z + \beta_t \epsilon) + \epsilon) \right\|^2 \right] \\
+\end{aligned}
+\]</span></p>
+<p><strong>The problem</strong>: The <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting blows up as <span class="math inline">\(\beta_t \to 0\)</span> (near <span class="math inline">\(t=1\)</span> for schedules like <span class="math inline">\(\beta_t = 1-t\)</span>), causing numerical instability.</p>
+<p><strong>The DDPM approach</strong> (Ho et al., 2020) makes two independent modifications:</p>
+<p><strong>1. Reparameterize to noise prediction.</strong> The loss is zero when <span class="math inline">\(s_t^\theta(x) = -\frac{\epsilon}{\beta_t}\)</span>, i.e., when <span class="math inline">\(-\beta_t s_t^\theta(x) = \epsilon\)</span>. This motivates defining a <strong>noise prediction network</strong>:</p>
+<p><span class="math display">\[\epsilon_t^\theta(x, t) := -\beta_t s_t^\theta(x, t)\]</span></p>
+<p>With this reparameterization, the CSM loss becomes:</p>
+<p><span class="math display">\[
+\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \frac{1}{\beta_t^2} \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+\]</span></p>
+<p>Note: the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting is still there! Reparameterization only changes what the network outputs (score → noise), not the weighting.</p>
+<p><strong>2. Drop the weighting (empirical choice).</strong> Ho et al.&nbsp;found that simply removing <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> works better in practice:</p>
+<p><span class="math display">\[
+\mathcal{L}_{\text{DDPM}}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+\]</span></p>
+<p><strong>Why does dropping the weighting work?</strong> Both losses share the same global minimum (zero when <span class="math inline">\(\epsilon_t^\theta = \epsilon\)</span> for all <span class="math inline">\(t\)</span>). What differs is the optimization landscape:</p>
+<ul>
+<li><strong>Weighted loss</strong>: Heavily penalizes errors at small <span class="math inline">\(\beta_t\)</span> (nearly clean images) → unstable gradients, network focuses on easy samples</li>
+<li><strong>Simple loss</strong>: Equal weight across all noise levels → stable training, network focuses on harder denoising tasks</li>
+</ul>
+<p>This is an empirical finding, not a mathematical consequence. The simple loss happens to produce better sample quality.</p>
+<p><strong>Note on time conditioning</strong>: The network takes <strong>both</strong> the noisy image <span class="math inline">\(x\)</span> <strong>and</strong> time <span class="math inline">\(t\)</span> as input. It needs <span class="math inline">\(t\)</span> to know the signal-to-noise ratio: the same <span class="math inline">\(\epsilon\)</span> creates different amounts of visible corruption at different times. In words: “given a noisy image and the noise level <span class="math inline">\(t\)</span>, predict the (standardized) noise.” This is why it’s called <strong>denoising</strong> score matching</p>
+</div>
+</div>
+<p><span class="math display">\[
+\begin{array}{l}
+\hline
+\textbf{Algorithm: } \text{Score Matching Training (Gaussian Probability Path } p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d) \text{)} \\
+\hline
+\textbf{Require: } \text{A dataset of samples } z \sim p_{\text{data}}, \text{ neural network } s_t^\theta \text{ (or } \epsilon_t^\theta \text{)} \\
+\text{1: } \textbf{for } \text{each mini-batch of data } \textbf{do} \\
+\text{2: } \quad \text{Sample a data example } z \text{ from the dataset.} \\
+\text{3: } \quad \text{Sample a random time } t \sim \text{Unif}_{[0,1]}. \\
+\text{4: } \quad \text{Sample noise } \epsilon \sim \mathcal{N}(0, I_d). \\
+\text{5: } \quad \text{Set } x = \alpha_t z + \beta_t \epsilon \\
+\text{6: } \quad \text{Compute loss:} \\
+\quad \quad \mathcal{L}_{CSM}(\theta) = \|s_t^\theta(x, t) + \frac{\epsilon}{\beta_t}\|^2 \quad \textit{// score prediction} \\
+\quad \quad \mathcal{L}_{DDPM}(\theta) = \|\epsilon_t^\theta(x, t) - \epsilon\|^2 \quad \textit{// noise prediction (recommended)} \\
+\text{7: } \quad \text{Update } \theta \text{ via gradient descent on } \mathcal{L}(\theta). \\
+\text{8: } \textbf{end for} \\
+\hline
+\end{array}
+\]</span></p>
+<p>There is another very useful property of the Gaussian probability path: we only need to learn one of <span class="math inline">\(s_t^\theta\)</span> or <span class="math inline">\(\epsilon_t^\theta\)</span> and compute the other one from it directly.</p>
+<div id="conversion-formula" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Proposition: Conversion formula for Gaussian probability path
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><span class="math display">\[
+\begin{aligned}
+u_t^{target}(x | z) &amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x | z) \\
+u_t^\theta(x) &amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x)
+\end{aligned}
+\]</span></p>
+<p>where the formula for the above marginal vector field <span class="math inline">\(u_t^{target}\)</span> is called <strong>probability flow ODE</strong> in the literature.</p>
+</div>
+</div>
+<p>Proof:</p>
+<p>As we derived in the example: Flow matching for Gaussian probability path, the conditional vector field is given by</p>
+<p><span class="math display">\[
+u_t^{target}(x | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+\]</span></p>
+<p>and in the example: denoising diffusion models, the conditional score is given by</p>
+<p><span class="math display">\[
+\nabla \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
+\]</span></p>
+<p>Substituting the conditional score into the conditional vector field, we get</p>
+<p><span class="math display">\[
+\begin{aligned}
+u_t^{target}(x | z) &amp;= (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x \\
+\end{aligned}
+\]</span></p>
+<p>From the conditional score, we can solve for <span class="math inline">\(z\)</span>:</p>
+<p><span class="math display">\[
+\nabla \log p_t(x|z) = -\frac{x - \alpha_t z}{\beta_t^2} \implies z = \frac{x + \beta_t^2 \nabla \log p_t(x|z)}{\alpha_t}
+\]</span></p>
+<p>Substituting back:</p>
+<p><span class="math display">\[
+\begin{aligned}
+u_t^{target}(x | z) &amp;= (\dot{\alpha}_t - \frac{\dot{\beta}_t \alpha_t}{\beta_t}) \cdot \frac{x + \beta_t^2 \nabla \log p_t(x|z)}{\alpha_t} + \frac{\dot{\beta}_t}{\beta_t} x \\
+&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} \nabla \log p_t(x|z) - \frac{\dot{\beta}_t}{\beta_t} x - \dot{\beta}_t \beta_t \nabla \log p_t(x|z) + \frac{\dot{\beta}_t}{\beta_t} x \\
+&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x|z) \\
+\end{aligned}
+\]</span></p>
+<p>The same identity holds for the marginal vector field <span class="math inline">\(u_t^\theta(x)\)</span>:</p>
+<p><span class="math display">\[
+\begin{aligned}
+u_t^\theta(x) &amp;= \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \\
+&amp;= \int \left(\frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x|z)\right) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \\
+&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x \underbrace{\int \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz}_{=1} + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \underbrace{\int \nabla \log p_t(x|z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz}_{= \nabla \log p_t(x)} \\
+&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x) \\
+\end{aligned}
+\]</span></p>
+<p>where the first integral equals 1 because <span class="math inline">\(\frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span> is the posterior <span class="math inline">\(p(z|x)\)</span> which integrates to 1, and the second integral is the definition of the marginal score <span class="math inline">\(\nabla \log p_t(x)\)</span> (as we derived in the Score Matching section).</p>
+<p>If we have learnt <span class="math inline">\(s_t^\theta\)</span>, we can compute <span class="math inline">\(u_t^\theta\)</span> from it using the conversion formula:</p>
+<p><span class="math display">\[
+u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
+\]</span></p>
+<p>Rearrange to get the conversion formula for <span class="math inline">\(s_t^\theta\)</span>:</p>
+<p><span class="math display">\[
+s_t^\theta(x) = \frac{\alpha_t}{\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t} \left(u_t^\theta(x) - \frac{\dot{\alpha}_t}{\alpha_t} x\right)
+\]</span></p>
+<p>This holds as long as <span class="math inline">\(\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t \neq 0\)</span>. Factoring: <span class="math inline">\(\beta_t(\dot{\alpha}_t \beta_t - \dot{\beta}_t \alpha_t)\)</span>. Recall from Part 3 that <span class="math inline">\(\alpha_t\)</span> increases from 0 to 1 (<span class="math inline">\(\dot{\alpha}_t &gt; 0\)</span>) and <span class="math inline">\(\beta_t\)</span> decreases from 1 to 0 (<span class="math inline">\(\dot{\beta}_t &lt; 0\)</span>). Therefore <span class="math inline">\(\dot{\alpha}_t \beta_t &gt; 0\)</span> and <span class="math inline">\(-\dot{\beta}_t \alpha_t &gt; 0\)</span>, so the second factor is strictly positive for <span class="math inline">\(t \in (0, 1)\)</span>.</p>
+<p>If we have a trained a score network <span class="math inline">\(s_t^\theta\)</span>, we can use arbitrary <span class="math inline">\(\sigma_t \geq 0\)</span> to sample from the SDE:</p>
+<p><span class="math display">\[
+\begin{aligned}
+X_0 &amp;\sim p_{\text{init}} \\
+dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
+&amp;= [\frac{\dot{\alpha}_t}{\alpha_t} X_t + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
+&amp;= [(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t + \frac{\sigma_t^2}{2}) s_t^\theta(X_t) + \frac{\dot{\alpha}_t}{\alpha_t} X_t] dt + \sigma_t dW_t \\
+\end{aligned}
+\]</span></p>
+<p>and generate samples <span class="math inline">\(X_1 \sim p_{data}\)</span>. This corresponds to <strong>stochastic sampling from a denoising diffusion model</strong>.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -552,26 +776,17 @@ J = \rho F
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We proved the <strong>marginalization trick</strong>: training on conditional targets <span class="math inline">\(u_t^{target}(x|z)\)</span> is mathematically equivalent to training on the intractable marginal <span class="math inline">\(u_t^{target}(x)\)</span>. The key step was showing that the cross-term <span class="math inline">\(\mathbb{E}[u_t^\theta \cdot u_t^{target}]\)</span> simplifies when we expand the marginal definition — the intractable <span class="math inline">\(p_t(x)\)</span> cancels.</p>
-<p>This gives us the <strong>Conditional Flow Matching (CFM) loss</strong>: <span class="math display">\[
-\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x}[\|u_t^\theta(x) - u_t^{target}(x|z)\|^2]
+<p>We derived the complete training algorithms for generative models with Gaussian probability paths.</p>
+<p><strong>Flow Matching (CFM)</strong>: Regress <span class="math inline">\(u_t^\theta(x)\)</span> against <span class="math inline">\(\dot{\alpha}_t z + \dot{\beta}_t \epsilon\)</span> where <span class="math inline">\(x = \alpha_t z + \beta_t \epsilon\)</span>. For optimal transport paths (<span class="math inline">\(\alpha_t = t\)</span>, <span class="math inline">\(\beta_t = 1-t\)</span>), the target simplifies to <span class="math inline">\(z - \epsilon\)</span>.</p>
+<p><strong>Score Matching (CSM → DDPM)</strong>: Regress against the conditional score <span class="math inline">\(-\frac{\epsilon}{\beta_t}\)</span>. DDPM reparameterizes to predict <span class="math inline">\(\epsilon\)</span> directly and drops the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting for stability.</p>
+<p><strong>Conversion formula</strong>: For Gaussian paths, vector field and score are interconvertible: <span class="math display">\[
+u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
 \]</span></p>
-<p>The flow matching framework is now complete for deterministic sampling. Next, we’ll add stochasticity to get diffusion models.</p>
+<p>Train one network, get both — then sample via ODE (deterministic) or SDE (stochastic) as needed.</p>
 </div>
 </div>
-</section>
-<section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>We’ve now covered the complete flow matching framework — from vector fields to probability paths to the training loss. But remember from <a href="../1-intro/">Part 1</a> that diffusion models take a different approach: they add <strong>stochasticity</strong> to the process.</p>
-<p>In the <a href="../5-diffusion-sde/">next post</a>, we’ll see how <strong>diffusion models</strong> generalize flow matching by adding a noise term to the ODE, turning it into an SDE. We’ll discover:</p>
-<ul>
-<li>How to derive SDEs using <strong>infinitesimal updates</strong> instead of derivatives</li>
-<li>Why the random term <span class="math inline">\(\sigma_t dW_t\)</span> enables new behaviors</li>
-<li>The connection between Brownian motion and continuous randomness</li>
-</ul>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->

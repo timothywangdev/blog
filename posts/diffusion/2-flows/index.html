@@ -334,9 +334,7 @@ window.Quarto = {
   <li><a href="#formal-definition" id="toc-formal-definition" class="nav-link" data-scroll-target="#formal-definition">Formal Definition</a></li>
   <li><a href="#from-trajectory-to-flow" id="toc-from-trajectory-to-flow" class="nav-link" data-scroll-target="#from-trajectory-to-flow">From Trajectory to Flow</a></li>
   <li><a href="#flow-equation" id="toc-flow-equation" class="nav-link" data-scroll-target="#flow-equation">Flow Equation</a></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -461,9 +459,17 @@ X_0 &amp;= x_0 \implies \phi_0(x_0) = x_0
 \end{aligned}
 \tag{2}\]</span></span></p>
 <p>The second line says: at <span class="math inline">\(t=0\)</span>, every point is where it started (the flow is the identity map).</p>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We established the core vocabulary: a <strong>vector field</strong> <span class="math inline">\(u_t(x)\)</span> assigns directions to points in space, a <strong>trajectory</strong> <span class="math inline">\(X_t\)</span> follows those directions from a single starting point, and a <strong>flow</strong> <span class="math inline">\(\phi_t(x)\)</span> describes where <em>all</em> points end up. The relationship: <span class="math inline">\(X_t = \phi_t(x_0)\)</span>.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -495,26 +501,14 @@ X_0 &amp;= x_0 \implies \phi_0(x_0) = x_0
 </tr>
 </tbody>
 </table>
-<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
-<p>Think of it like Google Maps:</p>
-<ul>
-<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
-<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
-<li><strong>Trajectory</strong> = The route YOUR car takes</li>
-<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
-</ul>
-<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
+<p>This is the foundation for everything that follows. In the next post, we’ll use flows to transform <em>probability distributions</em> — the key to generative modeling.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
 <p>We now understand how vector fields generate flows. But for generative modeling, we need flows that transform <em>probability distributions</em> — specifically, from noise to data.</p>
 <p>In the <a href="../3-probability-paths/">next post</a>, we’ll see how to construct <strong>probability paths</strong> that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Chen, R. T. Q., et al.&nbsp;(2018). <a href="https://arxiv.org/abs/1806.07366">Neural Ordinary Differential Equations</a>. <em>NeurIPS</em>.</li>
-</ol>
 
 
 </section>

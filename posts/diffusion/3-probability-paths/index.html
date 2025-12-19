@@ -335,7 +335,6 @@ window.Quarto = {
   <li><a href="#example-gaussian-probability-paths" id="toc-example-gaussian-probability-paths" class="nav-link" data-scroll-target="#example-gaussian-probability-paths">Example: Gaussian Probability Paths</a></li>
   <li><a href="#conditional-vector-field-for-gaussian-paths" id="toc-conditional-vector-field-for-gaussian-paths" class="nav-link" data-scroll-target="#conditional-vector-field-for-gaussian-paths">Conditional Vector Field for Gaussian Paths</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -544,6 +543,23 @@ u_t^{target}(x_t | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t
 <p>Why do this? Because the vector filed must be written as <span class="math display">\[
 u_t(x | z)
 \]</span> where x is the current position at time t.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We constructed <strong>probability paths</strong> that interpolate from noise to data. The key insight: build the marginal path <span class="math inline">\(p_t(x)\)</span> from simpler <strong>conditional paths</strong> <span class="math inline">\(p_t(x|z)\)</span>, each targeting a specific data point.</p>
+<p>For Gaussian paths <span class="math inline">\(p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I)\)</span>, we derived the conditional vector field: <span class="math display">\[
+u_t^{target}(x|z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+\]</span></p>
+<p>This is our training target — but there’s a catch: it depends on <span class="math inline">\(z\)</span>, which we don’t know at generation time. The next post resolves this with the marginalization trick.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
@@ -554,13 +570,6 @@ u_t(x | z)
 </ol>
 <p>But there’s a problem: these are <em>conditional</em> on knowing the target data point <span class="math inline">\(z\)</span>. At generation time, we don’t know <span class="math inline">\(z\)</span> — that’s what we’re trying to generate!</p>
 <p>In the <a href="../4-flow-matching-loss/">next post</a>, we’ll see how the <strong>marginalization trick</strong> solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing <span class="math inline">\(z\)</span>.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
-<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
-</ol>
 
 
 </section>

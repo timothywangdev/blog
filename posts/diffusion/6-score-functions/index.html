@@ -334,10 +334,8 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#intuition-the-drunken-marching-band" id="toc-intuition-the-drunken-marching-band" class="nav-link" data-scroll-target="#intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</a></li>
   </ul></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   <li><a href="#how-training-actually-works" id="toc-how-training-actually-works" class="nav-link" data-scroll-target="#how-training-actually-works">How Training Actually Works</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -653,18 +651,27 @@ dX_t = [\underbrace{u_t^{target}(X_t)}_{\text{ODE drift}} + \underbrace{\frac{\s
 <ul>
 <li>The result: individual band members are stumbling like crazy (stochastic), but because we added the extra “inward pull”, the macro shape (helicopter view, i.e., the probability distribution) looks identical to the sober band.</li>
 </ul>
-</section>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>We first find the marginal vector field <span class="math inline">\(u_t^{target}\)</span> that follows the probability path <span class="math inline">\(p_t\)</span> for the ODE, then we can construct an SDE vector field <span class="math inline">\(u_t^{sde}\)</span> that follows the same probability path <span class="math inline">\(p_t\)</span> by making it satisfy the Fokker-Planck equation.</p>
-<p><span class="math display">\[
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We proved the <strong>SDE extension trick</strong>: given an ODE with drift <span class="math inline">\(u_t^{target}\)</span>, we can add arbitrary noise <span class="math inline">\(\sigma_t dW_t\)</span> while preserving the same probability path by correcting the drift: <span class="math display">\[
 u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
 \]</span></p>
-<p>And this is our training target. Because we cannot compute the marginal score function <span class="math inline">\(\nabla \log p_t\)</span> analytically, we will convert it to the conditional score function <span class="math inline">\(\nabla \log p_t(x | z)\)</span> instead</p>
-<p><span class="math display">\[
-\nabla \log p_t(x) = \mathbb{E}_{z \sim p(z | x, t)}[\nabla \log p_t(x | z)]
+<p>The correction term <span class="math inline">\(\frac{\sigma_t^2}{2} \nabla \log p_t\)</span> points toward high-probability regions, counteracting the dispersion from noise (the “drunken marching band” needs to aim inward to maintain formation).</p>
+<p>For training, we showed that the marginal score equals an expectation of conditional scores: <span class="math display">\[
+\nabla \log p_t(x) = \mathbb{E}_{z \sim p(z|x,t)}[\nabla \log p_t(x|z)]
 \]</span></p>
+<p>The magic: <strong>least-squares regression computes this expectation automatically</strong> — we never need to evaluate the intractable posterior <span class="math inline">\(p(z|x,t)\)</span> explicitly.</p>
+</div>
+</div>
+</section>
 </section>
 <section id="how-training-actually-works" class="level2">
 <h2 class="anchored" data-anchor-id="how-training-actually-works">How Training Actually Works</h2>
@@ -700,7 +707,7 @@ u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
 \mathcal{L}(\theta) = \mathbb{E}_{t \sim \text{Uniform}[0,1]} \mathbb{E}_{z \sim p_{data}} \mathbb{E}_{x \sim p_t(x|z)} \left[ \|s_\theta(x, t) - \nabla_x \log p_t(x|z)\|^2 \right]
 \]</span></p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -709,7 +716,7 @@ u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>This is the <strong>score matching identity</strong>. When we minimize the loss above, the optimal <span class="math inline">\(s_\theta^*(x,t)\)</span> satisfies: <span class="math display">\[
 s_\theta^*(x, t) = \mathbb{E}_{z \sim p(z|x,t)}[\nabla \log p_t(x|z)] = \nabla \log p_t(x)
@@ -744,15 +751,6 @@ s_\theta^*(x, t) = \mathbb{E}_{z \sim p(z|x,t)}[\nabla \log p_t(x|z)] = \nabla \
 <ul>
 <li><strong>Part 7</strong>: The complete training algorithm — how to implement score matching in practice</li>
 <li><strong>Part 8</strong>: Sampling and inference — how to generate new samples from the trained model</li>
-</ul>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ul>
-<li><p>Hyvärinen, A. (2005). <a href="https://jmlr.org/papers/v6/hyvarinen05a.html">Estimation of Non-Normalized Statistical Models by Score Matching</a>. <em>Journal of Machine Learning Research, 6</em>, 695–709. — The original score matching paper.</p></li>
-<li><p>Vincent, P. (2011). <a href="https://direct.mit.edu/neco/article/23/7/1661/7677/A-Connection-Between-Score-Matching-and-Denoising">A Connection Between Score Matching and Denoising Autoencoders</a>. <em>Neural Computation, 23</em>(7), 1661–1674. — Shows that denoising is equivalent to score matching.</p></li>
-<li><p>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR 2021 (Outstanding Paper Award)</em>. — The SDE framework unifying score-based models.</p></li>
-<li><p>Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>. — The flow matching framework connecting to our exposition.</p></li>
 </ul>
 
 

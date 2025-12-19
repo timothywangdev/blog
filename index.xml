@@ -10,7 +10,252 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.26</generator>
-<lastBuildDate>Tue, 02 Dec 2025 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 14 Dec 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 7: Training Targets and Algorithms</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/7-training/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Flow matching training</strong>: Regress against the conditional vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)"> — mathematically equivalent to the intractable marginal loss</li>
+<li><strong>Score matching training</strong>: Same trick works for <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%7Cz)"> — this is how DDPM and Stable Diffusion are trained</li>
+<li><strong>DDPM simplification</strong>: Reparameterize to predict noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> instead of score, and drop the <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D"> weighting</li>
+<li><strong>Conversion formula</strong>: For Gaussian paths, you can convert between vector field, score, and noise prediction networks</li>
+</ul>
+</div>
+</div>
+<p>In the <a href="../6-score-functions/">previous posts</a>, we derived the target vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> for flow matching and extended it to SDEs via score functions. Now we face the practical question: <strong>how do we actually train a neural network?</strong></p>
+<section id="flow-matching" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching">Flow Matching</h2>
+<p>Recall from <a href="../2-flows/">Part 2</a> that flow matching generates samples via an ODE:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AdX_t%20=%20u_t%5E%5Ctheta(X_t)%20dt,%20%5Cquad%0AX_0%20%5Csim%20p_%7Binit%7D%0A"></p>
+<p>We want to train the neural network <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)"> to approximate the target vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> that we derived in <a href="../4-flow-matching-loss/">Part 4</a>. In other words, we want to find the parameters <img src="https://latex.codecogs.com/png.latex?%5Ctheta"> such that <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)%20%5Capprox%20u_t%5E%7Btarget%7D(x)">.</p>
+<p>An intuitive way to do this is to minimize the squared error between <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)"> and <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)">. In the following, we denote <img src="https://latex.codecogs.com/png.latex?%5Ctext%7BUnif%7D"> as the uniform distribution on <img src="https://latex.codecogs.com/png.latex?%5B0,1%5D">.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt%20%5Csim%20%5Ctext%7BUnif%7D,%20x%20%5Csim%20p_t(x)%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>But how do we sample <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(x)">? Recall the marginal is defined as:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Ap_t(x)%20=%20%5Cint%20p_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%20dz%0A"></p>
+<p>This integral tells us that <img src="https://latex.codecogs.com/png.latex?p_t(x)"> is the marginal of the joint distribution <img src="https://latex.codecogs.com/png.latex?p_t(x,%20z)%20=%20p_t(x%7Cz)%20p_%7Bdata%7D(z)">. So sampling <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(x)"> is equivalent to <strong>ancestral sampling</strong> from the joint:</p>
+<ol type="1">
+<li>Sample <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D(z)"></li>
+<li>Sample <img src="https://latex.codecogs.com/png.latex?x%20%5Csim%20p_t(x%20%7C%20z)"></li>
+<li>Discard <img src="https://latex.codecogs.com/png.latex?z">, keep <img src="https://latex.codecogs.com/png.latex?x"></li>
+</ol>
+<p>This means any expectation over <img src="https://latex.codecogs.com/png.latex?p_t(x)"> can be rewritten as an expectation over the joint:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbb%7BE%7D_%7Bx%20%5Csim%20p_t(x)%7D%5Bf(x)%5D%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p_%7Bdata%7D,%20x%20%5Csim%20p_t(x%7Cz)%7D%5Bf(x)%5D%0A"></p>
+<p><strong>Notation</strong>: Since we always sample via the joint, we’ll use the shorthand:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbb%7BE%7D_%7Bt,z,x%7D%5B%5Ccdot%5D%20:=%20%5Cmathbb%7BE%7D_%7Bt%20%5Csim%20%5Ctext%7BUnif%7D,%20z%20%5Csim%20p_%7Bdata%7D,%20x%20%5Csim%20p_t(x%7Cz)%7D%5B%5Ccdot%5D%0A"></p>
+<p>Applying this to our loss:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>We are not done here. While we do know the formula for <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x)%20=%20%5Cint%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%0A"></p>
+<p>but the integral itself is intractable. However, we can exploit the fact that the conditional vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> is tractable. Let us define the conditional flow matching loss as</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>Now I will prove that by explictly regressing against the conditional vector field, we are implicitly regressing against the marginal vector field.</p>
+<div id="cfm-proof" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: The marginal flow matching loss equals the conditional flow matching loss up to a constant
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20=%20%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20+%20%5Cmathcal%7BC%7D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BC%7D"> is independent of <img src="https://latex.codecogs.com/png.latex?%5Ctheta">. Their gradients are the same:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Ctheta%7D%20%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20=%20%5Cnabla_%7B%5Ctheta%7D%20%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%0A"></p>
+<p>Hence, minimizing <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)"> is equivalent to minimizing <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)">. In particular, for the minimizer <img src="https://latex.codecogs.com/png.latex?%5Ctheta%5E*">, it will hold that <img src="https://latex.codecogs.com/png.latex?u_t%5E%7B%5Ctheta%5E*%7D%20=%20u_t%5E%7Btarget%7D"></p>
+</div>
+</div>
+<p>Proof:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x)%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta%20(x)%20%5C%7C%5E2%20-%202%20%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x)%20%20+%20%5C%7Cu_t%5E%7Btarget%7D(x)%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta%20(x)%20%5C%7C%5E2%20%5Cright%5D%20-%202%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x)%20%5Cright%5D%20+%20%5Cunderbrace%7B%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%7Btarget%7D(x)%5C%7C%5E2%20%5Cright%5D%7D_%7B=%5Cmathcal%7BC_1%7D%7D%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>The last term does not depend on <img src="https://latex.codecogs.com/png.latex?%5Ctheta">. The key step is showing that the cross term simplifies. Note that <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> doesn’t depend on <img src="https://latex.codecogs.com/png.latex?z">, so we can write:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x)%20%5Cright%5D%20=%20%5Cmathbb%7BE%7D_%7Bt,x%7D%20%5Cleft%5B%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x)%20%5Cright%5D%0A"></p>
+<p>Now substitute the definition of <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> and write out the integral:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;%20%5Cmathbb%7BE%7D_%7Bt,x%7D%20%5Cleft%5B%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x)%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cint_t%20%5Cint_x%20p_t(x)%20%5Ccdot%20u_t%5E%5Ctheta(x)%5ET%20%5Cunderbrace%7B%5Cleft%5B%20%5Cint_z%20u_t%5E%7Btarget%7D(x%7Cz)%20%5Cfrac%7Bp_t(x%7Cz)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20%5Cright%5D%7D_%7Bu_t%5E%7Btarget%7D(x)%7D%20dx%20%5C,%20dt%20%5C%5C%0A&amp;=%20%5Cint_t%20%5Cint_x%20%5Cint_z%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x%7Cz)%20%5Ccdot%20%5Ccancel%7Bp_t(x)%7D%20%5Ccdot%20%5Cfrac%7Bp_t(x%7Cz)%20p_%7Bdata%7D(z)%7D%7B%5Ccancel%7Bp_t(x)%7D%7D%20%5C,%20dz%20%5C,%20dx%20%5C,%20dt%20%5C%5C%0A&amp;=%20%5Cint_t%20%5Cint_x%20%5Cint_z%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x%7Cz)%20%5Ccdot%20p_t(x%7Cz)%20p_%7Bdata%7D(z)%20%5C,%20dz%20%5C,%20dx%20%5C,%20dt%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x%7Cz)%20%5Cright%5D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>The intractable <img src="https://latex.codecogs.com/png.latex?p_t(x)"> cancels! This is why conditional flow matching works.</p>
+<p>Plugging this result back into our expansion of <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BFM%7D">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta%20(x)%20%5C%7C%5E2%20%5Cright%5D%20-%202%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20%5Cright%5D%20+%20%5Cmathcal%7BC_1%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>We want to complete the square to get <img src="https://latex.codecogs.com/png.latex?%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x%7Cz)%5C%7C%5E2">. Add and subtract <img src="https://latex.codecogs.com/png.latex?%5C%7Cu_t%5E%7Btarget%7D(x%7Cz)%5C%7C%5E2">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta%20(x)%20%5C%7C%5E2%20-%202%20u_t%5E%5Ctheta(x)%5ET%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20+%20%5C%7Cu_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%20-%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%20+%20%5Cmathcal%7BC_1%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>The first expectation is now a perfect square <img src="https://latex.codecogs.com/png.latex?%5C%7Ca%20-%20b%5C%7C%5E2%20=%20%5C%7Ca%5C%7C%5E2%20-%202a%5ET%20b%20+%20%5C%7Cb%5C%7C%5E2">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta%20(x)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%20-%20%5Cunderbrace%7B%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%7D_%7B=%5Cmathcal%7BC_2%7D%7D%20+%20%5Cmathcal%7BC_1%7D%20%5C%5C%0A&amp;=%20%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20+%20%5Cunderbrace%7B(%5Cmathcal%7BC_1%7D%20-%20%5Cmathcal%7BC_2%7D)%7D_%7B=%5Cmathcal%7BC%7D%7D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Both <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BC_1%7D"> and <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BC_2%7D"> are independent of <img src="https://latex.codecogs.com/png.latex?%5Ctheta">, so their difference <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BC%7D"> is also independent of <img src="https://latex.codecogs.com/png.latex?%5Ctheta">. ∎</p>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Example: Flow Matching for Gaussian Conditional Probability Paths
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Consider the Gaussian conditional probability path from <a href="../3-probability-paths/">Part 3</a>: <img src="https://latex.codecogs.com/png.latex?p_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)">, where we sample via</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d)%20%5Cimplies%20x%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20=%20p_t(%5Ccdot%20%7C%20z)%0A"></p>
+<p>As we derived before, the conditional vector field is given by</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%0A"></p>
+<p>Therefore, the conditional flow matching loss is</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;%20%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20u_t%5E%5Ctheta(x)%20-%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5Cright%5C%7C%5E2%20%5Cright%5D%0A%5Cquad%20%5Ctext%7B(replace%20x%20with%20$%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon$)%7D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20u_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20-%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20u_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20-%20%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Ccancel%7B%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%20%5Calpha_t%7D%7B%5Cbeta_t%7D%20z%7D%20-%20%5Ccancel%7B%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%20%5Calpha_t%7D%7B%5Cbeta_t%7D%20z%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cepsilon%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20u_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20-%20(%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20%5Cepsilon)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Special case: <img src="https://latex.codecogs.com/png.latex?%5Calpha_t%20=%20t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%20=%201-t">, so <img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Calpha%7D_t%20=%201"> and <img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cbeta%7D_t%20=%20-1">, commonly referred as <strong>Gaussian CondOT probability path</strong></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A&amp;%20%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20u_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20-%20(%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20%5Cepsilon)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20u_t%5E%5Ctheta(tz%20+%20(1-t)%20%5Cepsilon)%20-%20(z%20-%20%5Cepsilon)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Famous SOTA models like Stable Difussion 3, Meta’s Movie Gen Video use this simple yet effective procedure.</p>
+</div>
+</div>
+<p>Now, let us derive the training algorithm for flow matching for the <strong>Gaussian CondOT probability path</strong>:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Barray%7D%7Bl%7D%0A%5Chline%0A%5Ctextbf%7BAlgorithm:%20%7D%20%5Ctext%7BFlow%20Matching%20Training%20(Gaussian%20CondOT%20path%20%7D%20p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(tz,%20(1-t)%5E2%20I_d)%20%5Ctext%7B)%7D%20%5C%5C%0A%5Chline%0A%5Ctextbf%7BRequire:%20%7D%20%5Ctext%7BA%20dataset%20of%20samples%20%7D%20z%20%5Csim%20p_%7B%5Ctext%7Bdata%7D%7D,%20%5Ctext%7B%20neural%20network%20%7D%20u_t%5E%5Ctheta%20%5C%5C%0A%5Ctext%7B1:%20%7D%20%5Ctextbf%7Bfor%20%7D%20%5Ctext%7Beach%20mini-batch%20of%20data%20%7D%20%5Ctextbf%7Bdo%7D%20%5C%5C%0A%5Ctext%7B2:%20%7D%20%5Cquad%20%5Ctext%7BSample%20a%20data%20example%20%7D%20z%20%5Ctext%7B%20from%20the%20dataset.%7D%20%5C%5C%0A%5Ctext%7B3:%20%7D%20%5Cquad%20%5Ctext%7BSample%20a%20random%20time%20%7D%20t%20%5Csim%20%5Ctext%7BUnif%7D_%7B%5B0,1%5D%7D.%20%5C%5C%0A%5Ctext%7B4:%20%7D%20%5Cquad%20%5Ctext%7BSample%20noise%20%7D%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d).%20%5C%5C%0A%5Ctext%7B5:%20%7D%20%5Cquad%20%5Ctext%7BSet%20%7D%20x%20=%20tz%20+%20(1-t)%5Cepsilon%20%5Chfill%20%5Ctext%7B(General:%20%7D%20x%20%5Csim%20p_t(%5Ccdot%7Cz)%20%5Ctext%7B)%7D%20%5C%5C%0A%5Ctext%7B6:%20%7D%20%5Cquad%20%5Ctext%7BCompute%20loss%20%7D%20%5Cmathcal%7BL%7D(%5Ctheta)%20=%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20(z%20-%20%5Cepsilon)%5C%7C%5E2%20%5Chfill%20%5Ctext%7B(General:%20%7D%20%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7B%5Ctext%7Btarget%7D%7D(x%7Cz)%5C%7C%5E2%20%5Ctext%7B)%7D%20%5C%5C%0A%5Ctext%7B7:%20%7D%20%5Cquad%20%5Ctext%7BUpdate%20%7D%20%5Ctheta%20%5Ctext%7B%20via%20gradient%20descent%20on%20%7D%20%5Cmathcal%7BL%7D(%5Ctheta).%20%5C%5C%0A%5Ctext%7B8:%20%7D%20%5Ctextbf%7Bend%20for%7D%20%5C%5C%0A%5Chline%0A%5Cend%7Barray%7D%0A"></p>
+</section>
+<section id="score-matching" class="level2">
+<h2 class="anchored" data-anchor-id="score-matching">Score Matching</h2>
+<p>Now let’s turn to training diffusion models. Recall from <a href="../5-diffusion-sde/">Part 5</a> that diffusion models use an SDE:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AdX_t%20&amp;=%20%5Bu_t%5E%7Btarget%7D(X_t)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t(X_t)%5D%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0AX_0%20&amp;%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20%20%5C%5C%0A%5Cimplies%20X_t%20%5Csim%20p_t%0A%5Cend%7Baligned%7D%0A"></p>
+<p>and as we showed in <a href="../6-score-functions/">Part 6</a>, the marginal score function is calculated as <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cint%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%0A"></p>
+<p>To approximate <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t">, we can use a neural network called <strong>score network</strong> <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta(x)"> to regress against the marginal score function.</p>
+<p>Similarly, we can design a score matching loss and a conditional score matching loss:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BSM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,x%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20s_t%5E%5Ctheta(x)%20-%20%5Cnabla%20%5Clog%20p_t(x)%20%5Cright%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20s_t%5E%5Ctheta(x)%20-%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Cright%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>Again, <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> is intractable, but <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)"> is tractable.</p>
+<div id="sm-proof" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Theorem: The marginal score matching loss equals the conditional score matching loss up to a constant
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BSM%7D(%5Ctheta)%20=%20%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)%20+%20%5Cmathcal%7BC%7D%0A"></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BC%7D"> is independent of <img src="https://latex.codecogs.com/png.latex?%5Ctheta">. Their gradients are the same:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla_%7B%5Ctheta%7D%20%5Cmathcal%7BL%7D_%7BSM%7D(%5Ctheta)%20=%20%5Cnabla_%7B%5Ctheta%7D%20%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)%0A"></p>
+<p>In particular, for the minimizer <img src="https://latex.codecogs.com/png.latex?%5Ctheta%5E*">, it will hold that <img src="https://latex.codecogs.com/png.latex?s_t%5E%7B%5Ctheta%5E*%7D%20=%20%5Cnabla%20%5Clog%20p_t"></p>
+</div>
+</div>
+<p>The proof is identical to the flow matching proof, as you can just replace <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)"> with <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> and <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> with <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)">.</p>
+<p>After training, we can choose an arbitrary diffusion coefficient <img src="https://latex.codecogs.com/png.latex?%5Csigma_t"> and simulate the SDE to generate <img src="https://latex.codecogs.com/png.latex?X_1%20%5Csim%20p_%7Bdata%7D"></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_0%20&amp;%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20%5C%5C%0AdX_t%20&amp;=%20%5Bu_t%5E%5Ctheta(X_t)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20s_t%5E%5Ctheta(X_t)%5D%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>In practice, we encounter two types of errors:</p>
+<ol type="1">
+<li>Numerical errors from discretizing the SDE</li>
+<li>Approximation errors: <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(X_t)%20%5Cneq%20u_t%5E%7Btarget%7D(X_t)"></li>
+</ol>
+<p>It may seem a disadvantage to learn both <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta"> and <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta"> for a diffusion model as opposed to a flow model. However, we can often directly learn both <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta"> and <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta"> in a single neural network with two outputs. Further, as we will see for a special case of Gaussian probability path, <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta"> and <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta"> can be converted into one another</p>
+<div id="unified-training" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Example: Denoising Diffusion Models: Score Matching
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>As a remark, the term “denoising diffusion models” are simply diffusion models with Gaussian probability path <img src="https://latex.codecogs.com/png.latex?p_t(%5Ccdot%20%7C%20z)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)">.</p>
+<p>As before, the conditional score is</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
+<p>Plugging into <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)"> we get</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)%20&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20s_t%5E%5Ctheta(x)%20-%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20s_t%5E%5Ctheta(x)%20+%20%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;%20%5Ctext%7B(replace%20x%20with%20$%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon$)%7D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20s_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20+%20%5Cfrac%7B%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20s_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20+%20%5Cfrac%7B%5Cepsilon%7D%7B%5Cbeta_t%7D%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20%5Cfrac%7B1%7D%7B%5Cbeta_t%7D%20(%5Cbeta_t%20s_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20+%20%5Cepsilon)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D%20%5Cleft%5C%7C%20%20(%5Cbeta_t%20s_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon)%20+%20%5Cepsilon)%20%5Cright%5C%7C%5E2%20%5Cright%5D%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p><strong>The problem</strong>: The <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D"> weighting blows up as <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%20%5Cto%200"> (near <img src="https://latex.codecogs.com/png.latex?t=1"> for schedules like <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%20=%201-t">), causing numerical instability.</p>
+<p><strong>The DDPM approach</strong> (Ho et al., 2020) makes two independent modifications:</p>
+<p><strong>1. Reparameterize to noise prediction.</strong> The loss is zero when <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta(x)%20=%20-%5Cfrac%7B%5Cepsilon%7D%7B%5Cbeta_t%7D">, i.e., when <img src="https://latex.codecogs.com/png.latex?-%5Cbeta_t%20s_t%5E%5Ctheta(x)%20=%20%5Cepsilon">. This motivates defining a <strong>noise prediction network</strong>:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cepsilon_t%5E%5Ctheta(x,%20t)%20:=%20-%5Cbeta_t%20s_t%5E%5Ctheta(x,%20t)"></p>
+<p>With this reparameterization, the CSM loss becomes:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D%20%5Cleft%5C%7C%20%5Cepsilon_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon,%20t)%20-%20%5Cepsilon%20%5Cright%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>Note: the <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D"> weighting is still there! Reparameterization only changes what the network outputs (score → noise), not the weighting.</p>
+<p><strong>2. Drop the weighting (empirical choice).</strong> Ho et al.&nbsp;found that simply removing <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D"> works better in practice:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7B%5Ctext%7BDDPM%7D%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,z,%5Cepsilon%7D%20%5Cleft%5B%20%5Cleft%5C%7C%20%5Cepsilon_t%5E%5Ctheta(%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon,%20t)%20-%20%5Cepsilon%20%5Cright%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p><strong>Why does dropping the weighting work?</strong> Both losses share the same global minimum (zero when <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_t%5E%5Ctheta%20=%20%5Cepsilon"> for all <img src="https://latex.codecogs.com/png.latex?t">). What differs is the optimization landscape:</p>
+<ul>
+<li><strong>Weighted loss</strong>: Heavily penalizes errors at small <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> (nearly clean images) → unstable gradients, network focuses on easy samples</li>
+<li><strong>Simple loss</strong>: Equal weight across all noise levels → stable training, network focuses on harder denoising tasks</li>
+</ul>
+<p>This is an empirical finding, not a mathematical consequence. The simple loss happens to produce better sample quality.</p>
+<p><strong>Note on time conditioning</strong>: The network takes <strong>both</strong> the noisy image <img src="https://latex.codecogs.com/png.latex?x"> <strong>and</strong> time <img src="https://latex.codecogs.com/png.latex?t"> as input. It needs <img src="https://latex.codecogs.com/png.latex?t"> to know the signal-to-noise ratio: the same <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> creates different amounts of visible corruption at different times. In words: “given a noisy image and the noise level <img src="https://latex.codecogs.com/png.latex?t">, predict the (standardized) noise.” This is why it’s called <strong>denoising</strong> score matching</p>
+</div>
+</div>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Barray%7D%7Bl%7D%0A%5Chline%0A%5Ctextbf%7BAlgorithm:%20%7D%20%5Ctext%7BScore%20Matching%20Training%20(Gaussian%20Probability%20Path%20%7D%20p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)%20%5Ctext%7B)%7D%20%5C%5C%0A%5Chline%0A%5Ctextbf%7BRequire:%20%7D%20%5Ctext%7BA%20dataset%20of%20samples%20%7D%20z%20%5Csim%20p_%7B%5Ctext%7Bdata%7D%7D,%20%5Ctext%7B%20neural%20network%20%7D%20s_t%5E%5Ctheta%20%5Ctext%7B%20(or%20%7D%20%5Cepsilon_t%5E%5Ctheta%20%5Ctext%7B)%7D%20%5C%5C%0A%5Ctext%7B1:%20%7D%20%5Ctextbf%7Bfor%20%7D%20%5Ctext%7Beach%20mini-batch%20of%20data%20%7D%20%5Ctextbf%7Bdo%7D%20%5C%5C%0A%5Ctext%7B2:%20%7D%20%5Cquad%20%5Ctext%7BSample%20a%20data%20example%20%7D%20z%20%5Ctext%7B%20from%20the%20dataset.%7D%20%5C%5C%0A%5Ctext%7B3:%20%7D%20%5Cquad%20%5Ctext%7BSample%20a%20random%20time%20%7D%20t%20%5Csim%20%5Ctext%7BUnif%7D_%7B%5B0,1%5D%7D.%20%5C%5C%0A%5Ctext%7B4:%20%7D%20%5Cquad%20%5Ctext%7BSample%20noise%20%7D%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I_d).%20%5C%5C%0A%5Ctext%7B5:%20%7D%20%5Cquad%20%5Ctext%7BSet%20%7D%20x%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon%20%5C%5C%0A%5Ctext%7B6:%20%7D%20%5Cquad%20%5Ctext%7BCompute%20loss:%7D%20%5C%5C%0A%5Cquad%20%5Cquad%20%5Cmathcal%7BL%7D_%7BCSM%7D(%5Ctheta)%20=%20%5C%7Cs_t%5E%5Ctheta(x,%20t)%20+%20%5Cfrac%7B%5Cepsilon%7D%7B%5Cbeta_t%7D%5C%7C%5E2%20%5Cquad%20%5Ctextit%7B//%20score%20prediction%7D%20%5C%5C%0A%5Cquad%20%5Cquad%20%5Cmathcal%7BL%7D_%7BDDPM%7D(%5Ctheta)%20=%20%5C%7C%5Cepsilon_t%5E%5Ctheta(x,%20t)%20-%20%5Cepsilon%5C%7C%5E2%20%5Cquad%20%5Ctextit%7B//%20noise%20prediction%20(recommended)%7D%20%5C%5C%0A%5Ctext%7B7:%20%7D%20%5Cquad%20%5Ctext%7BUpdate%20%7D%20%5Ctheta%20%5Ctext%7B%20via%20gradient%20descent%20on%20%7D%20%5Cmathcal%7BL%7D(%5Ctheta).%20%5C%5C%0A%5Ctext%7B8:%20%7D%20%5Ctextbf%7Bend%20for%7D%20%5C%5C%0A%5Chline%0A%5Cend%7Barray%7D%0A"></p>
+<p>There is another very useful property of the Gaussian probability path: we only need to learn one of <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta"> or <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_t%5E%5Ctheta"> and compute the other one from it directly.</p>
+<div id="conversion-formula" class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Proposition: Conversion formula for Gaussian probability path
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20&amp;=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20%5C%5C%0Au_t%5E%5Ctheta(x)%20&amp;=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20%5Cnabla%20%5Clog%20p_t(x)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>where the formula for the above marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D"> is called <strong>probability flow ODE</strong> in the literature.</p>
+</div>
+</div>
+<p>Proof:</p>
+<p>As we derived in the example: Flow matching for Gaussian probability path, the conditional vector field is given by</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%0A"></p>
+<p>and in the example: denoising diffusion models, the conditional score is given by</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
+<p>Substituting the conditional score into the conditional vector field, we get</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20&amp;=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>From the conditional score, we can solve for <img src="https://latex.codecogs.com/png.latex?z">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x%7Cz)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%20%5Cimplies%20z%20=%20%5Cfrac%7Bx%20+%20%5Cbeta_t%5E2%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%7D%7B%5Calpha_t%7D%0A"></p>
+<p>Substituting back:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20&amp;=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%20%5Calpha_t%7D%7B%5Cbeta_t%7D)%20%5Ccdot%20%5Cfrac%7Bx%20+%20%5Cbeta_t%5E2%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%7D%7B%5Calpha_t%7D%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A&amp;=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A&amp;=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>The same identity holds for the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%5Ctheta(x)%20&amp;=%20%5Cint%20u_t%5E%7Btarget%7D(x%20%7C%20z)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20%5C%5C%0A&amp;=%20%5Cint%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%5Cright)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%20%5C%5C%0A&amp;=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20%5Cunderbrace%7B%5Cint%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%7D_%7B=1%7D%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20%5Cunderbrace%7B%5Cint%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%20%5Cfrac%7Bp_t(x%20%7C%20z)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D%20dz%7D_%7B=%20%5Cnabla%20%5Clog%20p_t(x)%7D%20%5C%5C%0A&amp;=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20%5Cnabla%20%5Clog%20p_t(x)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>where the first integral equals 1 because <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bp_t(x%7Cz)%20p_%7Bdata%7D(z)%7D%7Bp_t(x)%7D"> is the posterior <img src="https://latex.codecogs.com/png.latex?p(z%7Cx)"> which integrates to 1, and the second integral is the definition of the marginal score <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> (as we derived in the Score Matching section).</p>
+<p>If we have learnt <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta">, we can compute <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta"> from it using the conversion formula:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%5Ctheta(x)%20=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20s_t%5E%5Ctheta(x)%0A"></p>
+<p>Rearrange to get the conversion formula for <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0As_t%5E%5Ctheta(x)%20=%20%5Cfrac%7B%5Calpha_t%7D%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%20%5Calpha_t%7D%20%5Cleft(u_t%5E%5Ctheta(x)%20-%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%5Cright)%0A"></p>
+<p>This holds as long as <img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%20%5Calpha_t%20%5Cneq%200">. Factoring: <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t(%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Calpha_t)">. Recall from Part 3 that <img src="https://latex.codecogs.com/png.latex?%5Calpha_t"> increases from 0 to 1 (<img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Calpha%7D_t%20%3E%200">) and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"> decreases from 1 to 0 (<img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Cbeta%7D_t%20%3C%200">). Therefore <img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%20%3E%200"> and <img src="https://latex.codecogs.com/png.latex?-%5Cdot%7B%5Cbeta%7D_t%20%5Calpha_t%20%3E%200">, so the second factor is strictly positive for <img src="https://latex.codecogs.com/png.latex?t%20%5Cin%20(0,%201)">.</p>
+<p>If we have a trained a score network <img src="https://latex.codecogs.com/png.latex?s_t%5E%5Ctheta">, we can use arbitrary <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20%5Cgeq%200"> to sample from the SDE:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AX_0%20&amp;%5Csim%20p_%7B%5Ctext%7Binit%7D%7D%20%5C%5C%0AdX_t%20&amp;=%20%5Bu_t%5E%5Ctheta(X_t)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20s_t%5E%5Ctheta(X_t)%5D%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0A&amp;=%20%5B%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20X_t%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20s_t%5E%5Ctheta(X_t)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20s_t%5E%5Ctheta(X_t)%5D%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0A&amp;=%20%5B(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D)%20s_t%5E%5Ctheta(X_t)%20+%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20X_t%5D%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>and generate samples <img src="https://latex.codecogs.com/png.latex?X_1%20%5Csim%20p_%7Bdata%7D">. This corresponds to <strong>stochastic sampling from a denoising diffusion model</strong>.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We derived the complete training algorithms for generative models with Gaussian probability paths.</p>
+<p><strong>Flow Matching (CFM)</strong>: Regress <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x)"> against <img src="https://latex.codecogs.com/png.latex?%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20%5Cepsilon"> where <img src="https://latex.codecogs.com/png.latex?x%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon">. For optimal transport paths (<img src="https://latex.codecogs.com/png.latex?%5Calpha_t%20=%20t">, <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%20=%201-t">), the target simplifies to <img src="https://latex.codecogs.com/png.latex?z%20-%20%5Cepsilon">.</p>
+<p><strong>Score Matching (CSM → DDPM)</strong>: Regress against the conditional score <img src="https://latex.codecogs.com/png.latex?-%5Cfrac%7B%5Cepsilon%7D%7B%5Cbeta_t%7D">. DDPM reparameterizes to predict <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> directly and drops the <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B1%7D%7B%5Cbeta_t%5E2%7D"> weighting for stability.</p>
+<p><strong>Conversion formula</strong>: For Gaussian paths, vector field and score are interconvertible: <img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%5Ctheta(x)%20=%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D%20x%20+%20%5Cleft(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t%5Cright)%20s_t%5E%5Ctheta(x)%0A"></p>
+<p>Train one network, get both — then sample via ODE (deterministic) or SDE (stochastic) as needed.</p>
+</div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>score-matching</category>
+  <category>training</category>
+  <guid>https://layernorm.dev/posts/diffusion/7-training/</guid>
+  <pubDate>Sun, 14 Dec 2025 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -215,14 +460,23 @@
 <ul>
 <li>The result: individual band members are stumbling like crazy (stochastic), but because we added the extra “inward pull”, the macro shape (helicopter view, i.e., the probability distribution) looks identical to the sober band.</li>
 </ul>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We proved the <strong>SDE extension trick</strong>: given an ODE with drift <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D">, we can add arbitrary noise <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20dW_t"> while preserving the same probability path by correcting the drift: <img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Bsde%7D%20=%20u_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t%0A"></p>
+<p>The correction term <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t"> points toward high-probability regions, counteracting the dispersion from noise (the “drunken marching band” needs to aim inward to maintain formation).</p>
+<p>For training, we showed that the marginal score equals an expectation of conditional scores: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%7Cx,t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%7Cz)%5D%0A"></p>
+<p>The magic: <strong>least-squares regression computes this expectation automatically</strong> — we never need to evaluate the intractable posterior <img src="https://latex.codecogs.com/png.latex?p(z%7Cx,t)"> explicitly.</p>
+</div>
+</div>
 </section>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>We first find the marginal vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D"> that follows the probability path <img src="https://latex.codecogs.com/png.latex?p_t"> for the ODE, then we can construct an SDE vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Bsde%7D"> that follows the same probability path <img src="https://latex.codecogs.com/png.latex?p_t"> by making it satisfy the Fokker-Planck equation.</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Bsde%7D%20=%20u_t%5E%7Btarget%7D%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t%0A"></p>
-<p>And this is our training target. Because we cannot compute the marginal score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t"> analytically, we will convert it to the conditional score function <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)"> instead</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%20%7C%20x,%20t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%5D%0A"></p>
 </section>
 <section id="how-training-actually-works" class="level2">
 <h2 class="anchored" data-anchor-id="how-training-actually-works">How Training Actually Works</h2>
@@ -256,7 +510,7 @@
 </div>
 <p>The training loss becomes: <img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt%20%5Csim%20%5Ctext%7BUniform%7D%5B0,1%5D%7D%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p_%7Bdata%7D%7D%20%5Cmathbb%7BE%7D_%7Bx%20%5Csim%20p_t(x%7Cz)%7D%20%5Cleft%5B%20%5C%7Cs_%5Ctheta(x,%20t)%20-%20%5Cnabla_x%20%5Clog%20p_t(x%7Cz)%5C%7C%5E2%20%5Cright%5D%0A"></p>
 <div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
@@ -265,7 +519,7 @@
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>This is the <strong>score matching identity</strong>. When we minimize the loss above, the optimal <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta%5E*(x,t)"> satisfies: <img src="https://latex.codecogs.com/png.latex?%0As_%5Ctheta%5E*(x,%20t)%20=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p(z%7Cx,t)%7D%5B%5Cnabla%20%5Clog%20p_t(x%7Cz)%5D%20=%20%5Cnabla%20%5Clog%20p_t(x)%0A"></p>
 <p>Intuitively: for a given <img src="https://latex.codecogs.com/png.latex?x">, different <img src="https://latex.codecogs.com/png.latex?z">’s could have produced it. The network learns to average over all possible <img src="https://latex.codecogs.com/png.latex?z">’s, weighted by how likely each <img src="https://latex.codecogs.com/png.latex?z"> was to produce this <img src="https://latex.codecogs.com/png.latex?x"> — which is exactly the posterior <img src="https://latex.codecogs.com/png.latex?p(z%7Cx,t)">.</p>
@@ -296,15 +550,6 @@
 <ul>
 <li><strong>Part 7</strong>: The complete training algorithm — how to implement score matching in practice</li>
 <li><strong>Part 8</strong>: Sampling and inference — how to generate new samples from the trained model</li>
-</ul>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ul>
-<li><p>Hyvärinen, A. (2005). <a href="https://jmlr.org/papers/v6/hyvarinen05a.html">Estimation of Non-Normalized Statistical Models by Score Matching</a>. <em>Journal of Machine Learning Research, 6</em>, 695–709. — The original score matching paper.</p></li>
-<li><p>Vincent, P. (2011). <a href="https://direct.mit.edu/neco/article/23/7/1661/7677/A-Connection-Between-Score-Matching-and-Denoising">A Connection Between Score Matching and Denoising Autoencoders</a>. <em>Neural Computation, 23</em>(7), 1661–1674. — Shows that denoising is equivalent to score matching.</p></li>
-<li><p>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR 2021 (Outstanding Paper Award)</em>. — The SDE framework unifying score-based models.</p></li>
-<li><p>Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>. — The flow matching framework connecting to our exposition.</p></li>
 </ul>
 
 
@@ -584,47 +829,43 @@
 </div>
 </div>
 <p>It turns out there’s a beautiful mathematical result: the reverse SDE depends on something called the <strong>score function</strong> — the gradient of the log probability density. But how do we learn this score function? That’s the subject of the next post.</p>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>We’ve now extended flow matching to handle stochasticity:</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We extended flow matching to SDEs by thinking in terms of <strong>infinitesimal updates</strong> rather than derivatives: <img src="https://latex.codecogs.com/png.latex?%0AX_%7Bt+h%7D%20=%20X_t%20+%20h%20%5Ccdot%20u_t(X_t)%20+%20%5Csigma_t(W_%7Bt+h%7D%20-%20W_t)%0A"></p>
+<p>The Brownian motion term <img src="https://latex.codecogs.com/png.latex?W_t"> models continuous randomness — Gaussian increments with variance proportional to time elapsed. Setting <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200"> recovers the deterministic ODE.</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 44%">
-<col style="width: 36%">
-</colgroup>
 <thead>
 <tr class="header">
-<th>Concept</th>
-<th>Flow Matching (ODE)</th>
-<th>Diffusion (SDE)</th>
+<th>ODE (Flow Matching)</th>
+<th>SDE (Diffusion)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Dynamics</td>
-<td><img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t(X_t)%20dt"></td>
-<td><img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t(X_t)%20dt%20+%20%5Csigma_t%20dW_t"></td>
+<td><img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t%20dt"></td>
+<td><img src="https://latex.codecogs.com/png.latex?dX_t%20=%20u_t%20dt%20+%20%5Csigma_t%20dW_t"></td>
 </tr>
 <tr class="even">
-<td>Paths</td>
-<td>Deterministic</td>
-<td>Stochastic</td>
+<td>Deterministic paths</td>
+<td>Stochastic paths</td>
 </tr>
 <tr class="odd">
-<td>Key idea</td>
-<td>Learn vector field</td>
-<td>Learn vector field + add noise</td>
-</tr>
-<tr class="even">
-<td>Derivation</td>
-<td>Via derivatives</td>
-<td>Via infinitesimal updates</td>
+<td>One trajectory per <img src="https://latex.codecogs.com/png.latex?x_0"></td>
+<td>Distribution of trajectories</td>
 </tr>
 </tbody>
 </table>
-<p>The key insight: <strong>we derive SDEs through infinitesimal updates, not derivatives</strong>. This lets us naturally incorporate randomness into the dynamics.</p>
+<p>The open question: how do we train a network to reverse the SDE? The answer involves the <strong>score function</strong>.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
@@ -636,14 +877,6 @@
 <li>The <strong>probability flow ODE</strong> — how every SDE has an equivalent deterministic formulation</li>
 <li>How this connects diffusion models back to flow matching</li>
 </ul>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS</em>.</li>
-<li>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR</em>.</li>
-<li>Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., &amp; Ganguli, S. (2015). <a href="https://arxiv.org/abs/1503.03585">Deep Unsupervised Learning using Nonequilibrium Thermodynamics</a>. <em>ICML</em>.</li>
-</ol>
 
 
 </section>
@@ -804,6 +1037,21 @@
 <p>The magic: even though we only ever see conditional targets during training, the network learns the marginal vector field that generates the full data distribution.</p>
 </div>
 </div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We proved the <strong>marginalization trick</strong>: training on conditional targets <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)"> is mathematically equivalent to training on the intractable marginal <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x)">. The key step was showing that the cross-term <img src="https://latex.codecogs.com/png.latex?%5Cmathbb%7BE%7D%5Bu_t%5E%5Ctheta%20%5Ccdot%20u_t%5E%7Btarget%7D%5D"> simplifies when we expand the marginal definition — the intractable <img src="https://latex.codecogs.com/png.latex?p_t(x)"> cancels.</p>
+<p>This gives us the <strong>Conditional Flow Matching (CFM) loss</strong>: <img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,z,x%7D%5B%5C%7Cu_t%5E%5Ctheta(x)%20-%20u_t%5E%7Btarget%7D(x%7Cz)%5C%7C%5E2%5D%0A"></p>
+<p>The flow matching framework is now complete for deterministic sampling. Next, we’ll add stochasticity to get diffusion models.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
@@ -814,14 +1062,6 @@
 <li>Why the random term <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20dW_t"> enables new behaviors</li>
 <li>The connection between Brownian motion and continuous randomness</li>
 </ul>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
-<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
-<li>Liu, X., Gong, C., &amp; Liu, Q. (2023). <a href="https://arxiv.org/abs/2209.03003">Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow</a>. <em>ICLR</em>.</li>
-</ol>
 
 
 </section>
@@ -932,6 +1172,21 @@
 <p>substituting <img src="https://latex.codecogs.com/png.latex?x_0"> with <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bx_t%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%7D"> in the above equation, we get</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x_t%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x_t%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
 <p>Why do this? Because the vector filed must be written as <img src="https://latex.codecogs.com/png.latex?%0Au_t(x%20%7C%20z)%0A"> where x is the current position at time t.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We constructed <strong>probability paths</strong> that interpolate from noise to data. The key insight: build the marginal path <img src="https://latex.codecogs.com/png.latex?p_t(x)"> from simpler <strong>conditional paths</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)">, each targeting a specific data point.</p>
+<p>For Gaussian paths <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I)">, we derived the conditional vector field: <img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x%7Cz)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%0A"></p>
+<p>This is our training target — but there’s a catch: it depends on <img src="https://latex.codecogs.com/png.latex?z">, which we don’t know at generation time. The next post resolves this with the marginalization trick.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
@@ -942,13 +1197,6 @@
 </ol>
 <p>But there’s a problem: these are <em>conditional</em> on knowing the target data point <img src="https://latex.codecogs.com/png.latex?z">. At generation time, we don’t know <img src="https://latex.codecogs.com/png.latex?z"> — that’s what we’re trying to generate!</p>
 <p>In the <a href="../4-flow-matching-loss/">next post</a>, we’ll see how the <strong>marginalization trick</strong> solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing <img src="https://latex.codecogs.com/png.latex?z">.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
-<li>Albergo, M. S., &amp; Vanden-Eijnden, E. (2023). <a href="https://arxiv.org/abs/2209.15571">Building Normalizing Flows with Stochastic Interpolants</a>. <em>ICLR</em>.</li>
-</ol>
 
 
 </section>
@@ -1039,9 +1287,17 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <p>Since the flow satisfies the ODE, we can substitute <img src="https://latex.codecogs.com/png.latex?X_t%20=%20%5Cphi_t(x_0)">:</p>
 <p><span id="eq-flow-ode"><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cfrac%7BdX_t%7D%7Bdt%7D%20&amp;=%20u_t(X_t)%20%5Cimplies%20%5Cfrac%7Bd%20%5Cphi_t(x_0)%7D%7Bdt%7D%20=%20u_t(%5Cphi_t(x_0))%20%5C%5C%0AX_0%20&amp;=%20x_0%20%5Cimplies%20%5Cphi_0(x_0)%20=%20x_0%0A%5Cend%7Baligned%7D%0A%5Ctag%7B2%7D"></span></p>
 <p>The second line says: at <img src="https://latex.codecogs.com/png.latex?t=0">, every point is where it started (the flow is the identity map).</p>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We established the core vocabulary: a <strong>vector field</strong> <img src="https://latex.codecogs.com/png.latex?u_t(x)"> assigns directions to points in space, a <strong>trajectory</strong> <img src="https://latex.codecogs.com/png.latex?X_t"> follows those directions from a single starting point, and a <strong>flow</strong> <img src="https://latex.codecogs.com/png.latex?%5Cphi_t(x)"> describes where <em>all</em> points end up. The relationship: <img src="https://latex.codecogs.com/png.latex?X_t%20=%20%5Cphi_t(x_0)">.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -1073,26 +1329,14 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 </tr>
 </tbody>
 </table>
-<p><strong>Vector fields define ODEs whose solutions are flows.</strong></p>
-<p>Think of it like Google Maps:</p>
-<ul>
-<li><strong>Vector field</strong> = Traffic directions at every location (“turn left here”, “go straight there”)</li>
-<li><strong>ODE</strong> = The instruction “just follow the GPS”</li>
-<li><strong>Trajectory</strong> = The route YOUR car takes</li>
-<li><strong>Flow</strong> = If 1000 cars started at different places and all followed GPS, the flow tells you where ALL of them end up</li>
-</ul>
-<p>So: arrows (vector field) + “follow the arrows” (ODE) = everyone’s destination (flow).</p>
+<p>This is the foundation for everything that follows. In the next post, we’ll use flows to transform <em>probability distributions</em> — the key to generative modeling.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
 <p>We now understand how vector fields generate flows. But for generative modeling, we need flows that transform <em>probability distributions</em> — specifically, from noise to data.</p>
 <p>In the <a href="../3-probability-paths/">next post</a>, we’ll see how to construct <strong>probability paths</strong> that smoothly interpolate between a noise distribution and the data distribution, and the vector fields that generate them.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Chen, R. T. Q., et al.&nbsp;(2018). <a href="https://arxiv.org/abs/1806.07366">Neural Ordinary Differential Equations</a>. <em>NeurIPS</em>.</li>
-</ol>
 
 
 </section>
@@ -1173,6 +1417,11 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <td><strong>Part 6</strong></td>
 <td><a href="../6-score-functions/">Score Functions</a></td>
 <td>Conditional and marginal scores, the training trick</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 7</strong></td>
+<td><a href="../7-training/">Training Algorithms</a></td>
+<td>CFM, DDPM, and the conversion formulas</td>
 </tr>
 </tbody>
 </table>
@@ -1259,6 +1508,20 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <h2 class="anchored" data-anchor-id="the-deep-connection">The Deep Connection</h2>
 <p>Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent “probability flow” formulation that looks like flow matching. The score function (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.</p>
 <p>This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We’ve seen two paradigms for generative modeling: <strong>diffusion</strong> (add noise, learn to denoise) and <strong>flow matching</strong> (learn a velocity field that transports noise to data). Despite their different motivations, they share deep mathematical structure — every diffusion model has an equivalent ODE formulation.</p>
+<p>This series will make these connections precise. We’ll build up the theory piece by piece: first understanding what flows are (Part 2), then constructing probability paths (Part 3), deriving training losses (Part 4), adding stochasticity (Part 5), and finally connecting everything through score functions (Parts 6-7).</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
@@ -1271,14 +1534,6 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <li><a href="../6-score-functions/"><strong>Part 6</strong></a>: We’ll learn about score functions and the training trick</li>
 </ul>
 <p>By the end, you’ll understand not just <em>what</em> these models do, but <em>why</em> they work.</p>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS</em>.</li>
-<li>Lipman, Y., et al.&nbsp;(2023). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR</em>.</li>
-<li>Song, Y., et al.&nbsp;(2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR</em>.</li>
-</ol>
 
 
 </section>

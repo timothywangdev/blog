@@ -336,9 +336,7 @@ window.Quarto = {
   <li><a href="#what-is-brownian-motion" id="toc-what-is-brownian-motion" class="nav-link" data-scroll-target="#what-is-brownian-motion">What is Brownian Motion?</a></li>
   <li><a href="#the-diffusion-coefficient" id="toc-the-diffusion-coefficient" class="nav-link" data-scroll-target="#the-diffusion-coefficient">The Diffusion Coefficient</a></li>
   <li><a href="#forward-and-reverse-processes" id="toc-forward-and-reverse-processes" class="nav-link" data-scroll-target="#forward-and-reverse-processes">Forward and Reverse Processes</a></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -667,47 +665,45 @@ X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad
 </div>
 </div>
 <p>It turns out there’s a beautiful mathematical result: the reverse SDE depends on something called the <strong>score function</strong> — the gradient of the log probability density. But how do we learn this score function? That’s the subject of the next post.</p>
-</section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
-<p>We’ve now extended flow matching to handle stochasticity:</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We extended flow matching to SDEs by thinking in terms of <strong>infinitesimal updates</strong> rather than derivatives: <span class="math display">\[
+X_{t+h} = X_t + h \cdot u_t(X_t) + \sigma_t(W_{t+h} - W_t)
+\]</span></p>
+<p>The Brownian motion term <span class="math inline">\(W_t\)</span> models continuous randomness — Gaussian increments with variance proportional to time elapsed. Setting <span class="math inline">\(\sigma_t = 0\)</span> recovers the deterministic ODE.</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 19%">
-<col style="width: 44%">
-<col style="width: 36%">
-</colgroup>
 <thead>
 <tr class="header">
-<th>Concept</th>
-<th>Flow Matching (ODE)</th>
-<th>Diffusion (SDE)</th>
+<th>ODE (Flow Matching)</th>
+<th>SDE (Diffusion)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Dynamics</td>
-<td><span class="math inline">\(dX_t = u_t(X_t) dt\)</span></td>
-<td><span class="math inline">\(dX_t = u_t(X_t) dt + \sigma_t dW_t\)</span></td>
+<td><span class="math inline">\(dX_t = u_t dt\)</span></td>
+<td><span class="math inline">\(dX_t = u_t dt + \sigma_t dW_t\)</span></td>
 </tr>
 <tr class="even">
-<td>Paths</td>
-<td>Deterministic</td>
-<td>Stochastic</td>
+<td>Deterministic paths</td>
+<td>Stochastic paths</td>
 </tr>
 <tr class="odd">
-<td>Key idea</td>
-<td>Learn vector field</td>
-<td>Learn vector field + add noise</td>
-</tr>
-<tr class="even">
-<td>Derivation</td>
-<td>Via derivatives</td>
-<td>Via infinitesimal updates</td>
+<td>One trajectory per <span class="math inline">\(x_0\)</span></td>
+<td>Distribution of trajectories</td>
 </tr>
 </tbody>
 </table>
-<p>The key insight: <strong>we derive SDEs through infinitesimal updates, not derivatives</strong>. This lets us naturally incorporate randomness into the dynamics.</p>
+<p>The open question: how do we train a network to reverse the SDE? The answer involves the <strong>score function</strong>.</p>
+</div>
+</div>
 </section>
 <section id="whats-next" class="level2">
 <h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
@@ -719,14 +715,6 @@ X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad
 <li>The <strong>probability flow ODE</strong> — how every SDE has an equivalent deterministic formulation</li>
 <li>How this connects diffusion models back to flow matching</li>
 </ul>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS</em>.</li>
-<li>Song, Y., Sohl-Dickstein, J., Kingma, D. P., Kumar, A., Ermon, S., &amp; Poole, B. (2021). <a href="https://arxiv.org/abs/2011.13456">Score-Based Generative Modeling through Stochastic Differential Equations</a>. <em>ICLR</em>.</li>
-<li>Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., &amp; Ganguli, S. (2015). <a href="https://arxiv.org/abs/1503.03585">Deep Unsupervised Learning using Nonequilibrium Thermodynamics</a>. <em>ICML</em>.</li>
-</ol>
 
 
 </section>
