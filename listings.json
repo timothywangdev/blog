@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/diffusion/8-guidance/index.html",
       "/posts/diffusion/7-training/index.html",
       "/posts/diffusion/6-score-functions/index.html",
       "/posts/diffusion/5-diffusion-sde/index.html",

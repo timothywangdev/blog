@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Hujie Wang">
-<meta name="dcterms.date" content="2025-12-14">
-<meta name="description" content="The complete training algorithms for flow matching and diffusion models, including the DDPM loss and conversion formulas">
+<meta name="dcterms.date" content="2025-12-20">
+<meta name="description" content="Conditional generation, classifier guidance, and classifier-free guidance for controllable image synthesis">
 
-<title>Diffusion &amp; Flow Matching Part 7: Training Targets and Algorithms – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 8: Guided Generative Models – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -329,8 +329,14 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#flow-matching" id="toc-flow-matching" class="nav-link active" data-scroll-target="#flow-matching">Flow Matching</a></li>
-  <li><a href="#score-matching" id="toc-score-matching" class="nav-link" data-scroll-target="#score-matching">Score Matching</a></li>
+  <li><a href="#guidance-for-flow-models" id="toc-guidance-for-flow-models" class="nav-link active" data-scroll-target="#guidance-for-flow-models">Guidance for Flow Models</a>
+  <ul class="collapse">
+  <li><a href="#the-problem-weak-conditioning" id="toc-the-problem-weak-conditioning" class="nav-link" data-scroll-target="#the-problem-weak-conditioning">The Problem: Weak Conditioning</a></li>
+  <li><a href="#classifier-guidance" id="toc-classifier-guidance" class="nav-link" data-scroll-target="#classifier-guidance">Classifier Guidance</a></li>
+  <li><a href="#classifier-free-guidance-cfg" id="toc-classifier-free-guidance-cfg" class="nav-link" data-scroll-target="#classifier-free-guidance-cfg">Classifier-Free Guidance (CFG)</a></li>
+  </ul></li>
+  <li><a href="#guidance-for-flow-models-1" id="toc-guidance-for-flow-models-1" class="nav-link" data-scroll-target="#guidance-for-flow-models-1">Guidance for Flow Models</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -340,19 +346,19 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Diffusion &amp; Flow Matching Part 7: Training Targets and Algorithms</h1>
+<h1 class="title">Diffusion &amp; Flow Matching Part 8: Guided Generative Models</h1>
   <div class="quarto-categories">
     <div class="quarto-category">diffusion</div>
     <div class="quarto-category">flow-matching</div>
     <div class="quarto-category">generative-models</div>
-    <div class="quarto-category">score-matching</div>
-    <div class="quarto-category">training</div>
+    <div class="quarto-category">guidance</div>
+    <div class="quarto-category">classifier-free-guidance</div>
   </div>
   </div>
 
 <div>
   <div class="description">
-    The complete training algorithms for flow matching and diffusion models, including the DDPM loss and conversion formulas
+    Conditional generation, classifier guidance, and classifier-free guidance for controllable image synthesis
   </div>
 </div>
 
@@ -369,7 +375,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 14, 2025</p>
+      <p class="date">December 20, 2025</p>
     </div>
   </div>
   
@@ -392,374 +398,288 @@ window.Quarto = {
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>Flow matching training</strong>: Regress against the conditional vector field <span class="math inline">\(u_t^{target}(x|z)\)</span> — mathematically equivalent to the intractable marginal loss</li>
-<li><strong>Score matching training</strong>: Same trick works for <span class="math inline">\(\nabla \log p_t(x|z)\)</span> — this is how DDPM and Stable Diffusion are trained</li>
-<li><strong>DDPM simplification</strong>: Reparameterize to predict noise <span class="math inline">\(\epsilon\)</span> instead of score, and drop the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting</li>
-<li><strong>Conversion formula</strong>: For Gaussian paths, you can convert between vector field, score, and noise prediction networks</li>
+<li><strong>Guided generation</strong> conditions the model on additional information <span class="math inline">\(y\)</span> (e.g., text prompts, class labels)</li>
+<li><strong>CFG training</strong>: Standard loss + randomly drop conditioning with probability <span class="math inline">\(\eta\)</span> (10-20%)</li>
+<li><strong>CFG sampling</strong>: Amplify conditioning by extrapolating: <span class="math inline">\(\tilde{u}_t = u_t(\emptyset) + w \cdot (u_t(y) - u_t(\emptyset))\)</span></li>
+<li>For <strong>Gaussian paths</strong>, CFG = amplifying the classifier gradient; for general flows it’s purely empirical</li>
 </ul>
 </div>
 </div>
-<p>In the <a href="../6-score-functions/">previous posts</a>, we derived the target vector field <span class="math inline">\(u_t^{target}(x)\)</span> for flow matching and extended it to SDEs via score functions. Now we face the practical question: <strong>how do we actually train a neural network?</strong></p>
-<section id="flow-matching" class="level2">
-<h2 class="anchored" data-anchor-id="flow-matching">Flow Matching</h2>
-<p>Recall from <a href="../2-flows/">Part 2</a> that flow matching generates samples via an ODE:</p>
+<p>So far, the generative models we have discussed are all <strong>unconditional</strong> models, i.e., they generate samples from the target probability distribution <span class="math inline">\(p_{data}\)</span> without any additional information. In this post, we will discuss how to make these models <strong>conditional</strong> on some additional information like a text prompt <span class="math inline">\(y\)</span>.</p>
+<p>To avoid notation and terminology clash with the use of the word “<strong>conditional</strong>” to refer to conditioning on <span class="math inline">\(z \sim p_{data}\)</span>, we will use the term “<strong>guided</strong>” to refer specifically to conditioning on <span class="math inline">\(y\)</span>.</p>
+<div id="guided-generation" class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Def: Guided Generative Model</p>
+<p>A guided diffusion model is defined by the SDE:</p>
 <p><span class="math display">\[
-dX_t = u_t^\theta(X_t) dt, \quad
-X_0 \sim p_{init}
+\begin{aligned}
+dX_t &amp;= [u_t^{target}(X_t | y) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t | y)] dt + \sigma_t dW_t \\
+X_0 &amp;\sim p_{init} \\
+\implies X_t &amp;\sim p_t(\cdot | y) \quad \text{for all } 0 \leq t \leq 1
+\end{aligned}
 \]</span></p>
-<p>We want to train the neural network <span class="math inline">\(u_t^\theta(x)\)</span> to approximate the target vector field <span class="math inline">\(u_t^{target}(x)\)</span> that we derived in <a href="../4-flow-matching-loss/">Part 4</a>. In other words, we want to find the parameters <span class="math inline">\(\theta\)</span> such that <span class="math inline">\(u_t^\theta(x) \approx u_t^{target}(x)\)</span>.</p>
-<p>An intuitive way to do this is to minimize the squared error between <span class="math inline">\(u_t^\theta(x)\)</span> and <span class="math inline">\(u_t^{target}(x)\)</span>. In the following, we denote <span class="math inline">\(\text{Unif}\)</span> as the uniform distribution on <span class="math inline">\([0,1]\)</span>.</p>
+<p>When <span class="math inline">\(\sigma_t = 0\)</span>, the SDE reduces to the ODE for guided flow matching: <span class="math display">\[
+dX_t = u_t^{target}(X_t | y) dt, \quad X_0 \sim p_{init}
+\]</span></p>
+</div>
+</div>
+</div>
+<section id="guidance-for-flow-models" class="level2">
+<h2 class="anchored" data-anchor-id="guidance-for-flow-models">Guidance for Flow Models</h2>
+<p>Now let us imagine we have a label <span class="math inline">\(y\)</span> for each data <span class="math inline">\(z\)</span>. For images, some of them are “dog” and some of them are “cat”. Given a fixed label <span class="math inline">\(y\)</span>, we can think of <span class="math inline">\(p_{data}(z | y)\)</span> as a “slice” of the data distribution — the subset of data points with that label.</p>
+<p>Given a fixed label <span class="math inline">\(y\)</span>, the CFM loss is defined as before:</p>
 <p><span class="math display">\[
-\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t \sim \text{Unif}, x \sim p_t(x)} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
+L_{CFM, y}(\theta) = \mathbb{E}_{t, z \sim p_{data}(z|y), x \sim p_t(x|z)} \left[ \|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2 \right]
 \]</span></p>
-<p>But how do we sample <span class="math inline">\(x \sim p_t(x)\)</span>? Recall the marginal is defined as:</p>
+<p>The target <span class="math inline">\(u_t^{target}(x | z)\)</span> is exactly the same as in unconditional flow matching (see <a href="../3-probability-paths/">Part 3</a>): the vector field that transports noise toward data point <span class="math inline">\(z\)</span>. For Gaussian paths with <span class="math inline">\(x = \alpha_t z + \beta_t \epsilon\)</span>:</p>
 <p><span class="math display">\[
-p_t(x) = \int p_t(x | z) p_{data}(z) dz
+u_t^{target}(x | z) = \dot{\alpha}_t z + \dot{\beta}_t \epsilon
 \]</span></p>
-<p>This integral tells us that <span class="math inline">\(p_t(x)\)</span> is the marginal of the joint distribution <span class="math inline">\(p_t(x, z) = p_t(x|z) p_{data}(z)\)</span>. So sampling <span class="math inline">\(x \sim p_t(x)\)</span> is equivalent to <strong>ancestral sampling</strong> from the joint:</p>
-<ol type="1">
-<li>Sample <span class="math inline">\(z \sim p_{data}(z)\)</span></li>
-<li>Sample <span class="math inline">\(x \sim p_t(x | z)\)</span></li>
-<li>Discard <span class="math inline">\(z\)</span>, keep <span class="math inline">\(x\)</span></li>
-</ol>
-<p>This means any expectation over <span class="math inline">\(p_t(x)\)</span> can be rewritten as an expectation over the joint:</p>
+<p><strong>How does training on <span class="math inline">\(u_t^{target}(x|z)\)</span> give us <span class="math inline">\(u_t^{target}(x|y)\)</span>?</strong> This is the <a href="../4-flow-matching-loss/">marginalization trick</a> again. The key insight is:</p>
 <p><span class="math display">\[
-\mathbb{E}_{x \sim p_t(x)}[f(x)] = \mathbb{E}_{z \sim p_{data}, x \sim p_t(x|z)}[f(x)]
+u_t^{target}(x | z, y) = u_t^{target}(x | z)
 \]</span></p>
-<p><strong>Notation</strong>: Since we always sample via the joint, we’ll use the shorthand:</p>
+<p><strong>Why?</strong> Because the probability path <span class="math inline">\(p_t(x|z)\)</span> only depends on <span class="math inline">\(z\)</span> — once you know the specific data point <span class="math inline">\(z\)</span>, the label <span class="math inline">\(y\)</span> provides no additional information about how to add noise to it. The noise-adding process is purely mechanical and doesn’t care about labels.</p>
+<p>Therefore, the <a href="../4-flow-matching-loss/#the-marginalization-formula">marginalization formula from Part 4</a> applies directly:</p>
 <p><span class="math display">\[
-\mathbb{E}_{t,z,x}[\cdot] := \mathbb{E}_{t \sim \text{Unif}, z \sim p_{data}, x \sim p_t(x|z)}[\cdot]
+\begin{aligned}
+u_t^{target}(x | y) &amp;= \mathbb{E}_{z \sim p_t(z|x,y)}[u_t^{target}(x | z, y)] \\
+&amp;= \mathbb{E}_{z \sim p_t(z|x,y)}[u_t^{target}(x | z)]
+\end{aligned}
 \]</span></p>
-<p>Applying this to our loss:</p>
+<p><strong>What does this mean?</strong> Given noisy sample <span class="math inline">\(x\)</span> and label <span class="math inline">\(y\)</span>, the marginal vector field is an average over all possible clean data points <span class="math inline">\(z\)</span> that could have generated <span class="math inline">\(x\)</span>, weighted by the posterior <span class="math inline">\(p_t(z|x,y)\)</span>. The label <span class="math inline">\(y\)</span> constrains which <span class="math inline">\(z\)</span> values are plausible, but once a specific <span class="math inline">\(z\)</span> is chosen, the vector field <span class="math inline">\(u_t^{target}(x|z)\)</span> is the same regardless of <span class="math inline">\(y\)</span>.</p>
+<p>We never compute this expectation explicitly — least-squares regression does it for us (see <a href="../6-score-functions/">Part 6</a>). By sampling <span class="math inline">\((z, y) \sim p_{data}(z, y)\)</span> and regressing against <span class="math inline">\(u_t^{target}(x|z)\)</span>, the model learns <span class="math inline">\(u_t^\theta(x|y) \approx u_t^{target}(x|y)\)</span>.</p>
+<p>You can think of <span class="math inline">\(u_t^\theta(x | y)\)</span> as a specific model just for the data slice <span class="math inline">\(p_{data}(z|y)\)</span> with label <span class="math inline">\(y\)</span>. We could build separate models for each label <span class="math inline">\(y\)</span> and train them separately, but this is not efficient. Instead, we want to train a single model that works for all <span class="math inline">\(y\)</span>, so the model takes input <span class="math inline">\([x, y, t]\)</span> instead of only <span class="math inline">\([x, t]\)</span> as before.</p>
+<p>Now, we want to minimize the expected loss over all possible labels <span class="math inline">\(y\)</span>. The total loss is the expectation of the label-specific losses <span class="math inline">\(L_{CFM, y}\)</span>:</p>
 <p><span class="math display">\[
-\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
+\begin{aligned}
+\mathcal{L}_{CFM}(\theta) &amp;= \mathbb{E}_{y \sim p_{data}(y)} \left[ L_{CFM, y}(\theta) \right] \\
+&amp;= \mathbb{E}_{y \sim p_{data}(y)} \left[ \mathbb{E}_{t, z \sim p_{data}(z|y), x \sim p_t(x|z)} \left[ \|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2 \right] \right] \\
+&amp;= \mathbb{E}_{t, y \sim p_{data}(y), z \sim p_{data}(z|y), x \sim p_t(x|z)} \left[ \|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2 \right]
+\end{aligned}
 \]</span></p>
-<p>We are not done here. While we do know the formula for <span class="math inline">\(u_t^{target}(x)\)</span></p>
+<p>By the definition of joint probability: <span class="math display">\[
+p_{data}(z, y) = p_{data}(z | y) \, p_{data}(y)
+\]</span></p>
+<p>we can merge these two expectations into one:</p>
 <p><span class="math display">\[
-u_t^{target}(x) = \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
+\mathbb{E}_{y \sim p_{data}(y), z \sim p_{data}(z | y)} = \mathbb{E}_{(z, y) \sim p_{data}(z, y)}
 \]</span></p>
-<p>but the integral itself is intractable. However, we can exploit the fact that the conditional vector field <span class="math inline">\(u_t^{target}(x | z)\)</span> is tractable. Let us define the conditional flow matching loss as</p>
+<p>Substituting back, we get:</p>
 <p><span class="math display">\[
-\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x | z)\|^2 \right]
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,(z,y) \sim p_{data}(z, y), x \sim p_t(x|z)} \left[ \|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2 \right]
 \]</span></p>
-<p>Now I will prove that by explictly regressing against the conditional vector field, we are implicitly regressing against the marginal vector field.</p>
-<div id="cfm-proof" class="callout callout-style-default callout-tip callout-titled">
+<p>In practice, sampling <span class="math inline">\((z, y) \sim p_{data}(z, y)\)</span> would involve a dataloader that returns batches of both <span class="math inline">\(z\)</span> and <span class="math inline">\(y\)</span>.</p>
+<section id="the-problem-weak-conditioning" class="level3">
+<h3 class="anchored" data-anchor-id="the-problem-weak-conditioning">The Problem: Weak Conditioning</h3>
+<p>While the above training procedure is theoretically valid, it was empirically observed that images generated with this procedure did not fit well enough to the desired label <span class="math inline">\(y\)</span>. The generated samples were correct on average, but lacked the strong conditioning that users wanted.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Theorem: The marginal flow matching loss equals the conditional flow matching loss up to a constant
+<span class="screen-reader-only">Tip</span>The Solution: Amplify Conditioning at Sampling Time
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><span class="math display">\[
-\mathcal{L}_{FM}(\theta) = \mathcal{L}_{CFM}(\theta) + \mathcal{C}
-\]</span></p>
-<p>where <span class="math inline">\(\mathcal{C}\)</span> is independent of <span class="math inline">\(\theta\)</span>. Their gradients are the same:</p>
-<p><span class="math display">\[
-\nabla_{\theta} \mathcal{L}_{FM}(\theta) = \nabla_{\theta} \mathcal{L}_{CFM}(\theta)
-\]</span></p>
-<p>Hence, minimizing <span class="math inline">\(\mathcal{L}_{CFM}(\theta)\)</span> is equivalent to minimizing <span class="math inline">\(\mathcal{L}_{FM}(\theta)\)</span>. In particular, for the minimizer <span class="math inline">\(\theta^*\)</span>, it will hold that <span class="math inline">\(u_t^{\theta^*} = u_t^{target}\)</span></p>
+<p>Both <strong>Classifier Guidance</strong> and <strong>Classifier-Free Guidance (CFG)</strong> are sampling-time techniques. The idea is the same: scale up the “conditioning direction” to get stronger adherence to the label <span class="math inline">\(y\)</span>.</p>
+<p>The derivations below show <em>why</em> this works mathematically. The difference between the two methods is <em>how</em> you compute the conditioning direction:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 52%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>How to get the conditioning direction</th>
+<th>Extra training required?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Classifier Guidance</td>
+<td>Train a separate classifier <span class="math inline">\(p_t(y\|x)\)</span></td>
+<td>Yes (classifier)</td>
+</tr>
+<tr class="even">
+<td>CFG</td>
+<td>Use label dropout so one model estimates both terms</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
-<p>Proof:</p>
-<p><span class="math display">\[
-\begin{aligned}
-\mathcal{L}_{FM}(\theta) &amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 - 2  u_t^\theta(x)^T u_t^{target}(x)  + \|u_t^{target}(x)\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 \right] - 2 \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] + \underbrace{\mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x)\|^2 \right]}_{=\mathcal{C_1}} \\
-\end{aligned}
-\]</span></p>
-<p>The last term does not depend on <span class="math inline">\(\theta\)</span>. The key step is showing that the cross term simplifies. Note that <span class="math inline">\(u_t^{target}(x)\)</span> doesn’t depend on <span class="math inline">\(z\)</span>, so we can write:</p>
-<p><span class="math display">\[
-\mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] = \mathbb{E}_{t,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right]
-\]</span></p>
-<p>Now substitute the definition of <span class="math inline">\(u_t^{target}(x)\)</span> and write out the integral:</p>
-<p><span class="math display">\[
-\begin{aligned}
-&amp; \mathbb{E}_{t,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] \\
-&amp;= \int_t \int_x p_t(x) \cdot u_t^\theta(x)^T \underbrace{\left[ \int_z u_t^{target}(x|z) \frac{p_t(x|z) p_{data}(z)}{p_t(x)} dz \right]}_{u_t^{target}(x)} dx \, dt \\
-&amp;= \int_t \int_x \int_z u_t^\theta(x)^T u_t^{target}(x|z) \cdot \cancel{p_t(x)} \cdot \frac{p_t(x|z) p_{data}(z)}{\cancel{p_t(x)}} \, dz \, dx \, dt \\
-&amp;= \int_t \int_x \int_z u_t^\theta(x)^T u_t^{target}(x|z) \cdot p_t(x|z) p_{data}(z) \, dz \, dx \, dt \\
-&amp;= \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x|z) \right]
-\end{aligned}
-\]</span></p>
-<p>The intractable <span class="math inline">\(p_t(x)\)</span> cancels! This is why conditional flow matching works.</p>
-<p>Plugging this result back into our expansion of <span class="math inline">\(\mathcal{L}_{FM}\)</span>:</p>
-<p><span class="math display">\[
-\begin{aligned}
-\mathcal{L}_{FM}(\theta) &amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 \right] - 2 \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x | z) \right] + \mathcal{C_1}
-\end{aligned}
-\]</span></p>
-<p>We want to complete the square to get <span class="math inline">\(\|u_t^\theta(x) - u_t^{target}(x|z)\|^2\)</span>. Add and subtract <span class="math inline">\(\|u_t^{target}(x|z)\|^2\)</span>:</p>
-<p><span class="math display">\[
-\begin{aligned}
-&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 - 2 u_t^\theta(x)^T u_t^{target}(x | z) + \|u_t^{target}(x | z)\|^2 \right] - \mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x | z)\|^2 \right] + \mathcal{C_1}
-\end{aligned}
-\]</span></p>
-<p>The first expectation is now a perfect square <span class="math inline">\(\|a - b\|^2 = \|a\|^2 - 2a^T b + \|b\|^2\)</span>:</p>
-<p><span class="math display">\[
-\begin{aligned}
-&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) - u_t^{target}(x | z)\|^2 \right] - \underbrace{\mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x | z)\|^2 \right]}_{=\mathcal{C_2}} + \mathcal{C_1} \\
-&amp;= \mathcal{L}_{CFM}(\theta) + \underbrace{(\mathcal{C_1} - \mathcal{C_2})}_{=\mathcal{C}}
-\end{aligned}
-\]</span></p>
-<p>Both <span class="math inline">\(\mathcal{C_1}\)</span> and <span class="math inline">\(\mathcal{C_2}\)</span> are independent of <span class="math inline">\(\theta\)</span>, so their difference <span class="math inline">\(\mathcal{C}\)</span> is also independent of <span class="math inline">\(\theta\)</span>. ∎</p>
-<div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Example: Flow Matching for Gaussian Conditional Probability Paths
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Consider the Gaussian conditional probability path from <a href="../3-probability-paths/">Part 3</a>: <span class="math inline">\(p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)\)</span>, where we sample via</p>
-<p><span class="math display">\[
-\epsilon \sim \mathcal{N}(0, I_d) \implies x = \alpha_t z + \beta_t \epsilon \sim \mathcal{N}(\alpha_t z, \beta_t^2 I_d) = p_t(\cdot | z)
-\]</span></p>
-<p>As we derived before, the conditional vector field is given by</p>
-<p><span class="math display">\[
-u_t^{target}(x | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
-\]</span></p>
-<p>Therefore, the conditional flow matching loss is</p>
-<p><span class="math display">\[
-\begin{aligned}
-&amp; \mathcal{L}_{CFM}(\theta) \\
-&amp;= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x | z)\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,x} \left[ \left\| u_t^\theta(x) - (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z - \frac{\dot{\beta}_t}{\beta_t} x \right\|^2 \right]
-\quad \text{(replace x with $\alpha_t z + \beta_t \epsilon$)} \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z - \frac{\dot{\beta}_t}{\beta_t} (\alpha_t z + \beta_t \epsilon) \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - \dot{\alpha}_t z + \cancel{\frac{\dot{\beta}_t \alpha_t}{\beta_t} z} - \cancel{\frac{\dot{\beta}_t \alpha_t}{\beta_t} z} - \dot{\beta}_t \epsilon \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t z + \dot{\beta}_t \epsilon) \right\|^2 \right] \\
-\end{aligned}
-\]</span></p>
-<p>Special case: <span class="math inline">\(\alpha_t = t\)</span> and <span class="math inline">\(\beta_t = 1-t\)</span>, so <span class="math inline">\(\dot{\alpha}_t = 1\)</span> and <span class="math inline">\(\dot{\beta}_t = -1\)</span>, commonly referred as <strong>Gaussian CondOT probability path</strong></p>
-<p><span class="math display">\[
-\begin{aligned}
-&amp; \mathcal{L}_{CFM}(\theta) \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t z + \dot{\beta}_t \epsilon) \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(tz + (1-t) \epsilon) - (z - \epsilon) \right\|^2 \right] \\
-\end{aligned}
-\]</span></p>
-<p>Famous SOTA models like Stable Difussion 3, Meta’s Movie Gen Video use this simple yet effective procedure.</p>
-</div>
-</div>
-<p>Now, let us derive the training algorithm for flow matching for the <strong>Gaussian CondOT probability path</strong>:</p>
-<p><span class="math display">\[
-\begin{array}{l}
-\hline
-\textbf{Algorithm: } \text{Flow Matching Training (Gaussian CondOT path } p_t(x|z) = \mathcal{N}(tz, (1-t)^2 I_d) \text{)} \\
-\hline
-\textbf{Require: } \text{A dataset of samples } z \sim p_{\text{data}}, \text{ neural network } u_t^\theta \\
-\text{1: } \textbf{for } \text{each mini-batch of data } \textbf{do} \\
-\text{2: } \quad \text{Sample a data example } z \text{ from the dataset.} \\
-\text{3: } \quad \text{Sample a random time } t \sim \text{Unif}_{[0,1]}. \\
-\text{4: } \quad \text{Sample noise } \epsilon \sim \mathcal{N}(0, I_d). \\
-\text{5: } \quad \text{Set } x = tz + (1-t)\epsilon \hfill \text{(General: } x \sim p_t(\cdot|z) \text{)} \\
-\text{6: } \quad \text{Compute loss } \mathcal{L}(\theta) = \|u_t^\theta(x) - (z - \epsilon)\|^2 \hfill \text{(General: } \|u_t^\theta(x) - u_t^{\text{target}}(x|z)\|^2 \text{)} \\
-\text{7: } \quad \text{Update } \theta \text{ via gradient descent on } \mathcal{L}(\theta). \\
-\text{8: } \textbf{end for} \\
-\hline
-\end{array}
-\]</span></p>
 </section>
-<section id="score-matching" class="level2">
-<h2 class="anchored" data-anchor-id="score-matching">Score Matching</h2>
-<p>Now let’s turn to training diffusion models. Recall from <a href="../5-diffusion-sde/">Part 5</a> that diffusion models use an SDE:</p>
-<p><span class="math display">\[
-\begin{aligned}
-dX_t &amp;= [u_t^{target}(X_t) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t)] dt + \sigma_t dW_t \\
-X_0 &amp;\sim p_{\text{init}}  \\
-\implies X_t \sim p_t
-\end{aligned}
-\]</span></p>
-<p>and as we showed in <a href="../6-score-functions/">Part 6</a>, the marginal score function is calculated as <span class="math display">\[
-\nabla \log p_t(x) = \int \nabla \log p_t(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
-\]</span></p>
-<p>To approximate <span class="math inline">\(\nabla \log p_t\)</span>, we can use a neural network called <strong>score network</strong> <span class="math inline">\(s_t^\theta(x)\)</span> to regress against the marginal score function.</p>
-<p>Similarly, we can design a score matching loss and a conditional score matching loss:</p>
-<p><span class="math display">\[
-\mathcal{L}_{SM}(\theta) = \mathbb{E}_{t,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x) \right\|^2 \right]
-\]</span></p>
-<p><span class="math display">\[
-\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x | z) \right\|^2 \right]
-\]</span></p>
-<p>Again, <span class="math inline">\(\nabla \log p_t(x)\)</span> is intractable, but <span class="math inline">\(\nabla \log p_t(x | z)\)</span> is tractable.</p>
-<div id="sm-proof" class="callout callout-style-default callout-tip callout-titled">
+<section id="classifier-guidance" class="level3">
+<h3 class="anchored" data-anchor-id="classifier-guidance">Classifier Guidance</h3>
+<div class="callout callout-style-simple callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Theorem: The marginal score matching loss equals the conditional score matching loss up to a constant
+<span class="screen-reader-only">Important</span>Important: Gaussian Paths Required
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><span class="math display">\[
-\mathcal{L}_{SM}(\theta) = \mathcal{L}_{CSM}(\theta) + \mathcal{C}
-\]</span></p>
-<p>where <span class="math inline">\(\mathcal{C}\)</span> is independent of <span class="math inline">\(\theta\)</span>. Their gradients are the same:</p>
-<p><span class="math display">\[
-\nabla_{\theta} \mathcal{L}_{SM}(\theta) = \nabla_{\theta} \mathcal{L}_{CSM}(\theta)
-\]</span></p>
-<p>In particular, for the minimizer <span class="math inline">\(\theta^*\)</span>, it will hold that <span class="math inline">\(s_t^{\theta^*} = \nabla \log p_t\)</span></p>
+<p>The derivation below relies on <strong>Gaussian probability paths</strong> <span class="math inline">\(p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I)\)</span>. The score <span class="math inline">\(\nabla \log p_t(x)\)</span> is a property of the marginal distribution — it exists mathematically regardless of whether we’re training a diffusion model or flow model. For Gaussian paths, the <a href="../7-training/#conversion-formula">conversion formula</a> relates this score to the vector field, enabling the derivation below.</p>
 </div>
 </div>
-<p>The proof is identical to the flow matching proof, as you can just replace <span class="math inline">\(u_t^{target}(x)\)</span> with <span class="math inline">\(\nabla \log p_t(x)\)</span> and <span class="math inline">\(u_t^{target}(x | z)\)</span> with <span class="math inline">\(\nabla \log p_t(x | z)\)</span>.</p>
-<p>After training, we can choose an arbitrary diffusion coefficient <span class="math inline">\(\sigma_t\)</span> and simulate the SDE to generate <span class="math inline">\(X_1 \sim p_{data}\)</span></p>
+<p>Recall from <a href="../7-training/">Part 7</a> that for Gaussian conditional probability path <span class="math inline">\(p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)\)</span>, we can use the <a href="../7-training/#conversion-formula">conversion formula</a> to write the marginal vector field in terms of the marginal score:</p>
 <p><span class="math display">\[
 \begin{aligned}
-X_0 &amp;\sim p_{\text{init}} \\
-dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
+u_t^{target}(x) = a_t x + b_t \nabla \log p_t(x) \\
+(a_t, b_t) = (\frac{\dot{\alpha}_t}{\alpha_t}, \frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t) \\
 \end{aligned}
 \]</span></p>
-<p>In practice, we encounter two types of errors:</p>
-<ol type="1">
-<li>Numerical errors from discretizing the SDE</li>
-<li>Approximation errors: <span class="math inline">\(u_t^\theta(X_t) \neq u_t^{target}(X_t)\)</span></li>
-</ol>
-<p>It may seem a disadvantage to learn both <span class="math inline">\(u_t^\theta\)</span> and <span class="math inline">\(s_t^\theta\)</span> for a diffusion model as opposed to a flow model. However, we can often directly learn both <span class="math inline">\(u_t^\theta\)</span> and <span class="math inline">\(s_t^\theta\)</span> in a single neural network with two outputs. Further, as we will see for a special case of Gaussian probability path, <span class="math inline">\(u_t^\theta\)</span> and <span class="math inline">\(s_t^\theta\)</span> can be converted into one another</p>
-<div id="unified-training" class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Example: Denoising Diffusion Models: Score Matching
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>As a remark, the term “denoising diffusion models” are simply diffusion models with Gaussian probability path <span class="math inline">\(p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)\)</span>.</p>
-<p>As before, the conditional score is</p>
-<p><span class="math display">\[
-\nabla \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
-\]</span></p>
-<p>Plugging into <span class="math inline">\(\mathcal{L}_{CSM}(\theta)\)</span> we get</p>
+<p>Replacing the vector field and score function with guided ones, we get:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\mathcal{L}_{CSM}(\theta) &amp;= \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x | z) \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) + \frac{x - \alpha_t z}{\beta_t^2} \right\|^2 \right] \\
-&amp; \text{(replace x with $\alpha_t z + \beta_t \epsilon$)} \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| s_t^\theta(\alpha_t z + \beta_t \epsilon) + \frac{\alpha_t z + \beta_t \epsilon - \alpha_t z}{\beta_t^2} \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| s_t^\theta(\alpha_t z + \beta_t \epsilon) + \frac{\epsilon}{\beta_t} \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \left\| \frac{1}{\beta_t} (\beta_t s_t^\theta(\alpha_t z + \beta_t \epsilon) + \epsilon) \right\|^2 \right] \\
-&amp;= \mathbb{E}_{t,z,\epsilon} \left[ \frac{1}{\beta_t^2} \left\|  (\beta_t s_t^\theta(\alpha_t z + \beta_t \epsilon) + \epsilon) \right\|^2 \right] \\
+u_t^{target}(x | y) = a_t x + b_t \nabla \log p_t(x | y)
 \end{aligned}
 \]</span></p>
-<p><strong>The problem</strong>: The <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting blows up as <span class="math inline">\(\beta_t \to 0\)</span> (near <span class="math inline">\(t=1\)</span> for schedules like <span class="math inline">\(\beta_t = 1-t\)</span>), causing numerical instability.</p>
-<p><strong>The DDPM approach</strong> (Ho et al., 2020) makes two independent modifications:</p>
-<p><strong>1. Reparameterize to noise prediction.</strong> The loss is zero when <span class="math inline">\(s_t^\theta(x) = -\frac{\epsilon}{\beta_t}\)</span>, i.e., when <span class="math inline">\(-\beta_t s_t^\theta(x) = \epsilon\)</span>. This motivates defining a <strong>noise prediction network</strong>:</p>
-<p><span class="math display">\[\epsilon_t^\theta(x, t) := -\beta_t s_t^\theta(x, t)\]</span></p>
-<p>With this reparameterization, the CSM loss becomes:</p>
+<p>we can expand the guided score function using Bayes’ rule:</p>
 <p><span class="math display">\[
-\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \frac{1}{\beta_t^2} \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+\begin{aligned}
+\nabla \log p_t(x | y) &amp;= \nabla \log \frac{p_t(y|x) p_t(x)}{p_t(y)} \\
+&amp;= \nabla \log p_t(y|x) + \nabla \log p_t(x) - \nabla \log p_t(y) \\
+&amp; \text{(gradient is with respect to $x$, so $\nabla \log p_t(y)$ is a zero vector)} \\
+&amp; = \nabla \log p_t(y|x) + \nabla \log p_t(x)\\
+\end{aligned}
 \]</span></p>
-<p>Note: the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting is still there! Reparameterization only changes what the network outputs (score → noise), not the weighting.</p>
-<p><strong>2. Drop the weighting (empirical choice).</strong> Ho et al.&nbsp;found that simply removing <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> works better in practice:</p>
+<p>Plugging back to the guided vector field, we get:</p>
 <p><span class="math display">\[
-\mathcal{L}_{\text{DDPM}}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+\begin{aligned}
+u_t^{target}(x | y) &amp;= a_t x + b_t \nabla \log p_t(x | y) \\
+&amp;= a_t x + b_t (\nabla \log p_t(y|x) + \nabla \log p_t(x)) \\
+&amp;= \underbrace{a_t x + b_t \nabla \log p_t(x)}_{u_t^{target}(x)} +b_t \nabla \log p_t(y|x) \\
+&amp;= u_t^{target}(x) + b_t \nabla \log p_t(y|x) \\
+\end{aligned}
 \]</span></p>
-<p><strong>Why does dropping the weighting work?</strong> Both losses share the same global minimum (zero when <span class="math inline">\(\epsilon_t^\theta = \epsilon\)</span> for all <span class="math inline">\(t\)</span>). What differs is the optimization landscape:</p>
+<p>Notice the shape of the above equation: the guided vector field is a sum of the unguided vector field plus a guided score <span class="math inline">\(\nabla \log p_t(y|x)\)</span>. The term <span class="math inline">\(\log p_t(y | x)\)</span> is considered as a classifier which gives the likelihood of the label <span class="math inline">\(y\)</span> given the data <span class="math inline">\(x\)</span>.</p>
+<p>It has been empirically observed that scaling up the contribution of <span class="math inline">\(\nabla \log p_t(y|x)\)</span> by a <strong>guidance scale</strong> <span class="math inline">\(w &gt; 1\)</span> gives better outputs.</p>
+<p><span class="math display">\[
+\tilde{u}_t^{target}(x | y) = u_t^{target}(x) + w \cdot b_t \nabla \log p_t(y|x)
+\]</span></p>
+<p>Note that this is a heuristic: for <span class="math inline">\(w \neq 1\)</span>, we do not sample from the true guided distribution <span class="math inline">\(p_{data}(z | y)\)</span>.</p>
+<p>In the early works, people trained actual classifiers and use them to guide via the above procedure. But it has drawbacks:</p>
 <ul>
-<li><strong>Weighted loss</strong>: Heavily penalizes errors at small <span class="math inline">\(\beta_t\)</span> (nearly clean images) → unstable gradients, network focuses on easy samples</li>
-<li><strong>Simple loss</strong>: Equal weight across all noise levels → stable training, network focuses on harder denoising tasks</li>
+<li>Requires training an <strong>extra classifier</strong> on noisy data</li>
+<li>The classifier must handle all noise levels <span class="math inline">\(t \in [0, 1]\)</span></li>
+<li>Complicates the training pipeline</li>
 </ul>
-<p>This is an empirical finding, not a mathematical consequence. The simple loss happens to produce better sample quality.</p>
-<p><strong>Note on time conditioning</strong>: The network takes <strong>both</strong> the noisy image <span class="math inline">\(x\)</span> <strong>and</strong> time <span class="math inline">\(t\)</span> as input. It needs <span class="math inline">\(t\)</span> to know the signal-to-noise ratio: the same <span class="math inline">\(\epsilon\)</span> creates different amounts of visible corruption at different times. In words: “given a noisy image and the noise level <span class="math inline">\(t\)</span>, predict the (standardized) noise.” This is why it’s called <strong>denoising</strong> score matching</p>
-</div>
-</div>
-<p><span class="math display">\[
-\begin{array}{l}
-\hline
-\textbf{Algorithm: } \text{Score Matching Training (Gaussian Probability Path } p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d) \text{)} \\
-\hline
-\textbf{Require: } \text{A dataset of samples } z \sim p_{\text{data}}, \text{ neural network } s_t^\theta \text{ (or } \epsilon_t^\theta \text{)} \\
-\text{1: } \textbf{for } \text{each mini-batch of data } \textbf{do} \\
-\text{2: } \quad \text{Sample a data example } z \text{ from the dataset.} \\
-\text{3: } \quad \text{Sample a random time } t \sim \text{Unif}_{[0,1]}. \\
-\text{4: } \quad \text{Sample noise } \epsilon \sim \mathcal{N}(0, I_d). \\
-\text{5: } \quad \text{Set } x = \alpha_t z + \beta_t \epsilon \\
-\text{6: } \quad \text{Compute loss:} \\
-\quad \quad \mathcal{L}_{CSM}(\theta) = \|s_t^\theta(x, t) + \frac{\epsilon}{\beta_t}\|^2 \quad \textit{// score prediction} \\
-\quad \quad \mathcal{L}_{DDPM}(\theta) = \|\epsilon_t^\theta(x, t) - \epsilon\|^2 \quad \textit{// noise prediction (recommended)} \\
-\text{7: } \quad \text{Update } \theta \text{ via gradient descent on } \mathcal{L}(\theta). \\
-\text{8: } \textbf{end for} \\
-\hline
-\end{array}
+</section>
+<section id="classifier-free-guidance-cfg" class="level3">
+<h3 class="anchored" data-anchor-id="classifier-free-guidance-cfg">Classifier-Free Guidance (CFG)</h3>
+<p><strong>Classifier-free guidance (CFG)</strong><span class="math inline">\(^{[2]}\)</span> achieves the same amplification without training a separate classifier. The key idea: rewrite the classifier gradient in terms of vector fields we can learn from a single model.</p>
+<section id="deriving-the-cfg-formula" class="level4">
+<h4 class="anchored" data-anchor-id="deriving-the-cfg-formula">Deriving the CFG Formula</h4>
+<p>Using Bayes’ rule, we can rewrite the classifier gradient: <span class="math display">\[
+\nabla \log p_t(y|x) = \nabla \log p_t(x|y) - \nabla \log p_t(x)
 \]</span></p>
-<p>There is another very useful property of the Gaussian probability path: we only need to learn one of <span class="math inline">\(s_t^\theta\)</span> or <span class="math inline">\(\epsilon_t^\theta\)</span> and compute the other one from it directly.</p>
-<div id="conversion-formula" class="callout callout-style-default callout-tip callout-titled">
+<p>Plugging back into the scaled guided vector field <span class="math inline">\(\tilde{u}_t^{target}(x | y)\)</span>: <span class="math display">\[
+\begin{aligned}
+\tilde{u}_t^{target}(x | y) &amp;= u_t^{target}(x) + w \cdot b_t \nabla \log p_t(y|x) \\
+&amp;= u_t^{target}(x) + w \cdot b_t (\nabla \log p_t(x|y) - \nabla \log p_t(x))
+\end{aligned}
+\]</span></p>
+<p>From the conversion formula, we can express scores in terms of vector fields: <span class="math display">\[
+\begin{aligned}
+\nabla \log p_t(x) &amp;= \frac{1}{b_t} (u_t^{target}(x) - a_t x) \\
+\nabla \log p_t(x|y) &amp;= \frac{1}{b_t} (u_t^{target}(x | y) - a_t x) \\
+\end{aligned}
+\]</span></p>
+<p>Substituting back and simplifying (the <span class="math inline">\(a_t x\)</span> and <span class="math inline">\(b_t\)</span> terms cancel): <span class="math display">\[
+\begin{aligned}
+\tilde{u}_t^{target}(x | y) &amp;= u_t^{target}(x) + w \cdot (u_t^{target}(x | y) - u_t^{target}(x)) \\
+&amp;= (1-w) \cdot u_t^{target}(x) + w \cdot u_t^{target}(x | y)
+\end{aligned}
+\]</span></p>
+<p>This is the <strong>CFG formula</strong>: the scaled guided vector field is a linear combination of the unguided and guided vector fields. When <span class="math inline">\(w &gt; 1\)</span>, we extrapolate <em>beyond</em> the conditional direction, amplifying the effect of conditioning.</p>
+</section>
+<section id="cfg-training" class="level4">
+<h4 class="anchored" data-anchor-id="cfg-training">Training</h4>
+<p>To use the CFG formula, we need both <span class="math inline">\(u_t^\theta(x|y)\)</span> (guided) and <span class="math inline">\(u_t^\theta(x|\emptyset)\)</span> (unguided). Instead of training two separate models, we train a <strong>single model</strong> that handles both by introducing a null token <span class="math inline">\(\emptyset\)</span>:</p>
+<p><span class="math display">\[
+u_t^\theta(x | \emptyset) \approx u_t^{target}(x) \quad \text{(unconditional)}
+\]</span></p>
+<p><strong>Training procedure:</strong></p>
+<ol type="1">
+<li>Sample <span class="math inline">\((z, y) \sim p_{data}(z, y)\)</span> — a data point with its label</li>
+<li>With probability <span class="math inline">\(\eta\)</span> (typically 10-20%), replace <span class="math inline">\(y\)</span> with <span class="math inline">\(\emptyset\)</span></li>
+<li>Minimize the CFM loss: <span class="math inline">\(\|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2\)</span></li>
+</ol>
+<p><strong>Why does this work?</strong> The target <span class="math inline">\(u_t^{target}(x | z)\)</span> is always the same — it doesn’t depend on <span class="math inline">\(y\)</span>. What changes is the <strong>model input</strong>:</p>
+<ul>
+<li>When we keep <span class="math inline">\(y\)</span>: the model learns <span class="math inline">\(u_t^\theta(x | y) \approx\)</span> conditional vector field</li>
+<li>When we drop <span class="math inline">\(y\)</span>: the model learns <span class="math inline">\(u_t^\theta(x | \emptyset) \approx\)</span> marginal vector field</li>
+</ul>
+<p>By training with <span class="math inline">\(\emptyset\)</span> on random samples from all classes, the model learns the marginal (average over all conditionals) — exactly what we need for the CFG formula.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Proposition: Conversion formula for Gaussian probability path
+<span class="screen-reader-only">Note</span>Key Point
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><span class="math display">\[
-\begin{aligned}
-u_t^{target}(x | z) &amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x | z) \\
-u_t^\theta(x) &amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x)
-\end{aligned}
-\]</span></p>
-<p>where the formula for the above marginal vector field <span class="math inline">\(u_t^{target}\)</span> is called <strong>probability flow ODE</strong> in the literature.</p>
+<p>The training loss is identical to standard guided CFM. The only change is randomly dropping the label with probability <span class="math inline">\(\eta\)</span>. The CFG formula <span class="math inline">\(\tilde{u}_t\)</span> is <strong>not used during training</strong> — it only appears at sampling time.</p>
 </div>
 </div>
-<p>Proof:</p>
-<p>As we derived in the example: Flow matching for Gaussian probability path, the conditional vector field is given by</p>
+</section>
+<section id="cfg-sampling" class="level4">
+<h4 class="anchored" data-anchor-id="cfg-sampling">Sampling</h4>
+<p>At inference time, we use the trained model to compute both outputs and combine them:</p>
 <p><span class="math display">\[
-u_t^{target}(x | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+\tilde{u}_t^\theta(x | y) = \underbrace{u_t^\theta(x | \emptyset)}_{\text{unconditional}} + w \cdot (\underbrace{u_t^\theta(x | y)}_{\text{conditional}} - \underbrace{u_t^\theta(x | \emptyset)}_{\text{unconditional}})
 \]</span></p>
-<p>and in the example: denoising diffusion models, the conditional score is given by</p>
-<p><span class="math display">\[
-\nabla \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
-\]</span></p>
-<p>From the conditional score, we can solve for <span class="math inline">\(z\)</span>:</p>
-<p><span class="math display">\[
-\nabla \log p_t(x|z) = -\frac{x - \alpha_t z}{\beta_t^2} \implies z = \frac{x + \beta_t^2 \nabla \log p_t(x|z)}{\alpha_t}
-\]</span></p>
-<p>Substituting back:</p>
-<p><span class="math display">\[
-\begin{aligned}
-u_t^{target}(x | z) &amp;= (\dot{\alpha}_t - \frac{\dot{\beta}_t \alpha_t}{\beta_t}) \cdot \frac{x + \beta_t^2 \nabla \log p_t(x|z)}{\alpha_t} + \frac{\dot{\beta}_t}{\beta_t} x \\
-&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} \nabla \log p_t(x|z) - \frac{\dot{\beta}_t}{\beta_t} x - \dot{\beta}_t \beta_t \nabla \log p_t(x|z) + \frac{\dot{\beta}_t}{\beta_t} x \\
-&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x|z) \\
-\end{aligned}
-\]</span></p>
-<p>The same identity holds for the marginal vector field <span class="math inline">\(u_t^\theta(x)\)</span>:</p>
-<p><span class="math display">\[
-\begin{aligned}
-u_t^\theta(x) &amp;= \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \\
-&amp;= \int \left(\frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x|z)\right) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz \\
-&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x \underbrace{\int \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz}_{=1} + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \underbrace{\int \nabla \log p_t(x|z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz}_{= \nabla \log p_t(x)} \\
-&amp;= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x) \\
-\end{aligned}
-\]</span></p>
-<p>where the first integral equals 1 because <span class="math inline">\(\frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span> is the posterior <span class="math inline">\(p(z|x)\)</span> which integrates to 1, and the second integral is the definition of the marginal score <span class="math inline">\(\nabla \log p_t(x)\)</span> (as we derived in the Score Matching section).</p>
-<p>If we have learnt <span class="math inline">\(s_t^\theta\)</span>, we can compute <span class="math inline">\(u_t^\theta\)</span> from it using the conversion formula:</p>
-<p><span class="math display">\[
-u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
-\]</span></p>
-<p>Rearrange to get the conversion formula for <span class="math inline">\(s_t^\theta\)</span>:</p>
-<p><span class="math display">\[
-s_t^\theta(x) = \frac{\alpha_t}{\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t} \left(u_t^\theta(x) - \frac{\dot{\alpha}_t}{\alpha_t} x\right)
-\]</span></p>
-<p>This holds as long as <span class="math inline">\(\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t \neq 0\)</span>. Factoring: <span class="math inline">\(\beta_t(\dot{\alpha}_t \beta_t - \dot{\beta}_t \alpha_t)\)</span>. Recall from Part 3 that <span class="math inline">\(\alpha_t\)</span> increases from 0 to 1 (<span class="math inline">\(\dot{\alpha}_t &gt; 0\)</span>) and <span class="math inline">\(\beta_t\)</span> decreases from 1 to 0 (<span class="math inline">\(\dot{\beta}_t &lt; 0\)</span>). Therefore <span class="math inline">\(\dot{\alpha}_t \beta_t &gt; 0\)</span> and <span class="math inline">\(-\dot{\beta}_t \alpha_t &gt; 0\)</span>, so the second factor is strictly positive for <span class="math inline">\(t \in (0, 1)\)</span>.</p>
-<p>If we have a trained a score network <span class="math inline">\(s_t^\theta\)</span>, we can use arbitrary <span class="math inline">\(\sigma_t \geq 0\)</span> to sample from the SDE:</p>
-<p><span class="math display">\[
-\begin{aligned}
-X_0 &amp;\sim p_{\text{init}} \\
-dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
-&amp;= [\frac{\dot{\alpha}_t}{\alpha_t} X_t + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
-&amp;= [(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t + \frac{\sigma_t^2}{2}) s_t^\theta(X_t) + \frac{\dot{\alpha}_t}{\alpha_t} X_t] dt + \sigma_t dW_t \\
-\end{aligned}
-\]</span></p>
-<p>and generate samples <span class="math inline">\(X_1 \sim p_{data}\)</span>. This corresponds to <strong>stochastic sampling from a denoising diffusion model</strong>.</p>
+<p>Equivalently: <span class="math inline">\(\tilde{u}_t^\theta = (1-w) \cdot u_t^\theta(x|\emptyset) + w \cdot u_t^\theta(x|y)\)</span></p>
+<p><strong>Sampling procedure:</strong></p>
+<ol type="1">
+<li>Sample <span class="math inline">\(x_0 \sim p_{init}\)</span> (e.g., Gaussian noise)</li>
+<li>At each step, run the model twice: once with <span class="math inline">\(y\)</span>, once with <span class="math inline">\(\emptyset\)</span></li>
+<li>Combine outputs using the CFG formula with guidance scale <span class="math inline">\(w\)</span></li>
+<li>Integrate the ODE/SDE using <span class="math inline">\(\tilde{u}_t^\theta\)</span></li>
+</ol>
+<p>The guidance scale <span class="math inline">\(w\)</span> controls the strength of conditioning:</p>
+<ul>
+<li><span class="math inline">\(w = 1\)</span>: No amplification (standard conditional generation)</li>
+<li><span class="math inline">\(w &gt; 1\)</span>: Amplified conditioning (sharper, more “on-prompt” samples)</li>
+<li><span class="math inline">\(w \gg 1\)</span>: Over-saturation (artifacts, reduced diversity)</li>
+</ul>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>What about non-Gaussian flows?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The CFG formula <span class="math inline">\((1-w)u_t(x) + w \cdot u_t(x|y)\)</span> is just a weighted interpolation — you can apply it to <strong>any</strong> vector fields regardless of path type. What changes is the <strong>interpretation</strong>:</p>
+<ul>
+<li><strong>Gaussian paths</strong>: This interpolation = amplifying a classifier gradient <span class="math inline">\(\nabla \log p_t(y|x)\)</span> (the derivation above)</li>
+<li><strong>Non-Gaussian paths</strong>: The formula still works empirically, but we lose the classifier gradient interpretation. Why does interpolating vector fields improve conditioning? It remains theoretically unclear<span class="math inline">\(^{[1]}\)</span>.</li>
+</ul>
+<p>In practice, most modern systems (Stable Diffusion, Flux, etc.) use Gaussian paths, so this distinction rarely matters.</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="guidance-for-flow-models-1" class="level2">
+<h2 class="anchored" data-anchor-id="guidance-for-flow-models-1">Guidance for Flow Models</h2>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -770,15 +690,44 @@ dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We derived the complete training algorithms for generative models with Gaussian probability paths.</p>
-<p><strong>Flow Matching (CFM)</strong>: Regress <span class="math inline">\(u_t^\theta(x)\)</span> against <span class="math inline">\(\dot{\alpha}_t z + \dot{\beta}_t \epsilon\)</span> where <span class="math inline">\(x = \alpha_t z + \beta_t \epsilon\)</span>. For optimal transport paths (<span class="math inline">\(\alpha_t = t\)</span>, <span class="math inline">\(\beta_t = 1-t\)</span>), the target simplifies to <span class="math inline">\(z - \epsilon\)</span>.</p>
-<p><strong>Score Matching (CSM → DDPM)</strong>: Regress against the conditional score <span class="math inline">\(-\frac{\epsilon}{\beta_t}\)</span>. DDPM reparameterizes to predict <span class="math inline">\(\epsilon\)</span> directly and drops the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting for stability.</p>
-<p><strong>Conversion formula</strong>: For Gaussian paths, vector field and score are interconvertible: <span class="math display">\[
-u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
-\]</span></p>
-<p>Train one network, get both — then sample via ODE (deterministic) or SDE (stochastic) as needed.</p>
+<p>We extended flow matching and diffusion models to <strong>guided generation</strong> — conditioning on labels, text prompts, or other side information <span class="math inline">\(y\)</span>.</p>
+<p><strong>Classifier-free guidance (CFG)</strong> in two steps:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 40%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>What happens</th>
+<th>Formula used</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Training</strong></td>
+<td>Random label dropout with probability <span class="math inline">\(\eta\)</span></td>
+<td>Standard CFM loss</td>
+</tr>
+<tr class="even">
+<td><strong>Sampling</strong></td>
+<td>Combine conditional + unconditional outputs</td>
+<td><span class="math inline">\(\tilde{u}_t = (1-w) \cdot u_t(\emptyset) + w \cdot u_t(y)\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>The derivation shows <em>why</em> CFG works: for Gaussian paths, the difference <span class="math inline">\(u_t(x|y) - u_t(x|\emptyset)\)</span> approximates the classifier gradient <span class="math inline">\(\nabla \log p_t(y|x)\)</span>. Scaling by <span class="math inline">\(w &gt; 1\)</span> amplifies this gradient, improving sample quality at the cost of diversity.</p>
 </div>
 </div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2408.09000">Classifier-Free Guidance is a Predictor-Corrector</a>. Bradley &amp; Nakkiran. <em>arXiv 2024</em>.</p>
+<p>[2] <a href="https://arxiv.org/abs/2207.12598">Classifier-Free Diffusion Guidance</a>. Ho &amp; Salimans. <em>NeurIPS Workshop 2021</em>.</p>
+<p>[3] <a href="https://arxiv.org/abs/2105.05233">Diffusion Models Beat GANs on Image Synthesis</a>. Dhariwal &amp; Nichol. <em>NeurIPS 2021</em>.</p>
+<p>[4] <a href="https://arxiv.org/abs/2311.13443">Guided Flows for Generative Modeling and Decision Making</a>. Zheng et al.&nbsp;<em>arXiv 2023</em>.</p>
 
 
 </section>

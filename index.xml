@@ -10,7 +10,294 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.26</generator>
-<lastBuildDate>Sun, 14 Dec 2025 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sat, 20 Dec 2025 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 8: Guided Generative Models</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/8-guidance/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Guided generation</strong> conditions the model on additional information <img src="https://latex.codecogs.com/png.latex?y"> (e.g., text prompts, class labels)</li>
+<li><strong>CFG training</strong>: Standard loss + randomly drop conditioning with probability <img src="https://latex.codecogs.com/png.latex?%5Ceta"> (10-20%)</li>
+<li><strong>CFG sampling</strong>: Amplify conditioning by extrapolating: <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%20=%20u_t(%5Cemptyset)%20+%20w%20%5Ccdot%20(u_t(y)%20-%20u_t(%5Cemptyset))"></li>
+<li>For <strong>Gaussian paths</strong>, CFG = amplifying the classifier gradient; for general flows it’s purely empirical</li>
+</ul>
+</div>
+</div>
+<p>So far, the generative models we have discussed are all <strong>unconditional</strong> models, i.e., they generate samples from the target probability distribution <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D"> without any additional information. In this post, we will discuss how to make these models <strong>conditional</strong> on some additional information like a text prompt <img src="https://latex.codecogs.com/png.latex?y">.</p>
+<p>To avoid notation and terminology clash with the use of the word “<strong>conditional</strong>” to refer to conditioning on <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7Bdata%7D">, we will use the term “<strong>guided</strong>” to refer specifically to conditioning on <img src="https://latex.codecogs.com/png.latex?y">.</p>
+<div id="guided-generation" class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>Def: Guided Generative Model</p>
+<p>A guided diffusion model is defined by the SDE:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0AdX_t%20&amp;=%20%5Bu_t%5E%7Btarget%7D(X_t%20%7C%20y)%20+%20%5Cfrac%7B%5Csigma_t%5E2%7D%7B2%7D%20%5Cnabla%20%5Clog%20p_t(X_t%20%7C%20y)%5D%20dt%20+%20%5Csigma_t%20dW_t%20%5C%5C%0AX_0%20&amp;%5Csim%20p_%7Binit%7D%20%5C%5C%0A%5Cimplies%20X_t%20&amp;%5Csim%20p_t(%5Ccdot%20%7C%20y)%20%5Cquad%20%5Ctext%7Bfor%20all%20%7D%200%20%5Cleq%20t%20%5Cleq%201%0A%5Cend%7Baligned%7D%0A"></p>
+<p>When <img src="https://latex.codecogs.com/png.latex?%5Csigma_t%20=%200">, the SDE reduces to the ODE for guided flow matching: <img src="https://latex.codecogs.com/png.latex?%0AdX_t%20=%20u_t%5E%7Btarget%7D(X_t%20%7C%20y)%20dt,%20%5Cquad%20X_0%20%5Csim%20p_%7Binit%7D%0A"></p>
+</div>
+</div>
+</div>
+<section id="guidance-for-flow-models" class="level2">
+<h2 class="anchored" data-anchor-id="guidance-for-flow-models">Guidance for Flow Models</h2>
+<p>Now let us imagine we have a label <img src="https://latex.codecogs.com/png.latex?y"> for each data <img src="https://latex.codecogs.com/png.latex?z">. For images, some of them are “dog” and some of them are “cat”. Given a fixed label <img src="https://latex.codecogs.com/png.latex?y">, we can think of <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D(z%20%7C%20y)"> as a “slice” of the data distribution — the subset of data points with that label.</p>
+<p>Given a fixed label <img src="https://latex.codecogs.com/png.latex?y">, the CFM loss is defined as before:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0AL_%7BCFM,%20y%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,%20z%20%5Csim%20p_%7Bdata%7D(z%7Cy),%20x%20%5Csim%20p_t(x%7Cz)%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x%20%7C%20y)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>The target <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> is exactly the same as in unconditional flow matching (see <a href="../3-probability-paths/">Part 3</a>): the vector field that transports noise toward data point <img src="https://latex.codecogs.com/png.latex?z">. For Gaussian paths with <img src="https://latex.codecogs.com/png.latex?x%20=%20%5Calpha_t%20z%20+%20%5Cbeta_t%20%5Cepsilon">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20=%20%5Cdot%7B%5Calpha%7D_t%20z%20+%20%5Cdot%7B%5Cbeta%7D_t%20%5Cepsilon%0A"></p>
+<p><strong>How does training on <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)"> give us <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cy)">?</strong> This is the <a href="../4-flow-matching-loss/">marginalization trick</a> again. The key insight is:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x%20%7C%20z,%20y)%20=%20u_t%5E%7Btarget%7D(x%20%7C%20z)%0A"></p>
+<p><strong>Why?</strong> Because the probability path <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)"> only depends on <img src="https://latex.codecogs.com/png.latex?z"> — once you know the specific data point <img src="https://latex.codecogs.com/png.latex?z">, the label <img src="https://latex.codecogs.com/png.latex?y"> provides no additional information about how to add noise to it. The noise-adding process is purely mechanical and doesn’t care about labels.</p>
+<p>Therefore, the <a href="../4-flow-matching-loss/#the-marginalization-formula">marginalization formula from Part 4</a> applies directly:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20y)%20&amp;=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p_t(z%7Cx,y)%7D%5Bu_t%5E%7Btarget%7D(x%20%7C%20z,%20y)%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bz%20%5Csim%20p_t(z%7Cx,y)%7D%5Bu_t%5E%7Btarget%7D(x%20%7C%20z)%5D%0A%5Cend%7Baligned%7D%0A"></p>
+<p><strong>What does this mean?</strong> Given noisy sample <img src="https://latex.codecogs.com/png.latex?x"> and label <img src="https://latex.codecogs.com/png.latex?y">, the marginal vector field is an average over all possible clean data points <img src="https://latex.codecogs.com/png.latex?z"> that could have generated <img src="https://latex.codecogs.com/png.latex?x">, weighted by the posterior <img src="https://latex.codecogs.com/png.latex?p_t(z%7Cx,y)">. The label <img src="https://latex.codecogs.com/png.latex?y"> constrains which <img src="https://latex.codecogs.com/png.latex?z"> values are plausible, but once a specific <img src="https://latex.codecogs.com/png.latex?z"> is chosen, the vector field <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)"> is the same regardless of <img src="https://latex.codecogs.com/png.latex?y">.</p>
+<p>We never compute this expectation explicitly — least-squares regression does it for us (see <a href="../6-score-functions/">Part 6</a>). By sampling <img src="https://latex.codecogs.com/png.latex?(z,%20y)%20%5Csim%20p_%7Bdata%7D(z,%20y)"> and regressing against <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%7Cz)">, the model learns <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x%7Cy)%20%5Capprox%20u_t%5E%7Btarget%7D(x%7Cy)">.</p>
+<p>You can think of <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x%20%7C%20y)"> as a specific model just for the data slice <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D(z%7Cy)"> with label <img src="https://latex.codecogs.com/png.latex?y">. We could build separate models for each label <img src="https://latex.codecogs.com/png.latex?y"> and train them separately, but this is not efficient. Instead, we want to train a single model that works for all <img src="https://latex.codecogs.com/png.latex?y">, so the model takes input <img src="https://latex.codecogs.com/png.latex?%5Bx,%20y,%20t%5D"> instead of only <img src="https://latex.codecogs.com/png.latex?%5Bx,%20t%5D"> as before.</p>
+<p>Now, we want to minimize the expected loss over all possible labels <img src="https://latex.codecogs.com/png.latex?y">. The total loss is the expectation of the label-specific losses <img src="https://latex.codecogs.com/png.latex?L_%7BCFM,%20y%7D">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20&amp;=%20%5Cmathbb%7BE%7D_%7By%20%5Csim%20p_%7Bdata%7D(y)%7D%20%5Cleft%5B%20L_%7BCFM,%20y%7D(%5Ctheta)%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7By%20%5Csim%20p_%7Bdata%7D(y)%7D%20%5Cleft%5B%20%5Cmathbb%7BE%7D_%7Bt,%20z%20%5Csim%20p_%7Bdata%7D(z%7Cy),%20x%20%5Csim%20p_t(x%7Cz)%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x%20%7C%20y)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%20%5Cright%5D%20%5C%5C%0A&amp;=%20%5Cmathbb%7BE%7D_%7Bt,%20y%20%5Csim%20p_%7Bdata%7D(y),%20z%20%5Csim%20p_%7Bdata%7D(z%7Cy),%20x%20%5Csim%20p_t(x%7Cz)%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x%20%7C%20y)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%0A%5Cend%7Baligned%7D%0A"></p>
+<p>By the definition of joint probability: <img src="https://latex.codecogs.com/png.latex?%0Ap_%7Bdata%7D(z,%20y)%20=%20p_%7Bdata%7D(z%20%7C%20y)%20%5C,%20p_%7Bdata%7D(y)%0A"></p>
+<p>we can merge these two expectations into one:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathbb%7BE%7D_%7By%20%5Csim%20p_%7Bdata%7D(y),%20z%20%5Csim%20p_%7Bdata%7D(z%20%7C%20y)%7D%20=%20%5Cmathbb%7BE%7D_%7B(z,%20y)%20%5Csim%20p_%7Bdata%7D(z,%20y)%7D%0A"></p>
+<p>Substituting back, we get:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D_%7BCFM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,(z,y)%20%5Csim%20p_%7Bdata%7D(z,%20y),%20x%20%5Csim%20p_t(x%7Cz)%7D%20%5Cleft%5B%20%5C%7Cu_t%5E%5Ctheta(x%20%7C%20y)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2%20%5Cright%5D%0A"></p>
+<p>In practice, sampling <img src="https://latex.codecogs.com/png.latex?(z,%20y)%20%5Csim%20p_%7Bdata%7D(z,%20y)"> would involve a dataloader that returns batches of both <img src="https://latex.codecogs.com/png.latex?z"> and <img src="https://latex.codecogs.com/png.latex?y">.</p>
+<section id="the-problem-weak-conditioning" class="level3">
+<h3 class="anchored" data-anchor-id="the-problem-weak-conditioning">The Problem: Weak Conditioning</h3>
+<p>While the above training procedure is theoretically valid, it was empirically observed that images generated with this procedure did not fit well enough to the desired label <img src="https://latex.codecogs.com/png.latex?y">. The generated samples were correct on average, but lacked the strong conditioning that users wanted.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Solution: Amplify Conditioning at Sampling Time
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Both <strong>Classifier Guidance</strong> and <strong>Classifier-Free Guidance (CFG)</strong> are sampling-time techniques. The idea is the same: scale up the “conditioning direction” to get stronger adherence to the label <img src="https://latex.codecogs.com/png.latex?y">.</p>
+<p>The derivations below show <em>why</em> this works mathematically. The difference between the two methods is <em>how</em> you compute the conditioning direction:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 52%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>How to get the conditioning direction</th>
+<th>Extra training required?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Classifier Guidance</td>
+<td>Train a separate classifier <img src="https://latex.codecogs.com/png.latex?p_t(y%5C%7Cx)"></td>
+<td>Yes (classifier)</td>
+</tr>
+<tr class="even">
+<td>CFG</td>
+<td>Use label dropout so one model estimates both terms</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="classifier-guidance" class="level3">
+<h3 class="anchored" data-anchor-id="classifier-guidance">Classifier Guidance</h3>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Important: Gaussian Paths Required
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The derivation below relies on <strong>Gaussian probability paths</strong> <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I)">. The score <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(x)"> is a property of the marginal distribution — it exists mathematically regardless of whether we’re training a diffusion model or flow model. For Gaussian paths, the <a href="../7-training/#conversion-formula">conversion formula</a> relates this score to the vector field, enabling the derivation below.</p>
+</div>
+</div>
+<p>Recall from <a href="../7-training/">Part 7</a> that for Gaussian conditional probability path <img src="https://latex.codecogs.com/png.latex?p_t(x%7Cz)%20=%20%5Cmathcal%7BN%7D(%5Calpha_t%20z,%20%5Cbeta_t%5E2%20I_d)">, we can use the <a href="../7-training/#conversion-formula">conversion formula</a> to write the marginal vector field in terms of the marginal score:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x)%20=%20a_t%20x%20+%20b_t%20%5Cnabla%20%5Clog%20p_t(x)%20%5C%5C%0A(a_t,%20b_t)%20=%20(%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%7D%7B%5Calpha_t%7D,%20%5Cfrac%7B%5Cdot%7B%5Calpha%7D_t%20%5Cbeta_t%5E2%7D%7B%5Calpha_t%7D%20-%20%5Cdot%7B%5Cbeta%7D_t%20%5Cbeta_t)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Replacing the vector field and score function with guided ones, we get:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20y)%20=%20a_t%20x%20+%20b_t%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20y)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>we can expand the guided score function using Bayes’ rule:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cnabla%20%5Clog%20p_t(x%20%7C%20y)%20&amp;=%20%5Cnabla%20%5Clog%20%5Cfrac%7Bp_t(y%7Cx)%20p_t(x)%7D%7Bp_t(y)%7D%20%5C%5C%0A&amp;=%20%5Cnabla%20%5Clog%20p_t(y%7Cx)%20+%20%5Cnabla%20%5Clog%20p_t(x)%20-%20%5Cnabla%20%5Clog%20p_t(y)%20%5C%5C%0A&amp;%20%5Ctext%7B(gradient%20is%20with%20respect%20to%20$x$,%20so%20$%5Cnabla%20%5Clog%20p_t(y)$%20is%20a%20zero%20vector)%7D%20%5C%5C%0A&amp;%20=%20%5Cnabla%20%5Clog%20p_t(y%7Cx)%20+%20%5Cnabla%20%5Clog%20p_t(x)%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Plugging back to the guided vector field, we get:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20y)%20&amp;=%20a_t%20x%20+%20b_t%20%5Cnabla%20%5Clog%20p_t(x%20%7C%20y)%20%5C%5C%0A&amp;=%20a_t%20x%20+%20b_t%20(%5Cnabla%20%5Clog%20p_t(y%7Cx)%20+%20%5Cnabla%20%5Clog%20p_t(x))%20%5C%5C%0A&amp;=%20%5Cunderbrace%7Ba_t%20x%20+%20b_t%20%5Cnabla%20%5Clog%20p_t(x)%7D_%7Bu_t%5E%7Btarget%7D(x)%7D%20+b_t%20%5Cnabla%20%5Clog%20p_t(y%7Cx)%20%5C%5C%0A&amp;=%20u_t%5E%7Btarget%7D(x)%20+%20b_t%20%5Cnabla%20%5Clog%20p_t(y%7Cx)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Notice the shape of the above equation: the guided vector field is a sum of the unguided vector field plus a guided score <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(y%7Cx)">. The term <img src="https://latex.codecogs.com/png.latex?%5Clog%20p_t(y%20%7C%20x)"> is considered as a classifier which gives the likelihood of the label <img src="https://latex.codecogs.com/png.latex?y"> given the data <img src="https://latex.codecogs.com/png.latex?x">.</p>
+<p>It has been empirically observed that scaling up the contribution of <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(y%7Cx)"> by a <strong>guidance scale</strong> <img src="https://latex.codecogs.com/png.latex?w%20%3E%201"> gives better outputs.</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Ctilde%7Bu%7D_t%5E%7Btarget%7D(x%20%7C%20y)%20=%20u_t%5E%7Btarget%7D(x)%20+%20w%20%5Ccdot%20b_t%20%5Cnabla%20%5Clog%20p_t(y%7Cx)%0A"></p>
+<p>Note that this is a heuristic: for <img src="https://latex.codecogs.com/png.latex?w%20%5Cneq%201">, we do not sample from the true guided distribution <img src="https://latex.codecogs.com/png.latex?p_%7Bdata%7D(z%20%7C%20y)">.</p>
+<p>In the early works, people trained actual classifiers and use them to guide via the above procedure. But it has drawbacks:</p>
+<ul>
+<li>Requires training an <strong>extra classifier</strong> on noisy data</li>
+<li>The classifier must handle all noise levels <img src="https://latex.codecogs.com/png.latex?t%20%5Cin%20%5B0,%201%5D"></li>
+<li>Complicates the training pipeline</li>
+</ul>
+</section>
+<section id="classifier-free-guidance-cfg" class="level3">
+<h3 class="anchored" data-anchor-id="classifier-free-guidance-cfg">Classifier-Free Guidance (CFG)</h3>
+<p><strong>Classifier-free guidance (CFG)</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D"> achieves the same amplification without training a separate classifier. The key idea: rewrite the classifier gradient in terms of vector fields we can learn from a single model.</p>
+<section id="deriving-the-cfg-formula" class="level4">
+<h4 class="anchored" data-anchor-id="deriving-the-cfg-formula">Deriving the CFG Formula</h4>
+<p>Using Bayes’ rule, we can rewrite the classifier gradient: <img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(y%7Cx)%20=%20%5Cnabla%20%5Clog%20p_t(x%7Cy)%20-%20%5Cnabla%20%5Clog%20p_t(x)%0A"></p>
+<p>Plugging back into the scaled guided vector field <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%5E%7Btarget%7D(x%20%7C%20y)">: <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Ctilde%7Bu%7D_t%5E%7Btarget%7D(x%20%7C%20y)%20&amp;=%20u_t%5E%7Btarget%7D(x)%20+%20w%20%5Ccdot%20b_t%20%5Cnabla%20%5Clog%20p_t(y%7Cx)%20%5C%5C%0A&amp;=%20u_t%5E%7Btarget%7D(x)%20+%20w%20%5Ccdot%20b_t%20(%5Cnabla%20%5Clog%20p_t(x%7Cy)%20-%20%5Cnabla%20%5Clog%20p_t(x))%0A%5Cend%7Baligned%7D%0A"></p>
+<p>From the conversion formula, we can express scores in terms of vector fields: <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Cnabla%20%5Clog%20p_t(x)%20&amp;=%20%5Cfrac%7B1%7D%7Bb_t%7D%20(u_t%5E%7Btarget%7D(x)%20-%20a_t%20x)%20%5C%5C%0A%5Cnabla%20%5Clog%20p_t(x%7Cy)%20&amp;=%20%5Cfrac%7B1%7D%7Bb_t%7D%20(u_t%5E%7Btarget%7D(x%20%7C%20y)%20-%20a_t%20x)%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
+<p>Substituting back and simplifying (the <img src="https://latex.codecogs.com/png.latex?a_t%20x"> and <img src="https://latex.codecogs.com/png.latex?b_t"> terms cancel): <img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0A%5Ctilde%7Bu%7D_t%5E%7Btarget%7D(x%20%7C%20y)%20&amp;=%20u_t%5E%7Btarget%7D(x)%20+%20w%20%5Ccdot%20(u_t%5E%7Btarget%7D(x%20%7C%20y)%20-%20u_t%5E%7Btarget%7D(x))%20%5C%5C%0A&amp;=%20(1-w)%20%5Ccdot%20u_t%5E%7Btarget%7D(x)%20+%20w%20%5Ccdot%20u_t%5E%7Btarget%7D(x%20%7C%20y)%0A%5Cend%7Baligned%7D%0A"></p>
+<p>This is the <strong>CFG formula</strong>: the scaled guided vector field is a linear combination of the unguided and guided vector fields. When <img src="https://latex.codecogs.com/png.latex?w%20%3E%201">, we extrapolate <em>beyond</em> the conditional direction, amplifying the effect of conditioning.</p>
+</section>
+<section id="cfg-training" class="level4">
+<h4 class="anchored" data-anchor-id="cfg-training">Training</h4>
+<p>To use the CFG formula, we need both <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x%7Cy)"> (guided) and <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x%7C%5Cemptyset)"> (unguided). Instead of training two separate models, we train a <strong>single model</strong> that handles both by introducing a null token <img src="https://latex.codecogs.com/png.latex?%5Cemptyset">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%5Ctheta(x%20%7C%20%5Cemptyset)%20%5Capprox%20u_t%5E%7Btarget%7D(x)%20%5Cquad%20%5Ctext%7B(unconditional)%7D%0A"></p>
+<p><strong>Training procedure:</strong></p>
+<ol type="1">
+<li>Sample <img src="https://latex.codecogs.com/png.latex?(z,%20y)%20%5Csim%20p_%7Bdata%7D(z,%20y)"> — a data point with its label</li>
+<li>With probability <img src="https://latex.codecogs.com/png.latex?%5Ceta"> (typically 10-20%), replace <img src="https://latex.codecogs.com/png.latex?y"> with <img src="https://latex.codecogs.com/png.latex?%5Cemptyset"></li>
+<li>Minimize the CFM loss: <img src="https://latex.codecogs.com/png.latex?%5C%7Cu_t%5E%5Ctheta(x%20%7C%20y)%20-%20u_t%5E%7Btarget%7D(x%20%7C%20z)%5C%7C%5E2"></li>
+</ol>
+<p><strong>Why does this work?</strong> The target <img src="https://latex.codecogs.com/png.latex?u_t%5E%7Btarget%7D(x%20%7C%20z)"> is always the same — it doesn’t depend on <img src="https://latex.codecogs.com/png.latex?y">. What changes is the <strong>model input</strong>:</p>
+<ul>
+<li>When we keep <img src="https://latex.codecogs.com/png.latex?y">: the model learns <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x%20%7C%20y)%20%5Capprox"> conditional vector field</li>
+<li>When we drop <img src="https://latex.codecogs.com/png.latex?y">: the model learns <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x%20%7C%20%5Cemptyset)%20%5Capprox"> marginal vector field</li>
+</ul>
+<p>By training with <img src="https://latex.codecogs.com/png.latex?%5Cemptyset"> on random samples from all classes, the model learns the marginal (average over all conditionals) — exactly what we need for the CFG formula.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Key Point
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The training loss is identical to standard guided CFM. The only change is randomly dropping the label with probability <img src="https://latex.codecogs.com/png.latex?%5Ceta">. The CFG formula <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t"> is <strong>not used during training</strong> — it only appears at sampling time.</p>
+</div>
+</div>
+</section>
+<section id="cfg-sampling" class="level4">
+<h4 class="anchored" data-anchor-id="cfg-sampling">Sampling</h4>
+<p>At inference time, we use the trained model to compute both outputs and combine them:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Ctilde%7Bu%7D_t%5E%5Ctheta(x%20%7C%20y)%20=%20%5Cunderbrace%7Bu_t%5E%5Ctheta(x%20%7C%20%5Cemptyset)%7D_%7B%5Ctext%7Bunconditional%7D%7D%20+%20w%20%5Ccdot%20(%5Cunderbrace%7Bu_t%5E%5Ctheta(x%20%7C%20y)%7D_%7B%5Ctext%7Bconditional%7D%7D%20-%20%5Cunderbrace%7Bu_t%5E%5Ctheta(x%20%7C%20%5Cemptyset)%7D_%7B%5Ctext%7Bunconditional%7D%7D)%0A"></p>
+<p>Equivalently: <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%5E%5Ctheta%20=%20(1-w)%20%5Ccdot%20u_t%5E%5Ctheta(x%7C%5Cemptyset)%20+%20w%20%5Ccdot%20u_t%5E%5Ctheta(x%7Cy)"></p>
+<p><strong>Sampling procedure:</strong></p>
+<ol type="1">
+<li>Sample <img src="https://latex.codecogs.com/png.latex?x_0%20%5Csim%20p_%7Binit%7D"> (e.g., Gaussian noise)</li>
+<li>At each step, run the model twice: once with <img src="https://latex.codecogs.com/png.latex?y">, once with <img src="https://latex.codecogs.com/png.latex?%5Cemptyset"></li>
+<li>Combine outputs using the CFG formula with guidance scale <img src="https://latex.codecogs.com/png.latex?w"></li>
+<li>Integrate the ODE/SDE using <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%5E%5Ctheta"></li>
+</ol>
+<p>The guidance scale <img src="https://latex.codecogs.com/png.latex?w"> controls the strength of conditioning:</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?w%20=%201">: No amplification (standard conditional generation)</li>
+<li><img src="https://latex.codecogs.com/png.latex?w%20%3E%201">: Amplified conditioning (sharper, more “on-prompt” samples)</li>
+<li><img src="https://latex.codecogs.com/png.latex?w%20%5Cgg%201">: Over-saturation (artifacts, reduced diversity)</li>
+</ul>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>What about non-Gaussian flows?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The CFG formula <img src="https://latex.codecogs.com/png.latex?(1-w)u_t(x)%20+%20w%20%5Ccdot%20u_t(x%7Cy)"> is just a weighted interpolation — you can apply it to <strong>any</strong> vector fields regardless of path type. What changes is the <strong>interpretation</strong>:</p>
+<ul>
+<li><strong>Gaussian paths</strong>: This interpolation = amplifying a classifier gradient <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(y%7Cx)"> (the derivation above)</li>
+<li><strong>Non-Gaussian paths</strong>: The formula still works empirically, but we lose the classifier gradient interpretation. Why does interpolating vector fields improve conditioning? It remains theoretically unclear<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D">.</li>
+</ul>
+<p>In practice, most modern systems (Stable Diffusion, Flux, etc.) use Gaussian paths, so this distinction rarely matters.</p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="guidance-for-flow-models-1" class="level2">
+<h2 class="anchored" data-anchor-id="guidance-for-flow-models-1">Guidance for Flow Models</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We extended flow matching and diffusion models to <strong>guided generation</strong> — conditioning on labels, text prompts, or other side information <img src="https://latex.codecogs.com/png.latex?y">.</p>
+<p><strong>Classifier-free guidance (CFG)</strong> in two steps:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 40%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Phase</th>
+<th>What happens</th>
+<th>Formula used</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Training</strong></td>
+<td>Random label dropout with probability <img src="https://latex.codecogs.com/png.latex?%5Ceta"></td>
+<td>Standard CFM loss</td>
+</tr>
+<tr class="even">
+<td><strong>Sampling</strong></td>
+<td>Combine conditional + unconditional outputs</td>
+<td><img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%20=%20(1-w)%20%5Ccdot%20u_t(%5Cemptyset)%20+%20w%20%5Ccdot%20u_t(y)"></td>
+</tr>
+</tbody>
+</table>
+<p>The derivation shows <em>why</em> CFG works: for Gaussian paths, the difference <img src="https://latex.codecogs.com/png.latex?u_t(x%7Cy)%20-%20u_t(x%7C%5Cemptyset)"> approximates the classifier gradient <img src="https://latex.codecogs.com/png.latex?%5Cnabla%20%5Clog%20p_t(y%7Cx)">. Scaling by <img src="https://latex.codecogs.com/png.latex?w%20%3E%201"> amplifies this gradient, improving sample quality at the cost of diversity.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2408.09000">Classifier-Free Guidance is a Predictor-Corrector</a>. Bradley &amp; Nakkiran. <em>arXiv 2024</em>.</p>
+<p>[2] <a href="https://arxiv.org/abs/2207.12598">Classifier-Free Diffusion Guidance</a>. Ho &amp; Salimans. <em>NeurIPS Workshop 2021</em>.</p>
+<p>[3] <a href="https://arxiv.org/abs/2105.05233">Diffusion Models Beat GANs on Image Synthesis</a>. Dhariwal &amp; Nichol. <em>NeurIPS 2021</em>.</p>
+<p>[4] <a href="https://arxiv.org/abs/2311.13443">Guided Flows for Generative Modeling and Decision Making</a>. Zheng et al.&nbsp;<em>arXiv 2023</em>.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>guidance</category>
+  <category>classifier-free-guidance</category>
+  <guid>https://layernorm.dev/posts/diffusion/8-guidance/</guid>
+  <pubDate>Sat, 20 Dec 2025 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Diffusion &amp; Flow Matching Part 7: Training Targets and Algorithms</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -209,8 +496,6 @@
 <p><img src="https://latex.codecogs.com/png.latex?%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%0A"></p>
 <p>and in the example: denoising diffusion models, the conditional score is given by</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x%20%7C%20z)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%0A"></p>
-<p>Substituting the conditional score into the conditional vector field, we get</p>
-<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cbegin%7Baligned%7D%0Au_t%5E%7Btarget%7D(x%20%7C%20z)%20&amp;=%20(%5Cdot%7B%5Calpha%7D_t%20-%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20%5Calpha_t)%20z%20+%20%5Cfrac%7B%5Cdot%7B%5Cbeta%7D_t%7D%7B%5Cbeta_t%7D%20x%20%5C%5C%0A%5Cend%7Baligned%7D%0A"></p>
 <p>From the conditional score, we can solve for <img src="https://latex.codecogs.com/png.latex?z">:</p>
 <p><img src="https://latex.codecogs.com/png.latex?%0A%5Cnabla%20%5Clog%20p_t(x%7Cz)%20=%20-%5Cfrac%7Bx%20-%20%5Calpha_t%20z%7D%7B%5Cbeta_t%5E2%7D%20%5Cimplies%20z%20=%20%5Cfrac%7Bx%20+%20%5Cbeta_t%5E2%20%5Cnabla%20%5Clog%20p_t(x%7Cz)%7D%7B%5Calpha_t%7D%0A"></p>
 <p>Substituting back:</p>
