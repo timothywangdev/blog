@@ -392,14 +392,6 @@ $$
 \nabla \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
 $$
 
-Substituting the conditional score into the conditional vector field, we get
-
-$$
-\begin{aligned}
-u_t^{target}(x | z) &= (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x \\
-\end{aligned}
-$$
-
 From the conditional score, we can solve for $z$:
 
 $$
