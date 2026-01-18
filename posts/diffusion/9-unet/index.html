@@ -1,2 +1,1340 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"></html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2026-01-15">
+<meta name="description" content="U-Net architecture for learning vector fields and score functions in diffusion models">
+
+<title>Diffusion &amp; Flow Matching Part 9: U-Net Architecture – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../favicon.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#sec-learning-problem" id="toc-sec-learning-problem" class="nav-link active" data-scroll-target="#sec-learning-problem">The Learning Problem</a></li>
+  <li><a href="#sec-unet" id="toc-sec-unet" class="nav-link" data-scroll-target="#sec-unet">U-Net Architecture</a>
+  <ul class="collapse">
+  <li><a href="#the-encoder-decoder-baseline" id="toc-the-encoder-decoder-baseline" class="nav-link" data-scroll-target="#the-encoder-decoder-baseline">The Encoder-Decoder Baseline</a></li>
+  <li><a href="#the-u-net-solution-skip-connections" id="toc-the-u-net-solution-skip-connections" class="nav-link" data-scroll-target="#the-u-net-solution-skip-connections">The U-Net Solution: Skip Connections</a></li>
+  <li><a href="#sec-skip-connections" id="toc-sec-skip-connections" class="nav-link" data-scroll-target="#sec-skip-connections">How Skip Connections Actually Work</a></li>
+  <li><a href="#adaptations-for-diffusion" id="toc-adaptations-for-diffusion" class="nav-link" data-scroll-target="#adaptations-for-diffusion">Adaptations for Diffusion</a></li>
+  </ul></li>
+  <li><a href="#sec-training" id="toc-sec-training" class="nav-link" data-scroll-target="#sec-training">Training Considerations</a>
+  <ul class="collapse">
+  <li><a href="#sec-loss" id="toc-sec-loss" class="nav-link" data-scroll-target="#sec-loss">Loss Functions</a></li>
+  <li><a href="#sec-parameterization" id="toc-sec-parameterization" class="nav-link" data-scroll-target="#sec-parameterization">Parameterization Tricks</a></li>
+  </ul></li>
+  <li><a href="#sec-practical" id="toc-sec-practical" class="nav-link" data-scroll-target="#sec-practical">Practical Implementation</a>
+  <ul class="collapse">
+  <li><a href="#sec-hyperparameters" id="toc-sec-hyperparameters" class="nav-link" data-scroll-target="#sec-hyperparameters">Hyperparameters</a></li>
+  <li><a href="#sec-efficiency" id="toc-sec-efficiency" class="nav-link" data-scroll-target="#sec-efficiency">Computational Efficiency</a></li>
+  </ul></li>
+  <li><a href="#sec-modern" id="toc-sec-modern" class="nav-link" data-scroll-target="#sec-modern">Modern Variants and Extensions</a>
+  <ul class="collapse">
+  <li><a href="#architectural-innovations" id="toc-architectural-innovations" class="nav-link" data-scroll-target="#architectural-innovations">Architectural Innovations</a></li>
+  <li><a href="#sec-conditioning" id="toc-sec-conditioning" class="nav-link" data-scroll-target="#sec-conditioning">Conditioning Mechanisms</a></li>
+  </ul></li>
+  <li><a href="#sec-summary" id="toc-sec-summary" class="nav-link" data-scroll-target="#sec-summary">Summary</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Diffusion &amp; Flow Matching Part 9: U-Net Architecture</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">diffusion</div>
+    <div class="quarto-category">flow-matching</div>
+    <div class="quarto-category">generative-models</div>
+    <div class="quarto-category">u-net</div>
+    <div class="quarto-category">architecture</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    U-Net architecture for learning vector fields and score functions in diffusion models
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 15, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Why architecture matters</strong>: The network must predict noise at different timesteps while preserving spatial structure — this is unlike any standard vision task</li>
+<li><strong>U-Net dominates</strong> for pixel-space diffusion (Stable Diffusion, DALL-E 2) because skip connections preserve fine details lost during downsampling</li>
+<li><strong>Skip connections</strong> fuse semantic (decoder) and spatial (encoder) information — essential for precise reconstruction</li>
+<li><strong>Time conditioning</strong>: Sinusoidal embeddings convert timestep <span class="math inline">\(t\)</span> into a high-dimensional vector that modulates network behavior</li>
+</ul>
+</div>
+</div>
+<p>We’ve spent several posts deriving the mathematical theory of diffusion models: probability paths, flow matching objectives, and score functions. But here’s the practical question: <strong>how do we actually build a neural network that can denoise images at arbitrary timesteps?</strong></p>
+<p>This isn’t a standard image-to-image translation problem. The network needs to: 1. Handle the <em>same noisy image</em> differently depending on time <span class="math inline">\(t\)</span> (aggressive denoising at <span class="math inline">\(t \approx 0\)</span>, gentle refinement at <span class="math inline">\(t \approx 1\)</span>) 2. Preserve spatial structure while processing high-dimensional inputs (a 512×512 RGB image is 786,432 dimensions!) 3. Support flexible conditioning (text prompts, class labels, spatial masks)</p>
+<p>In this post, we’ll cover <strong>U-Net</strong> — the dominant architecture for diffusion models. For transformer-based approaches (DiT), see <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a>.</p>
+<section id="sec-learning-problem" class="level2">
+<h2 class="anchored" data-anchor-id="sec-learning-problem">The Learning Problem</h2>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What Makes Diffusion Different
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Unlike a classifier (image → label) or segmentation model (image → mask), diffusion models perform a unique task: <strong>image + time → velocity field</strong>. The network must predict <em>which direction to move in pixel space</em> to denoise the image, and this direction changes dramatically with time.</p>
+</div>
+</div>
+<p>Recall from <a href="../4-flow-matching-loss/">Part 4</a> and <a href="../7-training/">Part 7</a> that our goal is to learn a neural network that can predict either:</p>
+<ol type="1">
+<li><p><strong>Vector field</strong>: <span class="math inline">\(u_\theta(x_t, t, y) \approx u_t(x_t)\)</span> for flow matching (Points in the direction of clean data)</p></li>
+<li><p><strong>Score function</strong>: <span class="math inline">\(s_\theta(x_t, t, y) \approx \nabla_{x_t} \log p_t(x_t)\)</span> for score-based diffusion (Gradient of the log-probability — also points toward high-density regions)</p></li>
+</ol>
+<p>Here <span class="math inline">\(y\)</span> is an optional conditioning input (class label, text prompt, or other control signal).</p>
+<p>Both are fundamentally the same task: given noisy image <span class="math inline">\(x_t\)</span>, timestep <span class="math inline">\(t\)</span>, and condition <span class="math inline">\(y\)</span>, output a same-sized tensor that tells us “how to update each pixel.”</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why Same Dimensions? The Vector Field Property
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You might wonder: why does the output need to be the same size as the input?</p>
+<p><strong>Mathematical reason</strong>: A vector field <span class="math inline">\(u_t : \mathbb{R}^d \to \mathbb{R}^d\)</span> maps each point in space to a <strong>direction in the same space</strong>. Think of a weather map showing wind: at each <span class="math inline">\((x, y)\)</span> location, there’s a wind velocity vector pointing in some direction. The velocity lives in the same 2D space as the location.</p>
+<p><strong>Physical meaning</strong>: The vector field tells us “how to update <span class="math inline">\(x_t\)</span>” when we solve the ODE <span class="math inline">\(\frac{dx_t}{dt} = u_t(x_t)\)</span>. To add this update to <span class="math inline">\(x_t\)</span> (which is <span class="math inline">\(H \times W \times C\)</span>), the update <span class="math inline">\(u_t(x_t)\)</span> must also be <span class="math inline">\(H \times W \times C\)</span> — we need one “velocity” value per pixel per channel.</p>
+<p><strong>Score function case</strong>: Similarly, <span class="math inline">\(s_t(x_t) = \nabla_{x_t} \log p_t(x_t)\)</span> is a gradient with respect to <span class="math inline">\(x_t\)</span>, which by definition has the same shape as <span class="math inline">\(x_t\)</span>.</p>
+<p>This is why U-Net (input size = output size) is so natural for diffusion — it exactly matches the mathematical structure!</p>
+</div>
+</div>
+<p><strong>Why is this hard?</strong> Consider the architectural requirements:</p>
+<ul>
+<li><strong>Time conditioning is critical</strong>: At <span class="math inline">\(t=0.1\)</span> (mostly noise), the network should make large corrections toward data. At <span class="math inline">\(t=0.9\)</span> (nearly clean), only subtle refinements. The <em>same</em> network must handle both.</li>
+<li><strong>Multi-scale reasoning</strong>: Need to capture both global structure (“this is a dog”) and fine details (“the fur texture here”)</li>
+<li><strong>High resolution</strong>: Operating on 512×512×3 images = 786k dimensions</li>
+<li><strong>Flexible conditioning</strong>: Should accept class labels, text prompts, or spatial control signals</li>
+</ul>
+</section>
+<section id="sec-unet" class="level2">
+<h2 class="anchored" data-anchor-id="sec-unet">U-Net Architecture</h2>
+<section id="the-encoder-decoder-baseline" class="level3">
+<h3 class="anchored" data-anchor-id="the-encoder-decoder-baseline">The Encoder-Decoder Baseline</h3>
+<p>The natural starting point for an image-to-image network is an <strong>encoder-decoder</strong> architecture:</p>
+<ol type="1">
+<li><strong>Encoder</strong>: Progressively downsample the input (512×512 → 256×256 → 128×128 → … → 8×8)
+<ul>
+<li>Reduces spatial resolution while increasing channels</li>
+<li>Extracts increasingly abstract features</li>
+</ul></li>
+<li><strong>Bottleneck</strong>: Process at the lowest resolution (e.g., 8×8×512)
+<ul>
+<li>Rich semantic representation, but tiny spatial size</li>
+</ul></li>
+<li><strong>Decoder</strong>: Progressively upsample back to original size (8×8 → … → 512×512)
+<ul>
+<li>Reconstructs the output from the compressed representation</li>
+</ul></li>
+</ol>
+<p><strong>The problem</strong>: The 8×8 bottleneck is a severe <strong>information bottleneck</strong>. Spatial details are destroyed during downsampling and can’t be recovered during upsampling. You’d get blurry, imprecise outputs.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Encoder-Decoder Fails for Diffusion
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine compressing an image down to 8×8, then trying to reconstruct it to 512×512. You’d lose all fine details!</p>
+<p>For diffusion models, this is catastrophic — we need to predict pixel-level noise patterns. If the bottleneck destroys spatial information, the decoder has no way to know “what texture pattern existed at pixel (247, 381)?”</p>
+</div>
+</div>
+</section>
+<section id="the-u-net-solution-skip-connections" class="level3">
+<h3 class="anchored" data-anchor-id="the-u-net-solution-skip-connections">The U-Net Solution: Skip Connections</h3>
+<div id="fig-unet" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-unet-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="unet-original.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-unet-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The original U-Net architecture from Ronneberger et al.&nbsp;(2015). Blue boxes represent feature maps, with channel dimensions shown above. Gray arrows show skip connections (“copy and crop”), red arrows show downsampling (max pool), green arrows show upsampling (transposed convolution). The U-shape is clearly visible.
+</figcaption>
+</figure>
+</div>
+<p>U-Net solves the information bottleneck problem with <strong>skip connections</strong>:<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p><strong>The idea</strong>: Instead of forcing all information through the bottleneck, create <strong>direct pathways</strong> from encoder to decoder at matching resolutions. The decoder can now access high-resolution features that haven’t been compressed.</p>
+<p><strong>The architecture</strong>: 1. <strong>Encoder</strong>: Same as before — downsample from 512×512 to 8×8 2. <strong>Bottleneck</strong>: Same as before — process at 8×8 3. <strong>Decoder</strong>: Upsample back up, BUT at each level, <strong>concatenate</strong> the corresponding encoder features 4. <strong>Skip connections</strong>: The gray arrows in <a href="#fig-unet" class="quarto-xref">Figure&nbsp;1</a> — copy features across the U</p>
+<p>This creates the characteristic U-shape, giving the architecture its name. U-Net has become the workhorse for pixel-space diffusion models powering DALL-E 2, Stable Diffusion, and Midjourney.</p>
+</section>
+<section id="sec-skip-connections" class="level3">
+<h3 class="anchored" data-anchor-id="sec-skip-connections">How Skip Connections Actually Work</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Semantic vs Spatial Information
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Here’s the key insight:<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
+<ul>
+<li><strong>Decoder features</strong> (after upsampling): Rich in <strong>semantic information</strong> — “this region contains a bike”</li>
+<li><strong>Encoder features</strong> (before downsampling): Rich in <strong>spatial information</strong> — “these exact pixels are where the bike is”</li>
+</ul>
+<p>Skip connections let subsequent decoder layers operate on <strong>both</strong>: - Semantic understanding from the decoder: “I’m reconstructing a bike here” - Spatial precision from the encoder: “The bike’s exact pixel locations are here”</p>
+<p>This combination is exactly what you need to reconstruct fine details!</p>
+<p><strong>Preventing “forgetting”</strong>: Deep networks tend to lose low-level features as information passes through many layers.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> Skip connections reintroduce these features, ensuring the decoder doesn’t have to “remember” what the encoder saw — it can access it directly.</p>
+</div>
+</div>
+<div id="fig-semantic-spatial" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-semantic-spatial-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="semantic-spatial-fusion.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-semantic-spatial-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Semantic vs spatial information: decoder features know “what” (semantic understanding, but blurry), encoder features know “where” (spatial precision, but abstract). Skip connections combine both for precise reconstruction.
+</figcaption>
+</figure>
+</div>
+<div id="fig-skip-concat" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-skip-concat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="skip-connection-concat.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-skip-concat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Skip connection mechanism: encoder feature map (128 channels of high-resolution spatial details) is concatenated with decoder feature map (256 channels of upsampled semantic features) along the channel dimension, resulting in 384 total channels. Spatial dimensions stay the same.
+</figcaption>
+</figure>
+</div>
+<p><strong>The operation</strong>: Concatenate encoder and decoder feature maps along the channel dimension: - Same spatial size (256×256) - Encoder: 128 channels of <strong>“where things are”</strong> (spatial precision) - Decoder: 256 channels of <strong>“what things are”</strong> (semantic understanding) - Result: 384 channels combining both types of information</p>
+<p><strong>Why this is crucial for diffusion</strong>: Predicting pixel-level noise patterns requires knowing both: 1. <strong>Semantic</strong>: “This region is a dog’s fur” (from decoder’s global understanding) 2. <strong>Spatial</strong>: “The fur texture at pixel (247, 381) has this exact pattern” (from encoder’s preserved high-res features)</p>
+<p>Without skip connections, the 8×8 bottleneck would destroy all spatial precision, leaving only blurry semantic understanding.</p>
+<div id="fig-skip-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-skip-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="skip-connection-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-skip-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Comparison: Without skip connections (left), the bottleneck destroys spatial details leading to blurry reconstruction. With skip connections (right), high-resolution features bypass the bottleneck, enabling sharp detail reconstruction.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="adaptations-for-diffusion" class="level3">
+<h3 class="anchored" data-anchor-id="adaptations-for-diffusion">Adaptations for Diffusion</h3>
+<p>The original U-Net was designed for segmentation (image → mask). For diffusion, we need (image, time, condition) → velocity field. Here’s how it’s adapted:<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<section id="time-embedding-teaching-the-network-what-time-is-it" class="level4">
+<h4 class="anchored" data-anchor-id="time-embedding-teaching-the-network-what-time-is-it">Time Embedding: Teaching the Network “What Time Is It?”</h4>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Can’t We Just Feed in <span class="math inline">\(t\)</span> Directly?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The network needs to behave <strong>completely differently</strong> at different timesteps: - At <span class="math inline">\(t=0.1\)</span> (mostly noise): “Remove lots of noise, focus on global structure” - At <span class="math inline">\(t=0.9\)</span> (nearly clean): “Make tiny adjustments, preserve existing details”</p>
+<p>If you just feed in the scalar <span class="math inline">\(t=0.1\)</span> vs <span class="math inline">\(t=0.9\)</span>, the network has no way to know these are fundamentally different regimes! It’s like giving someone two numbers (0.1 vs 0.9) and expecting them to understand the profound behavioral difference they imply.</p>
+<p><strong>Solution</strong>: Convert <span class="math inline">\(t\)</span> into a rich, high-dimensional vector that encodes “what this timestep means” — this is called an <strong>embedding</strong>.</p>
+</div>
+</div>
+<p><strong>What is an embedding?</strong> A mapping from a simple input (like a number <span class="math inline">\(t\)</span> or a word) to a high-dimensional vector that captures its “meaning.” Here: scalar <span class="math inline">\(t \in [0,1]\)</span> → vector <span class="math inline">\(e_t \in \mathbb{R}^{512}\)</span> (or whatever dimension matches the network’s channels).</p>
+<div id="fig-time-embedding" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-time-embedding-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="time-embedding.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-time-embedding-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Time embedding transforms a single scalar timestep value into a rich high-dimensional vector that encodes “what this timestep means” for the network.
+</figcaption>
+</figure>
+</div>
+<p><strong>How it’s done</strong> — Sinusoidal position encoding:<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
+<p><span class="math display">\[
+t \to [\sin(2^0 \pi t), \cos(2^0 \pi t), \sin(2^1 \pi t), \cos(2^1 \pi t), \sin(2^2 \pi t), \cos(2^2 \pi t), \ldots] \to \text{MLP} \to e_t
+\]</span></p>
+<p>Think of it like encoding the number using multiple “frequencies” — low frequencies (<span class="math inline">\(2^0 = 1\)</span>) capture coarse time differences, high frequencies (<span class="math inline">\(2^{10} = 1024\)</span>) capture fine distinctions.</p>
+<p><strong>Why sinusoidal?</strong> Three key properties: 1. <strong>Smooth</strong>: Similar timesteps (<span class="math inline">\(t=0.5\)</span> vs <span class="math inline">\(t=0.51\)</span>) get similar embeddings → network can interpolate 2. <strong>Distinctive</strong>: Different timesteps (<span class="math inline">\(t=0.1\)</span> vs <span class="math inline">\(t=0.9\)</span>) get very different embeddings → network can learn distinct behaviors 3. <strong>Generalizable</strong>: Unlike learned embeddings, sinusoidal encodings work for <em>any</em> timestep value — a model trained with 50 steps still works with 1000 steps at inference<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p><strong>How it’s used</strong>: The time embedding <span class="math inline">\(e_t\)</span> is added to the feature maps at every resolution level of the U-Net, allowing each layer to “know” what time it is and adjust its processing accordingly.</p>
+</section>
+<section id="sec-injection" class="level4">
+<h4 class="anchored" data-anchor-id="sec-injection">Injecting Time and Condition into the Network</h4>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>How <span class="math inline">\(t\)</span> and <span class="math inline">\(y\)</span> Actually Flow Through the Network
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Here’s the concrete mechanism:</p>
+<p><strong>Step 1</strong>: Create embeddings - Time: <span class="math inline">\(t \to \text{sinusoidal + MLP} \to e_t \in \mathbb{R}^{512}\)</span> - Condition (if any): <span class="math inline">\(y \to \text{embedding layer} \to e_y \in \mathbb{R}^{512}\)</span> - Combine: <span class="math inline">\(e = e_t + e_y\)</span> (element-wise addition)<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
+<p><em>Why addition?</em> Both embeddings live in the same vector space with the same dimensions. Adding them creates a combined signal that encodes both “what time is it?” and “what are we generating?”. The network learns to interpret this combined embedding during training.</p>
+<p><strong>Step 2</strong>: Inject at every residual block<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a></p>
+<div id="fig-time-injection" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-time-injection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="time-injection-resblock.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-time-injection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Time and condition injection in a U-Net residual block: embedding <span class="math inline">\(e\)</span> is linearly projected and added to the feature map <span class="math inline">\(h\)</span> between convolutions, allowing the conditioning signal to modulate the block’s processing.
+</figcaption>
+</figure>
+</div>
+<p>The embedding <span class="math inline">\(e\)</span> is projected to match the number of channels, then added to the feature map between two convolutions. This allows the conditioning to modulate how each channel processes information.</p>
+</div>
+</div>
+<p><strong>Alternative injection methods</strong>:<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> - <strong>AdaGN (Adaptive Group Normalization)</strong>: Use <span class="math inline">\(e\)</span> to predict scale/shift for group normalization - <strong>Cross-attention</strong> (for text): Don’t add <span class="math inline">\(e\)</span>, instead let features attend to text embeddings - <strong>FiLM (Feature-wise Linear Modulation)</strong>: Predict channel-wise scale and shift from <span class="math inline">\(e\)</span></p>
+<p>Different implementations use different methods, but the core idea is the same: <strong>let the conditioning signal <span class="math inline">\(e\)</span> modify how the network processes features</strong>.</p>
+</section>
+<section id="other-conditioning-mechanisms" class="level4">
+<h4 class="anchored" data-anchor-id="other-conditioning-mechanisms">Other Conditioning Mechanisms</h4>
+<ul>
+<li><strong>Spatial conditioning</strong>: Concatenate additional input channels (e.g., edge maps for ControlNet) — happens at the input, not via embeddings</li>
+</ul>
+<p><strong>Self-attention layers</strong>: - Added at lower resolutions (e.g., 16×16, 8×8) where the quadratic cost is manageable - Captures long-range dependencies — e.g., ensuring a dog’s tail matches its head</p>
+</section>
+</section>
+</section>
+<section id="sec-training" class="level2">
+<h2 class="anchored" data-anchor-id="sec-training">Training Considerations</h2>
+<section id="sec-loss" class="level3">
+<h3 class="anchored" data-anchor-id="sec-loss">Loss Functions</h3>
+<p>U-Net is trained with standard diffusion objectives (see <a href="../7-training/">Part 7</a>):</p>
+<p><strong>Flow matching</strong> (Conditional Flow Matching loss): <span id="eq-flow-matching-loss"><span class="math display">\[\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t, z \sim p_{data}, x_t \sim p_t(\cdot|z)} \|u_\theta(x_t, t) - u_t(x_t|z)\|^2 \tag{1}\]</span></span></p>
+<p><strong>Score matching</strong> (Denoising Score Matching loss): <span id="eq-score-matching-loss"><span class="math display">\[\mathcal{L}_{DSM}(\theta) = \mathbb{E}_{t, z \sim p_{data}, x_t \sim p_t(\cdot|z)} \|s_\theta(x_t, t) - s_t(x_t|z)\|^2 \tag{2}\]</span></span></p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Note</strong>: We train by regressing against <strong>conditional</strong> targets (<span class="math inline">\(u_t(x_t|z)\)</span> conditioned on data point <span class="math inline">\(z\)</span>), but the network learns to approximate the <strong>marginal</strong> vector field <span class="math inline">\(u_t(x_t)\)</span> needed for generation. This is the <a href="../4-flow-matching-loss/">marginalization trick</a> — training on conditional targets is equivalent to learning the marginal.</p>
+</div>
+</div>
+</div>
+<p>The architecture doesn’t change the learning objective — only how we parameterize the function <span class="math inline">\(u_\theta(x_t, t, y)\)</span> or <span class="math inline">\(s_\theta(x_t, t, y)\)</span>.</p>
+</section>
+<section id="sec-parameterization" class="level3">
+<h3 class="anchored" data-anchor-id="sec-parameterization">Parameterization Tricks</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What Should the Network Predict?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You might think: “predict the velocity field <span class="math inline">\(u_t\)</span>.” But there are equivalent formulations that work better in practice: - <strong>Noise prediction</strong>: Predict the noise <span class="math inline">\(\epsilon\)</span> that was added - <strong>Data prediction</strong>: Predict the clean image <span class="math inline">\(x_0\)</span> - <strong>Velocity prediction</strong>: Predict the direction to move</p>
+<p>These are mathematically equivalent (related by simple algebra), but training dynamics differ!</p>
+</div>
+</div>
+<p><strong>Common parameterizations</strong>:</p>
+<ol type="1">
+<li><strong>Noise prediction</strong> (<span class="math inline">\(\epsilon\)</span>-parameterization): Network outputs <span class="math inline">\(\epsilon_\theta(x_t, t) \approx \epsilon\)</span> where <span class="math inline">\(x_t = \alpha_t x_0 + \sigma_t \epsilon\)</span>
+<ul>
+<li>Most common for DDPM-style training</li>
+<li>Works well across all timesteps</li>
+</ul></li>
+<li><strong>Velocity prediction</strong> (<span class="math inline">\(v\)</span>-parameterization): Network directly predicts <span class="math inline">\(v_\theta(x_t, t) \approx u_t(x_t)\)</span>
+<ul>
+<li>Natural for flow matching</li>
+<li>Better for consistency models</li>
+</ul></li>
+<li><strong>Data prediction</strong> (<span class="math inline">\(x_0\)</span>-parameterization): Network predicts <span class="math inline">\(\hat{x}_0 = f_\theta(x_t, t)\)</span>
+<ul>
+<li>Sometimes easier to interpret (direct image prediction)</li>
+<li>Can be unstable at high noise levels</li>
+</ul></li>
+</ol>
+<p><strong>Which to use?</strong> <span class="math inline">\(\epsilon\)</span>-prediction is the safe default. Some recent work uses <span class="math inline">\(v\)</span>-prediction for improved stability.</p>
+<p><strong>Prediction target scheduling</strong>: Some methods interpolate between parameterizations based on <span class="math inline">\(t\)</span> — e.g., predict noise at early steps, data at late steps.</p>
+</section>
+</section>
+<section id="sec-practical" class="level2">
+<h2 class="anchored" data-anchor-id="sec-practical">Practical Implementation</h2>
+<section id="sec-hyperparameters" class="level3">
+<h3 class="anchored" data-anchor-id="sec-hyperparameters">Hyperparameters</h3>
+<p><strong>Typical U-Net configuration</strong> (Stable Diffusion scale): - Base channels: 128-320 - Channel multipliers: [1, 2, 4, 4] → max channels ≈ 1280 - Attention resolutions: [32, 16, 8] (spatial sizes where attention is applied) - Residual blocks per level: 2 - Total parameters: ~800M-1B (depending on depth)</p>
+</section>
+<section id="sec-efficiency" class="level3">
+<h3 class="anchored" data-anchor-id="sec-efficiency">Computational Efficiency</h3>
+<p><strong>U-Net optimizations</strong>: - <strong>Flash Attention</strong> for self-attention layers (2-4× speedup) - <strong>Mixed precision (FP16/BF16)</strong> training (2× memory reduction) - <strong>Gradient checkpointing</strong> trades compute for memory (enables 2× larger batches) - <strong>Latent diffusion</strong> (VAE compress 512×512×3 → 64×64×4, saving 64× compute)</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Real-World Costs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Stable Diffusion (U-Net)</strong>: Trained on 256 A100 GPUs for ~150k steps (~200 GPU-days), cost ~$600k</p>
+<p>Training from scratch is expensive! Fine-tuning pretrained models costs 100-1000× less.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-modern" class="level2">
+<h2 class="anchored" data-anchor-id="sec-modern">Modern Variants and Extensions</h2>
+<p>The basic U-Net we’ve covered forms the foundation — but practical systems like Stable Diffusion add several innovations. Here are the most impactful:</p>
+<section id="architectural-innovations" class="level3">
+<h3 class="anchored" data-anchor-id="architectural-innovations">Architectural Innovations</h3>
+<ol type="1">
+<li><p><strong>Latent Diffusion Models (LDM)</strong><a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> — <strong>Most important innovation</strong></p>
+<div id="fig-latent-diffusion" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-latent-diffusion-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="latent-diffusion-original.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-latent-diffusion-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Latent Diffusion Model architecture from Rombach et al.&nbsp;(2022). Left: images are encoded to latent space <span class="math inline">\(z\)</span> via encoder <span class="math inline">\(\mathcal{E}\)</span>. Middle: diffusion happens in latent space, with conditioning (text, semantic maps, etc.) injected via cross-attention. Right: decoder <span class="math inline">\(\mathcal{D}\)</span> reconstructs the image from denoised latents.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why Latent Space?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Running diffusion directly on 512×512 images is prohibitively expensive. The key insight: <strong>perceptual compression</strong> via a pretrained VAE removes imperceptible high-frequency details, letting the diffusion model focus on semantic content.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a></p>
+</div>
+</div>
+<ul>
+<li><strong>VAE Encoder</strong>: Compress 512×512×3 → 64×64×4 latents (64× reduction)</li>
+<li><strong>Diffusion in latent space</strong>: U-Net denoises with text conditioning via cross-attention</li>
+<li><strong>VAE Decoder</strong>: Reconstruct latent → full resolution image</li>
+<li>Powers Stable Diffusion, DALL-E 3, Midjourney</li>
+</ul></li>
+<li><p><strong>Cascaded diffusion</strong><a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a></p>
+<ul>
+<li>Train separate models for 64×64 → 256×256 → 1024×1024</li>
+<li>Each stage focuses on appropriate level of detail</li>
+<li>Used by DALL-E 2, Imagen</li>
+</ul></li>
+</ol>
+</section>
+<section id="sec-conditioning" class="level3">
+<h3 class="anchored" data-anchor-id="sec-conditioning">Conditioning Mechanisms</h3>
+<p><strong>Text-to-image</strong>: - Encode text with CLIP or T5 → cross-attention in U-Net blocks - Stable Diffusion uses CLIP, Imagen uses T5</p>
+<p><strong>Spatial control</strong> (ControlNet<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a>): - Additional encoder branch processes control signal (edges, depth, pose) - Outputs merged into main U-Net via “zero convolutions” - Enables precise spatial guidance without retraining base model</p>
+<p><strong>Adapters</strong> (LoRA, etc.): - Fine-tune only low-rank adaptations of weight matrices - 100× fewer parameters than full fine-tuning - Popular for personalization (“Train this model on my face”)</p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Looking for Diffusion Transformers?</strong> See <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a> for how transformers (DiT) are adapted for diffusion models.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-summary" class="level2">
+<h2 class="anchored" data-anchor-id="sec-summary">Summary</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Key Takeaways
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We’ve seen how the mathematical theory of diffusion models (learning <span class="math inline">\(u_t(x_t, t)\)</span> or <span class="math inline">\(s_t(x_t, t)\)</span>) translates into practical neural network architectures.</p>
+<p><strong>Why architecture matters uniquely for diffusion:</strong> - Unlike standard vision tasks, diffusion networks must handle time-dependent denoising while preserving spatial structure - The architecture must process images at multiple scales (global structure + fine details) and adapt behavior based on timestep <span class="math inline">\(t\)</span></p>
+<p><strong>U-Net’s key components:</strong> - <strong>Skip connections</strong> solve the information bottleneck problem — semantic features from the decoder combine with spatial features from the encoder - <strong>Time embedding</strong>: Sinusoidal encoding converts scalar <span class="math inline">\(t\)</span> into high-dimensional vector that modulates network behavior - <strong>Condition injection</strong>: Time and class embeddings are combined (<span class="math inline">\(e = e_t + e_y\)</span>) and injected into every residual block - Strong inductive bias (convolutions + locality) works well with limited data and compute</p>
+<p><strong>Why U-Net dominates:</strong> - Powers Stable Diffusion, DALL-E 2, and most practical applications - Formula: <span class="math inline">\(\epsilon\)</span>-prediction + sinusoidal time embedding + cross-attention for text → state-of-the-art text-to-image - Latent diffusion (VAE + U-Net) makes high-resolution generation practical</p>
+</div>
+</div>
+<p><strong>What’s next?</strong> In <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a>, we’ll see how transformers (DiT) offer an alternative architecture with better scaling properties. Then we’ll explore <strong>sampling algorithms</strong> — numerical methods for solving the learned ODE/SDE to transform noise into images.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><strong>Foundational Papers:</strong></p>
+<ul>
+<li>Ronneberger, O., Fischer, P., &amp; Brox, T. (2015). <a href="https://arxiv.org/abs/1505.04597">U-Net: Convolutional Networks for Biomedical Image Segmentation</a>. <em>MICCAI 2015</em>.</li>
+<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS 2020</em>.</li>
+<li>Dhariwal, P., &amp; Nichol, A. (2021). <a href="https://arxiv.org/abs/2105.05233">Diffusion Models Beat GANs on Image Synthesis</a>. <em>NeurIPS 2021</em>.</li>
+</ul>
+<p><strong>Latent Diffusion &amp; Applications:</strong></p>
+<ul>
+<li>Rombach, R., Blattmann, A., Lorenz, D., Esser, P., &amp; Ommer, B. (2022). <a href="https://arxiv.org/abs/2112.10752">High-Resolution Image Synthesis with Latent Diffusion Models</a>. <em>CVPR 2022</em>. (Stable Diffusion)</li>
+<li>Ho, J., Saharia, C., Chan, W., Fleet, D. J., Norouzi, M., &amp; Salimans, T. (2022). <a href="https://arxiv.org/abs/2106.15282">Cascaded Diffusion Models for High Fidelity Image Generation</a>. <em>JMLR 2022</em>.</li>
+<li>Zhang, L., Rao, A., &amp; Agrawala, M. (2023). <a href="https://arxiv.org/abs/2302.05543">Adding Conditional Control to Text-to-Image Diffusion Models</a>. <em>ICCV 2023</em>. (ControlNet)</li>
+</ul>
+<p><strong>Educational Resources:</strong></p>
+<ul>
+<li>Computerphile. <a href="https://www.youtube.com/watch?v=NhdzGfB1q74">How U-Net Works (U-Net Explained)</a>. Video tutorial with excellent visual explanations of skip connections.</li>
+<li>LabML.ai. <a href="https://nn.labml.ai/diffusion/ddpm/unet.html">U-Net model for DDPM</a>. Annotated PyTorch implementation with detailed explanations of time embedding injection.</li>
+<li>LabML.ai. <a href="https://nn.labml.ai/diffusion/stable_diffusion/model/unet.html">U-Net for Stable Diffusion</a>. Annotated implementation showing ResBlock time conditioning.</li>
+<li>Hugging Face. <a href="https://huggingface.co/blog/annotated-diffusion">The Annotated Diffusion Model</a>. Step-by-step DDPM implementation guide.</li>
+<li>Hugging Face Diffusers. <a href="https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/embeddings.py">Embedding Implementations</a>. Source code showing CombinedTimestepLabelEmbeddings and other conditioning mechanisms.</li>
+<li>AI Summer. <a href="https://theaisummer.com/diffusion-models/">How Diffusion Models Work: The Math from Scratch</a>. Tutorial.</li>
+<li>AI Summer. <a href="https://theaisummer.com/skip-connections/">Intuitive Explanation of Skip Connections in Deep Learning</a>. Technical explainer.</li>
+<li>Analytics Vidhya. <a href="https://www.analyticsvidhya.com/blog/2021/08/all-you-need-to-know-about-skip-connections/">All You Need to Know About Skip Connections</a>. Blog post.</li>
+<li>Milvus AI. <a href="https://milvus.io/ai-quick-reference/how-are-sinusoidal-embeddings-implemented-in-diffusion-models">How are sinusoidal embeddings implemented in diffusion models?</a>. AI Quick Reference.</li>
+<li>Medium. <a href="https://medium.com/@preeti.gupta02.pg/understanding-skip-connections-in-convolutional-neural-networks-using-u-net-architecture-b31d90f9670a">Understanding Skip Connections in U-Net Architecture</a>. Blog post.</li>
+</ul>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://arxiv.org/abs/1505.04597">Ronneberger et al., 2015</a><a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><a href="https://www.youtube.com/watch?v=NhdzGfB1q74">Computerphile, “U-Net Explained”</a><a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p><a href="https://theaisummer.com/skip-connections/">AI Summer, “Skip Connections”</a><a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p><a href="https://arxiv.org/abs/2006.11239">Ho et al., 2020</a><a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p><a href="https://milvus.io/ai-quick-reference/how-are-sinusoidal-embeddings-implemented-in-diffusion-models">Milvus AI, “Sinusoidal embeddings in diffusion”</a><a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn6"><p><a href="https://arxiv.org/html/2405.14126v1">arXiv, “Disappearance of Timestep Embedding”</a><a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p><a href="https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/embeddings.py">HuggingFace Diffusers, CombinedTimestepLabelEmbeddings</a><a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p><a href="https://nn.labml.ai/diffusion/ddpm/unet.html">LabML.ai, “U-Net for DDPM”</a><a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p><a href="https://nn.labml.ai/diffusion/stable_diffusion/model/unet.html">LabML.ai, “U-Net for Stable Diffusion”</a><a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p><a href="https://arxiv.org/abs/2112.10752">Rombach et al., 2022</a><a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p><a href="https://www.louisbouchard.ai/latent-diffusion-models/">Louis Bouchard, “Latent Diffusion Models Explained”</a><a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p><a href="https://arxiv.org/abs/2106.15282">Ho et al., 2022</a><a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p><a href="https://arxiv.org/abs/2302.05543">Zhang et al., 2023</a><a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

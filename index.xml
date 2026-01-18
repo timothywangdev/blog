@@ -10,7 +10,1207 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.27</generator>
-<lastBuildDate>Sat, 20 Dec 2025 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sat, 17 Jan 2026 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 10: Diffusion Transformers</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/10-diffusion-transformers/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Vision Transformer (ViT)</strong> treats images as sequences of patches — this enables transformers to process images without convolutions</li>
+<li><strong>Diffusion Transformer (DiT)</strong> adapts ViT for diffusion by adding time/class conditioning via AdaLN</li>
+<li><strong>Key insight</strong>: DiT = ViT + AdaLN conditioning + latent space operation</li>
+<li><strong>Trade-off</strong>: DiT scales better than U-Net but needs more data/compute to overcome weak spatial bias</li>
+</ul>
+</div>
+</div>
+<p>In the <a href="../9-unet/">previous post</a>, we covered U-Net — the dominant architecture for diffusion models. But recent work shows that <strong>transformers can match or exceed U-Net performance</strong> while offering better scalability.</p>
+<p>This post covers: 1. <strong>Vision Transformer (ViT)</strong> — the foundation that DiT builds upon 2. <strong>Diffusion Transformer (DiT)</strong> — how to adapt ViT for diffusion models 3. <strong>When to use DiT vs U-Net</strong> — practical guidance</p>
+<section id="sec-vit" class="level2">
+<h2 class="anchored" data-anchor-id="sec-vit">Vision Transformer (ViT) Primer</h2>
+<p>Before understanding DiT, we need to understand <strong>Vision Transformer (ViT)</strong> — the architecture it’s built on.<sup>1</sup></p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The Problem ViT Solves
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Transformers revolutionized NLP with attention mechanisms that capture long-range dependencies. But transformers expect <strong>sequences of tokens</strong> — how do you apply them to 2D images?</p>
+<p><strong>The breakthrough</strong>: Treat image patches as “visual words.” A 224×224 image split into 16×16 patches becomes a sequence of <img src="https://latex.codecogs.com/png.latex?(224/16)%5E2%20=%20196"> tokens. Now standard transformer machinery applies!</p>
+</div>
+</div>
+<section id="the-vit-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="the-vit-architecture">The ViT Architecture</h3>
+<div id="fig-vit" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-vit-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/10-diffusion-transformers/vit-architecture-original.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-vit-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Vision Transformer (ViT) architecture from Dosovitskiy et al.&nbsp;(2020). Left: image is split into patches, linearly projected, combined with position embeddings, and processed by a transformer encoder. A learnable [class] token (position 0) aggregates information for classification. Right: the transformer encoder block structure with layer norm, multi-head attention, MLP, and residual connections.
+</figcaption>
+</figure>
+</div>
+<p><strong>Step-by-step</strong>:</p>
+<ol type="1">
+<li><strong>Patchify</strong>: Split image into non-overlapping <img src="https://latex.codecogs.com/png.latex?p%20%5Ctimes%20p"> patches
+<ul>
+<li>Input: <img src="https://latex.codecogs.com/png.latex?H%20%5Ctimes%20W%20%5Ctimes%20C"> image</li>
+<li>Output: <img src="https://latex.codecogs.com/png.latex?N%20=%20(H/p)%20%5Ctimes%20(W/p)"> patches, each of size <img src="https://latex.codecogs.com/png.latex?p%5E2%20%5Ccdot%20C"></li>
+</ul></li>
+<li><strong>Linear embedding</strong>: Project each flattened patch to dimension <img src="https://latex.codecogs.com/png.latex?d"> <img src="https://latex.codecogs.com/png.latex?z_i%20=%20W_%7B%5Ctext%7Bembed%7D%7D%20%5Ccdot%20%5Ctext%7Bflatten%7D(%5Ctext%7Bpatch%7D_i)%20+%20b">
+<ul>
+<li>This is just a learnable linear layer applied to each patch</li>
+</ul></li>
+<li><strong>Add position embeddings</strong>: Since attention is permutation-invariant, we must tell the model where each patch came from <img src="https://latex.codecogs.com/png.latex?z_i%20%5Cleftarrow%20z_i%20+%20e_%7B%5Ctext%7Bpos%7D%7D%5E%7B(i)%7D">
+<ul>
+<li>Position embeddings are learnable vectors (one per position)</li>
+<li>Without this, the model couldn’t distinguish a patch at top-left from bottom-right!</li>
+</ul></li>
+<li><strong>Prepend [CLS] token</strong>: A special learnable token that aggregates information
+<ul>
+<li>After processing, the [CLS] token’s output is used for classification</li>
+</ul></li>
+<li><strong>Transformer encoder</strong>: Stack of identical blocks, each containing:
+<ul>
+<li>Multi-head self-attention (patches attend to all other patches)</li>
+<li>MLP (feed-forward network)</li>
+<li>Layer normalization and residual connections</li>
+</ul></li>
+</ol>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What Does Patch Attention Learn?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Just like words “fox” and “jumps” share semantic relationships, visual patches relate to one another:<sup>2</sup></p>
+<ul>
+<li><strong>Texture relationships</strong>: All sky patches attend to each other, learning “blueness” is consistent</li>
+<li><strong>Structural relationships</strong>: A horse’s left ear patch attends to its right ear patch, learning symmetry</li>
+<li><strong>Semantic relationships</strong>: Wheel patches attend to window patches, learning “car-ness”</li>
+</ul>
+<p>This global attention — every patch sees every other patch — is what lets ViT capture long-range dependencies that CNNs struggle with.</p>
+</div>
+</div>
+<ol start="6" type="1">
+<li><strong>Classification head</strong>: MLP on the final [CLS] token representation</li>
+</ol>
+</section>
+<section id="why-patches-the-quadratic-cost-problem" class="level3">
+<h3 class="anchored" data-anchor-id="why-patches-the-quadratic-cost-problem">Why Patches? The Quadratic Cost Problem</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Not Use Pixels as Tokens?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You might wonder: why not treat each pixel as a token?</p>
+<p><strong>The math</strong>: A 224×224 image = 50,176 pixels. Self-attention is <img src="https://latex.codecogs.com/png.latex?O(n%5E2)">, so attention would require <img src="https://latex.codecogs.com/png.latex?50,176%5E2%20%5Capprox%202.5"> billion operations per layer!</p>
+<p><strong>Patches reduce this</strong>: With 16×16 patches, we get only 196 tokens. Attention cost: <img src="https://latex.codecogs.com/png.latex?196%5E2%20=%2038,416"> operations — a <strong>65,000× reduction</strong>.</p>
+<p>The trade-off: We lose some fine-grained spatial information, but gain computational tractability.</p>
+</div>
+</div>
+</section>
+<section id="vit-vs-cnns-inductive-bias" class="level3">
+<h3 class="anchored" data-anchor-id="vit-vs-cnns-inductive-bias">ViT vs CNNs: Inductive Bias</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 28%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>CNNs</th>
+<th>ViT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Local bias</strong></td>
+<td>Built-in (kernels are small)</td>
+<td>None (attention is global)</td>
+</tr>
+<tr class="even">
+<td><strong>Translation equivariance</strong></td>
+<td>Built-in (same kernel everywhere)</td>
+<td>Must learn from data</td>
+</tr>
+<tr class="odd">
+<td><strong>Data efficiency</strong></td>
+<td>Good (bias helps with limited data)</td>
+<td>Poor (needs lots of data)</td>
+</tr>
+<tr class="even">
+<td><strong>Scalability</strong></td>
+<td>Limited (hard to scale past ~1B params)</td>
+<td>Excellent (scales predictably)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key insight</strong>: ViT has <strong>weaker inductive bias</strong> than CNNs. This is a disadvantage with limited data (must learn what CNNs get “for free”), but an advantage at scale (fewer constraints on what it can learn).</p>
+</section>
+</section>
+<section id="sec-vit-to-dit" class="level2">
+<h2 class="anchored" data-anchor-id="sec-vit-to-dit">From ViT to DiT</h2>
+<p>Now we can understand DiT as <strong>ViT adapted for diffusion</strong>. The key question: what changes are needed?</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What’s Different About Diffusion?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>ViT for classification</strong>: - Input: image → Output: class label - No conditioning needed (besides the image itself)</p>
+<p><strong>DiT for diffusion</strong>: - Input: noisy image → Output: noise prediction (same size as input) - Must condition on timestep <img src="https://latex.codecogs.com/png.latex?t"> and optionally class <img src="https://latex.codecogs.com/png.latex?y"> - No [CLS] token needed (we want image output, not a single vector)</p>
+</div>
+</div>
+<section id="the-three-key-adaptations" class="level3">
+<h3 class="anchored" data-anchor-id="the-three-key-adaptations">The Three Key Adaptations</h3>
+<p><strong>1. Remove [CLS] token, add decoder</strong> - ViT: Uses [CLS] token for classification - DiT: Uses all patch tokens, decodes back to image via linear layer</p>
+<p><strong>2. Operate in latent space</strong> - ViT: Works on raw pixels (224×224 is manageable) - DiT: Works on VAE latents (raw 512×512 would be 65,536 tokens!)</p>
+<p><strong>3. Add conditioning mechanism (AdaLN)</strong> - ViT: No timestep/class conditioning - DiT: Must inject <img src="https://latex.codecogs.com/png.latex?t"> and <img src="https://latex.codecogs.com/png.latex?y"> into every block</p>
+</section>
+</section>
+<section id="sec-dit" class="level2">
+<h2 class="anchored" data-anchor-id="sec-dit">Diffusion Transformer (DiT)</h2>
+<section id="motivation-why-move-beyond-u-net" class="level3">
+<h3 class="anchored" data-anchor-id="motivation-why-move-beyond-u-net">Motivation: Why Move Beyond U-Net?</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The Scaling Problem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>U-Net works great, so why change? The problem is <strong>scaling</strong>.</p>
+<p><strong>U-Net’s issue</strong>: Adding more layers or channels hits diminishing returns. The hierarchical structure (downsampling → bottleneck → upsampling) limits how much compute you can effectively use.</p>
+<p><strong>Transformer’s advantage</strong>: It’s just <strong>repeated identical blocks</strong>. Want 2× the compute? Add more layers or wider hidden dimensions. This simplicity makes transformers scale predictably — a property called “scaling laws.”</p>
+<p><strong>Trade-off</strong>: Transformers have weaker spatial bias than convolutions. They need more data and compute to learn what convolutions get “for free.” But at massive scale (1000s of GPU-days), transformers win.</p>
+</div>
+</div>
+<p>Recent work shows transformer architectures can exceed U-Net performance:<sup>3</sup></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 31%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Property</th>
+<th>U-Net</th>
+<th>DiT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Scaling</strong></td>
+<td>Diminishing returns past ~1B params</td>
+<td>Predictable: 2× compute → better FID</td>
+</tr>
+<tr class="even">
+<td><strong>Design</strong></td>
+<td>Complex (skip connections, multi-resolution)</td>
+<td>Simple (stack identical blocks)</td>
+</tr>
+<tr class="odd">
+<td><strong>Spatial bias</strong></td>
+<td>Strong (convolutions)</td>
+<td>Weak (must learn from data)</td>
+</tr>
+<tr class="even">
+<td><strong>Best for</strong></td>
+<td>Limited compute, few data</td>
+<td>Massive compute, lots of data</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-dit-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="the-dit-architecture">The DiT Architecture</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: How Transformers See Images
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Transformers expect <strong>sequences of tokens</strong> (like words in a sentence). But images are 2D grids!</p>
+<p><strong>The solution</strong>: Split the image into non-overlapping patches and treat each patch as a “visual word.”</p>
+<p><strong>Example</strong>: A 256×256 image with 16×16 patches becomes <img src="https://latex.codecogs.com/png.latex?(256/16)%5E2%20=%20256"> tokens. Now the transformer can process it just like a sentence of 256 words!</p>
+<p><strong>The catch</strong>: Attention is <img src="https://latex.codecogs.com/png.latex?O(n%5E2)"> in sequence length. A 512×512 image with 16×16 patches = 1024 tokens = 1 million attention computations per layer. This is why DiT operates in <strong>latent space</strong> (more on this below).</p>
+</div>
+</div>
+<div id="fig-dit-patchify" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-dit-patchify-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/10-diffusion-transformers/dit-patchify.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dit-patchify-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: DiT pipeline: VAE latent (64×64×4) is split into patches, linearly embedded into tokens with positional encoding, processed through transformer blocks with AdaLN conditioning, then decoded back to latent space.
+</figcaption>
+</figure>
+</div>
+<p>DiT adapts Vision Transformer (ViT) for diffusion:<sup>4</sup></p>
+<ol type="1">
+<li><strong>Patchify</strong>: Split latent into <img src="https://latex.codecogs.com/png.latex?p%20%5Ctimes%20p"> non-overlapping patches</li>
+<li><strong>Embed</strong>: Linear projection maps each patch to a token vector (dimension <img src="https://latex.codecogs.com/png.latex?d">)</li>
+<li><strong>Add position</strong>: Learnable position embeddings tell the model where each patch came from</li>
+<li><strong>Process</strong>: Stack of transformer blocks (self-attention + MLP)</li>
+<li><strong>Decode</strong>: Linear layer maps tokens back to patches, reshape to image</li>
+</ol>
+</section>
+<section id="sec-latent" class="level3">
+<h3 class="anchored" data-anchor-id="sec-latent">Why Latent Space is Essential</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The Sequence Length Problem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Running DiT in pixel space is prohibitively expensive. Here’s why:</p>
+<p><strong>Pixel space</strong>: 256×256×3 image with patch size 2 → <img src="https://latex.codecogs.com/png.latex?(256/2)%5E2%20=%2016,384"> tokens <strong>Attention cost</strong>: <img src="https://latex.codecogs.com/png.latex?16,384%5E2%20%5Capprox%20270"> million operations per layer!</p>
+<p><strong>Latent space</strong>: VAE compresses 256×256×3 → 32×32×4, then patch size 2 → <img src="https://latex.codecogs.com/png.latex?(32/2)%5E2%20=%20256"> tokens <strong>Attention cost</strong>: <img src="https://latex.codecogs.com/png.latex?256%5E2%20=%2065,536"> operations per layer</p>
+<p>That’s a <strong>4000× reduction</strong> in attention cost. Latent diffusion isn’t optional for DiT — it’s essential.</p>
+</div>
+</div>
+<div id="fig-latent-diffusion-dit" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-latent-diffusion-dit-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/10-diffusion-transformers/latent-diffusion-original.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-latent-diffusion-dit-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Latent Diffusion Model architecture from Rombach et al.&nbsp;(2022). Images are encoded to latent space <img src="https://latex.codecogs.com/png.latex?z"> via encoder <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BE%7D">, diffusion operates in this compressed space with optional conditioning via cross-attention, then decoder <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BD%7D"> reconstructs the output.
+</figcaption>
+</figure>
+</div>
+<p><strong>Patch size trade-off</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Patch Size</th>
+<th>Tokens (from 64×64 latent)</th>
+<th>Quality</th>
+<th>Compute</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2</td>
+<td>1024</td>
+<td>Best (FID 2.27)</td>
+<td>Highest</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>256</td>
+<td>Good</td>
+<td>Medium</td>
+</tr>
+<tr class="odd">
+<td>8</td>
+<td>64</td>
+<td>Lower</td>
+<td>Fastest</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sec-adaln" class="level3">
+<h3 class="anchored" data-anchor-id="sec-adaln">Conditioning via AdaLN-Zero</h3>
+<p>Now for the key question: how does DiT handle time <img src="https://latex.codecogs.com/png.latex?t"> and class label <img src="https://latex.codecogs.com/png.latex?y">?</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Not Just Add Tokens?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The obvious approach: add <img src="https://latex.codecogs.com/png.latex?t"> and <img src="https://latex.codecogs.com/png.latex?y"> as extra tokens in the sequence. But this wastes capacity — every layer processes these tokens even though their values never change!</p>
+<p><strong>AdaLN’s insight</strong>: Instead of adding tokens, <strong>modulate the layer normalization</strong>. The conditioning doesn’t participate in attention — it just adjusts how the layers process features.</p>
+<p><strong>Analogy</strong>: Think of an audio equalizer. The EQ settings don’t become part of the music — they adjust the gain and tone of what’s playing. AdaLN adjusts the “gain and tone” of each layer based on timestep and class.</p>
+</div>
+</div>
+<div id="fig-adaln" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-adaln-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/10-diffusion-transformers/adaln-mechanism.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-adaln-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: AdaLN mechanism: timestep <img src="https://latex.codecogs.com/png.latex?t"> and condition <img src="https://latex.codecogs.com/png.latex?y"> are embedded and processed by an MLP to produce 6 parameters (<img src="https://latex.codecogs.com/png.latex?%5Cgamma">, <img src="https://latex.codecogs.com/png.latex?%5Cbeta"> for scale/shift, <img src="https://latex.codecogs.com/png.latex?%5Calpha"> for gating) that modulate how each transformer block processes features.
+</figcaption>
+</figure>
+</div>
+<p><strong>How AdaLN works</strong> — For each transformer block:</p>
+<ol type="1">
+<li><strong>Embed conditioning</strong>: <img src="https://latex.codecogs.com/png.latex?c%20=%20%5Ctext%7BMLP%7D(e_t%20+%20e_y)"> where <img src="https://latex.codecogs.com/png.latex?e_t,%20e_y"> are time/class embeddings</li>
+<li><strong>Predict 6 parameters</strong>: <img src="https://latex.codecogs.com/png.latex?(%5Cgamma_1,%20%5Cbeta_1,%20%5Calpha_1,%20%5Cgamma_2,%20%5Cbeta_2,%20%5Calpha_2)%20=%20%5Ctext%7BLinear%7D(c)"></li>
+<li><strong>Modulate attention branch</strong>:
+<ul>
+<li>Scale and shift after LayerNorm: <img src="https://latex.codecogs.com/png.latex?x'%20=%20%5Cgamma_1%20%5Ccdot%20%5Ctext%7BLN%7D(x)%20+%20%5Cbeta_1"></li>
+<li>Gate the residual: <img src="https://latex.codecogs.com/png.latex?x%20=%20x%20+%20%5Calpha_1%20%5Ccdot%20%5Ctext%7BAttention%7D(x')"></li>
+</ul></li>
+<li><strong>Modulate MLP branch</strong>:
+<ul>
+<li>Scale and shift: <img src="https://latex.codecogs.com/png.latex?x'%20=%20%5Cgamma_2%20%5Ccdot%20%5Ctext%7BLN%7D(x)%20+%20%5Cbeta_2"></li>
+<li>Gate the residual: <img src="https://latex.codecogs.com/png.latex?x%20=%20x%20+%20%5Calpha_2%20%5Ccdot%20%5Ctext%7BMLP%7D(x')"></li>
+</ul></li>
+</ol>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why “Zero” in AdaLN-Zero?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The <img src="https://latex.codecogs.com/png.latex?%5Calpha"> (gating) parameters are initialized to <strong>zero</strong>. This means at initialization, each DiT block computes: <img src="https://latex.codecogs.com/png.latex?x_%7B%5Ctext%7Bout%7D%7D%20=%20x%20+%200%20%5Ccdot%20%5Ctext%7BAttention%7D(x)%20=%20x"></p>
+<p>The block is an <strong>identity function</strong> — it just passes the input through unchanged! This makes training 28-layer networks stable because the model starts simple and gradually learns to use each layer.</p>
+<p><strong>Why this works so well</strong>: Research shows that zero-initialized weights gradually converge to a Gaussian-like distribution during training.<sup>5</sup> This smooth convergence is more stable than random initialization — the network learns to “turn on” conditioning gradually rather than starting with noisy modulation.</p>
+</div>
+</div>
+<p><strong>Why AdaLN-Zero wins</strong>:<sup>6</sup></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 31%">
+<col style="width: 14%">
+<col style="width: 34%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>How it works</th>
+<th>Cost</th>
+<th>ImageNet FID</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>In-context</strong></td>
+<td>Append <img src="https://latex.codecogs.com/png.latex?t">, <img src="https://latex.codecogs.com/png.latex?y"> as extra tokens</td>
+<td><img src="https://latex.codecogs.com/png.latex?O(d)"></td>
+<td>5.67</td>
+</tr>
+<tr class="even">
+<td><strong>Cross-attention</strong></td>
+<td>Attend over condition embeddings</td>
+<td><img src="https://latex.codecogs.com/png.latex?O(d%5E2)"></td>
+<td>3.75</td>
+</tr>
+<tr class="odd">
+<td><strong>AdaLN</strong></td>
+<td>Modulate LayerNorm scale/shift</td>
+<td><img src="https://latex.codecogs.com/png.latex?O(d)"></td>
+<td>2.98</td>
+</tr>
+<tr class="even">
+<td><strong>AdaLN-Zero</strong></td>
+<td>AdaLN + zero-init gating</td>
+<td><img src="https://latex.codecogs.com/png.latex?O(d)"></td>
+<td><strong>2.27</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Note on text conditioning</strong>: For free-form text prompts (not class labels), cross-attention works better than AdaLN. This is what Stable Diffusion uses — the text encoder outputs a sequence of embeddings, and each DiT block cross-attends to them.</p>
+</section>
+</section>
+<section id="sec-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="sec-comparison">Comparison: U-Net vs DiT</h2>
+<div id="fig-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/10-diffusion-transformers/unet-vs-dit-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Architectural comparison: U-Net uses hierarchical multi-scale processing with skip connections (top) vs.&nbsp;DiT’s flat architecture with global attention across all patches (bottom).
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>When to Use Each
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Use U-Net if:</strong> - You’re training on limited compute (&lt; 100 GPU-days) - Working in pixel space (not latent diffusion) - You need strong performance out-of-the-box with less data - Example: Fine-tuning Stable Diffusion on a custom domain</p>
+<p><strong>Use DiT if:</strong> - You have massive compute and data (foundation model scale) - Working in latent space with a pretrained VAE - You want best-in-class scalability and are willing to pay the compute cost - Example: Training a class-conditional ImageNet model from scratch</p>
+</div>
+</div>
+<p>Here’s how the architectures compare:<sup>7</sup></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 40%">
+<col style="width: 35%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Aspect</th>
+<th>U-Net</th>
+<th>DiT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Inductive bias</strong></td>
+<td>Strong (convolution = local, translation-invariant)</td>
+<td>Weak (attention = global, permutation-invariant)</td>
+</tr>
+<tr class="even">
+<td><strong>Scalability</strong></td>
+<td>Diminishing returns past ~1B parameters</td>
+<td>Predictable scaling: 2× compute → better FID</td>
+</tr>
+<tr class="odd">
+<td><strong>Training cost</strong></td>
+<td>Lower (100s of GPU-days for Stable Diffusion)</td>
+<td>Higher (1000s of GPU-days for DiT-XL/2)</td>
+</tr>
+<tr class="even">
+<td><strong>Sample quality (@ equivalent cost)</strong></td>
+<td>Better on small/mid budgets</td>
+<td>Better at massive scale</td>
+</tr>
+<tr class="odd">
+<td><strong>Conditioning</strong></td>
+<td>Ad-hoc (inject time, add cross-attn for text)</td>
+<td>Principled (AdaLN, cross-attn, or in-context)</td>
+</tr>
+<tr class="even">
+<td><strong>Architecture complexity</strong></td>
+<td>High (skip connections, resolution-dependent attn)</td>
+<td>Low (repeat identical blocks)</td>
+</tr>
+<tr class="odd">
+<td><strong>Memory efficiency</strong></td>
+<td>Better (hierarchical = smaller feature maps)</td>
+<td>Worse (all patches processed at full resolution)</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>“Transformers are always better than CNNs”</strong> — Not true for diffusion! U-Nets remain state-of-the-art for many applications because they encode strong spatial priors. DiT only wins when you have enough data and compute to overcome its lack of inductive bias.<sup>8</sup></p>
+</div>
+</div>
+<p><strong>Empirical result</strong>: DiT-XL/2 achieves FID 2.27 on ImageNet 256×256, beating the previous best (LDM) of 3.60. But this required training on 256 TPU-v3 cores — far more than U-Net baselines.<sup>9</sup></p>
+</section>
+<section id="sec-configs" class="level2">
+<h2 class="anchored" data-anchor-id="sec-configs">DiT Model Configurations</h2>
+<p>DiT comes in four configurations borrowed from ViT:<sup>10</sup></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Hidden Dim</th>
+<th>Depth</th>
+<th>Heads</th>
+<th>Parameters</th>
+<th>Gflops</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DiT-S</td>
+<td>384</td>
+<td>12</td>
+<td>6</td>
+<td>33M</td>
+<td>0.4</td>
+</tr>
+<tr class="even">
+<td>DiT-B</td>
+<td>768</td>
+<td>12</td>
+<td>12</td>
+<td>130M</td>
+<td>5.6</td>
+</tr>
+<tr class="odd">
+<td>DiT-L</td>
+<td>1024</td>
+<td>24</td>
+<td>16</td>
+<td>458M</td>
+<td>35.6</td>
+</tr>
+<tr class="even">
+<td>DiT-XL</td>
+<td>1152</td>
+<td>28</td>
+<td>16</td>
+<td>675M</td>
+<td>119</td>
+</tr>
+</tbody>
+</table>
+<p>The naming follows ViT conventions (S=Small, B=Base, L=Large, XL=Extra Large), and the configs were chosen based on ViT scaling research.</p>
+</section>
+<section id="sec-fid" class="level2">
+<h2 class="anchored" data-anchor-id="sec-fid">Evaluating Generative Models: FID</h2>
+<p>We’ve mentioned “FID 2.27” several times — but what does this actually mean?</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: How Do You Measure Image Quality?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You can’t just compare generated images to training images pixel-by-pixel (that would penalize valid variations). Instead, we compare <strong>high-level features</strong> — does the model generate things that “look like” real images at a semantic level?</p>
+<p><strong>Fréchet Inception Distance (FID)</strong> does exactly this:<sup>11</sup> 1. Pass real images through a pretrained Inception network → get feature vectors 2. Pass generated images through the same network → get feature vectors 3. Compare the <strong>distributions</strong> of these features (mean and covariance)</p>
+</div>
+</div>
+<p><strong>How FID works</strong>:<sup>12</sup></p>
+<ol type="1">
+<li><strong>Extract features</strong>: Use Inception v3’s 2048-dimensional penultimate layer activations</li>
+<li><strong>Assume Gaussian</strong>: Model both real and generated feature distributions as multivariate Gaussians</li>
+<li><strong>Compute distance</strong>: Calculate the Fréchet distance between the two Gaussians: <img src="https://latex.codecogs.com/png.latex?%5Ctext%7BFID%7D%20=%20%5C%7C%5Cmu_r%20-%20%5Cmu_g%5C%7C%5E2%20+%20%5Ctext%7BTr%7D(%5CSigma_r%20+%20%5CSigma_g%20-%202(%5CSigma_r%20%5CSigma_g)%5E%7B1/2%7D)"> where <img src="https://latex.codecogs.com/png.latex?(%5Cmu_r,%20%5CSigma_r)"> and <img src="https://latex.codecogs.com/png.latex?(%5Cmu_g,%20%5CSigma_g)"> are the mean/covariance of real and generated features</li>
+</ol>
+<p><strong>Interpreting FID scores</strong>: - <strong>Lower is better</strong> — FID = 0 means identical distributions - <strong>ImageNet benchmarks</strong>: FID &lt; 5 is excellent, FID &lt; 10 is good - DiT-XL/2 achieves <strong>FID 2.27</strong> on ImageNet 256×256 (state-of-the-art as of 2023)</p>
+<p><strong>Why FID over other metrics?</strong><sup>13</sup> - <strong>Inception Score (IS)</strong>: Only looks at generated images, ignores real data distribution - <strong>FID</strong>: Compares generated vs real — captures both quality AND diversity - <strong>Limitation</strong>: Assumes Gaussian features, biased on small samples</p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Note</strong>: FID is computed on a specific dataset (usually ImageNet) with specific image resolution. FID scores aren’t directly comparable across different datasets or resolutions.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="sec-variants" class="level2">
+<h2 class="anchored" data-anchor-id="sec-variants">Modern DiT Variants</h2>
+<p>DiT has become the backbone for several state-of-the-art models. Recent research has also improved the core conditioning mechanism — <strong>adaLN-Gaussian</strong> initializes modulation weights from Gaussian distributions (instead of zero), yielding a 2.16% FID improvement over AdaLN-Zero.<sup>14</sup></p>
+<p><strong>Stable Diffusion 3 (SD3)</strong>: - Uses “Multi-Modal Diffusion Transformer” (MM-DiT) - Separate transformer streams for text and image, with cross-attention - Text conditioning via T5 and CLIP embeddings</p>
+<p><strong>Flux</strong>: - Builds on DiT with improved text understanding - Uses rectified flow instead of DDPM-style diffusion - T5 + CLIP ensemble for text encoding</p>
+<p><strong>Sora</strong> (OpenAI): - Video generation using DiT - Treats video as sequence of patch tokens across space and time - Enables variable resolution and duration</p>
+</section>
+<section id="sec-summary" class="level2">
+<h2 class="anchored" data-anchor-id="sec-summary">Summary</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Key Takeaways
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Vision Transformer (ViT)</strong>: - Treats images as patch sequences, enabling transformers for vision - Key components: patchify → linear embed → position encoding → transformer blocks → classifier - Weaker inductive bias than CNNs (must learn locality), but scales better</p>
+<p><strong>Diffusion Transformer (DiT)</strong>: - DiT = ViT adapted for diffusion (no [CLS] token, adds decoder, adds AdaLN) - <strong>AdaLN-Zero</strong>: Inject timestep/class by modulating LayerNorm parameters, not adding tokens - Zero initialization of gating parameters → blocks start as identity → stable training - Must operate in latent space (4000× attention cost reduction)</p>
+<p><strong>When to use DiT vs U-Net</strong>: - U-Net: Limited compute, pixel space, need spatial bias - DiT: Massive compute, latent space, want scaling laws</p>
+<p><strong>The bigger picture</strong>: U-Net and DiT are different ways to parameterize the same math (<img src="https://latex.codecogs.com/png.latex?u_%5Ctheta(x_t,%20t)">). The architecture choice is about trade-offs: inductive bias vs scalability, data efficiency vs ultimate performance.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><strong>Foundational Papers:</strong></p>
+<ul>
+<li>Dosovitskiy, A., et al.&nbsp;(2020). <a href="https://arxiv.org/abs/2010.11929">An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale</a>. <em>ICLR 2021</em>. (ViT)</li>
+<li>Peebles, W., &amp; Xie, S. (2023). <a href="https://arxiv.org/abs/2212.09748">Scalable Diffusion Models with Transformers</a>. <em>ICCV 2023</em>. (DiT)</li>
+<li>Dhariwal, P., &amp; Nichol, A. (2021). <a href="https://arxiv.org/abs/2105.05233">Diffusion Models Beat GANs on Image Synthesis</a>. <em>NeurIPS 2021</em>.</li>
+</ul>
+<p><strong>Latent Diffusion:</strong></p>
+<ul>
+<li>Rombach, R., et al.&nbsp;(2022). <a href="https://arxiv.org/abs/2112.10752">High-Resolution Image Synthesis with Latent Diffusion Models</a>. <em>CVPR 2022</em>. (Stable Diffusion)</li>
+</ul>
+<p><strong>Educational Resources:</strong></p>
+<ul>
+<li>Encord. <a href="https://encord.com/blog/diffusion-models-with-transformers/">Diffusion Transformer (DiT) Models: A Beginner’s Guide</a>. Blog post.</li>
+<li>Lightly AI. <a href="https://www.lightly.ai/blog/diffusion-transformers-dit">Diffusion Transformers Explained: The Beginner’s Guide</a>. Blog post.</li>
+<li>DiT Project Page. <a href="https://www.wpeebles.com/DiT">Scalable Diffusion Models with Transformers</a>. Official project page.</li>
+<li>APXML. <a href="https://apxml.com/courses/advanced-diffusion-architectures/chapter-3-transformer-diffusion-models/unet-vs-transformer-diffusion">U-Net vs Transformer Comparison for Diffusion</a>. Course material.</li>
+<li>Towards Data Science. <a href="https://towardsdatascience.com/diffusion-transformer-explained-e603c4770f7e/">Diffusion Transformer Explained</a>. Comprehensive walkthrough.</li>
+<li>Pinecone. <a href="https://www.pinecone.io/learn/series/image-search/vision-transformers/">Vision Transformers (ViT) Explained</a>. Excellent visual explanations of patch embeddings and attention.</li>
+<li>AI Summer. <a href="https://theaisummer.com/vision-transformer/">How the Vision Transformer (ViT) works in 10 minutes</a>. Concise tutorial.</li>
+</ul>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://arxiv.org/abs/2010.11929">Dosovitskiy et al., 2020</a>↩︎</p></li>
+<li id="fn2"><p><a href="https://www.pinecone.io/learn/series/image-search/vision-transformers/">Pinecone, “Vision Transformers Explained”</a>↩︎</p></li>
+<li id="fn3"><p><a href="https://arxiv.org/abs/2212.09748">Peebles &amp; Xie, 2023</a>↩︎</p></li>
+<li id="fn4"><p><a href="https://encord.com/blog/diffusion-models-with-transformers/">Encord, “Diffusion Transformer Models Guide”</a>↩︎</p></li>
+<li id="fn5"><p><a href="https://openreview.net/forum?id=E4roJSM9RM">OpenReview, “Unveiling the Secret of AdaLN-Zero”</a>↩︎</p></li>
+<li id="fn6"><p><a href="https://arxiv.org/abs/2212.09748">Peebles &amp; Xie, 2023</a>↩︎</p></li>
+<li id="fn7"><p><a href="https://apxml.com/courses/advanced-diffusion-architectures/chapter-3-transformer-diffusion-models/unet-vs-transformer-diffusion">APXML, “U-Net vs Transformer Comparison”</a>↩︎</p></li>
+<li id="fn8"><p><a href="https://arxiv.org/abs/2105.05233">Dhariwal &amp; Nichol, 2021</a>↩︎</p></li>
+<li id="fn9"><p><a href="https://arxiv.org/abs/2212.09748">Peebles &amp; Xie, 2023</a>↩︎</p></li>
+<li id="fn10"><p><a href="https://arxiv.org/abs/2212.09748">Peebles &amp; Xie, 2023</a>↩︎</p></li>
+<li id="fn11"><p><a href="https://arxiv.org/abs/1706.08500">Heusel et al., 2017</a>↩︎</p></li>
+<li id="fn12"><p><a href="https://machinelearningmastery.com/how-to-implement-the-frechet-inception-distance-fid-from-scratch/">Machine Learning Mastery, “FID for Evaluating GANs”</a>↩︎</p></li>
+<li id="fn13"><p><a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance">Wikipedia, “Fréchet Inception Distance”</a>↩︎</p></li>
+<li id="fn14"><p><a href="https://openreview.net/forum?id=E4roJSM9RM">OpenReview, “Unveiling the Secret of AdaLN-Zero”</a>↩︎</p></li>
+</ol>
+</section></div> ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>transformer</category>
+  <category>vit</category>
+  <category>dit</category>
+  <category>architecture</category>
+  <guid>https://layernorm.dev/posts/diffusion/10-diffusion-transformers/</guid>
+  <pubDate>Sat, 17 Jan 2026 00:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Diffusion &amp; Flow Matching Part 9: U-Net Architecture</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/9-unet/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Why architecture matters</strong>: The network must predict noise at different timesteps while preserving spatial structure — this is unlike any standard vision task</li>
+<li><strong>U-Net dominates</strong> for pixel-space diffusion (Stable Diffusion, DALL-E 2) because skip connections preserve fine details lost during downsampling</li>
+<li><strong>Skip connections</strong> fuse semantic (decoder) and spatial (encoder) information — essential for precise reconstruction</li>
+<li><strong>Time conditioning</strong>: Sinusoidal embeddings convert timestep <img src="https://latex.codecogs.com/png.latex?t"> into a high-dimensional vector that modulates network behavior</li>
+</ul>
+</div>
+</div>
+<p>We’ve spent several posts deriving the mathematical theory of diffusion models: probability paths, flow matching objectives, and score functions. But here’s the practical question: <strong>how do we actually build a neural network that can denoise images at arbitrary timesteps?</strong></p>
+<p>This isn’t a standard image-to-image translation problem. The network needs to: 1. Handle the <em>same noisy image</em> differently depending on time <img src="https://latex.codecogs.com/png.latex?t"> (aggressive denoising at <img src="https://latex.codecogs.com/png.latex?t%20%5Capprox%200">, gentle refinement at <img src="https://latex.codecogs.com/png.latex?t%20%5Capprox%201">) 2. Preserve spatial structure while processing high-dimensional inputs (a 512×512 RGB image is 786,432 dimensions!) 3. Support flexible conditioning (text prompts, class labels, spatial masks)</p>
+<p>In this post, we’ll cover <strong>U-Net</strong> — the dominant architecture for diffusion models. For transformer-based approaches (DiT), see <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a>.</p>
+<section id="sec-learning-problem" class="level2">
+<h2 class="anchored" data-anchor-id="sec-learning-problem">The Learning Problem</h2>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What Makes Diffusion Different
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Unlike a classifier (image → label) or segmentation model (image → mask), diffusion models perform a unique task: <strong>image + time → velocity field</strong>. The network must predict <em>which direction to move in pixel space</em> to denoise the image, and this direction changes dramatically with time.</p>
+</div>
+</div>
+<p>Recall from <a href="../4-flow-matching-loss/">Part 4</a> and <a href="../7-training/">Part 7</a> that our goal is to learn a neural network that can predict either:</p>
+<ol type="1">
+<li><p><strong>Vector field</strong>: <img src="https://latex.codecogs.com/png.latex?u_%5Ctheta(x_t,%20t,%20y)%20%5Capprox%20u_t(x_t)"> for flow matching (Points in the direction of clean data)</p></li>
+<li><p><strong>Score function</strong>: <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta(x_t,%20t,%20y)%20%5Capprox%20%5Cnabla_%7Bx_t%7D%20%5Clog%20p_t(x_t)"> for score-based diffusion (Gradient of the log-probability — also points toward high-density regions)</p></li>
+</ol>
+<p>Here <img src="https://latex.codecogs.com/png.latex?y"> is an optional conditioning input (class label, text prompt, or other control signal).</p>
+<p>Both are fundamentally the same task: given noisy image <img src="https://latex.codecogs.com/png.latex?x_t">, timestep <img src="https://latex.codecogs.com/png.latex?t">, and condition <img src="https://latex.codecogs.com/png.latex?y">, output a same-sized tensor that tells us “how to update each pixel.”</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why Same Dimensions? The Vector Field Property
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You might wonder: why does the output need to be the same size as the input?</p>
+<p><strong>Mathematical reason</strong>: A vector field <img src="https://latex.codecogs.com/png.latex?u_t%20:%20%5Cmathbb%7BR%7D%5Ed%20%5Cto%20%5Cmathbb%7BR%7D%5Ed"> maps each point in space to a <strong>direction in the same space</strong>. Think of a weather map showing wind: at each <img src="https://latex.codecogs.com/png.latex?(x,%20y)"> location, there’s a wind velocity vector pointing in some direction. The velocity lives in the same 2D space as the location.</p>
+<p><strong>Physical meaning</strong>: The vector field tells us “how to update <img src="https://latex.codecogs.com/png.latex?x_t">” when we solve the ODE <img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bdx_t%7D%7Bdt%7D%20=%20u_t(x_t)">. To add this update to <img src="https://latex.codecogs.com/png.latex?x_t"> (which is <img src="https://latex.codecogs.com/png.latex?H%20%5Ctimes%20W%20%5Ctimes%20C">), the update <img src="https://latex.codecogs.com/png.latex?u_t(x_t)"> must also be <img src="https://latex.codecogs.com/png.latex?H%20%5Ctimes%20W%20%5Ctimes%20C"> — we need one “velocity” value per pixel per channel.</p>
+<p><strong>Score function case</strong>: Similarly, <img src="https://latex.codecogs.com/png.latex?s_t(x_t)%20=%20%5Cnabla_%7Bx_t%7D%20%5Clog%20p_t(x_t)"> is a gradient with respect to <img src="https://latex.codecogs.com/png.latex?x_t">, which by definition has the same shape as <img src="https://latex.codecogs.com/png.latex?x_t">.</p>
+<p>This is why U-Net (input size = output size) is so natural for diffusion — it exactly matches the mathematical structure!</p>
+</div>
+</div>
+<p><strong>Why is this hard?</strong> Consider the architectural requirements:</p>
+<ul>
+<li><strong>Time conditioning is critical</strong>: At <img src="https://latex.codecogs.com/png.latex?t=0.1"> (mostly noise), the network should make large corrections toward data. At <img src="https://latex.codecogs.com/png.latex?t=0.9"> (nearly clean), only subtle refinements. The <em>same</em> network must handle both.</li>
+<li><strong>Multi-scale reasoning</strong>: Need to capture both global structure (“this is a dog”) and fine details (“the fur texture here”)</li>
+<li><strong>High resolution</strong>: Operating on 512×512×3 images = 786k dimensions</li>
+<li><strong>Flexible conditioning</strong>: Should accept class labels, text prompts, or spatial control signals</li>
+</ul>
+</section>
+<section id="sec-unet" class="level2">
+<h2 class="anchored" data-anchor-id="sec-unet">U-Net Architecture</h2>
+<section id="the-encoder-decoder-baseline" class="level3">
+<h3 class="anchored" data-anchor-id="the-encoder-decoder-baseline">The Encoder-Decoder Baseline</h3>
+<p>The natural starting point for an image-to-image network is an <strong>encoder-decoder</strong> architecture:</p>
+<ol type="1">
+<li><strong>Encoder</strong>: Progressively downsample the input (512×512 → 256×256 → 128×128 → … → 8×8)
+<ul>
+<li>Reduces spatial resolution while increasing channels</li>
+<li>Extracts increasingly abstract features</li>
+</ul></li>
+<li><strong>Bottleneck</strong>: Process at the lowest resolution (e.g., 8×8×512)
+<ul>
+<li>Rich semantic representation, but tiny spatial size</li>
+</ul></li>
+<li><strong>Decoder</strong>: Progressively upsample back to original size (8×8 → … → 512×512)
+<ul>
+<li>Reconstructs the output from the compressed representation</li>
+</ul></li>
+</ol>
+<p><strong>The problem</strong>: The 8×8 bottleneck is a severe <strong>information bottleneck</strong>. Spatial details are destroyed during downsampling and can’t be recovered during upsampling. You’d get blurry, imprecise outputs.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Encoder-Decoder Fails for Diffusion
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine compressing an image down to 8×8, then trying to reconstruct it to 512×512. You’d lose all fine details!</p>
+<p>For diffusion models, this is catastrophic — we need to predict pixel-level noise patterns. If the bottleneck destroys spatial information, the decoder has no way to know “what texture pattern existed at pixel (247, 381)?”</p>
+</div>
+</div>
+</section>
+<section id="the-u-net-solution-skip-connections" class="level3">
+<h3 class="anchored" data-anchor-id="the-u-net-solution-skip-connections">The U-Net Solution: Skip Connections</h3>
+<div id="fig-unet" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-unet-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/unet-original.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-unet-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The original U-Net architecture from Ronneberger et al.&nbsp;(2015). Blue boxes represent feature maps, with channel dimensions shown above. Gray arrows show skip connections (“copy and crop”), red arrows show downsampling (max pool), green arrows show upsampling (transposed convolution). The U-shape is clearly visible.
+</figcaption>
+</figure>
+</div>
+<p>U-Net solves the information bottleneck problem with <strong>skip connections</strong>:<sup>1</sup></p>
+<p><strong>The idea</strong>: Instead of forcing all information through the bottleneck, create <strong>direct pathways</strong> from encoder to decoder at matching resolutions. The decoder can now access high-resolution features that haven’t been compressed.</p>
+<p><strong>The architecture</strong>: 1. <strong>Encoder</strong>: Same as before — downsample from 512×512 to 8×8 2. <strong>Bottleneck</strong>: Same as before — process at 8×8 3. <strong>Decoder</strong>: Upsample back up, BUT at each level, <strong>concatenate</strong> the corresponding encoder features 4. <strong>Skip connections</strong>: The gray arrows in Figure&nbsp;1 — copy features across the U</p>
+<p>This creates the characteristic U-shape, giving the architecture its name. U-Net has become the workhorse for pixel-space diffusion models powering DALL-E 2, Stable Diffusion, and Midjourney.</p>
+</section>
+<section id="sec-skip-connections" class="level3">
+<h3 class="anchored" data-anchor-id="sec-skip-connections">How Skip Connections Actually Work</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Semantic vs Spatial Information
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Here’s the key insight:<sup>2</sup></p>
+<ul>
+<li><strong>Decoder features</strong> (after upsampling): Rich in <strong>semantic information</strong> — “this region contains a bike”</li>
+<li><strong>Encoder features</strong> (before downsampling): Rich in <strong>spatial information</strong> — “these exact pixels are where the bike is”</li>
+</ul>
+<p>Skip connections let subsequent decoder layers operate on <strong>both</strong>: - Semantic understanding from the decoder: “I’m reconstructing a bike here” - Spatial precision from the encoder: “The bike’s exact pixel locations are here”</p>
+<p>This combination is exactly what you need to reconstruct fine details!</p>
+<p><strong>Preventing “forgetting”</strong>: Deep networks tend to lose low-level features as information passes through many layers.<sup>3</sup> Skip connections reintroduce these features, ensuring the decoder doesn’t have to “remember” what the encoder saw — it can access it directly.</p>
+</div>
+</div>
+<div id="fig-semantic-spatial" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-semantic-spatial-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/semantic-spatial-fusion.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-semantic-spatial-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Semantic vs spatial information: decoder features know “what” (semantic understanding, but blurry), encoder features know “where” (spatial precision, but abstract). Skip connections combine both for precise reconstruction.
+</figcaption>
+</figure>
+</div>
+<div id="fig-skip-concat" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-skip-concat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/skip-connection-concat.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-skip-concat-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Skip connection mechanism: encoder feature map (128 channels of high-resolution spatial details) is concatenated with decoder feature map (256 channels of upsampled semantic features) along the channel dimension, resulting in 384 total channels. Spatial dimensions stay the same.
+</figcaption>
+</figure>
+</div>
+<p><strong>The operation</strong>: Concatenate encoder and decoder feature maps along the channel dimension: - Same spatial size (256×256) - Encoder: 128 channels of <strong>“where things are”</strong> (spatial precision) - Decoder: 256 channels of <strong>“what things are”</strong> (semantic understanding) - Result: 384 channels combining both types of information</p>
+<p><strong>Why this is crucial for diffusion</strong>: Predicting pixel-level noise patterns requires knowing both: 1. <strong>Semantic</strong>: “This region is a dog’s fur” (from decoder’s global understanding) 2. <strong>Spatial</strong>: “The fur texture at pixel (247, 381) has this exact pattern” (from encoder’s preserved high-res features)</p>
+<p>Without skip connections, the 8×8 bottleneck would destroy all spatial precision, leaving only blurry semantic understanding.</p>
+<div id="fig-skip-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-skip-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/skip-connection-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-skip-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Comparison: Without skip connections (left), the bottleneck destroys spatial details leading to blurry reconstruction. With skip connections (right), high-resolution features bypass the bottleneck, enabling sharp detail reconstruction.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="adaptations-for-diffusion" class="level3">
+<h3 class="anchored" data-anchor-id="adaptations-for-diffusion">Adaptations for Diffusion</h3>
+<p>The original U-Net was designed for segmentation (image → mask). For diffusion, we need (image, time, condition) → velocity field. Here’s how it’s adapted:<sup>4</sup></p>
+<section id="time-embedding-teaching-the-network-what-time-is-it" class="level4">
+<h4 class="anchored" data-anchor-id="time-embedding-teaching-the-network-what-time-is-it">Time Embedding: Teaching the Network “What Time Is It?”</h4>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Can’t We Just Feed in <img src="https://latex.codecogs.com/png.latex?t"> Directly?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The network needs to behave <strong>completely differently</strong> at different timesteps: - At <img src="https://latex.codecogs.com/png.latex?t=0.1"> (mostly noise): “Remove lots of noise, focus on global structure” - At <img src="https://latex.codecogs.com/png.latex?t=0.9"> (nearly clean): “Make tiny adjustments, preserve existing details”</p>
+<p>If you just feed in the scalar <img src="https://latex.codecogs.com/png.latex?t=0.1"> vs <img src="https://latex.codecogs.com/png.latex?t=0.9">, the network has no way to know these are fundamentally different regimes! It’s like giving someone two numbers (0.1 vs 0.9) and expecting them to understand the profound behavioral difference they imply.</p>
+<p><strong>Solution</strong>: Convert <img src="https://latex.codecogs.com/png.latex?t"> into a rich, high-dimensional vector that encodes “what this timestep means” — this is called an <strong>embedding</strong>.</p>
+</div>
+</div>
+<p><strong>What is an embedding?</strong> A mapping from a simple input (like a number <img src="https://latex.codecogs.com/png.latex?t"> or a word) to a high-dimensional vector that captures its “meaning.” Here: scalar <img src="https://latex.codecogs.com/png.latex?t%20%5Cin%20%5B0,1%5D"> → vector <img src="https://latex.codecogs.com/png.latex?e_t%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B512%7D"> (or whatever dimension matches the network’s channels).</p>
+<div id="fig-time-embedding" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-time-embedding-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/time-embedding.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-time-embedding-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Time embedding transforms a single scalar timestep value into a rich high-dimensional vector that encodes “what this timestep means” for the network.
+</figcaption>
+</figure>
+</div>
+<p><strong>How it’s done</strong> — Sinusoidal position encoding:<sup>5</sup></p>
+<p><img src="https://latex.codecogs.com/png.latex?%0At%20%5Cto%20%5B%5Csin(2%5E0%20%5Cpi%20t),%20%5Ccos(2%5E0%20%5Cpi%20t),%20%5Csin(2%5E1%20%5Cpi%20t),%20%5Ccos(2%5E1%20%5Cpi%20t),%20%5Csin(2%5E2%20%5Cpi%20t),%20%5Ccos(2%5E2%20%5Cpi%20t),%20%5Cldots%5D%20%5Cto%20%5Ctext%7BMLP%7D%20%5Cto%20e_t%0A"></p>
+<p>Think of it like encoding the number using multiple “frequencies” — low frequencies (<img src="https://latex.codecogs.com/png.latex?2%5E0%20=%201">) capture coarse time differences, high frequencies (<img src="https://latex.codecogs.com/png.latex?2%5E%7B10%7D%20=%201024">) capture fine distinctions.</p>
+<p><strong>Why sinusoidal?</strong> Three key properties: 1. <strong>Smooth</strong>: Similar timesteps (<img src="https://latex.codecogs.com/png.latex?t=0.5"> vs <img src="https://latex.codecogs.com/png.latex?t=0.51">) get similar embeddings → network can interpolate 2. <strong>Distinctive</strong>: Different timesteps (<img src="https://latex.codecogs.com/png.latex?t=0.1"> vs <img src="https://latex.codecogs.com/png.latex?t=0.9">) get very different embeddings → network can learn distinct behaviors 3. <strong>Generalizable</strong>: Unlike learned embeddings, sinusoidal encodings work for <em>any</em> timestep value — a model trained with 50 steps still works with 1000 steps at inference<sup>6</sup></p>
+<p><strong>How it’s used</strong>: The time embedding <img src="https://latex.codecogs.com/png.latex?e_t"> is added to the feature maps at every resolution level of the U-Net, allowing each layer to “know” what time it is and adjust its processing accordingly.</p>
+</section>
+<section id="sec-injection" class="level4">
+<h4 class="anchored" data-anchor-id="sec-injection">Injecting Time and Condition into the Network</h4>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>How <img src="https://latex.codecogs.com/png.latex?t"> and <img src="https://latex.codecogs.com/png.latex?y"> Actually Flow Through the Network
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Here’s the concrete mechanism:</p>
+<p><strong>Step 1</strong>: Create embeddings - Time: <img src="https://latex.codecogs.com/png.latex?t%20%5Cto%20%5Ctext%7Bsinusoidal%20+%20MLP%7D%20%5Cto%20e_t%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B512%7D"> - Condition (if any): <img src="https://latex.codecogs.com/png.latex?y%20%5Cto%20%5Ctext%7Bembedding%20layer%7D%20%5Cto%20e_y%20%5Cin%20%5Cmathbb%7BR%7D%5E%7B512%7D"> - Combine: <img src="https://latex.codecogs.com/png.latex?e%20=%20e_t%20+%20e_y"> (element-wise addition)<sup>7</sup></p>
+<p><em>Why addition?</em> Both embeddings live in the same vector space with the same dimensions. Adding them creates a combined signal that encodes both “what time is it?” and “what are we generating?”. The network learns to interpret this combined embedding during training.</p>
+<p><strong>Step 2</strong>: Inject at every residual block<sup>8</sup></p>
+<div id="fig-time-injection" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-time-injection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/time-injection-resblock.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-time-injection-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Time and condition injection in a U-Net residual block: embedding <img src="https://latex.codecogs.com/png.latex?e"> is linearly projected and added to the feature map <img src="https://latex.codecogs.com/png.latex?h"> between convolutions, allowing the conditioning signal to modulate the block’s processing.
+</figcaption>
+</figure>
+</div>
+<p>The embedding <img src="https://latex.codecogs.com/png.latex?e"> is projected to match the number of channels, then added to the feature map between two convolutions. This allows the conditioning to modulate how each channel processes information.</p>
+</div>
+</div>
+<p><strong>Alternative injection methods</strong>:<sup>9</sup> - <strong>AdaGN (Adaptive Group Normalization)</strong>: Use <img src="https://latex.codecogs.com/png.latex?e"> to predict scale/shift for group normalization - <strong>Cross-attention</strong> (for text): Don’t add <img src="https://latex.codecogs.com/png.latex?e">, instead let features attend to text embeddings - <strong>FiLM (Feature-wise Linear Modulation)</strong>: Predict channel-wise scale and shift from <img src="https://latex.codecogs.com/png.latex?e"></p>
+<p>Different implementations use different methods, but the core idea is the same: <strong>let the conditioning signal <img src="https://latex.codecogs.com/png.latex?e"> modify how the network processes features</strong>.</p>
+</section>
+<section id="other-conditioning-mechanisms" class="level4">
+<h4 class="anchored" data-anchor-id="other-conditioning-mechanisms">Other Conditioning Mechanisms</h4>
+<ul>
+<li><strong>Spatial conditioning</strong>: Concatenate additional input channels (e.g., edge maps for ControlNet) — happens at the input, not via embeddings</li>
+</ul>
+<p><strong>Self-attention layers</strong>: - Added at lower resolutions (e.g., 16×16, 8×8) where the quadratic cost is manageable - Captures long-range dependencies — e.g., ensuring a dog’s tail matches its head</p>
+</section>
+</section>
+</section>
+<section id="sec-training" class="level2">
+<h2 class="anchored" data-anchor-id="sec-training">Training Considerations</h2>
+<section id="sec-loss" class="level3">
+<h3 class="anchored" data-anchor-id="sec-loss">Loss Functions</h3>
+<p>U-Net is trained with standard diffusion objectives (see <a href="../7-training/">Part 7</a>):</p>
+<p><strong>Flow matching</strong> (Conditional Flow Matching loss): <span id="eq-flow-matching-loss"><img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BFM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,%20z%20%5Csim%20p_%7Bdata%7D,%20x_t%20%5Csim%20p_t(%5Ccdot%7Cz)%7D%20%5C%7Cu_%5Ctheta(x_t,%20t)%20-%20u_t(x_t%7Cz)%5C%7C%5E2%20%5Ctag%7B1%7D"></span></p>
+<p><strong>Score matching</strong> (Denoising Score Matching loss): <span id="eq-score-matching-loss"><img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7BDSM%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7Bt,%20z%20%5Csim%20p_%7Bdata%7D,%20x_t%20%5Csim%20p_t(%5Ccdot%7Cz)%7D%20%5C%7Cs_%5Ctheta(x_t,%20t)%20-%20s_t(x_t%7Cz)%5C%7C%5E2%20%5Ctag%7B2%7D"></span></p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Note</strong>: We train by regressing against <strong>conditional</strong> targets (<img src="https://latex.codecogs.com/png.latex?u_t(x_t%7Cz)"> conditioned on data point <img src="https://latex.codecogs.com/png.latex?z">), but the network learns to approximate the <strong>marginal</strong> vector field <img src="https://latex.codecogs.com/png.latex?u_t(x_t)"> needed for generation. This is the <a href="../4-flow-matching-loss/">marginalization trick</a> — training on conditional targets is equivalent to learning the marginal.</p>
+</div>
+</div>
+</div>
+<p>The architecture doesn’t change the learning objective — only how we parameterize the function <img src="https://latex.codecogs.com/png.latex?u_%5Ctheta(x_t,%20t,%20y)"> or <img src="https://latex.codecogs.com/png.latex?s_%5Ctheta(x_t,%20t,%20y)">.</p>
+</section>
+<section id="sec-parameterization" class="level3">
+<h3 class="anchored" data-anchor-id="sec-parameterization">Parameterization Tricks</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What Should the Network Predict?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You might think: “predict the velocity field <img src="https://latex.codecogs.com/png.latex?u_t">.” But there are equivalent formulations that work better in practice: - <strong>Noise prediction</strong>: Predict the noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> that was added - <strong>Data prediction</strong>: Predict the clean image <img src="https://latex.codecogs.com/png.latex?x_0"> - <strong>Velocity prediction</strong>: Predict the direction to move</p>
+<p>These are mathematically equivalent (related by simple algebra), but training dynamics differ!</p>
+</div>
+</div>
+<p><strong>Common parameterizations</strong>:</p>
+<ol type="1">
+<li><strong>Noise prediction</strong> (<img src="https://latex.codecogs.com/png.latex?%5Cepsilon">-parameterization): Network outputs <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_%5Ctheta(x_t,%20t)%20%5Capprox%20%5Cepsilon"> where <img src="https://latex.codecogs.com/png.latex?x_t%20=%20%5Calpha_t%20x_0%20+%20%5Csigma_t%20%5Cepsilon">
+<ul>
+<li>Most common for DDPM-style training</li>
+<li>Works well across all timesteps</li>
+</ul></li>
+<li><strong>Velocity prediction</strong> (<img src="https://latex.codecogs.com/png.latex?v">-parameterization): Network directly predicts <img src="https://latex.codecogs.com/png.latex?v_%5Ctheta(x_t,%20t)%20%5Capprox%20u_t(x_t)">
+<ul>
+<li>Natural for flow matching</li>
+<li>Better for consistency models</li>
+</ul></li>
+<li><strong>Data prediction</strong> (<img src="https://latex.codecogs.com/png.latex?x_0">-parameterization): Network predicts <img src="https://latex.codecogs.com/png.latex?%5Chat%7Bx%7D_0%20=%20f_%5Ctheta(x_t,%20t)">
+<ul>
+<li>Sometimes easier to interpret (direct image prediction)</li>
+<li>Can be unstable at high noise levels</li>
+</ul></li>
+</ol>
+<p><strong>Which to use?</strong> <img src="https://latex.codecogs.com/png.latex?%5Cepsilon">-prediction is the safe default. Some recent work uses <img src="https://latex.codecogs.com/png.latex?v">-prediction for improved stability.</p>
+<p><strong>Prediction target scheduling</strong>: Some methods interpolate between parameterizations based on <img src="https://latex.codecogs.com/png.latex?t"> — e.g., predict noise at early steps, data at late steps.</p>
+</section>
+</section>
+<section id="sec-practical" class="level2">
+<h2 class="anchored" data-anchor-id="sec-practical">Practical Implementation</h2>
+<section id="sec-hyperparameters" class="level3">
+<h3 class="anchored" data-anchor-id="sec-hyperparameters">Hyperparameters</h3>
+<p><strong>Typical U-Net configuration</strong> (Stable Diffusion scale): - Base channels: 128-320 - Channel multipliers: [1, 2, 4, 4] → max channels ≈ 1280 - Attention resolutions: [32, 16, 8] (spatial sizes where attention is applied) - Residual blocks per level: 2 - Total parameters: ~800M-1B (depending on depth)</p>
+</section>
+<section id="sec-efficiency" class="level3">
+<h3 class="anchored" data-anchor-id="sec-efficiency">Computational Efficiency</h3>
+<p><strong>U-Net optimizations</strong>: - <strong>Flash Attention</strong> for self-attention layers (2-4× speedup) - <strong>Mixed precision (FP16/BF16)</strong> training (2× memory reduction) - <strong>Gradient checkpointing</strong> trades compute for memory (enables 2× larger batches) - <strong>Latent diffusion</strong> (VAE compress 512×512×3 → 64×64×4, saving 64× compute)</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Real-World Costs
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Stable Diffusion (U-Net)</strong>: Trained on 256 A100 GPUs for ~150k steps (~200 GPU-days), cost ~$600k</p>
+<p>Training from scratch is expensive! Fine-tuning pretrained models costs 100-1000× less.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-modern" class="level2">
+<h2 class="anchored" data-anchor-id="sec-modern">Modern Variants and Extensions</h2>
+<p>The basic U-Net we’ve covered forms the foundation — but practical systems like Stable Diffusion add several innovations. Here are the most impactful:</p>
+<section id="architectural-innovations" class="level3">
+<h3 class="anchored" data-anchor-id="architectural-innovations">Architectural Innovations</h3>
+<ol type="1">
+<li><p><strong>Latent Diffusion Models (LDM)</strong><sup>10</sup> — <strong>Most important innovation</strong></p>
+<div id="fig-latent-diffusion" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-latent-diffusion-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/9-unet/latent-diffusion-original.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-latent-diffusion-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Latent Diffusion Model architecture from Rombach et al.&nbsp;(2022). Left: images are encoded to latent space <img src="https://latex.codecogs.com/png.latex?z"> via encoder <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BE%7D">. Middle: diffusion happens in latent space, with conditioning (text, semantic maps, etc.) injected via cross-attention. Right: decoder <img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BD%7D"> reconstructs the image from denoised latents.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why Latent Space?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Running diffusion directly on 512×512 images is prohibitively expensive. The key insight: <strong>perceptual compression</strong> via a pretrained VAE removes imperceptible high-frequency details, letting the diffusion model focus on semantic content.<sup>11</sup></p>
+</div>
+</div>
+<ul>
+<li><strong>VAE Encoder</strong>: Compress 512×512×3 → 64×64×4 latents (64× reduction)</li>
+<li><strong>Diffusion in latent space</strong>: U-Net denoises with text conditioning via cross-attention</li>
+<li><strong>VAE Decoder</strong>: Reconstruct latent → full resolution image</li>
+<li>Powers Stable Diffusion, DALL-E 3, Midjourney</li>
+</ul></li>
+<li><p><strong>Cascaded diffusion</strong><sup>12</sup></p>
+<ul>
+<li>Train separate models for 64×64 → 256×256 → 1024×1024</li>
+<li>Each stage focuses on appropriate level of detail</li>
+<li>Used by DALL-E 2, Imagen</li>
+</ul></li>
+</ol>
+</section>
+<section id="sec-conditioning" class="level3">
+<h3 class="anchored" data-anchor-id="sec-conditioning">Conditioning Mechanisms</h3>
+<p><strong>Text-to-image</strong>: - Encode text with CLIP or T5 → cross-attention in U-Net blocks - Stable Diffusion uses CLIP, Imagen uses T5</p>
+<p><strong>Spatial control</strong> (ControlNet<sup>13</sup>): - Additional encoder branch processes control signal (edges, depth, pose) - Outputs merged into main U-Net via “zero convolutions” - Enables precise spatial guidance without retraining base model</p>
+<p><strong>Adapters</strong> (LoRA, etc.): - Fine-tune only low-rank adaptations of weight matrices - 100× fewer parameters than full fine-tuning - Popular for personalization (“Train this model on my face”)</p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p><strong>Looking for Diffusion Transformers?</strong> See <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a> for how transformers (DiT) are adapted for diffusion models.</p>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-summary" class="level2">
+<h2 class="anchored" data-anchor-id="sec-summary">Summary</h2>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Key Takeaways
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We’ve seen how the mathematical theory of diffusion models (learning <img src="https://latex.codecogs.com/png.latex?u_t(x_t,%20t)"> or <img src="https://latex.codecogs.com/png.latex?s_t(x_t,%20t)">) translates into practical neural network architectures.</p>
+<p><strong>Why architecture matters uniquely for diffusion:</strong> - Unlike standard vision tasks, diffusion networks must handle time-dependent denoising while preserving spatial structure - The architecture must process images at multiple scales (global structure + fine details) and adapt behavior based on timestep <img src="https://latex.codecogs.com/png.latex?t"></p>
+<p><strong>U-Net’s key components:</strong> - <strong>Skip connections</strong> solve the information bottleneck problem — semantic features from the decoder combine with spatial features from the encoder - <strong>Time embedding</strong>: Sinusoidal encoding converts scalar <img src="https://latex.codecogs.com/png.latex?t"> into high-dimensional vector that modulates network behavior - <strong>Condition injection</strong>: Time and class embeddings are combined (<img src="https://latex.codecogs.com/png.latex?e%20=%20e_t%20+%20e_y">) and injected into every residual block - Strong inductive bias (convolutions + locality) works well with limited data and compute</p>
+<p><strong>Why U-Net dominates:</strong> - Powers Stable Diffusion, DALL-E 2, and most practical applications - Formula: <img src="https://latex.codecogs.com/png.latex?%5Cepsilon">-prediction + sinusoidal time embedding + cross-attention for text → state-of-the-art text-to-image - Latent diffusion (VAE + U-Net) makes high-resolution generation practical</p>
+</div>
+</div>
+<p><strong>What’s next?</strong> In <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a>, we’ll see how transformers (DiT) offer an alternative architecture with better scaling properties. Then we’ll explore <strong>sampling algorithms</strong> — numerical methods for solving the learned ODE/SDE to transform noise into images.</p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p><strong>Foundational Papers:</strong></p>
+<ul>
+<li>Ronneberger, O., Fischer, P., &amp; Brox, T. (2015). <a href="https://arxiv.org/abs/1505.04597">U-Net: Convolutional Networks for Biomedical Image Segmentation</a>. <em>MICCAI 2015</em>.</li>
+<li>Ho, J., Jain, A., &amp; Abbeel, P. (2020). <a href="https://arxiv.org/abs/2006.11239">Denoising Diffusion Probabilistic Models</a>. <em>NeurIPS 2020</em>.</li>
+<li>Dhariwal, P., &amp; Nichol, A. (2021). <a href="https://arxiv.org/abs/2105.05233">Diffusion Models Beat GANs on Image Synthesis</a>. <em>NeurIPS 2021</em>.</li>
+</ul>
+<p><strong>Latent Diffusion &amp; Applications:</strong></p>
+<ul>
+<li>Rombach, R., Blattmann, A., Lorenz, D., Esser, P., &amp; Ommer, B. (2022). <a href="https://arxiv.org/abs/2112.10752">High-Resolution Image Synthesis with Latent Diffusion Models</a>. <em>CVPR 2022</em>. (Stable Diffusion)</li>
+<li>Ho, J., Saharia, C., Chan, W., Fleet, D. J., Norouzi, M., &amp; Salimans, T. (2022). <a href="https://arxiv.org/abs/2106.15282">Cascaded Diffusion Models for High Fidelity Image Generation</a>. <em>JMLR 2022</em>.</li>
+<li>Zhang, L., Rao, A., &amp; Agrawala, M. (2023). <a href="https://arxiv.org/abs/2302.05543">Adding Conditional Control to Text-to-Image Diffusion Models</a>. <em>ICCV 2023</em>. (ControlNet)</li>
+</ul>
+<p><strong>Educational Resources:</strong></p>
+<ul>
+<li>Computerphile. <a href="https://www.youtube.com/watch?v=NhdzGfB1q74">How U-Net Works (U-Net Explained)</a>. Video tutorial with excellent visual explanations of skip connections.</li>
+<li>LabML.ai. <a href="https://nn.labml.ai/diffusion/ddpm/unet.html">U-Net model for DDPM</a>. Annotated PyTorch implementation with detailed explanations of time embedding injection.</li>
+<li>LabML.ai. <a href="https://nn.labml.ai/diffusion/stable_diffusion/model/unet.html">U-Net for Stable Diffusion</a>. Annotated implementation showing ResBlock time conditioning.</li>
+<li>Hugging Face. <a href="https://huggingface.co/blog/annotated-diffusion">The Annotated Diffusion Model</a>. Step-by-step DDPM implementation guide.</li>
+<li>Hugging Face Diffusers. <a href="https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/embeddings.py">Embedding Implementations</a>. Source code showing CombinedTimestepLabelEmbeddings and other conditioning mechanisms.</li>
+<li>AI Summer. <a href="https://theaisummer.com/diffusion-models/">How Diffusion Models Work: The Math from Scratch</a>. Tutorial.</li>
+<li>AI Summer. <a href="https://theaisummer.com/skip-connections/">Intuitive Explanation of Skip Connections in Deep Learning</a>. Technical explainer.</li>
+<li>Analytics Vidhya. <a href="https://www.analyticsvidhya.com/blog/2021/08/all-you-need-to-know-about-skip-connections/">All You Need to Know About Skip Connections</a>. Blog post.</li>
+<li>Milvus AI. <a href="https://milvus.io/ai-quick-reference/how-are-sinusoidal-embeddings-implemented-in-diffusion-models">How are sinusoidal embeddings implemented in diffusion models?</a>. AI Quick Reference.</li>
+<li>Medium. <a href="https://medium.com/@preeti.gupta02.pg/understanding-skip-connections-in-convolutional-neural-networks-using-u-net-architecture-b31d90f9670a">Understanding Skip Connections in U-Net Architecture</a>. Blog post.</li>
+</ul>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p><a href="https://arxiv.org/abs/1505.04597">Ronneberger et al., 2015</a>↩︎</p></li>
+<li id="fn2"><p><a href="https://www.youtube.com/watch?v=NhdzGfB1q74">Computerphile, “U-Net Explained”</a>↩︎</p></li>
+<li id="fn3"><p><a href="https://theaisummer.com/skip-connections/">AI Summer, “Skip Connections”</a>↩︎</p></li>
+<li id="fn4"><p><a href="https://arxiv.org/abs/2006.11239">Ho et al., 2020</a>↩︎</p></li>
+<li id="fn5"><p><a href="https://milvus.io/ai-quick-reference/how-are-sinusoidal-embeddings-implemented-in-diffusion-models">Milvus AI, “Sinusoidal embeddings in diffusion”</a>↩︎</p></li>
+<li id="fn6"><p><a href="https://arxiv.org/html/2405.14126v1">arXiv, “Disappearance of Timestep Embedding”</a>↩︎</p></li>
+<li id="fn7"><p><a href="https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/embeddings.py">HuggingFace Diffusers, CombinedTimestepLabelEmbeddings</a>↩︎</p></li>
+<li id="fn8"><p><a href="https://nn.labml.ai/diffusion/ddpm/unet.html">LabML.ai, “U-Net for DDPM”</a>↩︎</p></li>
+<li id="fn9"><p><a href="https://nn.labml.ai/diffusion/stable_diffusion/model/unet.html">LabML.ai, “U-Net for Stable Diffusion”</a>↩︎</p></li>
+<li id="fn10"><p><a href="https://arxiv.org/abs/2112.10752">Rombach et al., 2022</a>↩︎</p></li>
+<li id="fn11"><p><a href="https://www.louisbouchard.ai/latent-diffusion-models/">Louis Bouchard, “Latent Diffusion Models Explained”</a>↩︎</p></li>
+<li id="fn12"><p><a href="https://arxiv.org/abs/2106.15282">Ho et al., 2022</a>↩︎</p></li>
+<li id="fn13"><p><a href="https://arxiv.org/abs/2302.05543">Zhang et al., 2023</a>↩︎</p></li>
+</ol>
+</section></div> ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>u-net</category>
+  <category>architecture</category>
+  <guid>https://layernorm.dev/posts/diffusion/9-unet/</guid>
+  <pubDate>Thu, 15 Jan 2026 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Diffusion &amp; Flow Matching Part 8: Guided Generative Models</title>
   <dc:creator>Hujie Wang</dc:creator>
