@@ -9,7 +9,7 @@
 <link>https://layernorm.dev/</link>
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
-<generator>quarto-1.8.26</generator>
+<generator>quarto-1.8.27</generator>
 <lastBuildDate>Sat, 20 Dec 2025 00:00:00 GMT</lastBuildDate>
 <item>
   <title>Diffusion &amp; Flow Matching Part 8: Guided Generative Models</title>
