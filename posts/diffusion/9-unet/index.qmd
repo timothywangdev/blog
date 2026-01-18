@@ -5,7 +5,7 @@ date: "2026-01-15"
 categories: [diffusion, flow-matching, generative-models, u-net, architecture]
 description: "U-Net architecture for learning vector fields and score functions in diffusion models"
 toc: true
-draft: true
+draft: false
 ---
 
 ::: {.callout-note appearance="simple"}
