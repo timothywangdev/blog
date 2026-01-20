@@ -422,7 +422,7 @@ window.Quarto = {
 </ul>
 </div>
 </div>
-<p>We’ve spent several posts deriving the mathematical theory of diffusion models: probability paths, flow matching objectives, and score functions. But here’s the practical question: <strong>how do we actually build a neural network that can denoise images at arbitrary timesteps?</strong></p>
+<p>We’ve spent several posts deriving the mathematical theory of diffusion models: <a href="../3-probability-paths/">probability paths</a>, <a href="../4-flow-matching-loss/">flow matching objectives</a>, and <a href="../6-score-functions/">score functions</a>. But here’s the practical question: <strong>how do we actually build a neural network that can denoise images at arbitrary timesteps?</strong></p>
 <p>This isn’t a standard image-to-image translation problem. The network needs to: 1. Handle the <em>same noisy image</em> differently depending on time <span class="math inline">\(t\)</span> (aggressive denoising at <span class="math inline">\(t \approx 0\)</span>, gentle refinement at <span class="math inline">\(t \approx 1\)</span>) 2. Preserve spatial structure while processing high-dimensional inputs (a 512×512 RGB image is 786,432 dimensions!) 3. Support flexible conditioning (text prompts, class labels, spatial masks)</p>
 <p>In this post, we’ll cover <strong>U-Net</strong> — the dominant architecture for diffusion models. For transformer-based approaches (DiT), see <a href="../10-diffusion-transformers/">Part 10: Diffusion Transformers</a>.</p>
 <section id="sec-learning-problem" class="level2">

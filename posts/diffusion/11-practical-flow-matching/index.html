@@ -7,10 +7,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Hujie Wang">
-<meta name="dcterms.date" content="2025-12-02">
-<meta name="description" content="How score functions connect ODEs to SDEs, and the elegant training trick that avoids intractable integrals">
+<meta name="dcterms.date" content="2025-01-20">
 
-<title>Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions – LayerNorm</title>
+<title>Diffusion &amp; Flow Matching Part 11: Building an Image Generator – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -329,13 +328,31 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#from-marginal-to-conditional-scores" id="toc-from-marginal-to-conditional-scores" class="nav-link active" data-scroll-target="#from-marginal-to-conditional-scores">From Marginal to Conditional Scores</a></li>
-  <li><a href="#proving-the-sde-extension-trick" id="toc-proving-the-sde-extension-trick" class="nav-link" data-scroll-target="#proving-the-sde-extension-trick">Proving the SDE Extension Trick</a>
+  <li><a href="#from-theory-to-practice" id="toc-from-theory-to-practice" class="nav-link active" data-scroll-target="#from-theory-to-practice">From Theory to Practice</a></li>
+  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
+  <li><a href="#loading-cifar-10" id="toc-loading-cifar-10" class="nav-link" data-scroll-target="#loading-cifar-10">Loading CIFAR-10</a></li>
+  <li><a href="#the-u-net-architecture" id="toc-the-u-net-architecture" class="nav-link" data-scroll-target="#the-u-net-architecture">The U-Net Architecture</a></li>
+  <li><a href="#flow-matching-the-core-idea" id="toc-flow-matching-the-core-idea" class="nav-link" data-scroll-target="#flow-matching-the-core-idea">Flow Matching: The Core Idea</a>
   <ul class="collapse">
-  <li><a href="#intuition-the-drunken-marching-band" id="toc-intuition-the-drunken-marching-band" class="nav-link" data-scroll-target="#intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</a></li>
+  <li><a href="#sec-gaussian-condot" id="toc-sec-gaussian-condot" class="nav-link" data-scroll-target="#sec-gaussian-condot">The Gaussian CondOT Path</a></li>
   </ul></li>
-  <li><a href="#how-training-actually-works" id="toc-how-training-actually-works" class="nav-link" data-scroll-target="#how-training-actually-works">How Training Actually Works</a></li>
-  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next</a></li>
+  <li><a href="#sec-cfg" id="toc-sec-cfg" class="nav-link" data-scroll-target="#sec-cfg">Classifier-Free Guidance</a>
+  <ul class="collapse">
+  <li><a href="#the-key-insight" id="toc-the-key-insight" class="nav-link" data-scroll-target="#the-key-insight">The Key Insight</a></li>
+  <li><a href="#training-label-dropout" id="toc-training-label-dropout" class="nav-link" data-scroll-target="#training-label-dropout">Training: Label Dropout</a></li>
+  <li><a href="#sampling-guided-velocity" id="toc-sampling-guided-velocity" class="nav-link" data-scroll-target="#sampling-guided-velocity">Sampling: Guided Velocity</a></li>
+  </ul></li>
+  <li><a href="#training" id="toc-training" class="nav-link" data-scroll-target="#training">Training</a>
+  <ul class="collapse">
+  <li><a href="#hyperparameters" id="toc-hyperparameters" class="nav-link" data-scroll-target="#hyperparameters">Hyperparameters</a></li>
+  </ul></li>
+  <li><a href="#sampling" id="toc-sampling" class="nav-link" data-scroll-target="#sampling">Sampling</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
+  <ul class="collapse">
+  <li><a href="#effect-of-guidance-scale" id="toc-effect-of-guidance-scale" class="nav-link" data-scroll-target="#effect-of-guidance-scale">Effect of Guidance Scale</a></li>
+  </ul></li>
+  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
     </div>
@@ -345,22 +362,16 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Diffusion &amp; Flow Matching Part 6: Conditional and Marginal Score Functions</h1>
+<h1 class="title">Diffusion &amp; Flow Matching Part 11: Building an Image Generator</h1>
   <div class="quarto-categories">
     <div class="quarto-category">diffusion</div>
     <div class="quarto-category">flow-matching</div>
     <div class="quarto-category">generative-models</div>
-    <div class="quarto-category">score-function</div>
-    <div class="quarto-category">score-matching</div>
-    <div class="quarto-category">fokker-planck</div>
+    <div class="quarto-category">tutorial</div>
+    <div class="quarto-category">cifar-10</div>
   </div>
   </div>
 
-<div>
-  <div class="description">
-    How score functions connect ODEs to SDEs, and the elegant training trick that avoids intractable integrals
-  </div>
-</div>
 
 
 <div class="quarto-title-meta">
@@ -375,7 +386,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 2, 2025</p>
+      <p class="date">January 20, 2025</p>
     </div>
   </div>
   
@@ -398,259 +409,339 @@ window.Quarto = {
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li>The <strong>score function</strong> <span class="math inline">\(\nabla \log p_t(x)\)</span> tells us which direction increases probability — it’s the key to extending flow matching to SDEs</li>
-<li>We can’t compute the marginal score directly, but we can express it as an expectation of <strong>conditional scores</strong> (which we <em>can</em> compute analytically)</li>
-<li>The magic of training: least-squares regression automatically computes the right expectation — no intractable integrals required!</li>
-<li><strong>Real-world impact</strong>: This is how Stable Diffusion, DALL-E, and Sora learn to denoise images</li>
+<li><strong>We build a working image generator from scratch</strong> using flow matching on CIFAR-10</li>
+<li><strong>Same techniques power production systems</strong> like Stable Diffusion, Flux, and Sora</li>
+<li><strong>Classifier-free guidance (CFG)</strong> lets us control what class to generate</li>
+<li><strong>Full code included</strong> — run it yourself on Google Colab</li>
 </ul>
 </div>
 </div>
-<p>In the previous post, we constructed the training target for flow matching models. Now we face a new challenge: <strong>how do we extend this to SDEs?</strong></p>
-<p>The answer involves a beautiful mathematical object called the <strong>score function</strong> — the gradient of log probability. This post shows how score functions connect ODEs to SDEs, and reveals the elegant trick that makes training tractable.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="score-function-vector-field.png" class="img-fluid figure-img"></p>
-<figcaption>The score function <span class="math inline">\(\nabla \log p(x)\)</span> is a vector field pointing toward high-probability regions. Arrows are longer where the gradient is steeper.</figcaption>
-</figure>
-</div>
-<p>Let’s start with the key theorem that bridges these two worlds.</p>
+<section id="from-theory-to-practice" class="level2">
+<h2 class="anchored" data-anchor-id="from-theory-to-practice">From Theory to Practice</h2>
+<p>In the previous posts, we built up the mathematical foundations of flow matching:</p>
+<ul>
+<li><a href="../2-flows/"><strong>Part 2</strong></a>: Vector fields and flows</li>
+<li><a href="../4-flow-matching-loss/"><strong>Part 4</strong></a>: The marginalization trick and CFM loss</li>
+<li><a href="../7-training/"><strong>Part 7</strong></a>: Training algorithms</li>
+<li><a href="../9-unet/"><strong>Part 9</strong></a>: U-Net architecture</li>
+</ul>
+<p>Now it’s time to put it all together. We’ll build a <strong>conditional image generator</strong> that can create CIFAR-10 images of any class — airplanes, cars, cats, dogs, and more.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Theorem: SDE Extension Trick
+<span class="screen-reader-only">Tip</span>Try it yourself
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Let <span class="math inline">\(u_t^{target}(x)\)</span> be the flow matching vector field that generates the probability path <span class="math inline">\(p_t\)</span> via the ODE (i.e., the ODE <span class="math inline">\(dX_t = u_t^{target}(X_t)dt\)</span> with <span class="math inline">\(X_0 \sim p_{init}\)</span> satisfies <span class="math inline">\(X_t \sim p_t\)</span>).</p>
-<p>For any diffusion coefficient <span class="math inline">\(\sigma_t \geq 0\)</span>, we can construct an <strong>SDE</strong> that follows the same probability path <span class="math inline">\(p_t\)</span>:</p>
-<p><span class="math display">\[
-\begin{aligned}
-dX_t &amp;= [u_t^{target}(X_t) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t)] \, dt + \sigma_t \, dW_t \\
-X_0 &amp;\sim p_{\text{init}} \\
-\implies X_t &amp;\sim p_t \quad \text{for all } 0 \leq t \leq 1
-\end{aligned}
-\]</span></p>
-<p>where <span class="math inline">\(\nabla \log p_t(x)\)</span> is the <strong>marginal score function</strong> of <span class="math inline">\(p_t\)</span>.</p>
-<p>The same identity holds if we replace the marginal probability <span class="math inline">\(p_t(x)\)</span> and vector field <span class="math inline">\(u_t^{target}(x)\)</span> with the conditional probability <span class="math inline">\(p_t(x | z)\)</span> and vector field <span class="math inline">\(u_t^{target}(x | z)\)</span>.</p>
-</div>
-</div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="ode-vs-sde-trajectories.png" class="img-fluid figure-img"></p>
-<figcaption>ODE trajectories are smooth and deterministic. SDE trajectories are noisy but — with the score correction — follow the same probability distribution.</figcaption>
+<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
+<figcaption>Open In Colab</figcaption>
 </figure>
 </div>
-<section id="from-marginal-to-conditional-scores" class="level2">
-<h2 class="anchored" data-anchor-id="from-marginal-to-conditional-scores">From Marginal to Conditional Scores</h2>
-<p>The theorem above requires the <strong>marginal score</strong> <span class="math inline">\(\nabla \log p_t(x)\)</span>. But there’s a problem: computing this directly requires integrating over all possible data points <span class="math inline">\(z\)</span> — computationally intractable!</p>
-<p>The solution is to express the marginal score as an expectation of <strong>conditional scores</strong> <span class="math inline">\(\nabla \log p_t(x|z)\)</span>, which we <em>can</em> compute analytically.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="marginal-vs-conditional.png" class="img-fluid figure-img"></p>
-<figcaption>The marginal score at <span class="math inline">\(x\)</span> is a weighted average of conditional scores from different data points <span class="math inline">\(z_1, z_2, z_3\)</span>.</figcaption>
-</figure>
+<p>The complete notebook runs in ~1-2 hours on a free Colab GPU.</p>
 </div>
-<p><span class="math display">\[
-\begin{aligned}
-\nabla \log p_t(x) &amp;= \frac{\nabla p_t(x)}{p_t(x)} &amp;&amp; \text{(chain rule)} \\[0.5em]
-&amp; = \frac{\nabla \int p_t(x | z) p_{data}(z) dz}{p_t(x)} &amp;&amp; \text{(marginalization)} \\[0.5em]
-&amp; = \frac{\int \nabla p_t(x | z) p_{data}(z) dz}{p_t(x)} &amp;&amp; \text{(Leibniz rule}^* \text{)} \\[0.5em]
-&amp; = \int \nabla \log p_t(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz &amp;&amp; \text{(see below)}
-\end{aligned}
-\]</span></p>
-<p><strong>Step-by-step reasoning:</strong></p>
-<ol type="1">
-<li><strong>Chain rule</strong>: <span class="math inline">\(\nabla \log f = \frac{\nabla f}{f}\)</span></li>
-<li><strong><a href="../3-probability-paths/">Marginalization</a></strong>: <span class="math inline">\(p_t(x) = \int p_t(x|z) p_{data}(z) dz\)</span> (law of total probability)</li>
-<li><strong>Leibniz rule</strong><span class="math inline">\(^*\)</span>: swap <span class="math inline">\(\nabla_x\)</span> and <span class="math inline">\(\int_z\)</span></li>
-<li><strong>Rewrite</strong> using <span class="math inline">\(\nabla p = p \nabla \log p\)</span> (derived below)</li>
-</ol>
-<p><span class="math inline">\(^*\)</span> Swapping <span class="math inline">\(\nabla\)</span> and <span class="math inline">\(\int\)</span> requires regularity conditions (the Leibniz integral rule). This holds when the integrand is smooth and its derivative is bounded by an integrable function — standard assumptions for “nice” probability densities.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+</div>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<p>We’ll use a few key libraries:</p>
+<ul>
+<li><strong>PyTorch</strong> and <strong>torchvision</strong> for deep learning and data</li>
+<li><strong>diffusers</strong> from Hugging Face for the <a href="../9-unet/">U-Net architecture</a> (the same library behind Stable Diffusion!)</li>
+<li><strong>torchdiffeq</strong> for ODE integration during sampling</li>
+</ul>
+<p>See the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation. The setup code is in the <code>setup</code> cell.</p>
+</section>
+<section id="loading-cifar-10" class="level2">
+<h2 class="anchored" data-anchor-id="loading-cifar-10">Loading CIFAR-10</h2>
+<p>CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.</p>
+<p>See the <code>data-loading</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for data loading code.</p>
+</section>
+<section id="the-u-net-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="the-u-net-architecture">The U-Net Architecture</h2>
+<p>We use <code>UNet2DModel</code> from the <code>diffusers</code> library. This is the <strong>same architecture</strong> that powers Stable Diffusion and other state-of-the-art models.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Derivation of the last step
+<span class="screen-reader-only">Tip</span>Why U-Net?
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The key is to rewrite <span class="math inline">\(\nabla p_t(x|z)\)</span> using the <strong>chain rule for logarithms</strong>.</p>
-<p><strong>Chain rule for <span class="math inline">\(\log\)</span>:</strong> If <span class="math inline">\(f(x) &gt; 0\)</span>, then <span class="math inline">\(\nabla_x \log f(x) = \frac{1}{f(x)} \nabla_x f(x)\)</span></p>
-<p>(This is the multivariate generalization of <span class="math inline">\(\frac{d}{dx}\log f = \frac{1}{f}\frac{df}{dx}\)</span> from single-variable calculus.)</p>
-<p>Rearranging: <span class="math display">\[
-\nabla p_t(x|z) = p_t(x|z) \cdot \nabla \log p_t(x|z)
-\]</span></p>
-<p>Substituting this into the integral: <span class="math display">\[
-\frac{\int \nabla p_t(x | z) p_{data}(z) dz}{p_t(x)} = \frac{\int p_t(x|z) \cdot \nabla \log p_t(x | z) \cdot p_{data}(z) dz}{p_t(x)}
-\]</span></p>
-<p>Since <span class="math inline">\(p_t(x)\)</span> doesn’t depend on <span class="math inline">\(z\)</span>, we can move it inside the integral: <span class="math display">\[
-= \int \nabla \log p_t(x | z) \cdot \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
-\]</span></p>
+<p>The U-Net’s encoder-decoder structure with skip connections is perfect for image generation:</p>
+<ul>
+<li><strong>Encoder</strong> captures global context at low resolutions</li>
+<li><strong>Decoder</strong> reconstructs fine details at high resolutions</li>
+<li><strong>Skip connections</strong> preserve spatial information that would otherwise be lost</li>
+</ul>
 </div>
 </div>
+<p>Key features of our model:</p>
+<ul>
+<li><strong>Time conditioning</strong>: Sinusoidal embeddings tell the network “where we are” in the flow (<span class="math inline">\(t \in [0,1]\)</span>)</li>
+<li><strong>Class conditioning</strong>: Embedding layer tells the network “what to generate” (airplane, cat, etc.)</li>
+<li><strong>Attention layers</strong>: Self-attention at lower resolutions for global context</li>
+</ul>
+<p>See the <code>unet-architecture</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the full U-Net configuration.</p>
+</section>
+<section id="flow-matching-the-core-idea" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching-the-core-idea">Flow Matching: The Core Idea</h2>
+<p>Recall from <a href="../4-flow-matching-loss/">Part 4</a> that flow matching learns a vector field to transport noise to data. Here’s the intuition:</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
-<p>Notice that <span class="math inline">\(\frac{p_t(x | z) p_{data}(z)}{p_t(x)} = p(z | x, t)\)</span> by <strong>Bayes’ theorem</strong> (since <span class="math inline">\(p_t(x,z) = p_t(x|z) p_{data}(z) = p(z|x,t) p_t(x)\)</span>), so this is an <strong>expectation over the posterior</strong>: <span class="math display">\[
-\nabla \log p_t(x) = \mathbb{E}_{z \sim p(z | x, t)}[\nabla \log p_t(x | z)]
-\]</span></p>
-<p>The conditional score function <span class="math inline">\(\nabla \log p_t(x | z)\)</span> is usually something we can calculate analytically (e.g., for Gaussian conditionals).</p>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Analogy: GPS Navigation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of flow matching like GPS navigation. You want to get from point A (noise) to point B (image). The network learns the <strong>velocity</strong> — which direction to move at each moment. Follow the velocity long enough, and you arrive at your destination.</p>
+</div>
+</div>
+<section id="sec-gaussian-condot" class="level3">
+<h3 class="anchored" data-anchor-id="sec-gaussian-condot">The Gaussian CondOT Path</h3>
+<p>We use the <strong>Gaussian CondOT path</strong> — the same formulation from <a href="../7-training/">Part 7</a>:</p>
+<p><span id="eq-gaussian-path"><span class="math display">\[x_t = \alpha_t \cdot z + \beta_t \cdot \epsilon \tag{1}\]</span></span></p>
+<p>where:</p>
+<ul>
+<li><span class="math inline">\(z \sim p_{\text{data}}\)</span> is a real image</li>
+<li><span class="math inline">\(\epsilon \sim \mathcal{N}(0, I)\)</span> is noise</li>
+<li><span class="math inline">\(\alpha_t = t\)</span> and <span class="math inline">\(\beta_t = 1 - t\)</span> (linear schedule)</li>
+</ul>
+<p>This gives us the <strong>linear interpolation</strong>:</p>
+<p><span id="eq-linear-path"><span class="math display">\[x_t = t \cdot z + (1-t) \cdot \epsilon \tag{2}\]</span></span></p>
+<div id="fig-linear-path" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="linear-path-diagram.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have pure noise <span class="math inline">\(\epsilon\)</span>; at t=1, the clean image <span class="math inline">\(z\)</span> emerges.
+</figcaption>
+</figure>
+</div>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Example: Gaussian Conditional Score Function
+<span class="screen-reader-only">Note</span>Boundary Conditions
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>For a Gaussian conditional <span class="math inline">\(p_t(x | z) = \mathcal{N}(x; \alpha_t z, \beta_t^2 I_d)\)</span> where <span class="math inline">\(x \in \mathbb{R}^d\)</span>, the conditional score function is: <span class="math display">\[
-\nabla_x \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
-\]</span></p>
-<p><strong>Derivation:</strong> The multivariate Gaussian PDF with mean <span class="math inline">\(\mu\)</span> and covariance <span class="math inline">\(\Sigma\)</span> is: <span class="math display">\[
-p(x) = \frac{1}{(2\pi)^{d/2} |\Sigma|^{1/2}} \exp\left(-\frac{1}{2}(x - \mu)^T \Sigma^{-1} (x - \mu)\right)
-\]</span></p>
-<p>For isotropic covariance <span class="math inline">\(\Sigma = \beta_t^2 I_d\)</span> (a diagonal matrix with <span class="math inline">\(\beta_t^2\)</span> on every diagonal):</p>
-<ul>
-<li><strong>Determinant:</strong> <span class="math inline">\(|\Sigma| = (\beta_t^2)^d\)</span> (product of diagonal entries), so <span class="math inline">\(|\Sigma|^{1/2} = \beta_t^d\)</span></li>
-<li><strong>Inverse:</strong> <span class="math inline">\((cI)^{-1} = \frac{1}{c}I\)</span>, so <span class="math inline">\(\Sigma^{-1} = \frac{1}{\beta_t^2}I_d\)</span></li>
-</ul>
-<p>Substituting into the Gaussian PDF: <span class="math display">\[
-p_t(x | z) = \frac{1}{(2\pi \beta_t^2)^{d/2}} \exp\left(-\frac{\|x - \alpha_t z\|^2}{2\beta_t^2}\right)
-\]</span></p>
-<p>Taking the log: <span class="math display">\[
-\log p_t(x | z) = \underbrace{-\frac{d}{2}\log(2\pi \beta_t^2)}_{\text{constant in } x} - \frac{\|x - \alpha_t z\|^2}{2\beta_t^2}
-\]</span></p>
-<p>Taking the gradient with respect to <span class="math inline">\(x \in \mathbb{R}^d\)</span> (the constant term vanishes): <span class="math display">\[
-\begin{aligned}
-\nabla_x \log p_t(x | z) &amp;= -\frac{1}{2\beta_t^2} \nabla_x \|x - \alpha_t z\|^2 &amp;&amp; \text{(gradient of constant is 0)} \\[0.5em]
-&amp;= -\frac{1}{2\beta_t^2} \cdot 2(x - \alpha_t z) &amp;&amp; \text{(chain rule: } \nabla_x \|x-a\|^2 = 2(x-a) \text{)} \\[0.5em]
-&amp;= -\frac{x - \alpha_t z}{\beta_t^2} &amp;&amp; \text{(cancel } \frac{1}{2} \cdot 2 = 1 \text{)}
-\end{aligned}
-\]</span></p>
-<p>(We used <span class="math inline">\(\nabla_x \|x - a\|^2 = 2(x - a)\)</span>, which follows from <span class="math inline">\(\|x-a\|^2 = (x-a)^T(x-a)\)</span>.)</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Time</th>
+<th><span class="math inline">\(\alpha_t\)</span></th>
+<th><span class="math inline">\(\beta_t\)</span></th>
+<th><span class="math inline">\(x_t\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(t = 0\)</span></td>
+<td>0</td>
+<td>1</td>
+<td><span class="math inline">\(\epsilon\)</span> (pure noise)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(t = 1\)</span></td>
+<td>1</td>
+<td>0</td>
+<td><span class="math inline">\(z\)</span> (clean data)</td>
+</tr>
+</tbody>
+</table>
+<p>The path starts at noise and ends at data — exactly what we need for generation!</p>
 </div>
 </div>
-</section>
-<section id="proving-the-sde-extension-trick" class="level2">
-<h2 class="anchored" data-anchor-id="proving-the-sde-extension-trick">Proving the SDE Extension Trick</h2>
-<p>Now that we understand conditional scores, let’s prove why the SDE Extension Trick works. The key tool is the <strong>Fokker-Planck equation</strong>, which extends the <a href="../4-flow-matching-loss/#continuity-equation">continuity equation (from Part 4)</a> to handle SDEs.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Theorem: Fokker-Planck Equation
+<span class="screen-reader-only">Tip</span>Why This Path?
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Consider an SDE: <span class="math display">\[
-\begin{aligned}
-&amp;X_0 \sim p_{\text{init}} \\
-&amp;dX_t = u_t(X_t) dt + \sigma_t dW_t \\
-\end{aligned}
-\]</span></p>
-<p>Then <span class="math inline">\(X_t \sim p_t(x)\)</span> for all <span class="math inline">\(0 \leq t \leq 1\)</span> iff the Fokker-Planck equation holds:</p>
-<p><span class="math display">\[
-\begin{aligned}
-\partial_t p_t(x) = -\nabla \cdot (p_t u_t)(x) + \frac{\sigma_t^2}{2} \Delta p_t(x) \\
-\end{aligned}
-\]</span></p>
-<p>where <span class="math inline">\(\Delta\)</span> is the Laplacian operator <span class="math display">\[
-\Delta w_t(x) = \nabla \cdot (\nabla w_t)(x)
-\]</span></p>
+<p>This is the <strong>optimal transport</strong> path — the straight line from noise to data. Compared to Gaussian variance-preserving paths used in DDPM (<a href="../5-diffusion-sde/">Part 5</a>):</p>
+<ol type="1">
+<li><strong>Constant vector field</strong>: <span class="math inline">\(u_t = z - \epsilon\)</span> doesn’t change with time</li>
+<li><strong>Straighter trajectories</strong>: Fewer ODE steps needed (10-50 vs 1000)</li>
+<li><strong>Same math</strong>: The <a href="../4-flow-matching-loss/">marginalization trick</a> still applies</li>
+</ol>
 </div>
 </div>
-<p>We know that <span class="math inline">\(u_t^{target}(x)\)</span> is a valid vector field that follows the probability path <span class="math inline">\(p_t\)</span> for the ODE, then it must satisfy the continuity equation:</p>
-<p><span class="math display">\[
-\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{target})(x)
-\]</span></p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<p><strong>The conditional vector field</strong> is remarkably simple. Taking the derivative of <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span>:</p>
+<p><span id="eq-cond-velocity"><span class="math display">\[u_t(x_t | z) = \frac{d x_t}{dt} = z - \epsilon \tag{3}\]</span></span></p>
+<p>This is <strong>constant in time</strong>! The direction from noise to image is simply their difference.</p>
+<p><strong>The CFM loss</strong> (from <a href="../4-flow-matching-loss/">Part 4</a>) trains the network to predict this vector field:</p>
+<p><span id="eq-cfm-loss"><span class="math display">\[\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right] \tag{4}\]</span></span></p>
+<p>The implementation is straightforward — sample <span class="math inline">\(t\)</span>, compute <span class="math inline">\(x_t\)</span>, and minimize MSE between predicted and target vector field. See the <code>flow-matching-loss</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation.</p>
+</section>
+</section>
+<section id="sec-cfg" class="level2">
+<h2 class="anchored" data-anchor-id="sec-cfg">Classifier-Free Guidance</h2>
+<p>We want to generate images of a <em>specific</em> class (e.g., “airplane”), not just any random image. <strong>Classifier-Free Guidance (CFG)</strong> is the standard solution, used in DALL-E, Stable Diffusion, and virtually all modern image generators.</p>
+<section id="the-key-insight" class="level3">
+<h3 class="anchored" data-anchor-id="the-key-insight">The Key Insight</h3>
+<p>Recall from <a href="../8-guidance/">Part 8</a> that for Gaussian paths, there’s a beautiful connection to Bayes’ rule. The <strong>conditional score</strong> decomposes as:</p>
+<p><span class="math display">\[\nabla_x \log p_t(x | y) = \underbrace{\nabla_x \log p_t(x)}_{\text{unconditional}} + \underbrace{\nabla_x \log p_t(y | x)}_{\text{classifier gradient}}\]</span></p>
+<p>This tells us: to generate class <span class="math inline">\(y\)</span>, take the unconditional direction and <strong>add</strong> the classifier gradient. CFG approximates this without training a separate classifier.</p>
+</section>
+<section id="training-label-dropout" class="level3">
+<h3 class="anchored" data-anchor-id="training-label-dropout">Training: Label Dropout</h3>
+<p>During training, we <strong>randomly drop class labels</strong> with probability <span class="math inline">\(\eta\)</span> (typically 10%). When dropped, we replace with a “null” class token. This teaches one model to do two things:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Input</th>
+<th>Model learns</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Real label <span class="math inline">\(y\)</span></td>
+<td>Conditional: <span class="math inline">\(u_t^\theta(x_t | y)\)</span></td>
+</tr>
+<tr class="even">
+<td>Null label <span class="math inline">\(\emptyset\)</span></td>
+<td>Unconditional: <span class="math inline">\(u_t^\theta(x_t | \emptyset)\)</span></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sampling-guided-velocity" class="level3">
+<h3 class="anchored" data-anchor-id="sampling-guided-velocity">Sampling: Guided Velocity</h3>
+<p>At inference, we <strong>blend</strong> both predictions:</p>
+<p><span id="eq-cfg"><span class="math display">\[\tilde{u}_t = u_t^\theta(x_t | \emptyset) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \emptyset)\bigr) \tag{5}\]</span></span></p>
+<p>Rearranging: <span class="math inline">\(\tilde{u}_t = (1-w) \cdot u_t^\theta(x_t | \emptyset) + w \cdot u_t^\theta(x_t | y)\)</span></p>
+<p>The <strong>guidance scale</strong> <span class="math inline">\(w\)</span> controls conditioning strength:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th><span class="math inline">\(w\)</span></th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>Pure unconditional (ignores class)</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Standard conditional</td>
+</tr>
+<tr class="odd">
+<td>2-4</td>
+<td>Typical range — sharper, more on-topic</td>
+</tr>
+<tr class="even">
+<td>&gt;8</td>
+<td>Oversaturated, artifacts</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Why can we start with the continuity equation?
+<span class="screen-reader-only">Warning</span>Common Pitfall
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>This may seem circular: we’re proving something about SDEs, but we start with the continuity equation (which is for ODEs). Here’s why this works:</p>
+<p>High guidance (<span class="math inline">\(w &gt; 8\)</span>) amplifies the class signal so much that images become oversaturated with artifacts. Start with <span class="math inline">\(w = 2\)</span> and adjust.</p>
+</div>
+</div>
+<p>See the <code>cfg-implementation</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the <code>CFGVelocityWrapper</code> class that applies this formula during sampling.</p>
+</section>
+</section>
+<section id="training" class="level2">
+<h2 class="anchored" data-anchor-id="training">Training</h2>
+<p>The training loop is straightforward:</p>
 <ol type="1">
-<li><strong>We already have</strong> a probability path <span class="math inline">\(p_t\)</span> and vector field <span class="math inline">\(u_t^{target}\)</span> from flow matching</li>
-<li><strong>By construction</strong>, <span class="math inline">\(u_t^{target}\)</span> was defined so that the ODE <span class="math inline">\(dX_t = u_t^{target}(X_t)dt\)</span> follows <span class="math inline">\(p_t\)</span></li>
-<li><strong>Therefore</strong>, the continuity equation above holds — this is just restating what we already know</li>
+<li>Sample a batch of images <span class="math inline">\(z\)</span> and labels <span class="math inline">\(y\)</span></li>
+<li>Compute the flow matching loss (<a href="#eq-cfm-loss" class="quarto-xref">4</a>)</li>
+<li>Backpropagate and update weights</li>
+<li>Repeat</li>
 </ol>
-<p>The question is: <strong>given this <span class="math inline">\(p_t\)</span>, can we find an SDE drift that also follows <span class="math inline">\(p_t\)</span>?</strong> We substitute the continuity equation (a known fact) into the Fokker-Planck equation and solve for what the SDE drift must be.</p>
-</div>
-</div>
-</div>
-<p>Our goal is to find an SDE drift term <span class="math inline">\(u_t^{sde}\)</span> that satisfies the Fokker-Planck equation.</p>
-<p>It turns out we can algebraically derive the SDE drift term <span class="math inline">\(u_t^{sde}\)</span> from the continuity equation:</p>
-<p><span class="math display">\[
-\begin{aligned}
-\partial_t p_t(x) &amp;= -\nabla \cdot (p_t u_t^{target})(x) &amp;&amp; \text{(continuity equation from Part 4)} \\[0.5em]
-&amp;= \underbrace{-\nabla \cdot (p_t u_t^{target})(x) - \frac{\sigma_t^2}{2} \Delta p_t(x)}_{\text{will become } -\nabla \cdot (p_t u_t^{sde})} + \underbrace{\frac{\sigma_t^2}{2} \Delta p_t(x)}_{\text{diffusion term}} &amp;&amp; \text{(add \&amp; subtract } \frac{\sigma_t^2}{2} \Delta p_t \text{)}
-\end{aligned}
-\]</span></p>
-<p>Note that we already have the last term in the Fokker-Planck equation, now we just need to manipulate the first two terms to match the Fokker-Planck equation.</p>
-<p><span class="math display">\[
-\begin{aligned}
-&amp;-\nabla \cdot (p_t u_t^{target})(x) - \frac{\sigma_t^2}{2} \Delta p_t(x) \\[0.5em]
-&amp;= -\nabla \cdot (p_t u_t^{target})(x) - \frac{\sigma_t^2}{2} \nabla \cdot (\nabla p_t)(x) &amp;&amp; \text{(Laplacian definition: } \Delta f = \nabla \cdot \nabla f \text{)} \\[0.5em]
-&amp;= -\nabla \cdot (p_t u_t^{target})(x) -  \nabla \cdot \left(\frac{\sigma_t^2}{2}\nabla p_t\right)(x) &amp;&amp; \text{(linearity: } \nabla \cdot (c \mathbf{v}) = c \nabla \cdot \mathbf{v} \text{)} \\[0.5em]
-&amp;=- \nabla \cdot \left (p_t u_t^{target} + \frac{\sigma_t^2}{2} \nabla p_t \right)(x) &amp;&amp; \text{(linearity: } \nabla \cdot \mathbf{u} + \nabla \cdot \mathbf{v} = \nabla \cdot (\mathbf{u} + \mathbf{v}) \text{)} \\[0.5em]
-&amp;=- \nabla \cdot \left (p_t u_t^{target} + \frac{\sigma_t^2}{2} p_t \nabla \log p_t \right)(x) &amp;&amp; \text{(chain rule: } \nabla p = p \nabla \log p \text{)} \\[0.5em]
-&amp;=- \nabla \cdot \left (p_t \big [u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t \big ] \right)(x) &amp;&amp; \text{(factor out } p_t \text{)}
-\end{aligned}
-\]</span></p>
-<p>Therefore, if we set <span class="math display">\[
-u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
-\]</span></p>
-<p>then it satisfies the Fokker-Planck equation.</p>
-<p><span class="math display">\[
-\partial_t p_t(x) = -\nabla \cdot (p_t u_t^{sde})(x) + \frac{\sigma_t^2}{2} \Delta p_t(x)
-\]</span></p>
-<p>To understand this intuitively, the SDE can be seen as follows: <span class="math display">\[
-\begin{aligned}
-dX_t = [\underbrace{u_t^{target}(X_t)}_{\text{ODE drift}} + \underbrace{\frac{\sigma_t^2}{2} \nabla \log p_t(X_t)}_{\text{score correction}}] dt + \underbrace{\sigma_t dW_t}_{\text{noise}}
-\end{aligned}
-\]</span></p>
-<section id="intuition-the-drunken-marching-band" class="level3">
-<h3 class="anchored" data-anchor-id="intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</h3>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="drunken-marching-band.png" class="img-fluid figure-img"></p>
-<figcaption>The sober band (ODE) keeps perfect formation. The drunk band without correction disperses. The drunk band with correction maintains formation despite individual randomness.</figcaption>
-</figure>
-</div>
-<p>Imagine a marching band trying to move from one end of a football field to the other in perfect formation.</p>
-<p><strong>The ODE (The Sober Band)</strong></p>
-<ul>
-<li>Every band member walks in a straight, precalculated line (<span class="math inline">\(u_t^{target}\)</span>)</li>
-<li>From the sky, the ‘A’ shape moves smoothly across the field (<span class="math inline">\(p_t\)</span>)</li>
-</ul>
-<p><strong>The SDE (The Drunken Band)</strong></p>
-<p>Now imagine we force every band member to be drunk. They stumble randomly (<span class="math inline">\(\sigma_t dW_t\)</span>).</p>
-<p>The problem: If they try to walk the same path as the sober band plus the stumbling, they will wander off. The ‘A’ shape will get fuzzy and eventually dissolve into a blob. The “probability path” is ruined.</p>
-<p><strong>The “Forcing” (The Drift Correction)</strong></p>
-<p>To fix this, we have to cheat. We have to “force” the SDE to match the ODE’s shape.</p>
-<ul>
-<li>The solution: We tell band members: “Since you are drunk and stumbling outward, you must strictly aim slightly inward to compensate”.</li>
-</ul>
-<p>If the stumbling pushes them away from the formation, we add an extra “Pull” (correction drift) pointing back towards the center of the formation.</p>
-<ul>
-<li>The result: individual band members are stumbling like crazy (stochastic), but because we added the extra “inward pull”, the macro shape (helicopter view, i.e., the probability distribution) looks identical to the sober band.</li>
-</ul>
+<p>See the <code>training-loop</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete training code.</p>
+<section id="hyperparameters" class="level3">
+<h3 class="anchored" data-anchor-id="hyperparameters">Hyperparameters</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 29%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Value</th>
+<th>Why?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Batch size</td>
+<td>128</td>
+<td>Fits on Colab GPU, provides stable gradients</td>
+</tr>
+<tr class="even">
+<td>Learning rate</td>
+<td>2e-4</td>
+<td>Standard for diffusion models</td>
+</tr>
+<tr class="odd">
+<td>Label dropout</td>
+<td>0.1</td>
+<td>10% enables CFG without hurting conditional quality</td>
+</tr>
+<tr class="even">
+<td>Epochs</td>
+<td>50+</td>
+<td>More is better; 100+ for publication-quality</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sampling" class="level2">
+<h2 class="anchored" data-anchor-id="sampling">Sampling</h2>
+<p>To generate images, we solve the ODE (recall <a href="../2-flows/">Part 2</a> — flows are generated by integrating vector fields):</p>
+<p><span id="eq-ode"><span class="math display">\[\frac{dx_t}{dt} = u_t^\theta(x_t | y) \tag{6}\]</span></span></p>
+<p>Starting from noise <span class="math inline">\(\epsilon\)</span> at <span class="math inline">\(t=0\)</span> and integrating to <span class="math inline">\(t=1\)</span>:</p>
+<ol type="1">
+<li>Sample initial noise <span class="math inline">\(\epsilon \sim \mathcal{N}(0, I)\)</span></li>
+<li>Use <code>torchdiffeq.odeint</code> to solve the ODE with the CFG-guided vector field</li>
+<li>The final state at <span class="math inline">\(t=1\)</span> is our generated image</li>
+</ol>
+<p>See the <code>sampling</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete sampling implementation.</p>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<p>After training, we can generate images for any CIFAR-10 class. See the <code>results</code> and <code>guidance-comparison</code> cells in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for generated samples and visualizations.</p>
+<section id="effect-of-guidance-scale" class="level3">
+<h3 class="anchored" data-anchor-id="effect-of-guidance-scale">Effect of Guidance Scale</h3>
+<p>Higher guidance scale <span class="math inline">\(w\)</span> means stronger class conditioning — but too high leads to artifacts. The notebook demonstrates this with samples at <span class="math inline">\(w \in \{1, 2, 4, 8\}\)</span>.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -661,97 +752,36 @@ dX_t = [\underbrace{u_t^{target}(X_t)}_{\text{ODE drift}} + \underbrace{\frac{\s
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We proved the <strong>SDE extension trick</strong>: given an ODE with drift <span class="math inline">\(u_t^{target}\)</span>, we can add arbitrary noise <span class="math inline">\(\sigma_t dW_t\)</span> while preserving the same probability path by correcting the drift: <span class="math display">\[
-u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
-\]</span></p>
-<p>The correction term <span class="math inline">\(\frac{\sigma_t^2}{2} \nabla \log p_t\)</span> points toward high-probability regions, counteracting the dispersion from noise (the “drunken marching band” needs to aim inward to maintain formation).</p>
-<p>For training, we showed that the marginal score equals an expectation of conditional scores: <span class="math display">\[
-\nabla \log p_t(x) = \mathbb{E}_{z \sim p(z|x,t)}[\nabla \log p_t(x|z)]
-\]</span></p>
-<p>The magic: <strong>least-squares regression computes this expectation automatically</strong> — we never need to evaluate the intractable posterior <span class="math inline">\(p(z|x,t)\)</span> explicitly.</p>
-</div>
-</div>
-</section>
-</section>
-<section id="how-training-actually-works" class="level2">
-<h2 class="anchored" data-anchor-id="how-training-actually-works">How Training Actually Works</h2>
-<p>You might wonder: “I know how to compute <span class="math inline">\(\nabla \log p_t(x|z)\)</span> for a given <span class="math inline">\(z\)</span>, but what about the other terms? How do I compute the expectation over <span class="math inline">\(p(z|x,t)\)</span>?”</p>
-<p>The key insight is that <strong>we don’t compute the integral explicitly</strong>. Instead, we use a clever sampling trick.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="training-trick.png" class="img-fluid figure-img"></p>
-<figcaption>The training trick: instead of the hard direction (finding which <span class="math inline">\(z\)</span> produced <span class="math inline">\(x\)</span>), we sample in the easy direction (adding noise to <span class="math inline">\(z\)</span> to get <span class="math inline">\(x\)</span>).</figcaption>
-</figure>
-</div>
-<div class="callout callout-style-simple callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>The Training Trick: Reverse the Sampling Order
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>The expectation is over the posterior <span class="math inline">\(p(z|x,t)\)</span>, which is hard to sample from. But we can <strong>reverse the sampling order</strong>:</p>
+<p>We built a complete conditional image generator using flow matching:</p>
 <ol type="1">
-<li>Sample <span class="math inline">\(z \sim p_{data}(z)\)</span> — pick a data point</li>
-<li>Sample <span class="math inline">\(x \sim p_t(x|z)\)</span> — generate its noisy version at time <span class="math inline">\(t\)</span></li>
-<li>Compute <span class="math inline">\(\nabla \log p_t(x|z)\)</span> — this we know analytically!</li>
-<li>Train <span class="math inline">\(s_\theta(x, t)\)</span> to predict this value</li>
+<li><strong>U-Net architecture</strong> from <code>diffusers</code> with time and class conditioning</li>
+<li><strong>Gaussian CondOT path</strong>: <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span> with constant vector field <span class="math inline">\(u_t = z - \epsilon\)</span> (<a href="#eq-linear-path" class="quarto-xref">2</a>, <a href="#eq-cond-velocity" class="quarto-xref">3</a>)</li>
+<li><strong>CFM loss</strong>: Train to predict the vector field (<a href="#eq-cfm-loss" class="quarto-xref">4</a>)</li>
+<li><strong>Classifier-free guidance</strong>: Blend conditional and unconditional predictions (<a href="#eq-cfg" class="quarto-xref">5</a>)</li>
+<li><strong>ODE sampling</strong>: Integrate from noise (<span class="math inline">\(t=0\)</span>) to image (<span class="math inline">\(t=1\)</span>) via <a href="#eq-ode" class="quarto-xref">6</a></li>
 </ol>
-<p><strong>Why this works:</strong> When we sample <span class="math inline">\((z, x)\)</span> this way, we’re sampling from the joint distribution <span class="math inline">\(p_t(x, z) = p_t(x|z) \cdot p_{data}(z)\)</span>.</p>
+<p>The same techniques — with larger models and datasets — power Stable Diffusion 3, Flux, DALL-E 3, and Sora. You now understand the core mechanics behind these systems!</p>
 </div>
 </div>
-<p>The training loss becomes: <span class="math display">\[
-\mathcal{L}(\theta) = \mathbb{E}_{t \sim \text{Uniform}[0,1]} \mathbb{E}_{z \sim p_{data}} \mathbb{E}_{x \sim p_t(x|z)} \left[ \|s_\theta(x, t) - \nabla_x \log p_t(x|z)\|^2 \right]
-\]</span></p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Why does this give us the marginal score?
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-9" class="callout-9-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>This is the <strong>score matching identity</strong>. When we minimize the loss above, the optimal <span class="math inline">\(s_\theta^*(x,t)\)</span> satisfies: <span class="math display">\[
-s_\theta^*(x, t) = \mathbb{E}_{z \sim p(z|x,t)}[\nabla \log p_t(x|z)] = \nabla \log p_t(x)
-\]</span></p>
-<p>Intuitively: for a given <span class="math inline">\(x\)</span>, different <span class="math inline">\(z\)</span>’s could have produced it. The network learns to average over all possible <span class="math inline">\(z\)</span>’s, weighted by how likely each <span class="math inline">\(z\)</span> was to produce this <span class="math inline">\(x\)</span> — which is exactly the posterior <span class="math inline">\(p(z|x,t)\)</span>.</p>
-<p><strong>But wait — where did the normalization <span class="math inline">\(p_t(x)\)</span> go?</strong></p>
-<p>Recall from earlier that the marginal score involves <span class="math inline">\(\frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span>. The denominator <span class="math inline">\(p_t(x)\)</span> is intractable (it’s a marginal over all possible <span class="math inline">\(z\)</span>’s). So how can training work without computing it?</p>
-<p>The answer lies in a fundamental property of <strong>least-squares regression</strong>:</p>
-<blockquote class="blockquote">
-<p>When you minimize squared error over samples from a joint distribution <span class="math inline">\(p(x, z)\)</span>, the optimal predictor <span class="math inline">\(f^*(x)\)</span> equals the <strong>conditional expectation</strong> <span class="math inline">\(\mathbb{E}_{z|x}[g(x,z)]\)</span>.</p>
-</blockquote>
-<p>Mathematically, if we minimize: <span class="math display">\[
-\min_f \mathbb{E}_{(x,z) \sim p(x,z)} \left[ \|f(x) - g(x,z)\|^2 \right]
-\]</span></p>
-<p>then the optimal solution is <span class="math inline">\(f^*(x) = \mathbb{E}_{z \sim p(z|x)}[g(x,z)]\)</span>.</p>
-<p><strong>Applied to our training:</strong></p>
-<ul>
-<li>We sample <span class="math inline">\((z, x)\)</span> from the joint <span class="math inline">\(p_t(x, z) = p_t(x|z) \cdot p_{data}(z)\)</span></li>
-<li>We regress <span class="math inline">\(s_\theta(x, t)\)</span> onto <span class="math inline">\(g(x,z) = \nabla \log p_t(x|z)\)</span></li>
-<li>The optimal <span class="math inline">\(s_\theta^*\)</span> automatically becomes <span class="math inline">\(\mathbb{E}_{z|x}[\nabla \log p_t(x|z)]\)</span></li>
-</ul>
-<p>The posterior weighting <span class="math inline">\(p(z|x,t) = \frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span> emerges implicitly from the <strong>sampling frequencies</strong>: data points <span class="math inline">\(z\)</span> that are more likely to produce a given <span class="math inline">\(x\)</span> will appear more often in our training batches at that <span class="math inline">\(x\)</span>. The neural network learns this weighting through gradient descent — we never need to compute <span class="math inline">\(p_t(x)\)</span> explicitly!</p>
-</div>
-</div>
-</div>
-<p><strong>In practice, you never compute <span class="math inline">\(\frac{p_t(x|z) p_{data}(z)}{p_t(x)}\)</span></strong> — you just sample and regress! The neural network implicitly learns to marginalize over <span class="math inline">\(z\)</span>.</p>
+</section>
 </section>
 <section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next</h2>
-<p>We’ve established the theoretical foundation: we know <em>what</em> to train (the score function) and <em>why</em> the training procedure works (least-squares regression gives us the conditional expectation).</p>
-<p>In the next two posts, we’ll dive into the practical details:</p>
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>This concludes our diffusion &amp; flow matching series! Here are some extensions to explore:</p>
 <ul>
-<li><strong><a href="../7-training/">Part 7</a></strong>: The complete training algorithm — how to implement score matching in practice</li>
-<li><strong><a href="../8-guidance/">Part 8</a></strong>: Sampling and inference — how to generate new samples from the trained model</li>
+<li><strong>Diffusion Transformers (DiT)</strong>: Replace U-Net with a transformer (<a href="../10-diffusion-transformers/">Part 10</a>)</li>
+<li><strong>Latent diffusion</strong>: Work in compressed latent space for higher resolution</li>
+<li><strong>Text conditioning</strong>: Replace class labels with text embeddings (CLIP)</li>
+<li><strong>Better samplers</strong>: DPM-Solver, Euler ancestral, etc.</li>
 </ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li><p>Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2022). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>.</p></li>
+<li><p>Ho, J., &amp; Salimans, T. (2022). <a href="https://arxiv.org/abs/2207.12598">Classifier-Free Diffusion Guidance</a>. <em>NeurIPS 2022 Workshop</em>.</p></li>
+<li><p>Tong, A., et al.&nbsp;(2024). <a href="https://arxiv.org/abs/2412.06264">Flow Matching Guide and Code</a>. <em>Meta AI</em>.</p></li>
+</ol>
 
 
 </section>

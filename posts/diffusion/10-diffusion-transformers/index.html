@@ -583,7 +583,7 @@ Figure&nbsp;1: Vision Transformer (ViT) architecture from Dosovitskiy et al.&nbs
 <section id="the-three-key-adaptations" class="level3">
 <h3 class="anchored" data-anchor-id="the-three-key-adaptations">The Three Key Adaptations</h3>
 <p><strong>1. Remove [CLS] token, add decoder</strong> - ViT: Uses [CLS] token for classification - DiT: Uses all patch tokens, decodes back to image via linear layer</p>
-<p><strong>2. Operate in latent space</strong> - ViT: Works on raw pixels (224×224 is manageable) - DiT: Works on VAE latents (raw 512×512 would be 65,536 tokens!)</p>
+<p><strong>2. Operate in latent space</strong> (see <a href="../9-unet/#sec-modern">Latent Diffusion in Part 9</a>) - ViT: Works on raw pixels (224×224 is manageable) - DiT: Works on VAE latents (raw 512×512 would be 65,536 tokens!)</p>
 <p><strong>3. Add conditioning mechanism (AdaLN)</strong> - ViT: No timestep/class conditioning - DiT: Must inject <span class="math inline">\(t\)</span> and <span class="math inline">\(y\)</span> into every block</p>
 </section>
 </section>
@@ -843,7 +843,7 @@ Figure&nbsp;4: AdaLN mechanism: timestep <span class="math inline">\(t\)</span> 
 </tr>
 </tbody>
 </table>
-<p><strong>Note on text conditioning</strong>: For free-form text prompts (not class labels), cross-attention works better than AdaLN. This is what Stable Diffusion uses — the text encoder outputs a sequence of embeddings, and each DiT block cross-attends to them.</p>
+<p><strong>Note on text conditioning</strong>: For free-form text prompts (not class labels), cross-attention works better than AdaLN. This is what Stable Diffusion uses — the text encoder outputs a sequence of embeddings, and each DiT block cross-attends to them. See <a href="../9-unet/">Part 9</a> for more on how conditioning flows through the network.</p>
 </section>
 </section>
 <section id="sec-comparison" class="level2">

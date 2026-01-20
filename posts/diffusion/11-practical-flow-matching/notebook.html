@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Building an Image Generator with Flow Matching – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../favicon.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#loading-cifar-10" id="toc-loading-cifar-10" class="nav-link active" data-scroll-target="#loading-cifar-10">1. Loading CIFAR-10</a></li>
+  <li><a href="#u-net-architecture-using-diffusers" id="toc-u-net-architecture-using-diffusers" class="nav-link" data-scroll-target="#u-net-architecture-using-diffusers">2. U-Net Architecture (using diffusers)</a></li>
+  <li><a href="#classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation" id="toc-classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation" class="nav-link" data-scroll-target="#classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation">4. Classifier-Free Guidance<strong>Problem</strong>: We want to generate images of a <em>specific</em> class, not just any random image.<strong>Solution</strong>: Classifier-Free Guidance (CFG) amplifies the “class signal” during sampling.During training, we randomly drop class labels (replacing with null class). This teaches the model both:- Conditional generation: <span class="math inline">\(u_t^\theta(x_t | y)\)</span> – generate class <span class="math inline">\(y\)</span>- Unconditional generation: <span class="math inline">\(u_t^\theta(x_t | \varnothing)\)</span> – generate any classDuring sampling, we blend both predictions:<span class="math display">\[\tilde{u}_t^\theta(x_t | y) = u_t^\theta(x_t | \varnothing) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \varnothing)\bigr)\]</span>Where <span class="math inline">\(w\)</span> is the <strong>guidance scale</strong>:- <span class="math inline">\(w = 1\)</span>: Standard conditional generation- <span class="math inline">\(w &gt; 1\)</span>: Amplified class signal (stronger conditioning)- <span class="math inline">\(w = 0\)</span>: Pure unconditional generation</a></li>
+  <li><a href="#training-loop" id="toc-training-loop" class="nav-link" data-scroll-target="#training-loop">5. Training Loop</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">7. Results</a></li>
+  <li><a href="#summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" id="toc-summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" class="nav-link" data-scroll-target="#summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality">SummaryWe built a conditional image generator using flow matching:1. <strong>U-Net architecture</strong> (from <code>diffusers</code>) with time and class conditioning2. <strong>Gaussian CondOT path</strong>: <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span> where <span class="math inline">\(z\)</span> is data, <span class="math inline">\(\epsilon\)</span> is noise3. <strong>Flow matching loss</strong>: Learn to predict the vector field $u_t^(x_t) z - <span class="math inline">\(4. **Classifier-free guidance**: Amplify class signal during sampling5. **ODE sampling**: Integrate from noise (\)</span>t=0<span class="math inline">\() to image (\)</span>t=1$) using <code>torchdiffeq</code>### Key takeaways:- Flow matching is conceptually simple: just learn the direction from noise to data- The same architecture powers Stable Diffusion, Flux, and other SOTA models- CFG is crucial for high-quality conditional generation### Extensions to try:- Use a DiT (Diffusion Transformer) instead of U-Net (see Part 10)- Train on larger datasets (ImageNet, LAION)- Try different ODE solvers (adaptive stepping with <code>dopri5</code>)- Add EMA (exponential moving average) for better sample quality</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Building an Image Generator with Flow Matching</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><cell_type>raw</cell_type>—title: “Flow Matching Image Generator - CIFAR-10”author: “Hujie Wang”format: html—</p>
+<p>This notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
+<figcaption>Open In Colab</figcaption>
+</figure>
+</div>
+<div id="setup" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies (uncomment if running in Colab)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># !pip install torch torchvision diffusers torchdiffeq tqdm matplotlib</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Core deep learning</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn <span class="im">as</span> nn</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch.nn.functional <span class="im">as</span> F</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> DataLoader</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co"># U-Net from diffusers</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> diffusers <span class="im">import</span> UNet2DModel</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Data and visualization</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torchvision</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torchvision.transforms <span class="im">as</span> transforms</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ODE solver for sampling</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torchdiffeq <span class="im">import</span> odeint</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co"># Progress bar</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tqdm.auto <span class="im">import</span> tqdm</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Set device</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>device <span class="op">=</span> torch.device(<span class="st">'cuda'</span> <span class="cf">if</span> torch.cuda.is_available() <span class="cf">else</span> <span class="st">'cpu'</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Using device: </span><span class="sc">{</span>device<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="loading-cifar-10" class="level2">
+<h2 class="anchored" data-anchor-id="loading-cifar-10">1. Loading CIFAR-10</h2>
+<div id="data-loading" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># CIFAR-10 class names for reference</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>CIFAR10_CLASSES <span class="op">=</span> [</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">'airplane'</span>, <span class="st">'automobile'</span>, <span class="st">'bird'</span>, <span class="st">'cat'</span>, <span class="st">'deer'</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">'dog'</span>, <span class="st">'frog'</span>, <span class="st">'horse'</span>, <span class="st">'ship'</span>, <span class="st">'truck'</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>NUM_CLASSES <span class="op">=</span> <span class="bu">len</span>(CIFAR10_CLASSES)  <span class="co"># 10</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Transform: convert to tensor and normalize to [-1, 1]</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Why [-1, 1]? Centering around zero helps with stable training</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>transform <span class="op">=</span> transforms.Compose([</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    transforms.ToTensor(),  <span class="co"># [0, 255] -&gt; [0, 1]</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    transforms.Normalize((<span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>), (<span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>))  <span class="co"># [0, 1] -&gt; [-1, 1]</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>])</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Download and load CIFAR-10</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>train_dataset <span class="op">=</span> torchvision.datasets.CIFAR10(</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    root<span class="op">=</span><span class="st">'./data'</span>, train<span class="op">=</span><span class="va">True</span>, download<span class="op">=</span><span class="va">True</span>, transform<span class="op">=</span>transform</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co"># DataLoader with shuffling</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>batch_size <span class="op">=</span> <span class="dv">128</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>train_loader <span class="op">=</span> DataLoader(</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    train_dataset, batch_size<span class="op">=</span>batch_size, shuffle<span class="op">=</span><span class="va">True</span>, num_workers<span class="op">=</span><span class="dv">2</span>, pin_memory<span class="op">=</span><span class="va">True</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Dataset size: </span><span class="sc">{</span><span class="bu">len</span>(train_dataset)<span class="sc">}</span><span class="ss"> images"</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Image shape: </span><span class="sc">{</span>train_dataset[<span class="dv">0</span>][<span class="dv">0</span>]<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Number of classes: </span><span class="sc">{</span>NUM_CLASSES<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>100%|██████████| 170M/170M [00:03&lt;00:00, 47.3MB/s] 
+/home/wearaway/projects/blog/.venv/lib/python3.12/site-packages/torchvision/datasets/cifar.py:83: VisibleDeprecationWarning: dtype(): align should be passed as Python or NumPy boolean but got `align=0`. Did you mean to pass a tuple to create a subarray type? (Deprecated NumPy 2.4)
+  entry = pickle.load(f, encoding="latin1")</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Dataset size: 50000 images
+Image shape: torch.Size([3, 32, 32])
+Number of classes: 10</code></pre>
+</div>
+</div>
+<div id="cell-6" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize some training images</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_images(images, labels<span class="op">=</span><span class="va">None</span>, nrow<span class="op">=</span><span class="dv">8</span>, title<span class="op">=</span><span class="st">'Images'</span>):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Display a grid of images."""</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Denormalize from [-1, 1] to [0, 1]</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    images <span class="op">=</span> (images <span class="op">+</span> <span class="dv">1</span>) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    images <span class="op">=</span> images.clamp(<span class="dv">0</span>, <span class="dv">1</span>)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    grid <span class="op">=</span> torchvision.utils.make_grid(images, nrow<span class="op">=</span>nrow, padding<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    plt.figure(figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">6</span>))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    plt.imshow(grid.permute(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>).cpu())</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    plt.axis(<span class="st">'off'</span>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    plt.title(title)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    plt.show()</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Show a batch</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>images, labels <span class="op">=</span> <span class="bu">next</span>(<span class="bu">iter</span>(train_loader))</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>show_images(images[:<span class="dv">16</span>], nrow<span class="op">=</span><span class="dv">8</span>, title<span class="op">=</span><span class="st">'CIFAR-10 Training Samples'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/cell-4-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="u-net-architecture-using-diffusers" class="level2">
+<h2 class="anchored" data-anchor-id="u-net-architecture-using-diffusers">2. U-Net Architecture (using diffusers)</h2>
+<p>We use <code>UNet2DModel</code> from the <code>diffusers</code> library. This is the same architecture used in Stable Diffusion and other state-of-the-art models.</p>
+<p>Key features: - <strong>Time conditioning</strong>: Built-in sinusoidal time embeddings - <strong>Class conditioning</strong>: We add class embeddings via the <code>class_labels</code> parameter - <strong>Attention layers</strong>: Self-attention at lower resolutions for global context - <strong>Skip connections</strong>: Encoder-decoder architecture with skip connections</p>
+<div id="unet-architecture" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create U-Net model from diffusers# Note: diffusers expects time in range [0, num_train_timesteps], not [0, 1]# We'll scale our t accordinglymodel = UNet2DModel(    sample_size=32,           # Image size (32x32 for CIFAR-10)    in_channels=3,            # RGB images    out_channels=3,           # Output vector field has same shape as input    layers_per_block=2,       # ResNet blocks per resolution level    block_out_channels=(64, 128, 256, 256),  # Channels at each resolution    down_block_types=(        "DownBlock2D",        # 32 -&gt; 16        "DownBlock2D",        # 16 -&gt; 8        "AttnDownBlock2D",    # 8 -&gt; 4 (with attention)        "DownBlock2D",        # 4 -&gt; 2    ),    up_block_types=(        "UpBlock2D",          # 2 -&gt; 4        "AttnUpBlock2D",      # 4 -&gt; 8 (with attention)        "UpBlock2D",          # 8 -&gt; 16        "UpBlock2D",          # 16 -&gt; 32    ),    # Class conditioning    num_class_embeds=NUM_CLASSES + 1,  # +1 for null class (used in CFG))model = model.to(device)print(f"Model parameters: {sum(p.numel() for p in model.parameters()):,}")# Test forward pass# Note: diffusers UNet expects timestep as integer, we'll multiply our t by 1000x = torch.randn(2, 3, 32, 32, device=device)t = torch.randint(0, 1000, (2,), device=device)  # timestep as integerc = torch.randint(0, NUM_CLASSES, (2,), device=device)out = model(x, t, class_labels=c).sampleprint(f"Input shape: {x.shape} -&gt; Output shape: {out.shape}")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p><cell_type>markdown</cell_type>## 3. Flow Matching LossThe key insight of flow matching: we learn a vector field that transports noise to data along straight paths.<strong>The probability path (Gaussian CondOT):</strong> <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span>- <span class="math inline">\(z \sim p_{\text{data}}\)</span> is a real image- <span class="math inline">\(\epsilon \sim \mathcal{N}(0, I)\)</span> is noise- At <span class="math inline">\(t=0\)</span>: pure noise <span class="math inline">\(\epsilon\)</span>- At <span class="math inline">\(t=1\)</span>: real image <span class="math inline">\(z\)</span><strong>The conditional vector field:</strong> <span class="math inline">\(u_t(x_t | z) = z - \epsilon\)</span>- This is constant in time! The direction from noise to image is simply their difference.<strong>The CFM loss:</strong> Train the network to predict this vector field:<span class="math display">\[\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right]\]</span></p>
+<div id="flow-matching-loss" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> flow_matching_loss(model, z, class_label, label_dropout<span class="op">=</span><span class="fl">0.1</span>, num_timesteps<span class="op">=</span><span class="dv">1000</span>):    <span class="st">"""Compute the Conditional Flow Matching loss.        Args:        model: The U-Net that predicts vector fields        z: Real images (data) from the dataset [B, C, H, W]        class_label: Class labels [B] (0 to NUM_CLASSES-1)        label_dropout: Probability of dropping class label (for CFG)        num_timesteps: Scale factor for time (diffusers convention)            Returns:        Scalar loss value    """</span>    batch_size <span class="op">=</span> z.shape[<span class="dv">0</span>]    device <span class="op">=</span> z.device        <span class="co"># Sample random time t ~ Uniform[0, 1]    t = torch.rand(batch_size, device=device)        # Sample noise ε ~ N(0, I)    eps = torch.randn_like(z)        # Compute x_t = t*z + (1-t)*ε (Gaussian CondOT path)    # Reshape t for broadcasting: [B] -&gt; [B, 1, 1, 1]    t_expand = t[:, None, None, None]    xt = t_expand * z + (1 - t_expand) * eps        # Target vector field: u_t(x|z) = z - ε (constant in time!)    target_vector_field = z - eps        # Apply label dropout for classifier-free guidance    # Replace some labels with the null class (NUM_CLASSES = 10)    null_class = NUM_CLASSES  # = 10    dropout_mask = torch.rand(batch_size, device=device) &lt; label_dropout    class_label_dropped = torch.where(dropout_mask, null_class, class_label)        # Convert t from [0, 1] to integer timesteps for diffusers    # diffusers expects timesteps in [0, num_timesteps)    timesteps = (t * num_timesteps).long().clamp(0, num_timesteps - 1)        # Predict vector field    predicted_vector_field = model(xt, timesteps, class_labels=class_label_dropped).sample        # MSE loss    loss = F.mse_loss(predicted_vector_field, target_vector_field)        return loss</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation" class="level2">
+<h2 class="anchored" data-anchor-id="classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation">4. Classifier-Free Guidance<strong>Problem</strong>: We want to generate images of a <em>specific</em> class, not just any random image.<strong>Solution</strong>: Classifier-Free Guidance (CFG) amplifies the “class signal” during sampling.During training, we randomly drop class labels (replacing with null class). This teaches the model both:- Conditional generation: <span class="math inline">\(u_t^\theta(x_t | y)\)</span> – generate class <span class="math inline">\(y\)</span>- Unconditional generation: <span class="math inline">\(u_t^\theta(x_t | \varnothing)\)</span> – generate any classDuring sampling, we blend both predictions:<span class="math display">\[\tilde{u}_t^\theta(x_t | y) = u_t^\theta(x_t | \varnothing) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \varnothing)\bigr)\]</span>Where <span class="math inline">\(w\)</span> is the <strong>guidance scale</strong>:- <span class="math inline">\(w = 1\)</span>: Standard conditional generation- <span class="math inline">\(w &gt; 1\)</span>: Amplified class signal (stronger conditioning)- <span class="math inline">\(w = 0\)</span>: Pure unconditional generation</h2>
+<div id="cfg-implementation" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> CFGVectorFieldWrapper(nn.Module):    <span class="st">"""Wraps the U-Net to apply classifier-free guidance during sampling.        CFG formula: u_tilde = u_t(x|varnothing) + w * (u_t(x|y) - u_t(x|varnothing))    """</span>        <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, model, guidance_scale<span class="op">=</span><span class="fl">2.0</span>, num_timesteps<span class="op">=</span><span class="dv">1000</span>):        <span class="bu">super</span>().<span class="fu">__init__</span>()        <span class="va">self</span>.model <span class="op">=</span> model        <span class="va">self</span>.guidance_scale <span class="op">=</span> guidance_scale        <span class="va">self</span>.num_timesteps <span class="op">=</span> num_timesteps        <span class="va">self</span>.class_label <span class="op">=</span> <span class="va">None</span>  <span class="co"># Set before sampling        def forward(self, t, x):        """Compute guided vector field for ODE solver.                Note: torchdiffeq expects (t, x) order, where t is scalar in [0, 1].        """        batch_size = x.shape[0]        device = x.device                # Convert scalar t to batch of integer timesteps        timestep = int(t.item() * self.num_timesteps)        timestep = min(timestep, self.num_timesteps - 1)        timesteps = torch.full((batch_size,), timestep, device=device, dtype=torch.long)                # Null class for unconditional prediction        null_class = torch.full((batch_size,), NUM_CLASSES, device=device, dtype=torch.long)                # Get both conditional and unconditional predictions        u_uncond = self.model(x, timesteps, class_labels=null_class).sample        u_cond = self.model(x, timesteps, class_labels=self.class_label).sample                # Apply CFG formula: u_tilde = u_uncond + w * (u_cond - u_uncond)        u_guided = u_uncond + self.guidance_scale * (u_cond - u_uncond)                return u_guided</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="training-loop" class="level2">
+<h2 class="anchored" data-anchor-id="training-loop">5. Training Loop</h2>
+<div id="training-loop" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train(model, train_loader, epochs<span class="op">=</span><span class="dv">50</span>, lr<span class="op">=</span><span class="fl">2e-4</span>, label_dropout<span class="op">=</span><span class="fl">0.1</span>):    <span class="st">"""Train the flow matching model.        Args:        model: U-Net model        train_loader: DataLoader for training images        epochs: Number of training epochs        lr: Learning rate        label_dropout: Probability of dropping class labels for CFG            Returns:        List of training losses    """</span>    optimizer <span class="op">=</span> torch.optim.AdamW(model.parameters(), lr<span class="op">=</span>lr)    scheduler <span class="op">=</span> torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max<span class="op">=</span>epochs)        losses <span class="op">=</span> []    model.train()        <span class="cf">for</span> epoch <span class="kw">in</span> <span class="bu">range</span>(epochs):        epoch_loss <span class="op">=</span> <span class="dv">0</span>        pbar <span class="op">=</span> tqdm(train_loader, desc<span class="op">=</span><span class="ss">f"Epoch </span><span class="sc">{</span>epoch<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">/</span><span class="sc">{</span>epochs<span class="sc">}</span><span class="ss">"</span>)                <span class="cf">for</span> z, y <span class="kw">in</span> pbar:  <span class="co"># z = data, y = class labels            z = z.to(device)            y = y.to(device)                        optimizer.zero_grad()            loss = flow_matching_loss(model, z, y, label_dropout=label_dropout)            loss.backward()                        # Gradient clipping for stability            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)                        optimizer.step()                        epoch_loss += loss.item()            pbar.set_postfix({'loss': f'{loss.item():.4f}'})                scheduler.step()        avg_loss = epoch_loss / len(train_loader)        losses.append(avg_loss)        print(f"Epoch {epoch+1}/{epochs} - Loss: {avg_loss:.4f}")        return losses# HyperparametersEPOCHS = 50  # Increase for better results (100+ recommended)LEARNING_RATE = 2e-4LABEL_DROPOUT = 0.1# Train the modellosses = train(    model, train_loader,    epochs=EPOCHS,    lr=LEARNING_RATE,    label_dropout=LABEL_DROPOUT)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="cell-training-curve" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot training loss</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">4</span>))</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>plt.plot(losses)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Epoch'</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'Loss'</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Training Loss'</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>plt.grid(<span class="va">True</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/training-curve-output-1.png" id="training-curve" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><cell_type>markdown</cell_type>## 6. SamplingTo generate images, we:1. Start with pure noise <span class="math inline">\(\epsilon\)</span> at $t=0$2. Solve the ODE: $ = u_t^(x_t | y)$3. Arrive at a generated image at <span class="math inline">\(t=1\)</span>We use <code>torchdiffeq.odeint</code> to numerically solve this ODE.</p>
+<div id="sampling" class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="at">@torch.no_grad</span>()<span class="kw">def</span> sample(model, num_samples, class_label, guidance_scale<span class="op">=</span><span class="fl">2.0</span>, num_steps<span class="op">=</span><span class="dv">50</span>):    <span class="st">"""Generate samples using ODE integration.        Args:        model: Trained U-Net model        num_samples: Number of images to generate        class_label: Class to generate (0-9 for CIFAR-10)        guidance_scale: CFG guidance scale (higher = stronger conditioning)        num_steps: Number of ODE solver steps            Returns:        Generated images [num_samples, 3, 32, 32]    """</span>    model.<span class="bu">eval</span>()        <span class="co"># Wrap model for CFG    vector_field_fn = CFGVectorFieldWrapper(model, guidance_scale=guidance_scale)    vector_field_fn.class_label = torch.full((num_samples,), class_label, device=device, dtype=torch.long)        # Start from noise ε at t=0    eps = torch.randn(num_samples, 3, 32, 32, device=device)        # Time points for ODE solver (from 0 to 1)    t_span = torch.linspace(0, 1, num_steps, device=device)        # Solve ODE: dx/dt = u(x, t)    # odeint returns trajectory at all time points, we want the final one    trajectory = odeint(        vector_field_fn,        eps,        t_span,        method='euler',  # Simple Euler method; can use 'dopri5' for adaptive stepping    )        # Get final samples at t=1    samples = trajectory[-1]        # Clamp to valid range    samples = samples.clamp(-1, 1)        return samplesdef display_samples(samples, title='Generated Images', nrow=8):    """Display generated samples in a grid."""    # Denormalize from [-1, 1] to [0, 1]    samples = (samples + 1) / 2    samples = samples.clamp(0, 1)        grid = torchvision.utils.make_grid(samples, nrow=nrow, padding=2)    plt.figure(figsize=(12, 6))    plt.imshow(grid.permute(1, 2, 0).cpu())    plt.axis('off')    plt.title(title)    plt.show()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">7. Results</h2>
+<p>Let’s generate images for each CIFAR-10 class and see the effect of different guidance scales.</p>
+<div id="results" class="cell" data-execution_count="10">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate samples for each class</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Generating samples for each class..."</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> class_idx, class_name <span class="kw">in</span> <span class="bu">enumerate</span>(CIFAR10_CLASSES):</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    samples <span class="op">=</span> sample(model, num_samples<span class="op">=</span><span class="dv">16</span>, class_label<span class="op">=</span>class_idx, guidance_scale<span class="op">=</span><span class="fl">2.0</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    display_samples(samples, title<span class="op">=</span><span class="ss">f'Generated: </span><span class="sc">{</span>class_name<span class="sc">}</span><span class="ss">'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Generating samples for each class...</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-2.png" id="results-1" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-3.png" id="results-2" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-4.png" id="results-3" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-5.png" id="results-4" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-6.png" id="results-5" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-7.png" id="results-6" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-8.png" id="results-7" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-9.png" id="results-8" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-10.png" id="results-9" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/results-output-11.png" id="results-10" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="cell-guidance-comparison" class="cell" data-execution_count="11">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compare different guidance scales</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">Effect of guidance scale on 'airplane' class:"</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>guidance_scales <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">2.0</span>, <span class="fl">4.0</span>, <span class="fl">8.0</span>]</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="bu">len</span>(guidance_scales), figsize<span class="op">=</span>(<span class="dv">16</span>, <span class="dv">4</span>))</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, w <span class="kw">in</span> <span class="bu">zip</span>(axes, guidance_scales):</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    samples <span class="op">=</span> sample(model, num_samples<span class="op">=</span><span class="dv">8</span>, class_label<span class="op">=</span><span class="dv">0</span>, guidance_scale<span class="op">=</span>w)  <span class="co"># airplane</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    samples <span class="op">=</span> (samples <span class="op">+</span> <span class="dv">1</span>) <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    grid <span class="op">=</span> torchvision.utils.make_grid(samples, nrow<span class="op">=</span><span class="dv">4</span>, padding<span class="op">=</span><span class="dv">1</span>)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>    ax.imshow(grid.permute(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">0</span>).cpu())</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f'w = </span><span class="sc">{</span>w<span class="sc">}</span><span class="ss">'</span>)</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    ax.axis(<span class="st">'off'</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">'Effect of Guidance Scale'</span>, fontsize<span class="op">=</span><span class="dv">14</span>)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Effect of guidance scale on 'airplane' class:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="notebook_files/figure-html/guidance-comparison-output-2.png" id="guidance-comparison" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" class="level2">
+<h2 class="anchored" data-anchor-id="summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality">SummaryWe built a conditional image generator using flow matching:1. <strong>U-Net architecture</strong> (from <code>diffusers</code>) with time and class conditioning2. <strong>Gaussian CondOT path</strong>: <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span> where <span class="math inline">\(z\)</span> is data, <span class="math inline">\(\epsilon\)</span> is noise3. <strong>Flow matching loss</strong>: Learn to predict the vector field $u_t^(x_t) z - <span class="math inline">\(4. **Classifier-free guidance**: Amplify class signal during sampling5. **ODE sampling**: Integrate from noise (\)</span>t=0<span class="math inline">\() to image (\)</span>t=1$) using <code>torchdiffeq</code>### Key takeaways:- Flow matching is conceptually simple: just learn the direction from noise to data- The same architecture powers Stable Diffusion, Flux, and other SOTA models- CFG is crucial for high-quality conditional generation### Extensions to try:- Use a DiT (Diffusion Transformer) instead of U-Net (see Part 10)- Train on larger datasets (ImageNet, LAION)- Try different ODE solvers (adaptive stepping with <code>dopri5</code>)- Add EMA (exponential moving average) for better sample quality</h2>
+<div id="cell-22" class="cell" data-execution_count="12">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the trained model</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>torch.save(model.state_dict(), <span class="st">'flow_matching_cifar10.pt'</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Model saved to flow_matching_cifar10.pt"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Model saved to flow_matching_cifar10.pt</code></pre>
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

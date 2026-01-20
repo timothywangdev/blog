@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2026-01-20">
+
+<title>Diffusion &amp; Flow Matching Part 12: Why Diffusion? – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../favicon.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#the-problem-one-input-many-valid-outputs" id="toc-the-problem-one-input-many-valid-outputs" class="nav-link active" data-scroll-target="#the-problem-one-input-many-valid-outputs">The Problem: One Input → Many Valid Outputs</a></li>
+  <li><a href="#sec-mode-averaging" id="toc-sec-mode-averaging" class="nav-link" data-scroll-target="#sec-mode-averaging">Why Direct Regression Fails: Mode Averaging</a>
+  <ul class="collapse">
+  <li><a href="#the-mathematical-inevitability" id="toc-the-mathematical-inevitability" class="nav-link" data-scroll-target="#the-mathematical-inevitability">The Mathematical Inevitability</a></li>
+  <li><a href="#visual-example-the-moving-object" id="toc-visual-example-the-moving-object" class="nav-link" data-scroll-target="#visual-example-the-moving-object">Visual Example: The Moving Object</a></li>
+  <li><a href="#real-world-consequences" id="toc-real-world-consequences" class="nav-link" data-scroll-target="#real-world-consequences">Real-World Consequences</a></li>
+  <li><a href="#sec-when-mse-works" id="toc-sec-when-mse-works" class="nav-link" data-scroll-target="#sec-when-mse-works">Wait — Doesn’t MSE Work Fine for Most Neural Networks?</a></li>
+  <li><a href="#sec-other-solutions" id="toc-sec-other-solutions" class="nav-link" data-scroll-target="#sec-other-solutions">Other Solutions to the Multimodal Problem</a></li>
+  </ul></li>
+  <li><a href="#the-solution-diffusion-and-flow-matching" id="toc-the-solution-diffusion-and-flow-matching" class="nav-link" data-scroll-target="#the-solution-diffusion-and-flow-matching">The Solution: Diffusion and Flow Matching</a>
+  <ul class="collapse">
+  <li><a href="#what-diffusionflow-matching-actually-learns" id="toc-what-diffusionflow-matching-actually-learns" class="nav-link" data-scroll-target="#what-diffusionflow-matching-actually-learns">What Diffusion/Flow Matching Actually Learns</a></li>
+  <li><a href="#why-this-works-the-three-key-insights" id="toc-why-this-works-the-three-key-insights" class="nav-link" data-scroll-target="#why-this-works-the-three-key-insights">Why This Works: The Three Key Insights</a></li>
+  </ul></li>
+  <li><a href="#application-image-generation" id="toc-application-image-generation" class="nav-link" data-scroll-target="#application-image-generation">Application: Image Generation</a>
+  <ul class="collapse">
+  <li><a href="#why-generate-a-cat-is-multimodal" id="toc-why-generate-a-cat-is-multimodal" class="nav-link" data-scroll-target="#why-generate-a-cat-is-multimodal">Why “Generate a Cat” is Multimodal</a></li>
+  <li><a href="#how-diffusion-solves-it" id="toc-how-diffusion-solves-it" class="nav-link" data-scroll-target="#how-diffusion-solves-it">How Diffusion Solves It</a></li>
+  <li><a href="#vae-vs-gan-vs-diffusion" id="toc-vae-vs-gan-vs-diffusion" class="nav-link" data-scroll-target="#vae-vs-gan-vs-diffusion">VAE vs GAN vs Diffusion</a></li>
+  </ul></li>
+  <li><a href="#application-robotics-diffusion-policy" id="toc-application-robotics-diffusion-policy" class="nav-link" data-scroll-target="#application-robotics-diffusion-policy">Application: Robotics (Diffusion Policy)</a>
+  <ul class="collapse">
+  <li><a href="#the-problem-with-behavioral-cloning" id="toc-the-problem-with-behavioral-cloning" class="nav-link" data-scroll-target="#the-problem-with-behavioral-cloning">The Problem with Behavioral Cloning</a></li>
+  <li><a href="#concrete-example-push-t-task" id="toc-concrete-example-push-t-task" class="nav-link" data-scroll-target="#concrete-example-push-t-task">Concrete Example: Push-T Task</a></li>
+  <li><a href="#how-diffusion-policy-works" id="toc-how-diffusion-policy-works" class="nav-link" data-scroll-target="#how-diffusion-policy-works">How Diffusion Policy Works</a></li>
+  <li><a href="#benchmark-results" id="toc-benchmark-results" class="nav-link" data-scroll-target="#benchmark-results">Benchmark Results</a></li>
+  <li><a href="#beyond-diffusion-policy-the-2024-2025-landscape" id="toc-beyond-diffusion-policy-the-2024-2025-landscape" class="nav-link" data-scroll-target="#beyond-diffusion-policy-the-2024-2025-landscape">Beyond Diffusion Policy: The 2024-2025 Landscape</a></li>
+  </ul></li>
+  <li><a href="#connecting-to-the-math-flow-matching" id="toc-connecting-to-the-math-flow-matching" class="nav-link" data-scroll-target="#connecting-to-the-math-flow-matching">Connecting to the Math: Flow Matching</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Diffusion &amp; Flow Matching Part 12: Why Diffusion?</h1>
+<p class="subtitle lead">The multimodal problem — why direct regression fails</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">diffusion</div>
+    <div class="quarto-category">generative-models</div>
+    <div class="quarto-category">deep-learning</div>
+    <div class="quarto-category">flow-matching</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 20, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>The problem</strong>: When one input has many valid outputs (e.g., “generate a cat” → infinitely many valid cats), direct regression with MSE loss outputs the <strong>average</strong> of all possibilities — a blurry mess</li>
+<li><strong>Why it fails</strong>: MSE-optimal prediction is mathematically guaranteed to be the mean <span class="math inline">\(\mathbb{E}[y|x]\)</span>, which falls <em>between</em> modes and is often invalid</li>
+<li><strong>The solution</strong>: Diffusion/flow matching learns a <strong>vector field</strong> that has a unique answer at each point, while stochasticity comes from initial noise — enabling sharp, diverse samples</li>
+<li><strong>Applications</strong>: Image generation (Stable Diffusion, DALL-E), robotics (Diffusion Policy), video prediction — anywhere outputs are inherently multimodal</li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>🧪 Interactive Demo
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Want to see the mode averaging problem in action? Check out the <a href="../../../posts/diffusion/12-why-diffusion/why_diffusion.html">companion notebook</a> where you can:</p>
+<ul>
+<li>Train a direct regressor and watch it collapse to the mean</li>
+<li>Train a flow matching model and see it capture both modes</li>
+<li>Visualize the learned vector field at different timesteps</li>
+</ul>
+</div>
+</div>
+<section id="the-problem-one-input-many-valid-outputs" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-one-input-many-valid-outputs">The Problem: One Input → Many Valid Outputs</h2>
+<p>Consider these tasks:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 25%">
+<col style="width: 53%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Input</th>
+<th>Valid Outputs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Image generation</td>
+<td>“a cat sitting”</td>
+<td>Infinitely many cats (different breeds, poses, lighting, backgrounds…)</td>
+</tr>
+<tr class="even">
+<td>Robot control</td>
+<td>Current state</td>
+<td>Multiple valid actions (go left OR right around obstacle)</td>
+</tr>
+<tr class="odd">
+<td>Video prediction</td>
+<td>Current frame</td>
+<td>Many possible futures (object moves in any direction)</td>
+</tr>
+</tbody>
+</table>
+<p>These are all <strong>one-to-many mappings</strong>. For a single input, there exist multiple — often infinitely many — correct outputs.</p>
+<p>The natural question is: why can’t we just train a neural network to directly predict the output?</p>
+<pre><code>f_θ: input → output</code></pre>
+<p>Let’s try it.</p>
+</section>
+<section id="sec-mode-averaging" class="level2">
+<h2 class="anchored" data-anchor-id="sec-mode-averaging">Why Direct Regression Fails: Mode Averaging</h2>
+<section id="the-mathematical-inevitability" class="level3">
+<h3 class="anchored" data-anchor-id="the-mathematical-inevitability">The Mathematical Inevitability</h3>
+<p>When you train a neural network with MSE loss:</p>
+<p><span class="math display">\[
+\mathcal{L} = \mathbb{E}\left[\|f_\theta(x) - y\|^2\right]
+\]</span></p>
+<p>The optimal solution is provably the <strong>conditional mean</strong>:</p>
+<p><span class="math display">\[
+f^*(x) = \mathbb{E}[y \mid x]
+\]</span></p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Mean Minimizes MSE
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of MSE as finding the point closest to all targets <strong>on average</strong>. If you’re playing darts and trying to minimize your average squared distance to several targets, the optimal strategy is to aim at their <strong>center of mass</strong> (the mean). This is true regardless of how spread out the targets are — aiming at the mean always minimizes the total squared distances.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Proof: Why Mean Minimizes MSE (Variance Decomposition)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><strong>The key insight</strong>: MSE decomposes into variance (irreducible) plus bias (what we control).</p>
+<p>For any prediction <span class="math inline">\(a\)</span>, we can use the “add and subtract the mean” trick:</p>
+<p><span id="eq-mse-decomp"><span class="math display">\[
+\begin{aligned}
+\mathbb{E}[(Y - a)^2] &amp;= \mathbb{E}[(Y - \mathbb{E}[Y] + \mathbb{E}[Y] - a)^2] &amp;&amp; \text{(add zero: } \mathbb{E}[Y] - \mathbb{E}[Y]\text{)} \\
+&amp;= \mathbb{E}\left[\underbrace{(Y - \mathbb{E}[Y])^2}_{\text{variance term}} + 2\underbrace{(Y - \mathbb{E}[Y])}_{\text{zero mean}}(\mathbb{E}[Y] - a) + \underbrace{(\mathbb{E}[Y] - a)^2}_{\text{bias term}}\right] \\
+&amp;= \text{Var}(Y) + 0 + (\mathbb{E}[Y] - a)^2
+\end{aligned}
+\tag{1}\]</span></span></p>
+<p><strong>Why does the cross-term vanish?</strong> The middle term contains <span class="math inline">\(\mathbb{E}[Y - \mathbb{E}[Y]]\)</span>, which is the expected deviation from the mean — always zero by definition.</p>
+<p><strong>The result</strong>:</p>
+<p><span class="math display">\[
+\underbrace{\mathbb{E}[(Y - a)^2]}_{\text{MSE}} = \underbrace{\text{Var}(Y)}_{\text{can't change this}} + \underbrace{(\mathbb{E}[Y] - a)^2}_{\text{minimized when } a = \mathbb{E}[Y]}
+\]</span></p>
+<p>Since variance is fixed (the data is what it is), minimizing MSE is equivalent to minimizing <span class="math inline">\((\mathbb{E}[Y] - a)^2\)</span> — a parabola with minimum at <span class="math inline">\(a^* = \mathbb{E}[Y]\)</span>.</p>
+</div>
+</div>
+</div>
+<p><strong>The consequence</strong>: When outputs are multimodal (multiple valid answers), the mean falls <em>between</em> the modes — often in a region of <strong>zero probability</strong>.</p>
+</section>
+<section id="visual-example-the-moving-object" class="level3">
+<h3 class="anchored" data-anchor-id="visual-example-the-moving-object">Visual Example: The Moving Object</h3>
+<p>Imagine predicting where an object will move. It can go left OR right with equal probability:</p>
+<pre><code>Training data:
+  - 50% of examples: object moves LEFT  → position (-3, 0)
+  - 50% of examples: object moves RIGHT → position (+3, 0)
+
+MSE-optimal prediction:
+  → Mean of [(-3, 0), (+3, 0)] = (0, 0)
+  → The object is predicted to stay in the CENTER
+  → But no training example ever showed this!</code></pre>
+<p>The mean <span class="math inline">\((0, 0)\)</span> is a <strong>statistical Frankenstein</strong> — it corresponds to no real outcome.</p>
+<div id="fig-mode-averaging" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-mode-averaging-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="mode-averaging.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mode-averaging-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Mode averaging: the mean of two valid modes is often invalid
+</figcaption>
+</figure>
+</div>
+<p>Here’s what this looks like when we actually train models on a 2D bimodal distribution:</p>
+<div id="fig-direct-vs-flow" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-direct-vs-flow-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="direct-vs-flow-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-direct-vs-flow-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Direct regression with MSE collapses to the mean (center), while flow matching successfully captures both modes. Run the <a href="../../../posts/diffusion/12-why-diffusion/why_diffusion.html">companion notebook</a> to reproduce this experiment.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="real-world-consequences" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-consequences">Real-World Consequences</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 78%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Domain</th>
+<th>What Mode Averaging Produces</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Image generation</strong></td>
+<td>Blurry images (average of all possible images)</td>
+</tr>
+<tr class="even">
+<td><strong>Video prediction</strong></td>
+<td>Ghostly, transparent objects (superposition of futures)</td>
+</tr>
+<tr class="odd">
+<td><strong>Robot control</strong></td>
+<td>Invalid actions (e.g., go THROUGH obstacle instead of around)</td>
+</tr>
+<tr class="even">
+<td><strong>VAE reconstructions</strong></td>
+<td>Loss of fine details, smoothed textures</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>“Blurry outputs mean the model needs more capacity or training.”</p>
+<p><strong>Reality</strong>: Blurriness from mode averaging is a <strong>fundamental limitation of MSE loss</strong>, not a capacity problem. A perfectly trained, infinitely large network with MSE loss will STILL output blurry averages for multimodal targets.</p>
+</div>
+</div>
+</section>
+<section id="sec-when-mse-works" class="level3">
+<h3 class="anchored" data-anchor-id="sec-when-mse-works">Wait — Doesn’t MSE Work Fine for Most Neural Networks?</h3>
+<p>Great question! Yes, MSE loss powers countless successful models. The key distinction is whether the <strong>ground truth is unique</strong> for each input.</p>
+<p><strong>MSE works great when targets are unimodal (one correct answer):</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 19%">
+<col style="width: 22%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Input</th>
+<th>Target</th>
+<th>Why MSE Works</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Image classification</td>
+<td>Image</td>
+<td>Class label</td>
+<td>Each image has ONE true class</td>
+</tr>
+<tr class="even">
+<td>Depth estimation</td>
+<td>RGB image</td>
+<td>Depth map</td>
+<td>Each scene has ONE true depth</td>
+</tr>
+<tr class="odd">
+<td>Pose estimation</td>
+<td>Image</td>
+<td>Joint positions</td>
+<td>Person has ONE true pose</td>
+</tr>
+<tr class="even">
+<td>Speech recognition</td>
+<td>Audio</td>
+<td>Transcript</td>
+<td>Each utterance has ONE transcription</td>
+</tr>
+<tr class="odd">
+<td>Object detection</td>
+<td>Image</td>
+<td>Bounding boxes</td>
+<td>Objects have ONE true location</td>
+</tr>
+</tbody>
+</table>
+<p>In these tasks, <span class="math inline">\(\mathbb{E}[y \mid x] = y_{\text{true}}\)</span> because there’s only one correct answer. The mean IS the answer.</p>
+<p><strong>MSE fails when targets are multimodal (many valid answers):</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 19%">
+<col style="width: 22%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Input</th>
+<th>Target</th>
+<th>Why MSE Fails</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Image generation</td>
+<td>“a cat”</td>
+<td>Image</td>
+<td>Infinitely many valid cats</td>
+</tr>
+<tr class="even">
+<td>Super-resolution</td>
+<td>Low-res image</td>
+<td>High-res image</td>
+<td>Many valid high-freq details</td>
+</tr>
+<tr class="odd">
+<td>Future prediction</td>
+<td>Current frame</td>
+<td>Next frame</td>
+<td>Many possible futures</td>
+</tr>
+<tr class="even">
+<td>Imitation learning</td>
+<td>State</td>
+<td>Action</td>
+<td>Multiple valid strategies</td>
+</tr>
+<tr class="odd">
+<td>Inpainting</td>
+<td>Masked image</td>
+<td>Completed image</td>
+<td>Many valid completions</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Key Question
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Ask yourself: <strong>“Given this input, is there exactly ONE correct output, or could multiple outputs all be valid?”</strong></p>
+<ul>
+<li>One correct answer → MSE is fine</li>
+<li>Multiple valid answers → You need a generative model (diffusion, flow matching, GANs, etc.)</li>
+</ul>
+</div>
+</div>
+<p>This is why we never had “blurry classification” problems — each image belongs to exactly one class. But the moment we flip the task to “generate an image of class X,” we enter multimodal territory.</p>
+</section>
+<section id="sec-other-solutions" class="level3">
+<h3 class="anchored" data-anchor-id="sec-other-solutions">Other Solutions to the Multimodal Problem</h3>
+<p>Diffusion/flow matching isn’t the ONLY way to handle multimodal outputs. Here are the main approaches:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 57%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Approach</th>
+<th>How It Avoids Mode Averaging</th>
+<th>Trade-offs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>GANs</strong></td>
+<td>Discriminator penalizes blurry outputs; generator must commit to ONE mode</td>
+<td>Mode collapse, training instability</td>
+</tr>
+<tr class="even">
+<td><strong>Autoregressive</strong></td>
+<td>Generate one token at a time; each step is unimodal given context</td>
+<td>Slow sequential generation</td>
+</tr>
+<tr class="odd">
+<td><strong>VAE + adversarial loss</strong></td>
+<td>Add discriminator to VAE to enforce sharpness</td>
+<td>More complex training</td>
+</tr>
+<tr class="even">
+<td><strong>Mixture Density Networks</strong></td>
+<td>Explicitly predict mixture of Gaussians</td>
+<td>Must pre-specify number of modes</td>
+</tr>
+<tr class="odd">
+<td><strong>Normalizing Flows</strong></td>
+<td>Learn invertible transform; exact likelihood</td>
+<td>Architecture constraints</td>
+</tr>
+<tr class="even">
+<td><strong>Discretization (VQ-VAE)</strong></td>
+<td>Convert to tokens, use classification per token</td>
+<td>Quantization artifacts</td>
+</tr>
+<tr class="odd">
+<td><strong>Diffusion / Flow Matching</strong></td>
+<td>Iterative refinement; each step is simple</td>
+<td>Slow sampling (many steps)</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why Not Just Use Autoregressive Models?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Autoregressive models ARE used for images — and they’re making a strong comeback!</p>
+<p><strong>Key autoregressive image models:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 17%">
+<col style="width: 15%">
+<col style="width: 48%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Year</th>
+<th>FID (ImageNet 256)</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>DALL-E 1</td>
+<td>2021</td>
+<td>-</td>
+<td>VQ-VAE + 12B GPT, pioneered text-to-image</td>
+</tr>
+<tr class="even">
+<td>Parti<span class="math inline">\(^{[7]}\)</span></td>
+<td>2022</td>
+<td>3.22</td>
+<td>20B params, encoder-decoder Transformer</td>
+</tr>
+<tr class="odd">
+<td>LlamaGen<span class="math inline">\(^{[8]}\)</span></td>
+<td>2024</td>
+<td>2.18</td>
+<td>Vanilla LLaMA architecture, 3.1B params</td>
+</tr>
+<tr class="even">
+<td><strong>VAR</strong><span class="math inline">\(^{[9]}\)</span></td>
+<td>2024</td>
+<td><strong>1.73</strong></td>
+<td>NeurIPS 2024 Best Paper, 20x faster</td>
+</tr>
+<tr class="odd">
+<td>DiT (diffusion)</td>
+<td>2023</td>
+<td>2.27</td>
+<td>For comparison</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The breakthrough: VAR (Visual Autoregressive Modeling)</strong></p>
+<p>VAR won <strong>NeurIPS 2024 Best Paper</strong> by changing HOW autoregressive generation works:</p>
+<ul>
+<li>Instead of “next-token” (raster scan), it predicts “next-scale” (coarse → fine)</li>
+<li><strong>20x faster</strong> than standard autoregressive models</li>
+<li><strong>FID 1.73</strong> — beating diffusion transformers (DiT: 2.27)</li>
+<li>Exhibits GPT-like scaling laws (power-law correlation -0.998)</li>
+</ul>
+<p><strong>Traditional AR limitations (mostly solved by VAR):</strong></p>
+<ol type="1">
+<li><del><strong>Speed</strong></del>: VAR’s next-scale approach parallelizes within each scale</li>
+<li><del><strong>Arbitrary ordering</strong></del>: VAR uses natural coarse-to-fine ordering</li>
+<li><strong>Discrete tokens</strong>: Still requires VQ-VAE, but codebook quality has improved (LlamaGen: 0.94 rFID reconstruction)</li>
+</ol>
+<p><strong>Where autoregressive excels:</strong></p>
+<ul>
+<li><strong>Text</strong>: Language IS sequential — perfect fit</li>
+<li><strong>Unified multimodal</strong>: Single architecture for text + image + video (Gemini, GPT-4V)</li>
+<li><strong>Inference-time scaling</strong>: Discrete tokens enable beam search and early pruning</li>
+</ul>
+<p><strong>2025 update</strong>: Hybrid approaches like <strong>HART</strong><span class="math inline">\(^{[10]}\)</span> (MIT/NVIDIA) combine AR + diffusion, achieving <strong>9x speedup</strong> over pure diffusion with comparable quality.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why Diffusion Won (For Now)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>The turning point</strong>: In 2021, Dhariwal &amp; Nichol published “Diffusion Models Beat GANs on Image Synthesis”<span class="math inline">\(^{[11]}\)</span>, achieving FID 2.97 on ImageNet 128×128 (vs BigGAN’s 6.02). By 2022, Stable Diffusion, DALL-E 2, and Imagen cemented diffusion’s dominance.</p>
+<p><strong>Why diffusion beat GANs:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 44%">
+<col style="width: 24%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Aspect</th>
+<th>Diffusion</th>
+<th>GANs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Training</td>
+<td>Stable — single denoising objective</td>
+<td>Unstable — adversarial min-max game</td>
+</tr>
+<tr class="even">
+<td>Diversity</td>
+<td>High recall, covers full distribution</td>
+<td>Mode collapse under truncation</td>
+</tr>
+<tr class="odd">
+<td>Scaling</td>
+<td>Smooth scaling to larger models</td>
+<td>Requires careful tuning at scale</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where GANs still win</strong>: Real-time applications. GANs generate in ~0.03s vs diffusion’s ~10s — a <strong>1000x speed difference</strong>. For video games and interactive apps, GANs remain relevant.</p>
+<p><strong>What powers modern systems:</strong></p>
+<ul>
+<li><strong>Sora</strong>: Diffusion Transformer (DiT), latent diffusion</li>
+<li><strong>DALL-E 3</strong>: Latent diffusion + U-Net + CLIP</li>
+<li><strong>SD3</strong>: MM-DiT + Rectified Flow (straighter trajectories, fewer steps)</li>
+<li><strong>Flux</strong>: 12-32B DiT + Flow Matching</li>
+</ul>
+<p>The main diffusion downside — slow sampling — is being addressed by consistency models<span class="math inline">\(^{[12]}\)</span> (1-4 step generation) and distillation.</p>
+<p><em>Note: The field is evolving fast. VAR now beats DiT on ImageNet, and hybrid AR+diffusion approaches are emerging.</em></p>
+</div>
+</div>
+</section>
+</section>
+<section id="the-solution-diffusion-and-flow-matching" class="level2">
+<h2 class="anchored" data-anchor-id="the-solution-diffusion-and-flow-matching">The Solution: Diffusion and Flow Matching</h2>
+<p>The key insight: instead of learning the impossible mapping <code>input → multimodal output</code>, we learn a <strong>different problem</strong> that IS well-posed.</p>
+<section id="what-diffusionflow-matching-actually-learns" class="level3">
+<h3 class="anchored" data-anchor-id="what-diffusionflow-matching-actually-learns">What Diffusion/Flow Matching Actually Learns</h3>
+<p>We don’t learn:</p>
+<pre><code>z ~ N(0,I) → image    ❌ (ill-posed, one-to-many)</code></pre>
+<p>We learn:</p>
+<pre><code>(noisy image x_t, time t) → velocity/direction to move    ✓ (well-posed!)</code></pre>
+<p>Then we <strong>integrate</strong> this vector field to generate samples:</p>
+<ol type="1">
+<li>Sample initial noise <span class="math inline">\(x_0 \sim \mathcal{N}(0, I)\)</span></li>
+<li>Follow the learned vector field from <span class="math inline">\(t=0\)</span> to <span class="math inline">\(t=1\)</span></li>
+<li>Arrive at a generated sample <span class="math inline">\(x_1\)</span></li>
+</ol>
+</section>
+<section id="why-this-works-the-three-key-insights" class="level3">
+<h3 class="anchored" data-anchor-id="why-this-works-the-three-key-insights">Why This Works: The Three Key Insights</h3>
+<section id="sec-insight-velocity" class="level4">
+<h4 class="anchored" data-anchor-id="sec-insight-velocity">Insight 1: The Velocity Prediction Has a Unique Answer</h4>
+<p>Even when the data distribution is multimodal, the <strong>conditional expected velocity</strong> is well-defined and unique. For the <a href="../11-practical-flow-matching/#sec-gaussian-condot">Gaussian CondOT path</a> where <span class="math inline">\(x_t = (1-t)x_0 + tx_1\)</span>:</p>
+<p><span id="eq-velocity-target"><span class="math display">\[
+u_t^\theta(x_t) \approx \mathbb{E}[x_1 - x_0 \mid x_t]
+\tag{2}\]</span></span></p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>This formula is for the <strong>linear (OT) path</strong>. For general <a href="../3-probability-paths/">Gaussian probability paths</a> with <span class="math inline">\(x_t = \alpha_t z + \beta_t \epsilon\)</span> (where <span class="math inline">\(z\)</span> is data and <span class="math inline">\(\epsilon\)</span> is noise), the target velocity is <span class="math inline">\(u_t(x_t|z) = \dot{\alpha}_t z + \dot{\beta}_t \epsilon\)</span>. The key insight — that the velocity is well-posed — holds for <strong>all</strong> path choices.</p>
+</div>
+</div>
+</div>
+<p>Why is the velocity well-posed? Because the spatial position of <span class="math inline">\(x_t\)</span> <strong>already encodes</strong> information about which mode it’s heading toward:</p>
+<ul>
+<li>Points near the LEFT mode → velocity points LEFT</li>
+<li>Points near the RIGHT mode → velocity points RIGHT</li>
+</ul>
+<p>The network learns to <strong>separate modes spatially</strong>. At any given <span class="math inline">\((x_t, t)\)</span>, there’s one optimal direction to move.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of it like rivers flowing to the ocean. Even though there are many rivers (modes), at any point in space, the water has one direction to flow. The vector field is deterministic; the variety comes from where you start (which river you’re in).</p>
+</div>
+</div>
+<div id="fig-velocity-field" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-velocity-field-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="velocity-field.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-velocity-field-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: The learned vector field naturally separates modes: points on the left get pushed left, points on the right get pushed right. The spatial position encodes which mode to target.
+</figcaption>
+</figure>
+</div>
+<p>The vector field also evolves over time. Here’s what it looks like at different timesteps from the trained model:</p>
+<div id="fig-velocity-evolution" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-velocity-evolution-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="velocity-field-evolution.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-velocity-evolution-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Vector field at t=0.0, 0.3, 0.6, 0.9. Early on (t≈0), the field points outward from the noise region toward both modes. As t increases, points have committed to their trajectories and the field refines toward final positions.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="sec-insight-noise" class="level4">
+<h4 class="anchored" data-anchor-id="sec-insight-noise">Insight 2: Stochasticity Comes from Initial Noise</h4>
+<p>The multimodality in generation comes from <strong>sampling different initial noise</strong>:</p>
+<ul>
+<li>Different <span class="math inline">\(x_0 \sim \mathcal{N}(0, I)\)</span> → different trajectories → different final samples</li>
+<li>The learned vector field is <strong>deterministic</strong></li>
+<li>Randomness is “front-loaded” into the initial sample</li>
+</ul>
+<p>This is why <strong>the same seed produces the same image</strong> in Stable Diffusion — the vector field is deterministic, only the starting point is random.</p>
+</section>
+<section id="sec-insight-iterative" class="level4">
+<h4 class="anchored" data-anchor-id="sec-insight-iterative">Insight 3: Iterative Refinement Avoids Averaging</h4>
+<p>Instead of making one prediction that must handle all uncertainty, diffusion makes <strong>many small predictions</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Noise Level</th>
+<th>What the Model Predicts</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Early (<span class="math inline">\(t \approx 0\)</span>)</td>
+<td>High</td>
+<td>Broad direction toward data manifold</td>
+</tr>
+<tr class="even">
+<td>Middle</td>
+<td>Medium</td>
+<td>Progressive mode selection based on trajectory</td>
+</tr>
+<tr class="odd">
+<td>Late (<span class="math inline">\(t \approx 1\)</span>)</td>
+<td>Low</td>
+<td>Fine details within chosen mode</td>
+</tr>
+</tbody>
+</table>
+<p>At high noise, the model CAN’T distinguish modes (everything looks like noise), so averaging is appropriate. At low noise, the trajectory has already committed to a mode, so there’s only one valid direction.</p>
+<p>Each individual step is <strong>simple enough</strong> that mode averaging doesn’t cause problems.</p>
+</section>
+</section>
+</section>
+<section id="application-image-generation" class="level2">
+<h2 class="anchored" data-anchor-id="application-image-generation">Application: Image Generation</h2>
+<section id="why-generate-a-cat-is-multimodal" class="level3">
+<h3 class="anchored" data-anchor-id="why-generate-a-cat-is-multimodal">Why “Generate a Cat” is Multimodal</h3>
+<p>The prompt “a cat” is compatible with:</p>
+<ul>
+<li>Orange tabby, black cat, calico, siamese…</li>
+<li>Sitting, standing, lying down, jumping…</li>
+<li>Indoors, outdoors, on furniture…</li>
+<li>Photo-realistic, cartoon, oil painting…</li>
+</ul>
+<p>A direct text→image model would average ALL of these → blurry, generic cat-like blob.</p>
+</section>
+<section id="how-diffusion-solves-it" class="level3">
+<h3 class="anchored" data-anchor-id="how-diffusion-solves-it">How Diffusion Solves It</h3>
+<ol type="1">
+<li><strong>Sample noise</strong> <span class="math inline">\(x_0 \sim \mathcal{N}(0, I)\)</span> — this random sample determines WHICH cat we’ll generate</li>
+<li><strong>Condition on text</strong> — “a cat” guides the vector field toward cat-like images</li>
+<li><strong>Iteratively denoise</strong> — early steps pick broad category, later steps add details</li>
+<li><strong>Output sharp image</strong> — we committed to ONE mode throughout the trajectory</li>
+</ol>
+</section>
+<section id="vae-vs-gan-vs-diffusion" class="level3">
+<h3 class="anchored" data-anchor-id="vae-vs-gan-vs-diffusion">VAE vs GAN vs Diffusion</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 40%">
+<col style="width: 32%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Strategy</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>VAE</strong></td>
+<td>Mode-covering (cover ALL modes)</td>
+<td>Diverse but blurry (averaging)</td>
+</tr>
+<tr class="even">
+<td><strong>GAN</strong></td>
+<td>Mode-seeking (focus on FEW modes)</td>
+<td>Sharp but mode collapse</td>
+</tr>
+<tr class="odd">
+<td><strong>Diffusion</strong></td>
+<td>Mode-covering + iterative refinement</td>
+<td>Sharp AND diverse</td>
+</tr>
+</tbody>
+</table>
+<div id="fig-vae-gan-diffusion" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-vae-gan-diffusion-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="vae-gan-diffusion-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-vae-gan-diffusion-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: VAE, GAN, and Diffusion represent different trade-offs: VAE covers all modes but is blurry, GAN is sharp but suffers mode collapse, Diffusion achieves both sharpness and diversity through iterative refinement.
+</figcaption>
+</figure>
+</div>
+<p>Diffusion achieves the best of both worlds: it covers the full distribution (diversity) while producing sharp samples (no averaging).</p>
+</section>
+</section>
+<section id="application-robotics-diffusion-policy" class="level2">
+<h2 class="anchored" data-anchor-id="application-robotics-diffusion-policy">Application: Robotics (Diffusion Policy)</h2>
+<section id="the-problem-with-behavioral-cloning" class="level3">
+<h3 class="anchored" data-anchor-id="the-problem-with-behavioral-cloning">The Problem with Behavioral Cloning</h3>
+<p>Traditional imitation learning uses regression:</p>
+<p><span class="math display">\[
+\pi_\theta(s) = \arg\min_\theta \mathbb{E}\left[\|\pi_\theta(s) - a_{\text{demo}}\|^2\right]
+\]</span></p>
+<p>When demonstrations contain multiple valid strategies, the policy learns their <strong>average</strong>.</p>
+</section>
+<section id="concrete-example-push-t-task" class="level3">
+<h3 class="anchored" data-anchor-id="concrete-example-push-t-task">Concrete Example: Push-T Task</h3>
+<p>A robot must push a T-shaped block to a target using a circular end-effector. To push from the bottom, the policy can approach from <strong>either left or right</strong> — creating a multimodal action distribution.</p>
+<div id="fig-push-t" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-push-t-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="push-t-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-push-t-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: The Push-T task illustrates mode averaging failure: direct regression averages left and right approaches, causing the robot to crash through the obstacle. Diffusion Policy commits to one mode and succeeds.
+</figcaption>
+</figure>
+</div>
+<p><strong>Observed failure modes from the paper<span class="math inline">\(^{[1]}\)</span>:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 31%">
+<col style="width: 43%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Behavior</th>
+<th>Failure Mode</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>LSTM-GMM</strong></td>
+<td>Gets stuck near T block</td>
+<td>Biased toward one mode; failed to reach end-zone in 8/20 trials</td>
+</tr>
+<tr class="even">
+<td><strong>IBC</strong></td>
+<td>Premature termination</td>
+<td>Left T block early in 6/20 trials; struggles with high-dim action sampling</td>
+</tr>
+<tr class="odd">
+<td><strong>BET</strong></td>
+<td>Jittery, indecisive</td>
+<td>Failed to commit to single mode due to lack of temporal consistency</td>
+</tr>
+<tr class="even">
+<td><strong>Diffusion Policy</strong></td>
+<td>Approaches from left OR right, commits</td>
+<td>✓ Learns multimodal behavior, commits within each rollout</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Real-world Push-T results:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Success Rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Human</td>
+<td>100%</td>
+</tr>
+<tr class="even">
+<td><strong>Diffusion Policy</strong></td>
+<td><strong>95%</strong></td>
+</tr>
+<tr class="odd">
+<td>LSTM-GMM</td>
+<td>20%</td>
+</tr>
+<tr class="even">
+<td>IBC</td>
+<td>0%</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="how-diffusion-policy-works" class="level3">
+<h3 class="anchored" data-anchor-id="how-diffusion-policy-works">How Diffusion Policy Works</h3>
+<p><strong>Diffusion Policy</strong><span class="math inline">\(^{[1]}\)</span> represents the policy as a conditional denoising process:</p>
+<p><span class="math display">\[
+\pi_\theta(a \mid s) = \text{Diffusion}(a \mid s)
+\]</span></p>
+<p><strong>Key architectural choices:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 20%">
+<col style="width: 47%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Value</th>
+<th>Why It Matters</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Observation horizon</td>
+<td>2 steps</td>
+<td>Past context for decision-making</td>
+</tr>
+<tr class="even">
+<td>Action prediction horizon</td>
+<td>16 steps</td>
+<td>Predicts sequence, not single action</td>
+</tr>
+<tr class="odd">
+<td>Action execution horizon</td>
+<td>8 steps</td>
+<td>Execute 8, then re-plan (like MPC)</td>
+</tr>
+<tr class="even">
+<td>Inference steps</td>
+<td>10-16 (DDIM)</td>
+<td>~0.1s latency on RTX 3080</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="benchmark-results" class="level3">
+<h3 class="anchored" data-anchor-id="benchmark-results">Benchmark Results</h3>
+<p>Tested on <strong>12 tasks across 4 benchmarks</strong> (RoboMimic, Push-T, Block Pushing, Franka Kitchen):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task Category</th>
+<th>Diffusion Policy</th>
+<th>Improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Average across all tasks</td>
+<td>-</td>
+<td><strong>+46.9%</strong> over best baseline</td>
+</tr>
+<tr class="even">
+<td>Block Pushing (push 2 blocks)</td>
+<td>94%</td>
+<td>+32% over BET (71%)</td>
+</tr>
+<tr class="odd">
+<td>Franka Kitchen (4+ objects)</td>
+<td>96%</td>
+<td>+213% over BET (44%)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="beyond-diffusion-policy-the-2024-2025-landscape" class="level3">
+<h3 class="anchored" data-anchor-id="beyond-diffusion-policy-the-2024-2025-landscape">Beyond Diffusion Policy: The 2024-2025 Landscape</h3>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Other Diffusion/Flow Methods in Robotics
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 15%">
+<col style="width: 21%">
+<col style="width: 42%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Year</th>
+<th>Params</th>
+<th>Key Innovation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>ACT</strong><span class="math inline">\(^{[13]}\)</span></td>
+<td>2023</td>
+<td>80M</td>
+<td>CVAE + Transformer, faster inference</td>
+</tr>
+<tr class="even">
+<td><strong>Octo</strong><span class="math inline">\(^{[14]}\)</span></td>
+<td>2024</td>
+<td>93M</td>
+<td>Open-source generalist, 800k trajectories</td>
+</tr>
+<tr class="odd">
+<td><strong>RDT-1B</strong><span class="math inline">\(^{[15]}\)</span></td>
+<td>2024</td>
+<td>1.2B</td>
+<td>Largest diffusion foundation model, 46 datasets</td>
+</tr>
+<tr class="even">
+<td><strong>π₀</strong><span class="math inline">\(^{[5]}\)</span></td>
+<td>2024</td>
+<td>3.3B</td>
+<td>VLM + flow matching, 50Hz dexterous control</td>
+</tr>
+</tbody>
+</table>
+<p><strong>π₀ (Physical Intelligence)</strong> uses <strong>flow matching</strong> instead of diffusion:</p>
+<ul>
+<li><strong>3.3B parameters</strong>: 3B VLM (PaliGemma) + 300M action expert</li>
+<li><strong>Training</strong>: 10,000+ hours across 7 robot platforms, 68 tasks</li>
+<li><strong>50 Hz control</strong>: Critical for dexterous manipulation (laundry folding, box assembly)</li>
+<li><strong>27-40ms latency</strong>: Fast enough for reactive tasks</li>
+<li><strong>Why flow matching?</strong> More stable, fewer hyperparameters, better for high-frequency actions</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why This Matters for Robotics
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Human demonstrations are inherently multimodal — people solve the same task different ways. Diffusion/flow matching handles this without hand-engineering mixture models. The <strong>46.9% improvement</strong> and <strong>95% vs 0-20%</strong> real-world success rates aren’t incremental — they represent a paradigm shift in imitation learning.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="connecting-to-the-math-flow-matching" class="level2">
+<h2 class="anchored" data-anchor-id="connecting-to-the-math-flow-matching">Connecting to the Math: Flow Matching</h2>
+<p>For readers who’ve followed the <a href="../4-flow-matching-loss/">flow matching derivations</a>, here’s the connection:</p>
+<p>The <strong>Conditional Flow Matching</strong> loss is (from <a href="../4-flow-matching-loss/">Part 4</a>):</p>
+<p><span class="math display">\[
+\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, x}\left[\|u_t^\theta(x) - u_t^{\text{target}}(x|z)\|^2\right]
+\]</span></p>
+<p>where <span class="math inline">\(z \sim p_{\text{data}}\)</span> is a data sample and <span class="math inline">\(x\)</span> is drawn from the conditional path <span class="math inline">\(p_t(x|z)\)</span>.</p>
+<p>For the <strong>Gaussian CondOT path</strong> we use throughout this series (<a href="../7-training/">Part 7</a>):</p>
+<p><span class="math display">\[
+x_t = t \cdot z + (1-t) \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\]</span></p>
+<p>the target velocity simplifies to <span class="math inline">\(u_t^{\text{target}}(x|z) = z - \epsilon\)</span>.</p>
+<p>This looks like MSE regression! Why doesn’t it suffer from mode averaging?</p>
+<p><strong>Because the target <span class="math inline">\((z - \epsilon)\)</span> is conditioned on a specific <span class="math inline">\((z, \epsilon)\)</span> pair.</strong></p>
+<p>During training: - We sample a specific noise <span class="math inline">\(\epsilon\)</span> and specific data point <span class="math inline">\(z\)</span> - The target velocity <span class="math inline">\(z - \epsilon\)</span> is <strong>unique</strong> for this pair - No averaging happens at the training level</p>
+<p>The magic: training on these <strong>conditional</strong> velocities implicitly learns the correct <strong>marginal</strong> vector field that transports the noise distribution to the data distribution.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why Conditional ≈ Marginal (The CFM Theorem)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-12" class="callout-12-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The key theorem of Conditional Flow Matching states:</p>
+<p><span class="math display">\[
+\nabla_\theta \mathcal{L}_{\text{CFM}} = \nabla_\theta \mathcal{L}_{\text{FM}}
+\]</span></p>
+<p>Training with the simple conditional loss has the same gradients as training with the intractable marginal loss. See <a href="../4-flow-matching-loss/">Part 4</a> for the full derivation.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We started with a fundamental question: why can’t we directly learn <code>label → image</code>?</p>
+<p>The answer is <strong>mode averaging</strong>: MSE loss provably converges to the mean of all valid outputs, which is often blurry or invalid when multiple modes exist.</p>
+<p>Diffusion and flow matching solve this by:</p>
+<ol type="1">
+<li><strong>Reframing the problem</strong>: Learn velocity/denoising direction instead of direct output</li>
+<li><strong>Front-loading randomness</strong>: Stochasticity comes from initial noise, not the learned function</li>
+<li><strong>Iterative refinement</strong>: Many small, well-posed predictions instead of one ill-posed prediction</li>
+</ol>
+<p>This insight — that the velocity prediction is well-posed even when the generation problem isn’t — is why diffusion models power Stable Diffusion, DALL-E 3, Sora, and state-of-the-art robotics systems.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2303.04137">Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</a>. Chi et al., <em>RSS 2023</em>.</p>
+<p>[2] <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. Lipman et al., <em>ICLR 2023</em>.</p>
+<p>[3] <a href="https://arxiv.org/abs/1503.03585">Deep Unsupervised Learning using Nonequilibrium Thermodynamics</a>. Sohl-Dickstein et al., <em>ICML 2015</em>.</p>
+<p>[4] <a href="https://arxiv.org/abs/2112.10752">High-Resolution Image Synthesis with Latent Diffusion Models</a>. Rombach et al., <em>CVPR 2022</em>.</p>
+<p>[5] <a href="https://arxiv.org/abs/2410.24164">π₀: A Vision-Language-Action Flow Model for General Robot Control</a>. Black et al., <em>Physical Intelligence 2024</em>.</p>
+<p>[6] <a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/">What are Diffusion Models?</a>. Lilian Weng, <em>2021</em>.</p>
+<p>[7] <a href="https://arxiv.org/abs/2206.10789">Scaling Autoregressive Models for Content-Rich Text-to-Image Generation</a>. Yu et al.&nbsp;(Parti), <em>TMLR 2022</em>.</p>
+<p>[8] <a href="https://arxiv.org/abs/2406.06525">Autoregressive Model Beats Diffusion: Llama for Scalable Image Generation</a>. Sun et al.&nbsp;(LlamaGen), <em>2024</em>.</p>
+<p>[9] <a href="https://arxiv.org/abs/2404.02905">Visual Autoregressive Modeling: Scalable Image Generation via Next-Scale Prediction</a>. Tian et al.&nbsp;(VAR), <em>NeurIPS 2024 Best Paper</em>.</p>
+<p>[10] <a href="https://arxiv.org/abs/2410.10812">HART: Efficient Visual Generation with Hybrid Autoregressive Transformer</a>. Tang et al., <em>ICLR 2025</em>.</p>
+<p>[11] <a href="https://arxiv.org/abs/2105.05233">Diffusion Models Beat GANs on Image Synthesis</a>. Dhariwal &amp; Nichol, <em>NeurIPS 2021</em>.</p>
+<p>[12] <a href="https://arxiv.org/abs/2303.01469">Consistency Models</a>. Song et al., <em>ICML 2023</em>.</p>
+<p>[13] <a href="https://arxiv.org/abs/2304.13705">Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware (ACT)</a>. Zhao et al., <em>RSS 2023</em>.</p>
+<p>[14] <a href="https://octo-models.github.io/">Octo: An Open-Source Generalist Robot Policy</a>. Ghosh et al., <em>RSS 2024</em>.</p>
+<p>[15] <a href="https://arxiv.org/abs/2410.07864">RDT-1B: A Diffusion Foundation Model for Bimanual Manipulation</a>. Liu et al., <em>2024</em>.</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

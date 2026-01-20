@@ -2,6 +2,9 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/diffusion/11-practical-flow-matching/notebook.html",
+      "/posts/diffusion/12-why-diffusion/why_diffusion.html",
+      "/posts/diffusion/12-why-diffusion/index.html",
       "/posts/diffusion/10-diffusion-transformers/index.html",
       "/posts/diffusion/9-unet/index.html",
       "/posts/diffusion/8-guidance/index.html",
@@ -12,7 +15,8 @@
       "/posts/diffusion/3-probability-paths/index.html",
       "/posts/diffusion/2-flows/index.html",
       "/posts/diffusion/1-intro/index.html",
-      "/posts/welcome/index.html"
+      "/posts/welcome/index.html",
+      "/posts/diffusion/11-practical-flow-matching/index.html"
     ]
   }
 ]

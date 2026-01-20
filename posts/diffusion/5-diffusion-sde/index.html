@@ -402,7 +402,7 @@ window.Quarto = {
 </div>
 <section id="diffusion-models-adding-stochasticity" class="level1">
 <h1>Diffusion Models: Adding Stochasticity</h1>
-<p>In <a href="../2-flows/">Parts 2-4</a>, we developed flow matching — a framework where a neural network learns a vector field <span class="math inline">\(u_t^\theta(x)\)</span> that transports noise to data via an ODE:</p>
+<p>In Parts 2-4 (<a href="../2-flows/">flows</a>, <a href="../3-probability-paths/">probability paths</a>, <a href="../4-flow-matching-loss/">training</a>), we developed flow matching — a framework where a neural network learns a vector field <span class="math inline">\(u_t^\theta(x)\)</span> that transports noise to data via an ODE:</p>
 <p><span class="math display">\[
 dX_t = u_t^\theta(X_t) \, dt
 \]</span></p>
@@ -550,7 +550,7 @@ X_0 &amp;\sim p_{\text{init}} &amp;&amp; \text{(random initialization)}
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Recall that for ODEs, we had a <strong>flow map</strong> <span class="math inline">\(\phi_t\)</span> that deterministically mapped initial points to their positions at time <span class="math inline">\(t\)</span>. SDEs don’t have this! Given a starting point <span class="math inline">\(X_0\)</span>, the value <span class="math inline">\(X_t\)</span> is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.</p>
+<p>Recall that for ODEs, we had a <a href="../2-flows/"><strong>flow map</strong></a> <span class="math inline">\(\phi_t\)</span> that deterministically mapped initial points to their positions at time <span class="math inline">\(t\)</span>. SDEs don’t have this! Given a starting point <span class="math inline">\(X_0\)</span>, the value <span class="math inline">\(X_t\)</span> is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.</p>
 </div>
 </div>
 </section>
@@ -664,7 +664,7 @@ X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad
 <p>Given the forward SDE that corrupts data into noise, what is the reverse SDE that transforms noise back into data?</p>
 </div>
 </div>
-<p>It turns out there’s a beautiful mathematical result: the reverse SDE depends on something called the <strong>score function</strong> — the gradient of the log probability density. But how do we learn this score function? That’s the subject of the next post.</p>
+<p>It turns out there’s a beautiful mathematical result: the reverse SDE depends on something called the <strong>score function</strong> — the gradient of the log probability density. But how do we learn this score function? That’s the subject of <a href="../6-score-functions/">Part 6</a>.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">

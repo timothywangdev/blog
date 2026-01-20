@@ -335,7 +335,6 @@ window.Quarto = {
   <li><a href="#classifier-guidance" id="toc-classifier-guidance" class="nav-link" data-scroll-target="#classifier-guidance">Classifier Guidance</a></li>
   <li><a href="#classifier-free-guidance-cfg" id="toc-classifier-free-guidance-cfg" class="nav-link" data-scroll-target="#classifier-free-guidance-cfg">Classifier-Free Guidance (CFG)</a></li>
   </ul></li>
-  <li><a href="#guidance-for-flow-models-1" id="toc-guidance-for-flow-models-1" class="nav-link" data-scroll-target="#guidance-for-flow-models-1">Guidance for Flow Models</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   </ul>
 </nav>
@@ -675,11 +674,6 @@ u_t^\theta(x | \emptyset) \approx u_t^{target}(x) \quad \text{(unconditional)}
 <p>In practice, most modern systems (Stable Diffusion, Flux, etc.) use Gaussian paths, so this distinction rarely matters.</p>
 </div>
 </div>
-</section>
-</section>
-</section>
-<section id="guidance-for-flow-models-1" class="level2">
-<h2 class="anchored" data-anchor-id="guidance-for-flow-models-1">Guidance for Flow Models</h2>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -721,6 +715,8 @@ u_t^\theta(x | \emptyset) \approx u_t^{target}(x) \quad \text{(unconditional)}
 <p>The derivation shows <em>why</em> CFG works: for Gaussian paths, the difference <span class="math inline">\(u_t(x|y) - u_t(x|\emptyset)\)</span> approximates the classifier gradient <span class="math inline">\(\nabla \log p_t(y|x)\)</span>. Scaling by <span class="math inline">\(w &gt; 1\)</span> amplifies this gradient, improving sample quality at the cost of diversity.</p>
 </div>
 </div>
+</section>
+</section>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>

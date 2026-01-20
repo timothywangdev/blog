@@ -413,6 +413,31 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 <td><a href="../7-training/">Training Algorithms</a></td>
 <td>CFM, DDPM, and the conversion formulas</td>
 </tr>
+<tr class="even">
+<td><strong>Part 8</strong></td>
+<td><a href="../8-guidance/">Guided Generation</a></td>
+<td>Classifier and classifier-free guidance</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 9</strong></td>
+<td><a href="../9-unet/">U-Net Architecture</a></td>
+<td>The workhorse architecture for image generation</td>
+</tr>
+<tr class="even">
+<td><strong>Part 10</strong></td>
+<td><a href="../10-diffusion-transformers/">Diffusion Transformers</a></td>
+<td>DiT: Transformers for diffusion</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 11</strong></td>
+<td><a href="../11-practical-flow-matching/">Building an Image Generator</a></td>
+<td>Hands-on: train a flow matching model on CIFAR-10</td>
+</tr>
+<tr class="even">
+<td><strong>Part 12</strong></td>
+<td><a href="../12-why-diffusion/">Why Diffusion?</a></td>
+<td>The multimodal problem — why direct regression fails</td>
+</tr>
 </tbody>
 </table>
 </section>
@@ -422,6 +447,19 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 <blockquote class="blockquote">
 <p><strong>How do we learn to transform random noise into structured data?</strong></p>
 </blockquote>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why Not Just Learn Directly?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You might wonder: why all this complexity? Can’t we just train a network to map labels to images directly? The short answer is <strong>mode averaging</strong> — direct regression produces blurry outputs when multiple valid answers exist. See <a href="../12-why-diffusion/">Part 12: Why Diffusion?</a> for the full explanation.</p>
+</div>
+</div>
 <p>If we can do this, we can generate new images, audio, video, or any data type by starting with random noise and “flowing” toward realistic samples.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -447,7 +485,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 <li><strong>Define a path</strong>: Specify how to smoothly interpolate between noise and data</li>
 <li><strong>Learn the velocity</strong>: Train a neural network to predict the direction of motion along this path</li>
 </ol>
-<p>Imagine dropping a leaf into a river. The current (vector field) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the “noise region” will flow toward the “data region.”</p>
+<p>Imagine dropping a leaf into a river. The current (<a href="../2-flows/">vector field</a>) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the “noise region” will flow toward the “data region.”</p>
 <p>The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.</p>
 </section>
 <section id="how-do-they-compare" class="level2">
@@ -496,7 +534,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </section>
 <section id="the-deep-connection" class="level2">
 <h2 class="anchored" data-anchor-id="the-deep-connection">The Deep Connection</h2>
-<p>Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent “probability flow” formulation that looks like flow matching. The score function (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.</p>
+<p>Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent “probability flow” formulation that looks like flow matching. The <a href="../6-score-functions/">score function</a> (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.</p>
 <p>This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
