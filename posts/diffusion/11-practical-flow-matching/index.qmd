@@ -29,7 +29,7 @@ Now it's time to put it all together. We'll build a **conditional image generato
 ::: {.callout-tip appearance="simple"}
 ## Try it yourself
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb)
 
 The complete notebook runs in ~1-2 hours on a free Colab GPU.
 :::
@@ -42,13 +42,13 @@ We'll use a few key libraries:
 - **diffusers** from Hugging Face for the [U-Net architecture](../9-unet/) (the same library behind Stable Diffusion!)
 - **torchdiffeq** for ODE integration during sampling
 
-See the [companion notebook](notebook.ipynb) for the complete implementation. The setup code is in the `setup` cell.
+See the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete implementation. The setup code is in the `setup` cell.
 
 ## Loading CIFAR-10
 
 CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.
 
-See the `data-loading` cell in the [companion notebook](notebook.ipynb) for data loading code.
+See the `data-loading` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for data loading code.
 
 ## The U-Net Architecture
 
@@ -70,7 +70,7 @@ Key features of our model:
 - **Class conditioning**: Embedding layer tells the network "what to generate" (airplane, cat, etc.)
 - **Attention layers**: Self-attention at lower resolutions for global context
 
-See the `unet-architecture` cell in the [companion notebook](notebook.ipynb) for the full U-Net configuration.
+See the `unet-architecture` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the full U-Net configuration.
 
 ## Flow Matching: The Core Idea
 
@@ -131,7 +131,7 @@ This is **constant in time**! The direction from noise to image is simply their 
 
 $$\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right]$$ {#eq-cfm-loss}
 
-The implementation is straightforward — sample $t$, compute $x_t$, and minimize MSE between predicted and target vector field. See the `flow-matching-loss` cell in the [companion notebook](notebook.ipynb) for the complete implementation.
+The implementation is straightforward — sample $t$, compute $x_t$, and minimize MSE between predicted and target vector field. See the `flow-matching-loss` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete implementation.
 
 ## Classifier-Free Guidance {#sec-cfg}
 
@@ -177,7 +177,7 @@ The **guidance scale** $w$ controls conditioning strength:
 High guidance ($w > 8$) amplifies the class signal so much that images become oversaturated with artifacts. Start with $w = 2$ and adjust.
 :::
 
-See the `cfg-implementation` cell in the [companion notebook](notebook.ipynb) for the `CFGVelocityWrapper` class that applies this formula during sampling.
+See the `cfg-implementation` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the `CFGVelocityWrapper` class that applies this formula during sampling.
 
 ## Training
 
@@ -188,7 +188,7 @@ The training loop is straightforward:
 3. Backpropagate and update weights
 4. Repeat
 
-See the `training-loop` cell in the [companion notebook](notebook.ipynb) for the complete training code.
+See the `training-loop` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete training code.
 
 ### Hyperparameters
 
@@ -211,11 +211,11 @@ Starting from noise $\epsilon$ at $t=0$ and integrating to $t=1$:
 2. Use `torchdiffeq.odeint` to solve the ODE with the CFG-guided vector field
 3. The final state at $t=1$ is our generated image
 
-See the `sampling` cell in the [companion notebook](notebook.ipynb) for the complete sampling implementation.
+See the `sampling` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete sampling implementation.
 
 ## Results
 
-After training, we can generate images for any CIFAR-10 class. See the `results` and `guidance-comparison` cells in the [companion notebook](notebook.ipynb) for generated samples and visualizations.
+After training, we can generate images for any CIFAR-10 class. See the `results` and `guidance-comparison` cells in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for generated samples and visualizations.
 
 ### Effect of Guidance Scale
 
