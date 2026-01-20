@@ -438,7 +438,7 @@ window.Quarto = {
 <div class="callout-body-container callout-body">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
+<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
 <figcaption>Open In Colab</figcaption>
 </figure>
 </div>
@@ -454,12 +454,12 @@ window.Quarto = {
 <li><strong>diffusers</strong> from Hugging Face for the <a href="../9-unet/">U-Net architecture</a> (the same library behind Stable Diffusion!)</li>
 <li><strong>torchdiffeq</strong> for ODE integration during sampling</li>
 </ul>
-<p>See the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation. The setup code is in the <code>setup</code> cell.</p>
+<p>See the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete implementation. The setup code is in the <code>setup</code> cell.</p>
 </section>
 <section id="loading-cifar-10" class="level2">
 <h2 class="anchored" data-anchor-id="loading-cifar-10">Loading CIFAR-10</h2>
 <p>CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.</p>
-<p>See the <code>data-loading</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for data loading code.</p>
+<p>See the <code>data-loading</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for data loading code.</p>
 </section>
 <section id="the-u-net-architecture" class="level2">
 <h2 class="anchored" data-anchor-id="the-u-net-architecture">The U-Net Architecture</h2>
@@ -488,7 +488,7 @@ window.Quarto = {
 <li><strong>Class conditioning</strong>: Embedding layer tells the network “what to generate” (airplane, cat, etc.)</li>
 <li><strong>Attention layers</strong>: Self-attention at lower resolutions for global context</li>
 </ul>
-<p>See the <code>unet-architecture</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the full U-Net configuration.</p>
+<p>See the <code>unet-architecture</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the full U-Net configuration.</p>
 </section>
 <section id="flow-matching-the-core-idea" class="level2">
 <h2 class="anchored" data-anchor-id="flow-matching-the-core-idea">Flow Matching: The Core Idea</h2>
@@ -588,7 +588,7 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <p>This is <strong>constant in time</strong>! The direction from noise to image is simply their difference.</p>
 <p><strong>The CFM loss</strong> (from <a href="../4-flow-matching-loss/">Part 4</a>) trains the network to predict this vector field:</p>
 <p><span id="eq-cfm-loss"><span class="math display">\[\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right] \tag{4}\]</span></span></p>
-<p>The implementation is straightforward — sample <span class="math inline">\(t\)</span>, compute <span class="math inline">\(x_t\)</span>, and minimize MSE between predicted and target vector field. See the <code>flow-matching-loss</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation.</p>
+<p>The implementation is straightforward — sample <span class="math inline">\(t\)</span>, compute <span class="math inline">\(x_t\)</span>, and minimize MSE between predicted and target vector field. See the <code>flow-matching-loss</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete implementation.</p>
 </section>
 </section>
 <section id="sec-cfg" class="level2">
@@ -671,7 +671,7 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <p>High guidance (<span class="math inline">\(w &gt; 8\)</span>) amplifies the class signal so much that images become oversaturated with artifacts. Start with <span class="math inline">\(w = 2\)</span> and adjust.</p>
 </div>
 </div>
-<p>See the <code>cfg-implementation</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the <code>CFGVelocityWrapper</code> class that applies this formula during sampling.</p>
+<p>See the <code>cfg-implementation</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the <code>CFGVelocityWrapper</code> class that applies this formula during sampling.</p>
 </section>
 </section>
 <section id="training" class="level2">
@@ -683,7 +683,7 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <li>Backpropagate and update weights</li>
 <li>Repeat</li>
 </ol>
-<p>See the <code>training-loop</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete training code.</p>
+<p>See the <code>training-loop</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete training code.</p>
 <section id="hyperparameters" class="level3">
 <h3 class="anchored" data-anchor-id="hyperparameters">Hyperparameters</h3>
 <table class="caption-top table">
@@ -734,11 +734,11 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <li>Use <code>torchdiffeq.odeint</code> to solve the ODE with the CFG-guided vector field</li>
 <li>The final state at <span class="math inline">\(t=1\)</span> is our generated image</li>
 </ol>
-<p>See the <code>sampling</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete sampling implementation.</p>
+<p>See the <code>sampling</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete sampling implementation.</p>
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>After training, we can generate images for any CIFAR-10 class. See the <code>results</code> and <code>guidance-comparison</code> cells in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for generated samples and visualizations.</p>
+<p>After training, we can generate images for any CIFAR-10 class. See the <code>results</code> and <code>guidance-comparison</code> cells in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for generated samples and visualizations.</p>
 <section id="effect-of-guidance-scale" class="level3">
 <h3 class="anchored" data-anchor-id="effect-of-guidance-scale">Effect of Guidance Scale</h3>
 <p>Higher guidance scale <span class="math inline">\(w\)</span> means stronger class conditioning — but too high leads to artifacts. The notebook demonstrates this with samples at <span class="math inline">\(w \in \{1, 2, 4, 8\}\)</span>.</p>

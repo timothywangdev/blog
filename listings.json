@@ -2,8 +2,6 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/diffusion/11-practical-flow-matching/notebook.html",
-      "/posts/diffusion/12-why-diffusion/why_diffusion.html",
       "/posts/diffusion/11-practical-flow-matching/index.html",
       "/posts/diffusion/12-why-diffusion/index.html",
       "/posts/diffusion/10-diffusion-transformers/index.html",
