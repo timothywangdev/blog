@@ -19,7 +19,7 @@ draft: false
 
 :::
 
-We've spent several posts deriving the mathematical theory of diffusion models: probability paths, flow matching objectives, and score functions. But here's the practical question: **how do we actually build a neural network that can denoise images at arbitrary timesteps?**
+We've spent several posts deriving the mathematical theory of diffusion models: [probability paths](../3-probability-paths/), [flow matching objectives](../4-flow-matching-loss/), and [score functions](../6-score-functions/). But here's the practical question: **how do we actually build a neural network that can denoise images at arbitrary timesteps?**
 
 This isn't a standard image-to-image translation problem. The network needs to:
 1. Handle the *same noisy image* differently depending on time $t$ (aggressive denoising at $t \approx 0$, gentle refinement at $t \approx 1$)

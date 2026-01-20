@@ -127,7 +127,7 @@ Now we can understand DiT as **ViT adapted for diffusion**. The key question: wh
 - ViT: Uses [CLS] token for classification
 - DiT: Uses all patch tokens, decodes back to image via linear layer
 
-**2. Operate in latent space**
+**2. Operate in latent space** (see [Latent Diffusion in Part 9](../9-unet/#sec-modern))
 - ViT: Works on raw pixels (224×224 is manageable)
 - DiT: Works on VAE latents (raw 512×512 would be 65,536 tokens!)
 
@@ -257,7 +257,7 @@ The block is an **identity function** — it just passes the input through uncha
 | **AdaLN** | Modulate LayerNorm scale/shift | $O(d)$ | 2.98 |
 | **AdaLN-Zero** | AdaLN + zero-init gating | $O(d)$ | **2.27** |
 
-**Note on text conditioning**: For free-form text prompts (not class labels), cross-attention works better than AdaLN. This is what Stable Diffusion uses — the text encoder outputs a sequence of embeddings, and each DiT block cross-attends to them.
+**Note on text conditioning**: For free-form text prompts (not class labels), cross-attention works better than AdaLN. This is what Stable Diffusion uses — the text encoder outputs a sequence of embeddings, and each DiT block cross-attends to them. See [Part 9](../9-unet/) for more on how conditioning flows through the network.
 
 ## Comparison: U-Net vs DiT {#sec-comparison}
 

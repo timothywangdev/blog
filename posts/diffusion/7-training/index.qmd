@@ -36,7 +36,7 @@ $$
 \mathcal{L}_{FM}(\theta) = \mathbb{E}_{t \sim \text{Unif}, x \sim p_t(x)} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
 $$
 
-But how do we sample $x \sim p_t(x)$? Recall the marginal is defined as:
+But how do we sample $x \sim p_t(x)$? Recall from [Part 3](../3-probability-paths/) that the marginal is defined as:
 
 $$
 p_t(x) = \int p_t(x | z) p_{data}(z) dz
@@ -433,7 +433,7 @@ $$
 s_t^\theta(x) = \frac{\alpha_t}{\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t} \left(u_t^\theta(x) - \frac{\dot{\alpha}_t}{\alpha_t} x\right)
 $$
 
-This holds as long as $\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t \neq 0$. Factoring: $\beta_t(\dot{\alpha}_t \beta_t - \dot{\beta}_t \alpha_t)$. Recall from Part 3 that $\alpha_t$ increases from 0 to 1 ($\dot{\alpha}_t > 0$) and $\beta_t$ decreases from 1 to 0 ($\dot{\beta}_t < 0$). Therefore $\dot{\alpha}_t \beta_t > 0$ and $-\dot{\beta}_t \alpha_t > 0$, so the second factor is strictly positive for $t \in (0, 1)$.
+This holds as long as $\dot{\alpha}_t \beta_t^2 - \dot{\beta}_t \beta_t \alpha_t \neq 0$. Factoring: $\beta_t(\dot{\alpha}_t \beta_t - \dot{\beta}_t \alpha_t)$. Recall from [Part 3](../3-probability-paths/) that $\alpha_t$ increases from 0 to 1 ($\dot{\alpha}_t > 0$) and $\beta_t$ decreases from 1 to 0 ($\dot{\beta}_t < 0$). Therefore $\dot{\alpha}_t \beta_t > 0$ and $-\dot{\beta}_t \alpha_t > 0$, so the second factor is strictly positive for $t \in (0, 1)$.
 
 
 If we have a trained a score network $s_t^\theta$, we can use arbitrary $\sigma_t \geq 0$ to sample from the SDE:

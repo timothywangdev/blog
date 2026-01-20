@@ -12,3 +12,6 @@
 
 # Playwright state
 .playwright-mcp/
+# Part 11 data files
+posts/diffusion/11-practical-flow-matching/data/
+posts/diffusion/11-practical-flow-matching/*.pt

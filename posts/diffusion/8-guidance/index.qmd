@@ -287,10 +287,6 @@ The CFG formula $(1-w)u_t(x) + w \cdot u_t(x|y)$ is just a weighted interpolatio
 In practice, most modern systems (Stable Diffusion, Flux, etc.) use Gaussian paths, so this distinction rarely matters.
 :::
 
-
-## Guidance for Flow Models
-
-
 ::: {.callout-note appearance="simple"}
 ## Summary
 

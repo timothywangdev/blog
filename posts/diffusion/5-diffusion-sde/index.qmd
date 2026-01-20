@@ -19,7 +19,7 @@ toc: true
 
 # Diffusion Models: Adding Stochasticity
 
-In [Parts 2-4](../2-flows/), we developed flow matching — a framework where a neural network learns a vector field $u_t^\theta(x)$ that transports noise to data via an ODE:
+In Parts 2-4 ([flows](../2-flows/), [probability paths](../3-probability-paths/), [training](../4-flow-matching-loss/)), we developed flow matching — a framework where a neural network learns a vector field $u_t^\theta(x)$ that transports noise to data via an ODE:
 
 $$
 dX_t = u_t^\theta(X_t) \, dt
@@ -140,7 +140,7 @@ The drift $u_t^\theta$ is parameterized by a neural network, and $p_{\text{init}
 
 ::: {.callout-warning appearance="simple"}
 ## No Flow Map for SDEs
-Recall that for ODEs, we had a **flow map** $\phi_t$ that deterministically mapped initial points to their positions at time $t$. SDEs don't have this! Given a starting point $X_0$, the value $X_t$ is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.
+Recall that for ODEs, we had a [**flow map**](../2-flows/) $\phi_t$ that deterministically mapped initial points to their positions at time $t$. SDEs don't have this! Given a starting point $X_0$, the value $X_t$ is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.
 :::
 
 ## What is Brownian Motion?
@@ -223,7 +223,7 @@ The forward process is usually simple and fixed (e.g., just adding Gaussian nois
 Given the forward SDE that corrupts data into noise, what is the reverse SDE that transforms noise back into data?
 :::
 
-It turns out there's a beautiful mathematical result: the reverse SDE depends on something called the **score function** — the gradient of the log probability density. But how do we learn this score function? That's the subject of the next post.
+It turns out there's a beautiful mathematical result: the reverse SDE depends on something called the **score function** — the gradient of the log probability density. But how do we learn this score function? That's the subject of [Part 6](../6-score-functions/).
 
 ::: {.callout-note appearance="simple"}
 ## Summary

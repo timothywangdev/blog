@@ -27,12 +27,23 @@ This multi-part series explores the theory behind modern generative models. Each
 | **Part 5** | [Diffusion Models & SDEs](../5-diffusion-sde/) | Stochastic differential equations and Brownian motion |
 | **Part 6** | [Score Functions](../6-score-functions/) | Conditional and marginal scores, the training trick |
 | **Part 7** | [Training Algorithms](../7-training/) | CFM, DDPM, and the conversion formulas |
+| **Part 8** | [Guided Generation](../8-guidance/) | Classifier and classifier-free guidance |
+| **Part 9** | [U-Net Architecture](../9-unet/) | The workhorse architecture for image generation |
+| **Part 10** | [Diffusion Transformers](../10-diffusion-transformers/) | DiT: Transformers for diffusion |
+| **Part 11** | [Building an Image Generator](../11-practical-flow-matching/) | Hands-on: train a flow matching model on CIFAR-10 |
+| **Part 12** | [Why Diffusion?](../12-why-diffusion/) | The multimodal problem — why direct regression fails |
 
 ## What Are We Building?
 
 Diffusion models and flow matching power today's best generative AI systems — Stable Diffusion, DALL-E, Midjourney, and Flux. Despite their different formulations, both solve the same fundamental problem:
 
 > **How do we learn to transform random noise into structured data?**
+
+::: {.callout-tip appearance="simple"}
+## Why Not Just Learn Directly?
+
+You might wonder: why all this complexity? Can't we just train a network to map labels to images directly? The short answer is **mode averaging** — direct regression produces blurry outputs when multiple valid answers exist. See [Part 12: Why Diffusion?](../12-why-diffusion/) for the full explanation.
+:::
 
 If we can do this, we can generate new images, audio, video, or any data type by starting with random noise and "flowing" toward realistic samples.
 
@@ -56,7 +67,7 @@ Flow matching takes a more direct approach:
 1. **Define a path**: Specify how to smoothly interpolate between noise and data
 2. **Learn the velocity**: Train a neural network to predict the direction of motion along this path
 
-Imagine dropping a leaf into a river. The current (vector field) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the "noise region" will flow toward the "data region."
+Imagine dropping a leaf into a river. The current ([vector field](../2-flows/)) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the "noise region" will flow toward the "data region."
 
 The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.
 
@@ -72,7 +83,7 @@ The simplest path is a straight line between a noise sample and a data sample. T
 
 ## The Deep Connection
 
-Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent "probability flow" formulation that looks like flow matching. The score function (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.
+Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent "probability flow" formulation that looks like flow matching. The [score function](../6-score-functions/) (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.
 
 This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.
 

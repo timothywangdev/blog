@@ -67,7 +67,7 @@ $$
 **Step-by-step reasoning:**
 
 1. **Chain rule**: $\nabla \log f = \frac{\nabla f}{f}$
-2. **Marginalization**: $p_t(x) = \int p_t(x|z) p_{data}(z) dz$ (law of total probability)
+2. **[Marginalization](../3-probability-paths/)**: $p_t(x) = \int p_t(x|z) p_{data}(z) dz$ (law of total probability)
 3. **Leibniz rule**$^*$: swap $\nabla_x$ and $\int_z$
 4. **Rewrite** using $\nabla p = p \nabla \log p$ (derived below)
 
@@ -145,7 +145,7 @@ $$
 
 ## Proving the SDE Extension Trick
 
-Now that we understand conditional scores, let's prove why the SDE Extension Trick works. The key tool is the **Fokker-Planck equation**, which extends the continuity equation (from Part 4) to handle SDEs.
+Now that we understand conditional scores, let's prove why the SDE Extension Trick works. The key tool is the **Fokker-Planck equation**, which extends the [continuity equation (from Part 4)](../4-flow-matching-loss/#continuity-equation) to handle SDEs.
 
 ::: {.callout-tip appearance="simple"}
 ## Theorem: Fokker-Planck Equation
@@ -345,6 +345,6 @@ We've established the theoretical foundation: we know *what* to train (the score
 
 In the next two posts, we'll dive into the practical details:
 
-- **Part 7**: The complete training algorithm — how to implement score matching in practice
-- **Part 8**: Sampling and inference — how to generate new samples from the trained model
+- **[Part 7](../7-training/)**: The complete training algorithm — how to implement score matching in practice
+- **[Part 8](../8-guidance/)**: Sampling and inference — how to generate new samples from the trained model
 
