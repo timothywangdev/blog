@@ -4556,7 +4556,7 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <p>This notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><a href="https://colab.research.google.com/github/YOUR_USERNAME/YOUR_REPO/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
+<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
 <figcaption>Open In Colab</figcaption>
 </figure>
 </div>
@@ -5436,7 +5436,7 @@ font-style: inherit;">"Model saved to flow_matching_cifar10.pt"</span>)</span></
 
  ]]></description>
   <guid>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/notebook.html</guid>
-  <pubDate>Tue, 20 Jan 2026 19:29:56 GMT</pubDate>
+  <pubDate>Tue, 20 Jan 2026 19:43:53 GMT</pubDate>
 </item>
 <item>
   <title>Why Can’t We Just Learn Label -&gt; Image Directly?</title>
@@ -6317,7 +6317,7 @@ font-style: inherit;"># Visualize the learned vector field@torch.no_grad()def pl
 
  ]]></description>
   <guid>https://layernorm.dev/posts/diffusion/12-why-diffusion/why_diffusion.html</guid>
-  <pubDate>Tue, 20 Jan 2026 19:29:56 GMT</pubDate>
+  <pubDate>Tue, 20 Jan 2026 19:43:53 GMT</pubDate>
 </item>
 </channel>
 </rss>
