@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Hujie Wang">
 
-<title>Building an Image Generator with Flow Matching – LayerNorm</title>
+<title>Flow Matching Image Generator - CIFAR-10 – LayerNorm</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -361,12 +362,15 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#loading-cifar-10" id="toc-loading-cifar-10" class="nav-link active" data-scroll-target="#loading-cifar-10">1. Loading CIFAR-10</a></li>
+  <li><a href="#building-an-image-generator-with-flow-matchingthis-notebook-implements-a-conditional-flow-matching-model-on-cifar-10-using-the-diffusers-library-for-the-u-net-architecture.open-in-colab" id="toc-building-an-image-generator-with-flow-matchingthis-notebook-implements-a-conditional-flow-matching-model-on-cifar-10-using-the-diffusers-library-for-the-u-net-architecture.open-in-colab" class="nav-link active" data-scroll-target="#building-an-image-generator-with-flow-matchingthis-notebook-implements-a-conditional-flow-matching-model-on-cifar-10-using-the-diffusers-library-for-the-u-net-architecture.open-in-colab">Building an Image Generator with Flow MatchingThis notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.<img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid" alt="Open In Colab"></a>
+  <ul class="collapse">
+  <li><a href="#loading-cifar-10" id="toc-loading-cifar-10" class="nav-link" data-scroll-target="#loading-cifar-10">1. Loading CIFAR-10</a></li>
   <li><a href="#u-net-architecture-using-diffusers" id="toc-u-net-architecture-using-diffusers" class="nav-link" data-scroll-target="#u-net-architecture-using-diffusers">2. U-Net Architecture (using diffusers)</a></li>
   <li><a href="#classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation" id="toc-classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation" class="nav-link" data-scroll-target="#classifier-free-guidanceproblem-we-want-to-generate-images-of-a-specific-class-not-just-any-random-image.solution-classifier-free-guidance-cfg-amplifies-the-class-signal-during-sampling.during-training-we-randomly-drop-class-labels-replacing-with-null-class.-this-teaches-the-model-both--conditional-generation-u_tthetax_t-y-generate-class-y--unconditional-generation-u_tthetax_t-varnothing-generate-any-classduring-sampling-we-blend-both-predictionstildeu_tthetax_t-y-u_tthetax_t-varnothing-w-cdot-biglu_tthetax_t-y---u_tthetax_t-varnothingbigrwhere-w-is-the-guidance-scale--w-1-standard-conditional-generation--w-1-amplified-class-signal-stronger-conditioning--w-0-pure-unconditional-generation">4. Classifier-Free Guidance<strong>Problem</strong>: We want to generate images of a <em>specific</em> class, not just any random image.<strong>Solution</strong>: Classifier-Free Guidance (CFG) amplifies the “class signal” during sampling.During training, we randomly drop class labels (replacing with null class). This teaches the model both:- Conditional generation: <span class="math inline">\(u_t^\theta(x_t | y)\)</span> – generate class <span class="math inline">\(y\)</span>- Unconditional generation: <span class="math inline">\(u_t^\theta(x_t | \varnothing)\)</span> – generate any classDuring sampling, we blend both predictions:<span class="math display">\[\tilde{u}_t^\theta(x_t | y) = u_t^\theta(x_t | \varnothing) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \varnothing)\bigr)\]</span>Where <span class="math inline">\(w\)</span> is the <strong>guidance scale</strong>:- <span class="math inline">\(w = 1\)</span>: Standard conditional generation- <span class="math inline">\(w &gt; 1\)</span>: Amplified class signal (stronger conditioning)- <span class="math inline">\(w = 0\)</span>: Pure unconditional generation</a></li>
   <li><a href="#training-loop" id="toc-training-loop" class="nav-link" data-scroll-target="#training-loop">5. Training Loop</a></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">7. Results</a></li>
   <li><a href="#summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" id="toc-summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" class="nav-link" data-scroll-target="#summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality">SummaryWe built a conditional image generator using flow matching:1. <strong>U-Net architecture</strong> (from <code>diffusers</code>) with time and class conditioning2. <strong>Gaussian CondOT path</strong>: <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span> where <span class="math inline">\(z\)</span> is data, <span class="math inline">\(\epsilon\)</span> is noise3. <strong>Flow matching loss</strong>: Learn to predict the vector field $u_t^(x_t) z - <span class="math inline">\(4. **Classifier-free guidance**: Amplify class signal during sampling5. **ODE sampling**: Integrate from noise (\)</span>t=0<span class="math inline">\() to image (\)</span>t=1$) using <code>torchdiffeq</code>### Key takeaways:- Flow matching is conceptually simple: just learn the direction from noise to data- The same architecture powers Stable Diffusion, Flux, and other SOTA models- CFG is crucial for high-quality conditional generation### Extensions to try:- Use a DiT (Diffusion Transformer) instead of U-Net (see Part 10)- Train on larger datasets (ImageNet, LAION)- Try different ODE solvers (adaptive stepping with <code>dopri5</code>)- Add EMA (exponential moving average) for better sample quality</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -376,13 +380,19 @@ window.Quarto = {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Building an Image Generator with Flow Matching</h1>
+<h1 class="title">Flow Matching Image Generator - CIFAR-10</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
     
   
     
@@ -393,14 +403,9 @@ window.Quarto = {
 </header>
 
 
-<p><cell_type>raw</cell_type>—title: “Flow Matching Image Generator - CIFAR-10”author: “Hujie Wang”format: html—</p>
-<p>This notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
-<figcaption>Open In Colab</figcaption>
-</figure>
-</div>
+<p>—title: “Flow Matching Image Generator - CIFAR-10”author: “Hujie Wang”format: htmllisting: false—</p>
+<section id="building-an-image-generator-with-flow-matchingthis-notebook-implements-a-conditional-flow-matching-model-on-cifar-10-using-the-diffusers-library-for-the-u-net-architecture.open-in-colab" class="level1">
+<h1>Building an Image Generator with Flow MatchingThis notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.<a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid" alt="Open In Colab"></a></h1>
 <div id="setup" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies (uncomment if running in Colab)</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co"># !pip install torch torchvision diffusers torchdiffeq tqdm matplotlib</span></span>
@@ -472,7 +477,7 @@ Image shape: torch.Size([3, 32, 32])
 Number of classes: 10</code></pre>
 </div>
 </div>
-<div id="cell-6" class="cell" data-execution_count="3">
+<div id="cell-5" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Visualize some training images</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_images(images, labels<span class="op">=</span><span class="va">None</span>, nrow<span class="op">=</span><span class="dv">8</span>, title<span class="op">=</span><span class="st">'Images'</span>):</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Display a grid of images."""</span></span>
@@ -661,7 +666,7 @@ Effect of guidance scale on 'airplane' class:</code></pre>
 </section>
 <section id="summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" class="level2">
 <h2 class="anchored" data-anchor-id="summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality">SummaryWe built a conditional image generator using flow matching:1. <strong>U-Net architecture</strong> (from <code>diffusers</code>) with time and class conditioning2. <strong>Gaussian CondOT path</strong>: <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span> where <span class="math inline">\(z\)</span> is data, <span class="math inline">\(\epsilon\)</span> is noise3. <strong>Flow matching loss</strong>: Learn to predict the vector field $u_t^(x_t) z - <span class="math inline">\(4. **Classifier-free guidance**: Amplify class signal during sampling5. **ODE sampling**: Integrate from noise (\)</span>t=0<span class="math inline">\() to image (\)</span>t=1$) using <code>torchdiffeq</code>### Key takeaways:- Flow matching is conceptually simple: just learn the direction from noise to data- The same architecture powers Stable Diffusion, Flux, and other SOTA models- CFG is crucial for high-quality conditional generation### Extensions to try:- Use a DiT (Diffusion Transformer) instead of U-Net (see Part 10)- Train on larger datasets (ImageNet, LAION)- Try different ODE solvers (adaptive stepping with <code>dopri5</code>)- Add EMA (exponential moving average) for better sample quality</h2>
-<div id="cell-22" class="cell" data-execution_count="12">
+<div id="cell-21" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Save the trained model</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>torch.save(model.state_dict(), <span class="st">'flow_matching_cifar10.pt'</span>)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Model saved to flow_matching_cifar10.pt"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -671,6 +676,7 @@ Effect of guidance scale on 'airplane' class:</code></pre>
 </div>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

@@ -12,6 +12,413 @@
 <generator>quarto-1.8.27</generator>
 <lastBuildDate>Tue, 20 Jan 2026 00:00:00 GMT</lastBuildDate>
 <item>
+  <title>Diffusion &amp; Flow Matching Part 11: Building an Image Generator</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>We build a working image generator from scratch</strong> using flow matching on CIFAR-10</li>
+<li><strong>Same techniques power production systems</strong> like Stable Diffusion, Flux, and Sora</li>
+<li><strong>Classifier-free guidance (CFG)</strong> lets us control what class to generate</li>
+<li><strong>Full code included</strong> — run it yourself on Google Colab</li>
+</ul>
+</div>
+</div>
+<section id="from-theory-to-practice" class="level2">
+<h2 class="anchored" data-anchor-id="from-theory-to-practice">From Theory to Practice</h2>
+<p>In the previous posts, we built up the mathematical foundations of flow matching:</p>
+<ul>
+<li><a href="../2-flows/"><strong>Part 2</strong></a>: Vector fields and flows</li>
+<li><a href="../4-flow-matching-loss/"><strong>Part 4</strong></a>: The marginalization trick and CFM loss</li>
+<li><a href="../7-training/"><strong>Part 7</strong></a>: Training algorithms</li>
+<li><a href="../9-unet/"><strong>Part 9</strong></a>: U-Net architecture</li>
+</ul>
+<p>Now it’s time to put it all together. We’ll build a <strong>conditional image generator</strong> that can create CIFAR-10 images of any class — airplanes, cars, cats, dogs, and more.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Try it yourself
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
+<figcaption>Open In Colab</figcaption>
+</figure>
+</div>
+<p>The complete notebook runs in ~1-2 hours on a free Colab GPU.</p>
+</div>
+</div>
+</section>
+<section id="setup" class="level2">
+<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<p>We’ll use a few key libraries:</p>
+<ul>
+<li><strong>PyTorch</strong> and <strong>torchvision</strong> for deep learning and data</li>
+<li><strong>diffusers</strong> from Hugging Face for the <a href="../9-unet/">U-Net architecture</a> (the same library behind Stable Diffusion!)</li>
+<li><strong>torchdiffeq</strong> for ODE integration during sampling</li>
+</ul>
+<p>See the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation. The setup code is in the <code>setup</code> cell.</p>
+</section>
+<section id="loading-cifar-10" class="level2">
+<h2 class="anchored" data-anchor-id="loading-cifar-10">Loading CIFAR-10</h2>
+<p>CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.</p>
+<p>See the <code>data-loading</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for data loading code.</p>
+</section>
+<section id="the-u-net-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="the-u-net-architecture">The U-Net Architecture</h2>
+<p>We use <code>UNet2DModel</code> from the <code>diffusers</code> library. This is the <strong>same architecture</strong> that powers Stable Diffusion and other state-of-the-art models.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why U-Net?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The U-Net’s encoder-decoder structure with skip connections is perfect for image generation:</p>
+<ul>
+<li><strong>Encoder</strong> captures global context at low resolutions</li>
+<li><strong>Decoder</strong> reconstructs fine details at high resolutions</li>
+<li><strong>Skip connections</strong> preserve spatial information that would otherwise be lost</li>
+</ul>
+</div>
+</div>
+<p>Key features of our model:</p>
+<ul>
+<li><strong>Time conditioning</strong>: Sinusoidal embeddings tell the network “where we are” in the flow (<img src="https://latex.codecogs.com/png.latex?t%20%5Cin%20%5B0,1%5D">)</li>
+<li><strong>Class conditioning</strong>: Embedding layer tells the network “what to generate” (airplane, cat, etc.)</li>
+<li><strong>Attention layers</strong>: Self-attention at lower resolutions for global context</li>
+</ul>
+<p>See the <code>unet-architecture</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the full U-Net configuration.</p>
+</section>
+<section id="flow-matching-the-core-idea" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching-the-core-idea">Flow Matching: The Core Idea</h2>
+<p>Recall from <a href="../4-flow-matching-loss/">Part 4</a> that flow matching learns a vector field to transport noise to data. Here’s the intuition:</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Analogy: GPS Navigation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of flow matching like GPS navigation. You want to get from point A (noise) to point B (image). The network learns the <strong>velocity</strong> — which direction to move at each moment. Follow the velocity long enough, and you arrive at your destination.</p>
+</div>
+</div>
+<section id="sec-gaussian-condot" class="level3">
+<h3 class="anchored" data-anchor-id="sec-gaussian-condot">The Gaussian CondOT Path</h3>
+<p>We use the <strong>Gaussian CondOT path</strong> — the same formulation from <a href="../7-training/">Part 7</a>:</p>
+<p><span id="eq-gaussian-path"><img src="https://latex.codecogs.com/png.latex?x_t%20=%20%5Calpha_t%20%5Ccdot%20z%20+%20%5Cbeta_t%20%5Ccdot%20%5Cepsilon%20%5Ctag%7B1%7D"></span></p>
+<p>where:</p>
+<ul>
+<li><img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7B%5Ctext%7Bdata%7D%7D"> is a real image</li>
+<li><img src="https://latex.codecogs.com/png.latex?%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)"> is noise</li>
+<li><img src="https://latex.codecogs.com/png.latex?%5Calpha_t%20=%20t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%20=%201%20-%20t"> (linear schedule)</li>
+</ul>
+<p>This gives us the <strong>linear interpolation</strong>:</p>
+<p><span id="eq-linear-path"><img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon%20%5Ctag%7B2%7D"></span></p>
+<div id="fig-linear-path" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/linear-path-diagram.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have pure noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon">; at t=1, the clean image <img src="https://latex.codecogs.com/png.latex?z"> emerges.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Boundary Conditions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Time</th>
+<th><img src="https://latex.codecogs.com/png.latex?%5Calpha_t"></th>
+<th><img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"></th>
+<th><img src="https://latex.codecogs.com/png.latex?x_t"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><img src="https://latex.codecogs.com/png.latex?t%20=%200"></td>
+<td>0</td>
+<td>1</td>
+<td><img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> (pure noise)</td>
+</tr>
+<tr class="even">
+<td><img src="https://latex.codecogs.com/png.latex?t%20=%201"></td>
+<td>1</td>
+<td>0</td>
+<td><img src="https://latex.codecogs.com/png.latex?z"> (clean data)</td>
+</tr>
+</tbody>
+</table>
+<p>The path starts at noise and ends at data — exactly what we need for generation!</p>
+</div>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why This Path?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This is the <strong>optimal transport</strong> path — the straight line from noise to data. Compared to Gaussian variance-preserving paths used in DDPM (<a href="../5-diffusion-sde/">Part 5</a>):</p>
+<ol type="1">
+<li><strong>Constant vector field</strong>: <img src="https://latex.codecogs.com/png.latex?u_t%20=%20z%20-%20%5Cepsilon"> doesn’t change with time</li>
+<li><strong>Straighter trajectories</strong>: Fewer ODE steps needed (10-50 vs 1000)</li>
+<li><strong>Same math</strong>: The <a href="../4-flow-matching-loss/">marginalization trick</a> still applies</li>
+</ol>
+</div>
+</div>
+<p><strong>The conditional vector field</strong> is remarkably simple. Taking the derivative of <img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon">:</p>
+<p><span id="eq-cond-velocity"><img src="https://latex.codecogs.com/png.latex?u_t(x_t%20%7C%20z)%20=%20%5Cfrac%7Bd%20x_t%7D%7Bdt%7D%20=%20z%20-%20%5Cepsilon%20%5Ctag%7B3%7D"></span></p>
+<p>This is <strong>constant in time</strong>! The direction from noise to image is simply their difference.</p>
+<p><strong>The CFM loss</strong> (from <a href="../4-flow-matching-loss/">Part 4</a>) trains the network to predict this vector field:</p>
+<p><span id="eq-cfm-loss"><img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7B%5Ctext%7BCFM%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20z,%20%5Cepsilon%7D%20%5Cleft%5B%20%5C%7C%20u_t%5E%5Ctheta(x_t)%20-%20(z%20-%20%5Cepsilon)%20%5C%7C%5E2%20%5Cright%5D%20%5Ctag%7B4%7D"></span></p>
+<p>The implementation is straightforward — sample <img src="https://latex.codecogs.com/png.latex?t">, compute <img src="https://latex.codecogs.com/png.latex?x_t">, and minimize MSE between predicted and target vector field. See the <code>flow-matching-loss</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation.</p>
+</section>
+</section>
+<section id="sec-cfg" class="level2">
+<h2 class="anchored" data-anchor-id="sec-cfg">Classifier-Free Guidance</h2>
+<p>We want to generate images of a <em>specific</em> class (e.g., “airplane”), not just any random image. <strong>Classifier-Free Guidance (CFG)</strong> is the standard solution, used in DALL-E, Stable Diffusion, and virtually all modern image generators.</p>
+<section id="the-key-insight" class="level3">
+<h3 class="anchored" data-anchor-id="the-key-insight">The Key Insight</h3>
+<p>Recall from <a href="../8-guidance/">Part 8</a> that for Gaussian paths, there’s a beautiful connection to Bayes’ rule. The <strong>conditional score</strong> decomposes as:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20y)%20=%20%5Cunderbrace%7B%5Cnabla_x%20%5Clog%20p_t(x)%7D_%7B%5Ctext%7Bunconditional%7D%7D%20+%20%5Cunderbrace%7B%5Cnabla_x%20%5Clog%20p_t(y%20%7C%20x)%7D_%7B%5Ctext%7Bclassifier%20gradient%7D%7D"></p>
+<p>This tells us: to generate class <img src="https://latex.codecogs.com/png.latex?y">, take the unconditional direction and <strong>add</strong> the classifier gradient. CFG approximates this without training a separate classifier.</p>
+</section>
+<section id="training-label-dropout" class="level3">
+<h3 class="anchored" data-anchor-id="training-label-dropout">Training: Label Dropout</h3>
+<p>During training, we <strong>randomly drop class labels</strong> with probability <img src="https://latex.codecogs.com/png.latex?%5Ceta"> (typically 10%). When dropped, we replace with a “null” class token. This teaches one model to do two things:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 65%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Input</th>
+<th>Model learns</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Real label <img src="https://latex.codecogs.com/png.latex?y"></td>
+<td>Conditional: <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x_t%20%7C%20y)"></td>
+</tr>
+<tr class="even">
+<td>Null label <img src="https://latex.codecogs.com/png.latex?%5Cemptyset"></td>
+<td>Unconditional: <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)"></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sampling-guided-velocity" class="level3">
+<h3 class="anchored" data-anchor-id="sampling-guided-velocity">Sampling: Guided Velocity</h3>
+<p>At inference, we <strong>blend</strong> both predictions:</p>
+<p><span id="eq-cfg"><img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%20=%20u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)%20+%20w%20%5Ccdot%20%5Cbigl(u_t%5E%5Ctheta(x_t%20%7C%20y)%20-%20u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)%5Cbigr)%20%5Ctag%7B5%7D"></span></p>
+<p>Rearranging: <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%20=%20(1-w)%20%5Ccdot%20u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)%20+%20w%20%5Ccdot%20u_t%5E%5Ctheta(x_t%20%7C%20y)"></p>
+<p>The <strong>guidance scale</strong> <img src="https://latex.codecogs.com/png.latex?w"> controls conditioning strength:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th><img src="https://latex.codecogs.com/png.latex?w"></th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0</td>
+<td>Pure unconditional (ignores class)</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>Standard conditional</td>
+</tr>
+<tr class="odd">
+<td>2-4</td>
+<td>Typical range — sharper, more on-topic</td>
+</tr>
+<tr class="even">
+<td>&gt;8</td>
+<td>Oversaturated, artifacts</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Pitfall
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>High guidance (<img src="https://latex.codecogs.com/png.latex?w%20%3E%208">) amplifies the class signal so much that images become oversaturated with artifacts. Start with <img src="https://latex.codecogs.com/png.latex?w%20=%202"> and adjust.</p>
+</div>
+</div>
+<p>See the <code>cfg-implementation</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the <code>CFGVelocityWrapper</code> class that applies this formula during sampling.</p>
+</section>
+</section>
+<section id="training" class="level2">
+<h2 class="anchored" data-anchor-id="training">Training</h2>
+<p>The training loop is straightforward:</p>
+<ol type="1">
+<li>Sample a batch of images <img src="https://latex.codecogs.com/png.latex?z"> and labels <img src="https://latex.codecogs.com/png.latex?y"></li>
+<li>Compute the flow matching loss (4)</li>
+<li>Backpropagate and update weights</li>
+<li>Repeat</li>
+</ol>
+<p>See the <code>training-loop</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete training code.</p>
+<section id="hyperparameters" class="level3">
+<h3 class="anchored" data-anchor-id="hyperparameters">Hyperparameters</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 29%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Value</th>
+<th>Why?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Batch size</td>
+<td>128</td>
+<td>Fits on Colab GPU, provides stable gradients</td>
+</tr>
+<tr class="even">
+<td>Learning rate</td>
+<td>2e-4</td>
+<td>Standard for diffusion models</td>
+</tr>
+<tr class="odd">
+<td>Label dropout</td>
+<td>0.1</td>
+<td>10% enables CFG without hurting conditional quality</td>
+</tr>
+<tr class="even">
+<td>Epochs</td>
+<td>50+</td>
+<td>More is better; 100+ for publication-quality</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sampling" class="level2">
+<h2 class="anchored" data-anchor-id="sampling">Sampling</h2>
+<p>To generate images, we solve the ODE (recall <a href="../2-flows/">Part 2</a> — flows are generated by integrating vector fields):</p>
+<p><span id="eq-ode"><img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bdx_t%7D%7Bdt%7D%20=%20u_t%5E%5Ctheta(x_t%20%7C%20y)%20%5Ctag%7B6%7D"></span></p>
+<p>Starting from noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> at <img src="https://latex.codecogs.com/png.latex?t=0"> and integrating to <img src="https://latex.codecogs.com/png.latex?t=1">:</p>
+<ol type="1">
+<li>Sample initial noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)"></li>
+<li>Use <code>torchdiffeq.odeint</code> to solve the ODE with the CFG-guided vector field</li>
+<li>The final state at <img src="https://latex.codecogs.com/png.latex?t=1"> is our generated image</li>
+</ol>
+<p>See the <code>sampling</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete sampling implementation.</p>
+</section>
+<section id="results" class="level2">
+<h2 class="anchored" data-anchor-id="results">Results</h2>
+<p>After training, we can generate images for any CIFAR-10 class. See the <code>results</code> and <code>guidance-comparison</code> cells in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for generated samples and visualizations.</p>
+<section id="effect-of-guidance-scale" class="level3">
+<h3 class="anchored" data-anchor-id="effect-of-guidance-scale">Effect of Guidance Scale</h3>
+<p>Higher guidance scale <img src="https://latex.codecogs.com/png.latex?w"> means stronger class conditioning — but too high leads to artifacts. The notebook demonstrates this with samples at <img src="https://latex.codecogs.com/png.latex?w%20%5Cin%20%5C%7B1,%202,%204,%208%5C%7D">.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We built a complete conditional image generator using flow matching:</p>
+<ol type="1">
+<li><strong>U-Net architecture</strong> from <code>diffusers</code> with time and class conditioning</li>
+<li><strong>Gaussian CondOT path</strong>: <img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon"> with constant vector field <img src="https://latex.codecogs.com/png.latex?u_t%20=%20z%20-%20%5Cepsilon"> (2, 3)</li>
+<li><strong>CFM loss</strong>: Train to predict the vector field (4)</li>
+<li><strong>Classifier-free guidance</strong>: Blend conditional and unconditional predictions (5)</li>
+<li><strong>ODE sampling</strong>: Integrate from noise (<img src="https://latex.codecogs.com/png.latex?t=0">) to image (<img src="https://latex.codecogs.com/png.latex?t=1">) via 6</li>
+</ol>
+<p>The same techniques — with larger models and datasets — power Stable Diffusion 3, Flux, DALL-E 3, and Sora. You now understand the core mechanics behind these systems!</p>
+</div>
+</div>
+</section>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>This concludes our diffusion &amp; flow matching series! Here are some extensions to explore:</p>
+<ul>
+<li><strong>Diffusion Transformers (DiT)</strong>: Replace U-Net with a transformer (<a href="../10-diffusion-transformers/">Part 10</a>)</li>
+<li><strong>Latent diffusion</strong>: Work in compressed latent space for higher resolution</li>
+<li><strong>Text conditioning</strong>: Replace class labels with text embeddings (CLIP)</li>
+<li><strong>Better samplers</strong>: DPM-Solver, Euler ancestral, etc.</li>
+</ul>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li><p>Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2022). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>.</p></li>
+<li><p>Ho, J., &amp; Salimans, T. (2022). <a href="https://arxiv.org/abs/2207.12598">Classifier-Free Diffusion Guidance</a>. <em>NeurIPS 2022 Workshop</em>.</p></li>
+<li><p>Tong, A., et al.&nbsp;(2024). <a href="https://arxiv.org/abs/2412.06264">Flow Matching Guide and Code</a>. <em>Meta AI</em>.</p></li>
+</ol>
+
+
+</section>
+
+ ]]></description>
+  <category>diffusion</category>
+  <category>flow-matching</category>
+  <category>generative-models</category>
+  <category>tutorial</category>
+  <category>cifar-10</category>
+  <guid>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/</guid>
+  <pubDate>Tue, 20 Jan 2026 00:00:00 GMT</pubDate>
+</item>
+<item>
   <title>Diffusion &amp; Flow Matching Part 12: Why Diffusion?</title>
   <dc:creator>Hujie Wang</dc:creator>
   <link>https://layernorm.dev/posts/diffusion/12-why-diffusion/</link>
@@ -4137,414 +4544,8 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
   <pubDate>Thu, 27 Nov 2025 00:00:00 GMT</pubDate>
 </item>
 <item>
-  <title>Diffusion &amp; Flow Matching Part 11: Building an Image Generator</title>
+  <title>Flow Matching Image Generator - CIFAR-10</title>
   <dc:creator>Hujie Wang</dc:creator>
-  <link>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>TL;DR
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ul>
-<li><strong>We build a working image generator from scratch</strong> using flow matching on CIFAR-10</li>
-<li><strong>Same techniques power production systems</strong> like Stable Diffusion, Flux, and Sora</li>
-<li><strong>Classifier-free guidance (CFG)</strong> lets us control what class to generate</li>
-<li><strong>Full code included</strong> — run it yourself on Google Colab</li>
-</ul>
-</div>
-</div>
-<section id="from-theory-to-practice" class="level2">
-<h2 class="anchored" data-anchor-id="from-theory-to-practice">From Theory to Practice</h2>
-<p>In the previous posts, we built up the mathematical foundations of flow matching:</p>
-<ul>
-<li><a href="../2-flows/"><strong>Part 2</strong></a>: Vector fields and flows</li>
-<li><a href="../4-flow-matching-loss/"><strong>Part 4</strong></a>: The marginalization trick and CFM loss</li>
-<li><a href="../7-training/"><strong>Part 7</strong></a>: Training algorithms</li>
-<li><a href="../9-unet/"><strong>Part 9</strong></a>: U-Net architecture</li>
-</ul>
-<p>Now it’s time to put it all together. We’ll build a <strong>conditional image generator</strong> that can create CIFAR-10 images of any class — airplanes, cars, cats, dogs, and more.</p>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Try it yourself
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
-<figcaption>Open In Colab</figcaption>
-</figure>
-</div>
-<p>The complete notebook runs in ~1-2 hours on a free Colab GPU.</p>
-</div>
-</div>
-</section>
-<section id="setup" class="level2">
-<h2 class="anchored" data-anchor-id="setup">Setup</h2>
-<p>We’ll use a few key libraries:</p>
-<ul>
-<li><strong>PyTorch</strong> and <strong>torchvision</strong> for deep learning and data</li>
-<li><strong>diffusers</strong> from Hugging Face for the <a href="../9-unet/">U-Net architecture</a> (the same library behind Stable Diffusion!)</li>
-<li><strong>torchdiffeq</strong> for ODE integration during sampling</li>
-</ul>
-<p>See the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation. The setup code is in the <code>setup</code> cell.</p>
-</section>
-<section id="loading-cifar-10" class="level2">
-<h2 class="anchored" data-anchor-id="loading-cifar-10">Loading CIFAR-10</h2>
-<p>CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.</p>
-<p>See the <code>data-loading</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for data loading code.</p>
-</section>
-<section id="the-u-net-architecture" class="level2">
-<h2 class="anchored" data-anchor-id="the-u-net-architecture">The U-Net Architecture</h2>
-<p>We use <code>UNet2DModel</code> from the <code>diffusers</code> library. This is the <strong>same architecture</strong> that powers Stable Diffusion and other state-of-the-art models.</p>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Why U-Net?
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>The U-Net’s encoder-decoder structure with skip connections is perfect for image generation:</p>
-<ul>
-<li><strong>Encoder</strong> captures global context at low resolutions</li>
-<li><strong>Decoder</strong> reconstructs fine details at high resolutions</li>
-<li><strong>Skip connections</strong> preserve spatial information that would otherwise be lost</li>
-</ul>
-</div>
-</div>
-<p>Key features of our model:</p>
-<ul>
-<li><strong>Time conditioning</strong>: Sinusoidal embeddings tell the network “where we are” in the flow (<img src="https://latex.codecogs.com/png.latex?t%20%5Cin%20%5B0,1%5D">)</li>
-<li><strong>Class conditioning</strong>: Embedding layer tells the network “what to generate” (airplane, cat, etc.)</li>
-<li><strong>Attention layers</strong>: Self-attention at lower resolutions for global context</li>
-</ul>
-<p>See the <code>unet-architecture</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the full U-Net configuration.</p>
-</section>
-<section id="flow-matching-the-core-idea" class="level2">
-<h2 class="anchored" data-anchor-id="flow-matching-the-core-idea">Flow Matching: The Core Idea</h2>
-<p>Recall from <a href="../4-flow-matching-loss/">Part 4</a> that flow matching learns a vector field to transport noise to data. Here’s the intuition:</p>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Analogy: GPS Navigation
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Think of flow matching like GPS navigation. You want to get from point A (noise) to point B (image). The network learns the <strong>velocity</strong> — which direction to move at each moment. Follow the velocity long enough, and you arrive at your destination.</p>
-</div>
-</div>
-<section id="sec-gaussian-condot" class="level3">
-<h3 class="anchored" data-anchor-id="sec-gaussian-condot">The Gaussian CondOT Path</h3>
-<p>We use the <strong>Gaussian CondOT path</strong> — the same formulation from <a href="../7-training/">Part 7</a>:</p>
-<p><span id="eq-gaussian-path"><img src="https://latex.codecogs.com/png.latex?x_t%20=%20%5Calpha_t%20%5Ccdot%20z%20+%20%5Cbeta_t%20%5Ccdot%20%5Cepsilon%20%5Ctag%7B1%7D"></span></p>
-<p>where:</p>
-<ul>
-<li><img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20p_%7B%5Ctext%7Bdata%7D%7D"> is a real image</li>
-<li><img src="https://latex.codecogs.com/png.latex?%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)"> is noise</li>
-<li><img src="https://latex.codecogs.com/png.latex?%5Calpha_t%20=%20t"> and <img src="https://latex.codecogs.com/png.latex?%5Cbeta_t%20=%201%20-%20t"> (linear schedule)</li>
-</ul>
-<p>This gives us the <strong>linear interpolation</strong>:</p>
-<p><span id="eq-linear-path"><img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon%20%5Ctag%7B2%7D"></span></p>
-<div id="fig-linear-path" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/linear-path-diagram.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have pure noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon">; at t=1, the clean image <img src="https://latex.codecogs.com/png.latex?z"> emerges.
-</figcaption>
-</figure>
-</div>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Boundary Conditions
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Time</th>
-<th><img src="https://latex.codecogs.com/png.latex?%5Calpha_t"></th>
-<th><img src="https://latex.codecogs.com/png.latex?%5Cbeta_t"></th>
-<th><img src="https://latex.codecogs.com/png.latex?x_t"></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><img src="https://latex.codecogs.com/png.latex?t%20=%200"></td>
-<td>0</td>
-<td>1</td>
-<td><img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> (pure noise)</td>
-</tr>
-<tr class="even">
-<td><img src="https://latex.codecogs.com/png.latex?t%20=%201"></td>
-<td>1</td>
-<td>0</td>
-<td><img src="https://latex.codecogs.com/png.latex?z"> (clean data)</td>
-</tr>
-</tbody>
-</table>
-<p>The path starts at noise and ends at data — exactly what we need for generation!</p>
-</div>
-</div>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Why This Path?
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>This is the <strong>optimal transport</strong> path — the straight line from noise to data. Compared to Gaussian variance-preserving paths used in DDPM (<a href="../5-diffusion-sde/">Part 5</a>):</p>
-<ol type="1">
-<li><strong>Constant vector field</strong>: <img src="https://latex.codecogs.com/png.latex?u_t%20=%20z%20-%20%5Cepsilon"> doesn’t change with time</li>
-<li><strong>Straighter trajectories</strong>: Fewer ODE steps needed (10-50 vs 1000)</li>
-<li><strong>Same math</strong>: The <a href="../4-flow-matching-loss/">marginalization trick</a> still applies</li>
-</ol>
-</div>
-</div>
-<p><strong>The conditional vector field</strong> is remarkably simple. Taking the derivative of <img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon">:</p>
-<p><span id="eq-cond-velocity"><img src="https://latex.codecogs.com/png.latex?u_t(x_t%20%7C%20z)%20=%20%5Cfrac%7Bd%20x_t%7D%7Bdt%7D%20=%20z%20-%20%5Cepsilon%20%5Ctag%7B3%7D"></span></p>
-<p>This is <strong>constant in time</strong>! The direction from noise to image is simply their difference.</p>
-<p><strong>The CFM loss</strong> (from <a href="../4-flow-matching-loss/">Part 4</a>) trains the network to predict this vector field:</p>
-<p><span id="eq-cfm-loss"><img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7B%5Ctext%7BCFM%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20z,%20%5Cepsilon%7D%20%5Cleft%5B%20%5C%7C%20u_t%5E%5Ctheta(x_t)%20-%20(z%20-%20%5Cepsilon)%20%5C%7C%5E2%20%5Cright%5D%20%5Ctag%7B4%7D"></span></p>
-<p>The implementation is straightforward — sample <img src="https://latex.codecogs.com/png.latex?t">, compute <img src="https://latex.codecogs.com/png.latex?x_t">, and minimize MSE between predicted and target vector field. See the <code>flow-matching-loss</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete implementation.</p>
-</section>
-</section>
-<section id="sec-cfg" class="level2">
-<h2 class="anchored" data-anchor-id="sec-cfg">Classifier-Free Guidance</h2>
-<p>We want to generate images of a <em>specific</em> class (e.g., “airplane”), not just any random image. <strong>Classifier-Free Guidance (CFG)</strong> is the standard solution, used in DALL-E, Stable Diffusion, and virtually all modern image generators.</p>
-<section id="the-key-insight" class="level3">
-<h3 class="anchored" data-anchor-id="the-key-insight">The Key Insight</h3>
-<p>Recall from <a href="../8-guidance/">Part 8</a> that for Gaussian paths, there’s a beautiful connection to Bayes’ rule. The <strong>conditional score</strong> decomposes as:</p>
-<p><img src="https://latex.codecogs.com/png.latex?%5Cnabla_x%20%5Clog%20p_t(x%20%7C%20y)%20=%20%5Cunderbrace%7B%5Cnabla_x%20%5Clog%20p_t(x)%7D_%7B%5Ctext%7Bunconditional%7D%7D%20+%20%5Cunderbrace%7B%5Cnabla_x%20%5Clog%20p_t(y%20%7C%20x)%7D_%7B%5Ctext%7Bclassifier%20gradient%7D%7D"></p>
-<p>This tells us: to generate class <img src="https://latex.codecogs.com/png.latex?y">, take the unconditional direction and <strong>add</strong> the classifier gradient. CFG approximates this without training a separate classifier.</p>
-</section>
-<section id="training-label-dropout" class="level3">
-<h3 class="anchored" data-anchor-id="training-label-dropout">Training: Label Dropout</h3>
-<p>During training, we <strong>randomly drop class labels</strong> with probability <img src="https://latex.codecogs.com/png.latex?%5Ceta"> (typically 10%). When dropped, we replace with a “null” class token. This teaches one model to do two things:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 35%">
-<col style="width: 65%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Input</th>
-<th>Model learns</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Real label <img src="https://latex.codecogs.com/png.latex?y"></td>
-<td>Conditional: <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x_t%20%7C%20y)"></td>
-</tr>
-<tr class="even">
-<td>Null label <img src="https://latex.codecogs.com/png.latex?%5Cemptyset"></td>
-<td>Unconditional: <img src="https://latex.codecogs.com/png.latex?u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)"></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="sampling-guided-velocity" class="level3">
-<h3 class="anchored" data-anchor-id="sampling-guided-velocity">Sampling: Guided Velocity</h3>
-<p>At inference, we <strong>blend</strong> both predictions:</p>
-<p><span id="eq-cfg"><img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%20=%20u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)%20+%20w%20%5Ccdot%20%5Cbigl(u_t%5E%5Ctheta(x_t%20%7C%20y)%20-%20u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)%5Cbigr)%20%5Ctag%7B5%7D"></span></p>
-<p>Rearranging: <img src="https://latex.codecogs.com/png.latex?%5Ctilde%7Bu%7D_t%20=%20(1-w)%20%5Ccdot%20u_t%5E%5Ctheta(x_t%20%7C%20%5Cemptyset)%20+%20w%20%5Ccdot%20u_t%5E%5Ctheta(x_t%20%7C%20y)"></p>
-<p>The <strong>guidance scale</strong> <img src="https://latex.codecogs.com/png.latex?w"> controls conditioning strength:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th><img src="https://latex.codecogs.com/png.latex?w"></th>
-<th>Effect</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>0</td>
-<td>Pure unconditional (ignores class)</td>
-</tr>
-<tr class="even">
-<td>1</td>
-<td>Standard conditional</td>
-</tr>
-<tr class="odd">
-<td>2-4</td>
-<td>Typical range — sharper, more on-topic</td>
-</tr>
-<tr class="even">
-<td>&gt;8</td>
-<td>Oversaturated, artifacts</td>
-</tr>
-</tbody>
-</table>
-<div class="callout callout-style-simple callout-warning callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>Common Pitfall
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>High guidance (<img src="https://latex.codecogs.com/png.latex?w%20%3E%208">) amplifies the class signal so much that images become oversaturated with artifacts. Start with <img src="https://latex.codecogs.com/png.latex?w%20=%202"> and adjust.</p>
-</div>
-</div>
-<p>See the <code>cfg-implementation</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the <code>CFGVelocityWrapper</code> class that applies this formula during sampling.</p>
-</section>
-</section>
-<section id="training" class="level2">
-<h2 class="anchored" data-anchor-id="training">Training</h2>
-<p>The training loop is straightforward:</p>
-<ol type="1">
-<li>Sample a batch of images <img src="https://latex.codecogs.com/png.latex?z"> and labels <img src="https://latex.codecogs.com/png.latex?y"></li>
-<li>Compute the flow matching loss (4)</li>
-<li>Backpropagate and update weights</li>
-<li>Repeat</li>
-</ol>
-<p>See the <code>training-loop</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete training code.</p>
-<section id="hyperparameters" class="level3">
-<h3 class="anchored" data-anchor-id="hyperparameters">Hyperparameters</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 45%">
-<col style="width: 29%">
-<col style="width: 25%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>Value</th>
-<th>Why?</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Batch size</td>
-<td>128</td>
-<td>Fits on Colab GPU, provides stable gradients</td>
-</tr>
-<tr class="even">
-<td>Learning rate</td>
-<td>2e-4</td>
-<td>Standard for diffusion models</td>
-</tr>
-<tr class="odd">
-<td>Label dropout</td>
-<td>0.1</td>
-<td>10% enables CFG without hurting conditional quality</td>
-</tr>
-<tr class="even">
-<td>Epochs</td>
-<td>50+</td>
-<td>More is better; 100+ for publication-quality</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="sampling" class="level2">
-<h2 class="anchored" data-anchor-id="sampling">Sampling</h2>
-<p>To generate images, we solve the ODE (recall <a href="../2-flows/">Part 2</a> — flows are generated by integrating vector fields):</p>
-<p><span id="eq-ode"><img src="https://latex.codecogs.com/png.latex?%5Cfrac%7Bdx_t%7D%7Bdt%7D%20=%20u_t%5E%5Ctheta(x_t%20%7C%20y)%20%5Ctag%7B6%7D"></span></p>
-<p>Starting from noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> at <img src="https://latex.codecogs.com/png.latex?t=0"> and integrating to <img src="https://latex.codecogs.com/png.latex?t=1">:</p>
-<ol type="1">
-<li>Sample initial noise <img src="https://latex.codecogs.com/png.latex?%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)"></li>
-<li>Use <code>torchdiffeq.odeint</code> to solve the ODE with the CFG-guided vector field</li>
-<li>The final state at <img src="https://latex.codecogs.com/png.latex?t=1"> is our generated image</li>
-</ol>
-<p>See the <code>sampling</code> cell in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for the complete sampling implementation.</p>
-</section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>After training, we can generate images for any CIFAR-10 class. See the <code>results</code> and <code>guidance-comparison</code> cells in the <a href="../../../posts/diffusion/11-practical-flow-matching/notebook.html">companion notebook</a> for generated samples and visualizations.</p>
-<section id="effect-of-guidance-scale" class="level3">
-<h3 class="anchored" data-anchor-id="effect-of-guidance-scale">Effect of Guidance Scale</h3>
-<p>Higher guidance scale <img src="https://latex.codecogs.com/png.latex?w"> means stronger class conditioning — but too high leads to artifacts. The notebook demonstrates this with samples at <img src="https://latex.codecogs.com/png.latex?w%20%5Cin%20%5C%7B1,%202,%204,%208%5C%7D">.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Summary
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>We built a complete conditional image generator using flow matching:</p>
-<ol type="1">
-<li><strong>U-Net architecture</strong> from <code>diffusers</code> with time and class conditioning</li>
-<li><strong>Gaussian CondOT path</strong>: <img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon"> with constant vector field <img src="https://latex.codecogs.com/png.latex?u_t%20=%20z%20-%20%5Cepsilon"> (2, 3)</li>
-<li><strong>CFM loss</strong>: Train to predict the vector field (4)</li>
-<li><strong>Classifier-free guidance</strong>: Blend conditional and unconditional predictions (5)</li>
-<li><strong>ODE sampling</strong>: Integrate from noise (<img src="https://latex.codecogs.com/png.latex?t=0">) to image (<img src="https://latex.codecogs.com/png.latex?t=1">) via 6</li>
-</ol>
-<p>The same techniques — with larger models and datasets — power Stable Diffusion 3, Flux, DALL-E 3, and Sora. You now understand the core mechanics behind these systems!</p>
-</div>
-</div>
-</section>
-</section>
-<section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>This concludes our diffusion &amp; flow matching series! Here are some extensions to explore:</p>
-<ul>
-<li><strong>Diffusion Transformers (DiT)</strong>: Replace U-Net with a transformer (<a href="../10-diffusion-transformers/">Part 10</a>)</li>
-<li><strong>Latent diffusion</strong>: Work in compressed latent space for higher resolution</li>
-<li><strong>Text conditioning</strong>: Replace class labels with text embeddings (CLIP)</li>
-<li><strong>Better samplers</strong>: DPM-Solver, Euler ancestral, etc.</li>
-</ul>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<ol type="1">
-<li><p>Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., &amp; Le, M. (2022). <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>.</p></li>
-<li><p>Ho, J., &amp; Salimans, T. (2022). <a href="https://arxiv.org/abs/2207.12598">Classifier-Free Diffusion Guidance</a>. <em>NeurIPS 2022 Workshop</em>.</p></li>
-<li><p>Tong, A., et al.&nbsp;(2024). <a href="https://arxiv.org/abs/2412.06264">Flow Matching Guide and Code</a>. <em>Meta AI</em>.</p></li>
-</ol>
-
-
-</section>
-
- ]]></description>
-  <category>diffusion</category>
-  <category>flow-matching</category>
-  <category>generative-models</category>
-  <category>tutorial</category>
-  <category>cifar-10</category>
-  <guid>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/</guid>
-  <pubDate>Mon, 20 Jan 2025 00:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Building an Image Generator with Flow Matching</title>
   <link>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/notebook.html</link>
   <description><![CDATA[ 
 
@@ -4552,14 +4553,9 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 
 
 
-<p><cell_type>raw</cell_type>—title: “Flow Matching Image Generator - CIFAR-10”author: “Hujie Wang”format: html—</p>
-<p>This notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid figure-img"></a></p>
-<figcaption>Open In Colab</figcaption>
-</figure>
-</div>
+<p>—title: “Flow Matching Image Generator - CIFAR-10”author: “Hujie Wang”format: htmllisting: false—</p>
+<section id="building-an-image-generator-with-flow-matchingthis-notebook-implements-a-conditional-flow-matching-model-on-cifar-10-using-the-diffusers-library-for-the-u-net-architecture.open-in-colab" class="level1">
+<h1>Building an Image Generator with Flow MatchingThis notebook implements a conditional flow matching model on CIFAR-10, using the <code>diffusers</code> library for the U-Net architecture.<a href="https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" class="img-fluid" alt="Open In Colab"></a></h1>
 <div id="setup" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
 background-color: null;
@@ -4839,7 +4835,7 @@ Image shape: torch.Size([3, 32, 32])
 Number of classes: 10</code></pre>
 </div>
 </div>
-<div id="cell-6" class="cell" data-execution_count="3">
+<div id="cell-5" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Visualize some training images</span></span>
@@ -5414,7 +5410,7 @@ Effect of guidance scale on 'airplane' class:</code></pre>
 </section>
 <section id="summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality" class="level2">
 <h2 class="anchored" data-anchor-id="summarywe-built-a-conditional-image-generator-using-flow-matching1.-u-net-architecture-from-diffusers-with-time-and-class-conditioning2.-gaussian-condot-path-x_t-t-cdot-z-1-t-cdot-epsilon-where-z-is-data-epsilon-is-noise3.-flow-matching-loss-learn-to-predict-the-vector-field-u_tx_t-z---4.-classifier-free-guidance-amplify-class-signal-during-sampling5.-ode-sampling-integrate-from-noise-t0-to-image-t1-using-torchdiffeq-key-takeaways--flow-matching-is-conceptually-simple-just-learn-the-direction-from-noise-to-data--the-same-architecture-powers-stable-diffusion-flux-and-other-sota-models--cfg-is-crucial-for-high-quality-conditional-generation-extensions-to-try--use-a-dit-diffusion-transformer-instead-of-u-net-see-part-10--train-on-larger-datasets-imagenet-laion--try-different-ode-solvers-adaptive-stepping-with-dopri5--add-ema-exponential-moving-average-for-better-sample-quality">SummaryWe built a conditional image generator using flow matching:1. <strong>U-Net architecture</strong> (from <code>diffusers</code>) with time and class conditioning2. <strong>Gaussian CondOT path</strong>: <img src="https://latex.codecogs.com/png.latex?x_t%20=%20t%20%5Ccdot%20z%20+%20(1-t)%20%5Ccdot%20%5Cepsilon"> where <img src="https://latex.codecogs.com/png.latex?z"> is data, <img src="https://latex.codecogs.com/png.latex?%5Cepsilon"> is noise3. <strong>Flow matching loss</strong>: Learn to predict the vector field $u_t^(x_t) z - <img src="https://latex.codecogs.com/png.latex?4.%20**Classifier-free%20guidance**:%20Amplify%20class%20signal%20during%20sampling5.%20**ODE%20sampling**:%20Integrate%20from%20noise%20(">t=0<img src="https://latex.codecogs.com/png.latex?)%20to%20image%20(">t=1$) using <code>torchdiffeq</code>### Key takeaways:- Flow matching is conceptually simple: just learn the direction from noise to data- The same architecture powers Stable Diffusion, Flux, and other SOTA models- CFG is crucial for high-quality conditional generation### Extensions to try:- Use a DiT (Diffusion Transformer) instead of U-Net (see Part 10)- Train on larger datasets (ImageNet, LAION)- Try different ODE solvers (adaptive stepping with <code>dopri5</code>)- Add EMA (exponential moving average) for better sample quality</h2>
-<div id="cell-22" class="cell" data-execution_count="12">
+<div id="cell-21" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><span class="co" style="color: #5E5E5E;
 background-color: null;
 font-style: inherit;"># Save the trained model</span></span>
@@ -5433,10 +5429,11 @@ font-style: inherit;">"Model saved to flow_matching_cifar10.pt"</span>)</span></
 
 
 </section>
+</section>
 
  ]]></description>
   <guid>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/notebook.html</guid>
-  <pubDate>Tue, 20 Jan 2026 19:43:53 GMT</pubDate>
+  <pubDate>Tue, 20 Jan 2026 19:47:18 GMT</pubDate>
 </item>
 <item>
   <title>Why Can’t We Just Learn Label -&gt; Image Directly?</title>
@@ -5448,7 +5445,7 @@ font-style: inherit;">"Model saved to flow_matching_cifar10.pt"</span>)</span></
 
 
 
-<p>—title: “Why Can’t We Just Learn Label -&gt; Image Directly?”author: “Hujie Wang”format: html—# Why Can’t We Just Learn Label -&gt; Image Directly?This notebook demonstrates <strong>why</strong> we need diffusion/flow matching instead of direct regression.</p>
+<p>—title: “Why Can’t We Just Learn Label -&gt; Image Directly?”author: “Hujie Wang”format: htmllisting: false—# Why Can’t We Just Learn Label -&gt; Image Directly?This notebook demonstrates <strong>why</strong> we need diffusion/flow matching instead of direct regression.</p>
 <div id="cell-1" class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="im" style="color: #00769E;
 background-color: null;
@@ -6317,7 +6314,7 @@ font-style: inherit;"># Visualize the learned vector field@torch.no_grad()def pl
 
  ]]></description>
   <guid>https://layernorm.dev/posts/diffusion/12-why-diffusion/why_diffusion.html</guid>
-  <pubDate>Tue, 20 Jan 2026 19:43:53 GMT</pubDate>
+  <pubDate>Tue, 20 Jan 2026 19:47:18 GMT</pubDate>
 </item>
 </channel>
 </rss>
