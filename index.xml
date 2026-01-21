@@ -77,12 +77,26 @@
 <li><strong>diffusers</strong> from Hugging Face for the <a href="../9-unet/">U-Net architecture</a> (the same library behind Stable Diffusion!)</li>
 <li><strong>torchdiffeq</strong> for ODE integration during sampling</li>
 </ul>
-<p>See the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete implementation. The setup code is in the <code>setup</code> cell.</p>
+<div class="quarto-embed-nb-cell">
+<div id="setup" class="cell" data-execution_count="1">
+<div class="cell-output cell-output-stdout">
+<pre><code>Using device: cuda</code></pre>
+</div>
+</div>
+<a class="quarto-notebook-link" id="nblink-1" href="notebook-preview.html#cell-setup">Source: Building an Image Generator with Flow MatchingThis notebook implements a conditional flow matching model on CIFAR-10, using the `diffusers` library for the U-Net architecture.[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/timothywangdev/blog/blob/main/posts/diffusion/11-practical-flow-matching/notebook.ipynb)</a></div>
 </section>
 <section id="loading-cifar-10" class="level2">
 <h2 class="anchored" data-anchor-id="loading-cifar-10">Loading CIFAR-10</h2>
 <p>CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.</p>
-<p>See the <code>data-loading</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for data loading code.</p>
+<div class="quarto-embed-nb-cell">
+<div id="data-loading" class="cell" data-execution_count="2">
+<div class="cell-output cell-output-stdout">
+<pre><code>Dataset size: 50000 images
+Image shape: torch.Size([3, 32, 32])
+Number of classes: 10</code></pre>
+</div>
+</div>
+</div>
 </section>
 <section id="the-u-net-architecture" class="level2">
 <h2 class="anchored" data-anchor-id="the-u-net-architecture">The U-Net Architecture</h2>
@@ -111,7 +125,108 @@
 <li><strong>Class conditioning</strong>: Embedding layer tells the network “what to generate” (airplane, cat, etc.)</li>
 <li><strong>Attention layers</strong>: Self-attention at lower resolutions for global context</li>
 </ul>
-<p>See the <code>unet-architecture</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the full U-Net configuration.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1">model <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> UNet2DModel(</span>
+<span id="cb3-2">    sample_size<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">32</span>,           <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Image size (32x32 for CIFAR-10)</span></span>
+<span id="cb3-3">    in_channels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>,            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># RGB images</span></span>
+<span id="cb3-4">    out_channels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>,           <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Output vector field has same shape as input</span></span>
+<span id="cb3-5">    layers_per_block<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>,       <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># ResNet blocks per resolution level</span></span>
+<span id="cb3-6">    block_out_channels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">64</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">128</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">256</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">256</span>),  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Channels at each resolution</span></span>
+<span id="cb3-7">    down_block_types<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>(</span>
+<span id="cb3-8">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"DownBlock2D"</span>,        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 32 -&gt; 16</span></span>
+<span id="cb3-9">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"DownBlock2D"</span>,        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 16 -&gt; 8</span></span>
+<span id="cb3-10">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AttnDownBlock2D"</span>,    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 8 -&gt; 4 (with attention)</span></span>
+<span id="cb3-11">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"DownBlock2D"</span>,        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 4 -&gt; 2</span></span>
+<span id="cb3-12">    ),</span>
+<span id="cb3-13">    up_block_types<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>(</span>
+<span id="cb3-14">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"UpBlock2D"</span>,          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 2 -&gt; 4</span></span>
+<span id="cb3-15">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"AttnUpBlock2D"</span>,      <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 4 -&gt; 8 (with attention)</span></span>
+<span id="cb3-16">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"UpBlock2D"</span>,          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 8 -&gt; 16</span></span>
+<span id="cb3-17">        <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"UpBlock2D"</span>,          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 16 -&gt; 32</span></span>
+<span id="cb3-18">    ),</span>
+<span id="cb3-19">    num_class_embeds<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>NUM_CLASSES <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>,  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># +1 for null class (CFG)</span></span>
+<span id="cb3-20">)</span></code></pre></div></div>
 </section>
 <section id="flow-matching-the-core-idea" class="level2">
 <h2 class="anchored" data-anchor-id="flow-matching-the-core-idea">Flow Matching: The Core Idea</h2>
@@ -211,7 +326,111 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <p>This is <strong>constant in time</strong>! The direction from noise to image is simply their difference.</p>
 <p><strong>The CFM loss</strong> (from <a href="../4-flow-matching-loss/">Part 4</a>) trains the network to predict this vector field:</p>
 <p><span id="eq-cfm-loss"><img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D_%7B%5Ctext%7BCFM%7D%7D%20=%20%5Cmathbb%7BE%7D_%7Bt,%20z,%20%5Cepsilon%7D%20%5Cleft%5B%20%5C%7C%20u_t%5E%5Ctheta(x_t)%20-%20(z%20-%20%5Cepsilon)%20%5C%7C%5E2%20%5Cright%5D%20%5Ctag%7B4%7D"></span></p>
-<p>The implementation is straightforward — sample <img src="https://latex.codecogs.com/png.latex?t">, compute <img src="https://latex.codecogs.com/png.latex?x_t">, and minimize MSE between predicted and target vector field. See the <code>flow-matching-loss</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete implementation.</p>
+<p>The implementation is straightforward — sample <img src="https://latex.codecogs.com/png.latex?t">, compute <img src="https://latex.codecogs.com/png.latex?x_t">, and minimize MSE between predicted and target vector field:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> flow_matching_loss(model, z, class_label, label_dropout<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1</span>):</span>
+<span id="cb4-2">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""Compute the Conditional Flow Matching loss."""</span></span>
+<span id="cb4-3">    batch_size <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> z.shape[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]</span>
+<span id="cb4-4"></span>
+<span id="cb4-5">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Sample random time t ~ Uniform[0, 1]</span></span>
+<span id="cb4-6">    t <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.rand(batch_size, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>z.device)</span>
+<span id="cb4-7"></span>
+<span id="cb4-8">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Sample noise ε ~ N(0, I)</span></span>
+<span id="cb4-9">    eps <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.randn_like(z)</span>
+<span id="cb4-10"></span>
+<span id="cb4-11">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Compute x_t = t*z + (1-t)*ε (linear interpolation)</span></span>
+<span id="cb4-12">    t_expand <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> t[:, <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>, <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>, <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>]</span>
+<span id="cb4-13">    xt <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> t_expand <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> z <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> t_expand) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> eps</span>
+<span id="cb4-14"></span>
+<span id="cb4-15">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Target vector field: u_t = z - ε (constant in time!)</span></span>
+<span id="cb4-16">    target <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> z <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> eps</span>
+<span id="cb4-17"></span>
+<span id="cb4-18">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Apply label dropout for CFG (replace some labels with null class)</span></span>
+<span id="cb4-19">    dropout_mask <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.rand(batch_size, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>z.device) <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&lt;</span> label_dropout</span>
+<span id="cb4-20">    class_label_dropped <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.where(dropout_mask, NUM_CLASSES, class_label)</span>
+<span id="cb4-21"></span>
+<span id="cb4-22">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Predict vector field</span></span>
+<span id="cb4-23">    predicted <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model(xt, (t <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>).<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">long</span>(), class_labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>class_label_dropped).sample</span>
+<span id="cb4-24"></span>
+<span id="cb4-25">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># MSE loss</span></span>
+<span id="cb4-26">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> F.mse_loss(predicted, target)</span></code></pre></div></div>
 </section>
 </section>
 <section id="sec-cfg" class="level2">
@@ -294,7 +513,132 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <p>High guidance (<img src="https://latex.codecogs.com/png.latex?w%20%3E%208">) amplifies the class signal so much that images become oversaturated with artifacts. Start with <img src="https://latex.codecogs.com/png.latex?w%20=%202"> and adjust.</p>
 </div>
 </div>
-<p>See the <code>cfg-implementation</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the <code>CFGVelocityWrapper</code> class that applies this formula during sampling.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">class</span> CFGVectorField(nn.Module):</span>
+<span id="cb5-2">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""Applies classifier-free guidance during sampling."""</span></span>
+<span id="cb5-3"></span>
+<span id="cb5-4">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, model, guidance_scale<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2.0</span>):</span>
+<span id="cb5-5">        <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">super</span>().<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">__init__</span>()</span>
+<span id="cb5-6">        <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.model <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> model</span>
+<span id="cb5-7">        <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.guidance_scale <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> guidance_scale</span>
+<span id="cb5-8">        <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.class_label <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">None</span>  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Set before sampling</span></span>
+<span id="cb5-9"></span>
+<span id="cb5-10">    <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> forward(<span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>, t, x):</span>
+<span id="cb5-11">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""Compute guided vector field for ODE solver."""</span></span>
+<span id="cb5-12">        batch_size <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> x.shape[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>]</span>
+<span id="cb5-13">        timestep <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">int</span>(t.item() <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1000</span>)</span>
+<span id="cb5-14">        timesteps <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.full((batch_size,), timestep, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>x.device, dtype<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>torch.<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">long</span>)</span>
+<span id="cb5-15"></span>
+<span id="cb5-16">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Unconditional prediction (null class)</span></span>
+<span id="cb5-17">        null_class <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.full((batch_size,), NUM_CLASSES, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>x.device, dtype<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>torch.<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">long</span>)</span>
+<span id="cb5-18">        u_uncond <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.model(x, timesteps, class_labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>null_class).sample</span>
+<span id="cb5-19"></span>
+<span id="cb5-20">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Conditional prediction</span></span>
+<span id="cb5-21">        u_cond <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.model(x, timesteps, class_labels<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.class_label).sample</span>
+<span id="cb5-22"></span>
+<span id="cb5-23">        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># CFG formula: u_guided = u_uncond + w * (u_cond - u_uncond)</span></span>
+<span id="cb5-24">        <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> u_uncond <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">self</span>.guidance_scale <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> (u_cond <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> u_uncond)</span></code></pre></div></div>
 </section>
 </section>
 <section id="training" class="level2">
@@ -306,7 +650,49 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <li>Backpropagate and update weights</li>
 <li>Repeat</li>
 </ol>
-<p>See the <code>training-loop</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete training code.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1">optimizer <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.optim.AdamW(model.parameters(), lr<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2e-4</span>)</span>
+<span id="cb6-2"></span>
+<span id="cb6-3"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> epoch <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">range</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>):</span>
+<span id="cb6-4">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> z, y <span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> train_loader:</span>
+<span id="cb6-5">        z, y <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> z.to(device), y.to(device)</span>
+<span id="cb6-6"></span>
+<span id="cb6-7">        optimizer.zero_grad()</span>
+<span id="cb6-8">        loss <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> flow_matching_loss(model, z, y, label_dropout<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.1</span>)</span>
+<span id="cb6-9">        loss.backward()</span>
+<span id="cb6-10">        torch.nn.utils.clip_grad_norm_(model.parameters(), <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.0</span>)</span>
+<span id="cb6-11">        optimizer.step()</span></code></pre></div></div>
 <section id="hyperparameters" class="level3">
 <h3 class="anchored" data-anchor-id="hyperparameters">Hyperparameters</h3>
 <table class="caption-top table">
@@ -357,14 +743,196 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <li>Use <code>torchdiffeq.odeint</code> to solve the ODE with the CFG-guided vector field</li>
 <li>The final state at <img src="https://latex.codecogs.com/png.latex?t=1"> is our generated image</li>
 </ol>
-<p>See the <code>sampling</code> cell in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for the complete sampling implementation.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">@torch.no_grad</span>()</span>
+<span id="cb7-2"><span class="kw" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">def</span> sample(model, num_samples, class_label, guidance_scale<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2.0</span>, num_steps<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">50</span>):</span>
+<span id="cb7-3">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">"""Generate samples using ODE integration."""</span></span>
+<span id="cb7-4">    model.<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">eval</span>()</span>
+<span id="cb7-5"></span>
+<span id="cb7-6">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Wrap model for CFG</span></span>
+<span id="cb7-7">    vector_field <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> CFGVectorField(model, guidance_scale)</span>
+<span id="cb7-8">    vector_field.class_label <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.full(</span>
+<span id="cb7-9">        (num_samples,), class_label, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>device, dtype<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>torch.<span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">long</span></span>
+<span id="cb7-10">    )</span>
+<span id="cb7-11"></span>
+<span id="cb7-12">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Start from noise at t=0</span></span>
+<span id="cb7-13">    x <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.randn(num_samples, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">32</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">32</span>, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>device)</span>
+<span id="cb7-14"></span>
+<span id="cb7-15">    <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Integrate ODE from t=0 to t=1</span></span>
+<span id="cb7-16">    t_span <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> torch.linspace(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, num_steps, device<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>device)</span>
+<span id="cb7-17">    trajectory <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> odeint(vector_field, x, t_span, method<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'euler'</span>)</span>
+<span id="cb7-18"></span>
+<span id="cb7-19">    <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">return</span> trajectory[<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>].clamp(<span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)  <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Final image at t=1</span></span></code></pre></div></div>
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>After training, we can generate images for any CIFAR-10 class. See the <code>results</code> and <code>guidance-comparison</code> cells in the <a href="https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb">companion notebook</a> for generated samples and visualizations.</p>
+<p>After training, we can generate images for any CIFAR-10 class:</p>
+<div class="quarto-embed-nb-cell">
+<div id="results" class="cell" data-execution_count="10">
+<div class="cell-output cell-output-stdout">
+<pre><code>Generating samples for each class...</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-2.png" id="results-1" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-3.png" id="results-2" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-4.png" id="results-3" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-5.png" id="results-4" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-6.png" id="results-5" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-7.png" id="results-6" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-8.png" id="results-7" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-9.png" id="results-8" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-10.png" id="results-9" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-results-output-11.png" id="results-10" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
 <section id="effect-of-guidance-scale" class="level3">
 <h3 class="anchored" data-anchor-id="effect-of-guidance-scale">Effect of Guidance Scale</h3>
-<p>Higher guidance scale <img src="https://latex.codecogs.com/png.latex?w"> means stronger class conditioning — but too high leads to artifacts. The notebook demonstrates this with samples at <img src="https://latex.codecogs.com/png.latex?w%20%5Cin%20%5C%7B1,%202,%204,%208%5C%7D">.</p>
+<p>Higher guidance scale <img src="https://latex.codecogs.com/png.latex?w"> means stronger class conditioning — but too high leads to artifacts:</p>
+<div class="quarto-embed-nb-cell">
+<div id="cell-guidance-comparison" class="cell" data-execution_count="11">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Effect of guidance scale on 'airplane' class:</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://layernorm.dev/posts/diffusion/11-practical-flow-matching/index_files/figure-html/notebook-guidance-comparison-output-2.png" id="guidance-comparison" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</div>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
