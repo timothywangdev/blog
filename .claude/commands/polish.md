@@ -2,6 +2,11 @@
 
 Polish the current document to make it accessible and engaging for our target audiences.
 
+## Critical Requirements
+
+- **Author name**: Always use `author: "Hujie Wang"` in frontmatter. Never use any other name.
+- **Parallel research**: When researching topics, always use multiple Task agents in parallel to gather information efficiently. Don't research sequentially — launch 3-4 agents simultaneously for different aspects of the topic.
+
 ## Target Audiences (in priority order)
 
 1. **ML Engineers & Applied Researchers** - Need practical insights without reading full papers

@@ -1,0 +1,377 @@
+---
+title: "Robot Learning Part 1: Diffusion Policy"
+author: "Hujie Wang"
+date: "2026-01-20"
+categories: [robotics, diffusion-policy, imitation-learning, robot-learning]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **Behavioral cloning** fails when multiple valid actions exist — it averages them into nonsense
+- **Diffusion Policy** represents robot actions as a denoising process, naturally handling multimodal distributions
+- **Action chunking** predicts sequences of actions, reducing compounding errors and enabling temporal consistency
+- Results: **46.9% average improvement** over prior methods across 12 manipulation tasks
+:::
+
+## Why Not Just Use Supervised Learning?
+
+If you've trained image classifiers or language models, your first instinct for robot learning might be: "collect demonstrations, train a neural network to predict actions from observations." This approach is called **behavioral cloning (BC)**, and it's deceptively simple:
+
+$$
+\pi_\theta(s) = \arg\min_\theta \mathbb{E}_{(s,a) \sim \mathcal{D}} \left[ \| \pi_\theta(s) - a \|^2 \right]
+$$ {#eq-bc-loss}
+
+Train a network $\pi_\theta$ to minimize the mean squared error between predicted and demonstrated actions. What could go wrong?
+
+As it turns out, quite a lot.
+
+## The Multimodality Problem {#sec-multimodality}
+
+Consider a robot approaching an obstacle. In your demonstrations, sometimes the expert goes **left**, sometimes **right** — both are valid. What does a standard neural network trained with MSE loss learn?
+
+![The averaging problem: two valid paths (left and right) get averaged into a collision course](multimodality-problem.png){#fig-multimodal}
+
+::: {#multimodal-problem .callout-warning appearance="default"}
+## The Averaging Disaster
+
+When demonstrations contain multiple valid actions for the same state, MSE loss produces the **average** of those actions. Going left and going right averages to going **straight ahead** — directly into the obstacle (@fig-multimodal).
+
+This isn't a rare edge case. Multimodality appears everywhere in manipulation:
+
+- **Short-horizon**: Approach an object from the left or right
+- **Long-horizon**: Different orderings of subtasks (stack blocks A-B-C or C-B-A)
+- **Grasping**: Multiple valid grasp poses for the same object
+:::
+
+The mathematical reason is fundamental: neural networks with continuous activations draw smooth curves through data. They cannot represent the **sharp discontinuity** between "go left" and "go right" — the decision boundary would need to be infinitely steep.$^{[1]}$
+
+### What About Mixture Models?
+
+You might think: "Use a Gaussian Mixture Model (GMM) to capture multiple modes!" Methods like LSTM-GMM try this, but face challenges:
+
+- Must **pre-specify** the number of modes (how many valid actions exist?)
+- Often **biased toward one mode** in practice
+- Struggles with **high-dimensional** action spaces
+
+Energy-based methods like Implicit BC (IBC)$^{[2]}$ can represent arbitrary distributions, but require **negative sampling** during training — notoriously unstable and prone to mode collapse.
+
+## Enter Diffusion Policy
+
+Here's the key insight from Chi et al.$^{[3]}$: **diffusion models naturally represent multimodal distributions**. The same property that lets them generate diverse images lets them generate diverse robot actions.
+
+::: {.callout-tip appearance="simple"}
+## Intuition: From Images to Actions
+
+In image generation, diffusion starts with noise and iteratively refines it into a coherent image. For robotics, we start with noise and refine it into a coherent **action sequence**:
+
+| Image Diffusion | Action Diffusion |
+|-----------------|------------------|
+| Random pixels → Image | Random actions → Trajectory |
+| Conditioned on text prompt | Conditioned on visual observation |
+| Multiple valid images per prompt | Multiple valid trajectories per observation |
+:::
+
+The denoising process acts like **gradient descent on a learned energy landscape**. Different random initializations converge to different modes — the policy "commits" to one valid action sequence per rollout while learning the full multimodal distribution.
+
+### Why Diffusion Handles Multimodality
+
+Three mechanisms make this work:
+
+1. **Stochastic initialization**: Each inference starts from random Gaussian noise, naturally exploring different modes
+
+2. **Score function learning**: Instead of predicting actions directly, the network predicts the **gradient** of log-probability. This sidesteps the normalization constant that makes energy-based methods unstable
+
+3. **Iterative refinement**: Langevin dynamics sampling follows the learned gradient field toward high-probability regions, allowing the model to express arbitrarily complex distributions
+
+## The Diffusion Policy Formulation
+
+Let's make this precise. Given an observation $O_t$, we want to sample from the action distribution $p(A_t | O_t)$, where $A_t$ is a **sequence** of future actions (more on this shortly).
+
+### Forward Process (Training)
+
+During training, we corrupt clean action sequences with noise:
+
+$$
+A_t^k = \sqrt{\bar{\alpha}_k} \cdot A_t^0 + \sqrt{1 - \bar{\alpha}_k} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+$$ {#eq-forward}
+
+Here $k$ indexes **diffusion timesteps** (not robot timesteps), and $\bar{\alpha}_k$ is a noise schedule that increases corruption as $k$ grows.
+
+### Reverse Process (Inference)
+
+At test time, we start from pure noise and iteratively denoise (@fig-denoising):
+
+![Diffusion Policy iteratively refines random noise into a coherent action trajectory, conditioned on the observation](diffusion-denoising.png){#fig-denoising}
+
+$$
+A_t^{k-1} = \frac{1}{\sqrt{\alpha_k}} \left( A_t^k - \frac{1 - \alpha_k}{\sqrt{1 - \bar{\alpha}_k}} \epsilon_\theta(O_t, A_t^k, k) \right) + \sigma_k z
+$$ {#eq-reverse}
+
+where $\epsilon_\theta$ is a neural network predicting the noise, and $z \sim \mathcal{N}(0, I)$.
+
+::: {.callout-tip appearance="simple"}
+## Intuition: What the Network Learns
+
+The network $\epsilon_\theta(O_t, A_t^k, k)$ learns to answer: "Given this noisy action sequence and this observation, what noise was added?"
+
+Equivalently, it learns the **score function** — the gradient of log-probability pointing toward valid actions. The denoising process follows this gradient field from noise toward high-probability action sequences.
+:::
+
+### Training Objective
+
+The loss is simply mean squared error between true and predicted noise:
+
+$$
+\mathcal{L}(\theta) = \mathbb{E}_{k, \epsilon, (A_t^0, O_t)} \left[ \| \epsilon - \epsilon_\theta(O_t, A_t^k, k) \|^2 \right]
+$$ {#eq-loss}
+
+This elegant formulation avoids the normalization constant entirely — we never need to compute $Z = \int \exp(-E(a)) da$.
+
+## Action Chunking: Predicting Sequences {#sec-action-chunking}
+
+A crucial design choice in Diffusion Policy is predicting **sequences** of future actions rather than single-step actions. This is called **action chunking**, and it solves several problems at once.
+
+### The Compounding Error Problem
+
+In standard closed-loop control, errors compound quadratically:
+
+::: {.callout-warning appearance="simple"}
+## Compounding Errors in Imitation Learning
+
+With matched train/test distributions, total error scales as $O(\epsilon T)$ — linear in horizon $T$.
+
+With distribution shift (the reality), error scales as $O(\epsilon T^2)$ — **quadratic** growth.$^{[4]}$
+
+A small mistake pushes the robot into unfamiliar states, causing larger mistakes, causing even more unfamiliar states...
+:::
+
+Action chunking dramatically reduces this: a 500-step task with chunk size $k=100$ becomes effectively a **5-step problem**.
+
+### The Idle Action Problem
+
+Human demonstrations contain pauses — waiting before prying open a lid, hesitating before a delicate insertion. A single-step policy sees the same observation and must choose between "stay still" and "move" — impossible from current state alone.
+
+With action chunking, the sequence encodes timing implicitly: "stay still for 10 steps, then move." The behavior becomes Markovian again as long as pauses fit within a chunk.
+
+### The Three Horizons
+
+![Receding horizon control: predict 16 actions, execute 8, then replan with new observations](action-chunking.png){#fig-action-chunking}
+
+Diffusion Policy uses three temporal parameters (@fig-action-chunking):
+
+| Parameter | Symbol | Typical Value | Description |
+|-----------|--------|---------------|-------------|
+| Observation horizon | $T_o$ | 2 | Past observation steps used as context |
+| Prediction horizon | $T_p$ | 16 | Future actions predicted by the model |
+| Action horizon | $T_a$ | 8 | Actions actually executed before replanning |
+
+The key insight is $T_a < T_p$: we predict more actions than we execute, then **replan** with updated observations.
+
+### Receding Horizon Control
+
+This creates a receding horizon scheme:
+
+```
+Time 0: Predict actions [0, 1, 2, ..., 15]
+        Execute actions [0, 1, 2, ..., 7]
+
+Time 8: Observe new state
+        Predict actions [8, 9, 10, ..., 23]
+        Execute actions [8, 9, 10, ..., 15]
+
+Time 16: Observe, replan, execute...
+```
+
+::: {.callout-tip appearance="simple"}
+## Intuition: GPS Navigation
+
+Think of it like a GPS that continuously replans. You compute a route to the destination (prediction horizon), drive for a few miles (action horizon), then replan based on current position. This balances commitment to plans with responsiveness to new information.
+:::
+
+**Temporal ensembling** further improves smoothness: query the policy at every timestep, producing overlapping predictions, then average them with exponential weights. This creates a voting mechanism across multiple predictions.$^{[5]}$
+
+## Network Architectures {#sec-architectures}
+
+Diffusion Policy supports two architectures, each with distinct tradeoffs:
+
+### CNN-Based (U-Net)
+
+The default architecture uses a **1D temporal U-Net**:
+
+- **Visual encoder**: ResNet-18 with spatial softmax pooling (extracts 32 keypoints per image)
+- **Denoising network**: 1D convolutions along the time axis with FiLM conditioning
+- **Conditioning**: Observations modulate every convolution layer via scale/shift
+
+**Strengths**: Stable training, fewer hyperparameters, good default choice
+**Weakness**: Low-pass filtering bias — struggles with high-frequency action changes
+
+### Transformer-Based
+
+The alternative uses a **decoder-only transformer**:
+
+- **Encoder**: Processes conditioning (timestep embedding + observation embedding)
+- **Decoder**: Generates action sequence with causal attention
+- **Cross-attention**: Actions attend to observation embeddings in each layer
+
+**Strengths**: Better for complex tasks, captures long-range dependencies
+**Weakness**: More hyperparameter-sensitive, requires careful tuning
+
+::: {.callout-note appearance="simple"}
+## Practical Recommendation
+
+Start with the **CNN architecture** (DP-C). It's more stable and works well on most tasks. Switch to transformer (DP-T) if you see performance plateaus on complex, long-horizon tasks.
+:::
+
+## Visual Conditioning {#sec-conditioning}
+
+A key efficiency insight: observations are extracted **once** per inference, not once per denoising step.
+
+The policy learns $p(A_t | O_t)$ — the conditional distribution given observations — rather than the joint distribution $p(A_t, O_t)$. This means:
+
+1. Extract visual features from images
+2. Run 10-100 denoising iterations using those same features
+3. Total visual encoding cost: 1x, not 10-100x
+
+For **FiLM conditioning** (CNN architecture):
+$$
+h' = \gamma(O_t, k) \odot h + \beta(O_t, k)
+$$
+where $h$ is the intermediate representation and $\gamma, \beta$ are learned scale/shift parameters from observations and diffusion timestep.
+
+## DDIM: Fast Inference {#sec-ddim}
+
+Standard DDPM requires as many denoising steps as training noise levels (typically 100). This is too slow for real-time control.
+
+**DDIM** (Denoising Diffusion Implicit Models)$^{[6]}$ decouples training and inference:
+
+- **Training**: 100 noise levels
+- **Inference**: 10 denoising steps
+- **Result**: ~0.1 second latency on an NVIDIA 3080
+
+This enables **10Hz real-time control** — fast enough for most manipulation tasks.
+
+## Results {#sec-results}
+
+Diffusion Policy was evaluated on 12 tasks across 4 benchmarks:
+
+### Simulation Results
+
+| Task | Diffusion Policy | Best Baseline | Improvement |
+|------|------------------|---------------|-------------|
+| Push-T | **95%** | 20% (LSTM-GMM) | +75% |
+| Block Push (4 blocks) | **84%** | 28% (BET) | +56% |
+| ToolHang | **89%** | 73% (LSTM-GMM) | +16% |
+| Transport | **94%** | 90% (LSTM-GMM) | +4% |
+
+**Average improvement: 46.9%** across all tasks.
+
+### Real-World Results
+
+On physical robots (UR5, Franka):
+
+| Task | Success Rate |
+|------|--------------|
+| Push-T (UR5) | 95% |
+| Mug Flipping | 90% |
+| Sauce Pouring | 0.74 IoU (vs 0.79 human) |
+
+### The Push-T Visualization
+
+The Push-T task beautifully demonstrates multimodal learning. The robot must push a T-shaped block to a target pose — approachable from left or right.
+
+- **LSTM-GMM**: Biased toward one approach direction
+- **IBC**: Fails to commit, produces jittery motion
+- **BET**: Indecisive, oscillates between modes
+- **Diffusion Policy**: Learns both modes, commits to one per episode
+
+## Common Misconceptions {#sec-misconceptions}
+
+::: {.callout-warning appearance="default"}
+## Common Misconception: "Diffusion is too slow for robotics"
+
+With DDIM, inference takes ~100ms — fast enough for 10Hz control. The [Consistency Policy](https://consistency-policy.github.io/) further reduces this to single-step generation via distillation.
+:::
+
+::: {.callout-warning appearance="default"}
+## Common Misconception: "You need thousands of demonstrations"
+
+Diffusion Policy achieves strong results with **50-200 demonstrations**. The action chunking reduces effective horizon, and diffusion's inductive biases help generalization.
+:::
+
+::: {.callout-warning appearance="default"}
+## Common Misconception: "Position control causes compounding errors"
+
+Counterintuitively, **position control outperforms velocity control** for Diffusion Policy. The multimodality modeling benefits outweigh compounding concerns.
+:::
+
+## Practical Implementation
+
+If you want to try Diffusion Policy yourself:
+
+1. **LeRobot**: Hugging Face's [LeRobot library](https://github.com/huggingface/lerobot) includes Diffusion Policy with pretrained weights
+
+2. **Official Implementation**: The [original codebase](https://github.com/real-stanford/diffusion_policy) includes all benchmarks
+
+3. **Simulation First**: Start with Push-T in simulation before moving to real hardware
+
+::: {.callout-note collapse="true"}
+## Training Hyperparameters
+
+From the paper's recommended settings:
+
+- **Observation horizon**: $T_o = 2$
+- **Prediction horizon**: $T_p = 16$
+- **Action horizon**: $T_a = 8$
+- **Training diffusion steps**: 100
+- **Inference diffusion steps**: 10 (DDIM)
+- **Batch size**: 256
+- **Learning rate**: 1e-4 with cosine decay
+:::
+
+## What's Next?
+
+Diffusion Policy established the foundation, but the field has evolved rapidly:
+
+- **3D Diffusion Policy**: Extends to 3D point cloud observations
+- **Vision-Language-Action models**: Combine VLMs with diffusion heads (π0, FLOWER)
+- **Flow matching**: π0 uses flow matching for faster 50Hz control
+
+In [Part 2](../2-vla/), we'll explore how diffusion integrates with large vision-language models to create generalist robot policies.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+We've seen why naive behavioral cloning fails — averaging multimodal actions produces nonsense — and how **Diffusion Policy** solves this by representing actions as a denoising process. The key innovations are:
+
+1. **Diffusion for actions**: Start from noise, iteratively refine into valid trajectories
+2. **Action chunking**: Predict sequences to reduce compounding errors and capture temporal dependencies
+3. **Receding horizon**: Balance commitment with responsiveness by replanning frequently
+4. **Efficient conditioning**: Extract visual features once, reuse across denoising steps
+
+The result is a **46.9% average improvement** over prior methods, with strong real-world performance on manipulation tasks.
+
+The framework is surprisingly simple once you see it: replace the image output of a diffusion model with action sequences, condition on observations instead of text, and apply standard denoising. The elegance lies in how naturally diffusion handles the multimodality that makes robot learning hard.
+:::
+
+## References
+
+[1] [Decisiveness in Imitation Learning for Robots](https://research.google/blog/decisiveness-in-imitation-learning-for-robots/). *Google Research Blog, 2023*.
+
+[2] Florence, P., et al. [Implicit Behavioral Cloning](https://arxiv.org/abs/2109.00137). *CoRL 2021*.
+
+[3] Chi, C., et al. [Diffusion Policy: Visuomotor Policy Learning via Action Diffusion](https://arxiv.org/abs/2303.04137). *RSS 2023, IJRR 2024*.
+
+[4] Ross, S., et al. [A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning](https://arxiv.org/abs/1011.0686). *AISTATS 2011*.
+
+[5] Zhao, T., et al. [Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware](https://tonyzhaozh.github.io/aloha/). *RSS 2023*.
+
+[6] Song, J., et al. [Denoising Diffusion Implicit Models](https://arxiv.org/abs/2010.02502). *ICLR 2021*.
+
+## Further Reading
+
+- [Diving into Diffusion Policy with LeRobot](https://radekosmulski.com/diving-into-diffusion-policy-with-lerobot/) — Excellent code walkthrough
+- [Diffusion Policy Project Page](https://diffusion-policy.cs.columbia.edu/) — Official demos and code
+- [diffusion-literature-for-robotics](https://github.com/mbreuss/diffusion-literature-for-robotics) — Curated paper list

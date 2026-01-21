@@ -42,13 +42,13 @@ We'll use a few key libraries:
 - **diffusers** from Hugging Face for the [U-Net architecture](../9-unet/) (the same library behind Stable Diffusion!)
 - **torchdiffeq** for ODE integration during sampling
 
-See the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete implementation. The setup code is in the `setup` cell.
+{{< embed notebook.ipynb#setup >}}
 
 ## Loading CIFAR-10
 
 CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [-1, 1] — centering around zero helps with stable training.
 
-See the `data-loading` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for data loading code.
+{{< embed notebook.ipynb#data-loading >}}
 
 ## The U-Net Architecture
 
@@ -70,7 +70,28 @@ Key features of our model:
 - **Class conditioning**: Embedding layer tells the network "what to generate" (airplane, cat, etc.)
 - **Attention layers**: Self-attention at lower resolutions for global context
 
-See the `unet-architecture` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the full U-Net configuration.
+```python
+model = UNet2DModel(
+    sample_size=32,           # Image size (32x32 for CIFAR-10)
+    in_channels=3,            # RGB images
+    out_channels=3,           # Output vector field has same shape as input
+    layers_per_block=2,       # ResNet blocks per resolution level
+    block_out_channels=(64, 128, 256, 256),  # Channels at each resolution
+    down_block_types=(
+        "DownBlock2D",        # 32 -> 16
+        "DownBlock2D",        # 16 -> 8
+        "AttnDownBlock2D",    # 8 -> 4 (with attention)
+        "DownBlock2D",        # 4 -> 2
+    ),
+    up_block_types=(
+        "UpBlock2D",          # 2 -> 4
+        "AttnUpBlock2D",      # 4 -> 8 (with attention)
+        "UpBlock2D",          # 8 -> 16
+        "UpBlock2D",          # 16 -> 32
+    ),
+    num_class_embeds=NUM_CLASSES + 1,  # +1 for null class (CFG)
+)
+```
 
 ## Flow Matching: The Core Idea
 
@@ -131,7 +152,36 @@ This is **constant in time**! The direction from noise to image is simply their 
 
 $$\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right]$$ {#eq-cfm-loss}
 
-The implementation is straightforward — sample $t$, compute $x_t$, and minimize MSE between predicted and target vector field. See the `flow-matching-loss` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete implementation.
+The implementation is straightforward — sample $t$, compute $x_t$, and minimize MSE between predicted and target vector field:
+
+```python
+def flow_matching_loss(model, z, class_label, label_dropout=0.1):
+    """Compute the Conditional Flow Matching loss."""
+    batch_size = z.shape[0]
+
+    # Sample random time t ~ Uniform[0, 1]
+    t = torch.rand(batch_size, device=z.device)
+
+    # Sample noise ε ~ N(0, I)
+    eps = torch.randn_like(z)
+
+    # Compute x_t = t*z + (1-t)*ε (linear interpolation)
+    t_expand = t[:, None, None, None]
+    xt = t_expand * z + (1 - t_expand) * eps
+
+    # Target vector field: u_t = z - ε (constant in time!)
+    target = z - eps
+
+    # Apply label dropout for CFG (replace some labels with null class)
+    dropout_mask = torch.rand(batch_size, device=z.device) < label_dropout
+    class_label_dropped = torch.where(dropout_mask, NUM_CLASSES, class_label)
+
+    # Predict vector field
+    predicted = model(xt, (t * 1000).long(), class_labels=class_label_dropped).sample
+
+    # MSE loss
+    return F.mse_loss(predicted, target)
+```
 
 ## Classifier-Free Guidance {#sec-cfg}
 
@@ -177,7 +227,32 @@ The **guidance scale** $w$ controls conditioning strength:
 High guidance ($w > 8$) amplifies the class signal so much that images become oversaturated with artifacts. Start with $w = 2$ and adjust.
 :::
 
-See the `cfg-implementation` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the `CFGVelocityWrapper` class that applies this formula during sampling.
+```python
+class CFGVectorField(nn.Module):
+    """Applies classifier-free guidance during sampling."""
+
+    def __init__(self, model, guidance_scale=2.0):
+        super().__init__()
+        self.model = model
+        self.guidance_scale = guidance_scale
+        self.class_label = None  # Set before sampling
+
+    def forward(self, t, x):
+        """Compute guided vector field for ODE solver."""
+        batch_size = x.shape[0]
+        timestep = int(t.item() * 1000)
+        timesteps = torch.full((batch_size,), timestep, device=x.device, dtype=torch.long)
+
+        # Unconditional prediction (null class)
+        null_class = torch.full((batch_size,), NUM_CLASSES, device=x.device, dtype=torch.long)
+        u_uncond = self.model(x, timesteps, class_labels=null_class).sample
+
+        # Conditional prediction
+        u_cond = self.model(x, timesteps, class_labels=self.class_label).sample
+
+        # CFG formula: u_guided = u_uncond + w * (u_cond - u_uncond)
+        return u_uncond + self.guidance_scale * (u_cond - u_uncond)
+```
 
 ## Training
 
@@ -188,7 +263,19 @@ The training loop is straightforward:
 3. Backpropagate and update weights
 4. Repeat
 
-See the `training-loop` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete training code.
+```python
+optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4)
+
+for epoch in range(50):
+    for z, y in train_loader:
+        z, y = z.to(device), y.to(device)
+
+        optimizer.zero_grad()
+        loss = flow_matching_loss(model, z, y, label_dropout=0.1)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+```
 
 ### Hyperparameters
 
@@ -211,15 +298,39 @@ Starting from noise $\epsilon$ at $t=0$ and integrating to $t=1$:
 2. Use `torchdiffeq.odeint` to solve the ODE with the CFG-guided vector field
 3. The final state at $t=1$ is our generated image
 
-See the `sampling` cell in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for the complete sampling implementation.
+```python
+@torch.no_grad()
+def sample(model, num_samples, class_label, guidance_scale=2.0, num_steps=50):
+    """Generate samples using ODE integration."""
+    model.eval()
+
+    # Wrap model for CFG
+    vector_field = CFGVectorField(model, guidance_scale)
+    vector_field.class_label = torch.full(
+        (num_samples,), class_label, device=device, dtype=torch.long
+    )
+
+    # Start from noise at t=0
+    x = torch.randn(num_samples, 3, 32, 32, device=device)
+
+    # Integrate ODE from t=0 to t=1
+    t_span = torch.linspace(0, 1, num_steps, device=device)
+    trajectory = odeint(vector_field, x, t_span, method='euler')
+
+    return trajectory[-1].clamp(-1, 1)  # Final image at t=1
+```
 
 ## Results
 
-After training, we can generate images for any CIFAR-10 class. See the `results` and `guidance-comparison` cells in the [companion notebook](https://github.com/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb) for generated samples and visualizations.
+After training, we can generate images for any CIFAR-10 class:
+
+{{< embed notebook.ipynb#results >}}
 
 ### Effect of Guidance Scale
 
-Higher guidance scale $w$ means stronger class conditioning — but too high leads to artifacts. The notebook demonstrates this with samples at $w \in \{1, 2, 4, 8\}$.
+Higher guidance scale $w$ means stronger class conditioning — but too high leads to artifacts:
+
+{{< embed notebook.ipynb#guidance-comparison >}}
 
 ::: {.callout-note appearance="simple"}
 ## Summary
