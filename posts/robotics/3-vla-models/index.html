@@ -1,0 +1,1504 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2026-01-23">
+
+<title>Robot Learning Part 3: Vision-Language-Action (VLA) Models – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../favicon.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#sec-what" id="toc-sec-what" class="nav-link active" data-scroll-target="#sec-what">What Are VLA Models?</a>
+  <ul class="collapse">
+  <li><a href="#why-vla-models-matter-now" id="toc-why-vla-models-matter-now" class="nav-link" data-scroll-target="#why-vla-models-matter-now">Why VLA Models Matter Now</a></li>
+  </ul></li>
+  <li><a href="#sec-evolution" id="toc-sec-evolution" class="nav-link" data-scroll-target="#sec-evolution">The Evolution of Robot Policies</a>
+  <ul class="collapse">
+  <li><a href="#single-task-policies-act-diffusion-policy" id="toc-single-task-policies-act-diffusion-policy" class="nav-link" data-scroll-target="#single-task-policies-act-diffusion-policy">Single-Task Policies (ACT, Diffusion Policy)</a></li>
+  <li><a href="#multi-task-policies-rt-1" id="toc-multi-task-policies-rt-1" class="nav-link" data-scroll-target="#multi-task-policies-rt-1">Multi-Task Policies (RT-1)</a></li>
+  <li><a href="#foundation-model-policies-rt-2-openvla-π0" id="toc-foundation-model-policies-rt-2-openvla-π0" class="nav-link" data-scroll-target="#foundation-model-policies-rt-2-openvla-π0">Foundation Model Policies (RT-2, OpenVLA, π0)</a></li>
+  </ul></li>
+  <li><a href="#sec-architecture" id="toc-sec-architecture" class="nav-link" data-scroll-target="#sec-architecture">The Three-Component Architecture</a>
+  <ul class="collapse">
+  <li><a href="#sec-vision-encoder" id="toc-sec-vision-encoder" class="nav-link" data-scroll-target="#sec-vision-encoder">Component 1: Vision Encoder</a></li>
+  <li><a href="#sec-language-backbone" id="toc-sec-language-backbone" class="nav-link" data-scroll-target="#sec-language-backbone">Component 2: Language Model Backbone</a></li>
+  <li><a href="#sec-action-decoder" id="toc-sec-action-decoder" class="nav-link" data-scroll-target="#sec-action-decoder">Component 3: Action Decoder</a></li>
+  </ul></li>
+  <li><a href="#sec-cotraining" id="toc-sec-cotraining" class="nav-link" data-scroll-target="#sec-cotraining">Co-Training: The Secret Sauce</a>
+  <ul class="collapse">
+  <li><a href="#internet-scale-vision-language-data" id="toc-internet-scale-vision-language-data" class="nav-link" data-scroll-target="#internet-scale-vision-language-data">Internet-Scale Vision-Language Data</a></li>
+  <li><a href="#robot-demonstration-data" id="toc-robot-demonstration-data" class="nav-link" data-scroll-target="#robot-demonstration-data">Robot Demonstration Data</a></li>
+  <li><a href="#the-co-training-recipe" id="toc-the-co-training-recipe" class="nav-link" data-scroll-target="#the-co-training-recipe">The Co-Training Recipe</a></li>
+  <li><a href="#open-x-embodiment-the-imagenet-of-robotics" id="toc-open-x-embodiment-the-imagenet-of-robotics" class="nav-link" data-scroll-target="#open-x-embodiment-the-imagenet-of-robotics">Open X-Embodiment: The ImageNet of Robotics</a></li>
+  </ul></li>
+  <li><a href="#sec-models" id="toc-sec-models" class="nav-link" data-scroll-target="#sec-models">Key VLA Models</a>
+  <ul class="collapse">
+  <li><a href="#sec-rt1" id="toc-sec-rt1" class="nav-link" data-scroll-target="#sec-rt1">RT-1: Robotics Transformer (December 2022)</a></li>
+  <li><a href="#sec-rt2" id="toc-sec-rt2" class="nav-link" data-scroll-target="#sec-rt2">RT-2: Actions as Language (July 2023)</a></li>
+  <li><a href="#sec-openvla" id="toc-sec-openvla" class="nav-link" data-scroll-target="#sec-openvla">OpenVLA: Open-Source 7B Model (June 2024)</a></li>
+  <li><a href="#sec-pi0" id="toc-sec-pi0" class="nav-link" data-scroll-target="#sec-pi0">π0 (Pi-Zero): Flow Matching VLA (October 2024)</a></li>
+  <li><a href="#sec-octo" id="toc-sec-octo" class="nav-link" data-scroll-target="#sec-octo">Octo: Modular Transformer Policy (May 2024)</a></li>
+  </ul></li>
+  <li><a href="#sec-performance" id="toc-sec-performance" class="nav-link" data-scroll-target="#sec-performance">Performance Comparisons</a>
+  <ul class="collapse">
+  <li><a href="#success-rates-vla-vs.-specialized-policies" id="toc-success-rates-vla-vs.-specialized-policies" class="nav-link" data-scroll-target="#success-rates-vla-vs.-specialized-policies">Success Rates: VLA vs.&nbsp;Specialized Policies</a></li>
+  <li><a href="#head-to-head-comparisons" id="toc-head-to-head-comparisons" class="nav-link" data-scroll-target="#head-to-head-comparisons">Head-to-Head Comparisons</a></li>
+  <li><a href="#zero-shot-generalization" id="toc-zero-shot-generalization" class="nav-link" data-scroll-target="#zero-shot-generalization">Zero-Shot Generalization</a></li>
+  </ul></li>
+  <li><a href="#sec-language" id="toc-sec-language" class="nav-link" data-scroll-target="#sec-language">Language Conditioning: Why It Matters</a>
+  <ul class="collapse">
+  <li><a href="#zero-shot-task-specification" id="toc-zero-shot-task-specification" class="nav-link" data-scroll-target="#zero-shot-task-specification">1. Zero-Shot Task Specification</a></li>
+  <li><a href="#semantic-understanding-and-reasoning" id="toc-semantic-understanding-and-reasoning" class="nav-link" data-scroll-target="#semantic-understanding-and-reasoning">2. Semantic Understanding and Reasoning</a></li>
+  <li><a href="#human-robot-communication" id="toc-human-robot-communication" class="nav-link" data-scroll-target="#human-robot-communication">3. Human-Robot Communication</a></li>
+  </ul></li>
+  <li><a href="#sec-limitations" id="toc-sec-limitations" class="nav-link" data-scroll-target="#sec-limitations">Limitations and Open Challenges</a>
+  <ul class="collapse">
+  <li><a href="#the-deployment-gap" id="toc-the-deployment-gap" class="nav-link" data-scroll-target="#the-deployment-gap">The Deployment Gap</a></li>
+  <li><a href="#inference-latency" id="toc-inference-latency" class="nav-link" data-scroll-target="#inference-latency">Inference Latency</a></li>
+  <li><a href="#robustness-issues" id="toc-robustness-issues" class="nav-link" data-scroll-target="#robustness-issues">Robustness Issues</a></li>
+  <li><a href="#data-hunger" id="toc-data-hunger" class="nav-link" data-scroll-target="#data-hunger">Data Hunger</a></li>
+  </ul></li>
+  <li><a href="#sec-future" id="toc-sec-future" class="nav-link" data-scroll-target="#sec-future">The Future of VLAs</a>
+  <ul class="collapse">
+  <li><a href="#more-efficient-architectures" id="toc-more-efficient-architectures" class="nav-link" data-scroll-target="#more-efficient-architectures">1. More Efficient Architectures</a></li>
+  <li><a href="#unified-humanoid-control" id="toc-unified-humanoid-control" class="nav-link" data-scroll-target="#unified-humanoid-control">2. Unified Humanoid Control</a></li>
+  <li><a href="#real-time-flow-matching" id="toc-real-time-flow-matching" class="nav-link" data-scroll-target="#real-time-flow-matching">3. Real-Time Flow Matching</a></li>
+  <li><a href="#self-improvement-and-rl" id="toc-self-improvement-and-rl" class="nav-link" data-scroll-target="#self-improvement-and-rl">4. Self-Improvement and RL</a></li>
+  </ul></li>
+  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a>
+  <ul class="collapse">
+  <li><a href="#recommended-resources" id="toc-recommended-resources" class="nav-link" data-scroll-target="#recommended-resources">Recommended Resources</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Robot Learning Part 3: Vision-Language-Action (VLA) Models</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">robotics</div>
+    <div class="quarto-category">VLA</div>
+    <div class="quarto-category">transformers</div>
+    <div class="quarto-category">foundation-models</div>
+    <div class="quarto-category">robot-learning</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 23, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>VLA models</strong> unify vision, language, and action in end-to-end neural networks for robotic control</li>
+<li><strong>Co-training</strong> on internet-scale vision-language data + robot demonstrations enables zero-shot generalization</li>
+<li><strong>Key innovation</strong>: Treating robot actions as language tokens (RT-2) or continuous trajectories (π0)</li>
+<li><strong>Performance</strong>: OpenVLA (7B) outperforms RT-2-X (55B) by 16.5% with 7× fewer parameters</li>
+<li><strong>Trade-offs</strong>: VLAs excel at semantic understanding but face deployment challenges (latency, robustness)</li>
+</ul>
+</div>
+</div>
+<section id="sec-what" class="level2">
+<h2 class="anchored" data-anchor-id="sec-what">What Are VLA Models?</h2>
+<p>Imagine you’re teaching someone to cook. You don’t just show them what ingredients look like, or explain recipes in words, or demonstrate knife techniques in isolation. You integrate all three: “See these tomatoes? Dice them like this while following the recipe.” That’s exactly how <strong>Vision-Language-Action (VLA)</strong> models work.</p>
+<p>VLA models are multimodal foundation models that process three inputs together: 1. <strong>Vision</strong>: Camera images of the robot’s environment 2. <strong>Language</strong>: Natural language instructions (“pick up the red mug”) 3. <strong>Proprioception</strong>: Robot’s current state (joint positions, velocities)</p>
+<p>And produce one output: - <strong>Actions</strong>: Executable motor commands to control the robot</p>
+<div id="fig-vla-architecture" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-vla-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="vla-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-vla-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: VLA model architecture showing the flow from visual observations and language instructions through encoders and language model backbone to action generation.
+</figcaption>
+</figure>
+</div>
+<p>As shown in <a href="#fig-vla-architecture" class="quarto-xref">Figure&nbsp;1</a>, VLAs differ fundamentally from the specialized policies we’ve seen in <a href="../1.5-action-chunking/">Part 1.5 (ACT)</a> and will see in Part 2 (Diffusion Policy). Instead of learning task-specific behaviors, VLAs aim for <strong>generalist intelligence</strong> — a single model that can handle diverse tasks across different environments and robot embodiments.</p>
+<section id="why-vla-models-matter-now" class="level3">
+<h3 class="anchored" data-anchor-id="why-vla-models-matter-now">Why VLA Models Matter Now</h3>
+<p>Recall from <a href="../1-background/#sec-multimodality">Part 1</a> that robot learning faces a fundamental challenge: how do we create policies that generalize beyond their training data? Traditional approaches required collecting demonstrations for every task, on every robot, in every environment.</p>
+<p>VLA models change this equation through <strong>transfer learning</strong>: - Vision encoders pre-trained on billions of images understand object semantics without robot-specific training - Language models pre-trained on internet text understand task instructions and spatial reasoning - Robot demonstrations teach motor skills, but semantic knowledge comes “for free”</p>
+<p><strong>The result</strong>: RT-2 achieves <strong>3× better generalization</strong> than RT-1, with emergent capabilities like reasoning (“pick up an object that could be used as a hammer” → selects a rock).<span class="math inline">\(^{[1]}\)</span></p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The “Unified Brain” Analogy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Traditional robot systems are like separate departments in a company: the vision team processes images, the language team interprets commands, the planning team decides actions. Each hands off to the next, with information lost at every boundary.</p>
+<p>VLA models are like a single expert who sees, understands, and acts simultaneously. When you ask a chef to “dice those tomatoes,” they don’t mentally translate to a planning module that sends commands to a motor control system. They just… do it. VLAs aim for this same integrated intelligence.<span class="math inline">\(^{[2]}\)</span></p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-evolution" class="level2">
+<h2 class="anchored" data-anchor-id="sec-evolution">The Evolution of Robot Policies</h2>
+<p>To understand why VLAs represent a paradigm shift, let’s trace the evolution:</p>
+<section id="single-task-policies-act-diffusion-policy" class="level3">
+<h3 class="anchored" data-anchor-id="single-task-policies-act-diffusion-policy">Single-Task Policies (ACT, Diffusion Policy)</h3>
+<p>As we saw in <a href="../1.5-action-chunking/">Part 1.5</a>, ACT achieves impressive <strong>80-90% success</strong> on specific manipulation tasks with just 50 demonstrations. But each task requires: - Task-specific data collection - Separate model training - No transfer between tasks</p>
+<p><strong>Limitation</strong>: You need N models for N tasks.</p>
+</section>
+<section id="multi-task-policies-rt-1" class="level3">
+<h3 class="anchored" data-anchor-id="multi-task-policies-rt-1">Multi-Task Policies (RT-1)</h3>
+<p>RT-1 (2022) demonstrated that a single transformer could handle <strong>700+ tasks</strong> with 130k demonstrations across 13 robots.<span class="math inline">\(^{[3]}\)</span> This proved task-conditional control was feasible.</p>
+<p><strong>Innovation</strong>: Natural language task specification instead of task IDs.</p>
+<p><strong>Limitation</strong>: Still requires robot demonstrations for every task, even simple variations.</p>
+</section>
+<section id="foundation-model-policies-rt-2-openvla-π0" class="level3">
+<h3 class="anchored" data-anchor-id="foundation-model-policies-rt-2-openvla-π0">Foundation Model Policies (RT-2, OpenVLA, π0)</h3>
+<p>VLA models leverage <strong>vision-language pre-training</strong> to achieve: - Zero-shot execution of novel tasks - Emergent reasoning capabilities - Cross-embodiment transfer - Semantic understanding of objects never seen in robot training</p>
+<p><strong>The leap</strong>: Instead of “learn from robot demos only,” it’s “inherit knowledge from internet-scale data, then specialize to robotics.”</p>
+</section>
+</section>
+<section id="sec-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="sec-architecture">The Three-Component Architecture</h2>
+<p>Modern VLA models follow a consistent design pattern. Let’s understand each component and the design choices.</p>
+<section id="sec-vision-encoder" class="level3">
+<h3 class="anchored" data-anchor-id="sec-vision-encoder">Component 1: Vision Encoder</h3>
+<p><strong>Purpose</strong>: Transform raw pixels into semantic visual representations.</p>
+<p><strong>Common Architectures</strong>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 33%">
+<col style="width: 23%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Encoder</th>
+<th>Pre-training</th>
+<th>Strength</th>
+<th>Used In</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>SigLIP</strong></td>
+<td>Contrastive (image-text pairs)</td>
+<td>Semantic understanding</td>
+<td>OpenVLA, π0</td>
+</tr>
+<tr class="even">
+<td><strong>DINOv2</strong></td>
+<td>Self-supervised</td>
+<td>Spatial relationships</td>
+<td>OpenVLA (fused)</td>
+</tr>
+<tr class="odd">
+<td><strong>EfficientNet</strong></td>
+<td>ImageNet classification</td>
+<td>Efficient inference</td>
+<td>RT-1</td>
+</tr>
+<tr class="even">
+<td><strong>CLIP</strong></td>
+<td>Contrastive</td>
+<td>General vision-language</td>
+<td>Various</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Design Choice: Fused Encoders</strong></p>
+<p>OpenVLA discovered that combining SigLIP + DINOv2 works better than either alone:<span class="math inline">\(^{[4]}\)</span> - <strong>SigLIP</strong>: Understands “what” objects are (semantic categories) - <strong>DINOv2</strong>: Understands “where” and spatial arrangements - <strong>Together</strong>: Provides both semantic and geometric understanding</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Fuse Vision Encoders?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine describing a cluttered desk. One person excels at identifying objects (“That’s a stapler, a mug, and scissors”). Another excels at spatial layout (“The mug is behind the stapler, to the left of the scissors”). Neither description alone is sufficient for manipulation — you need both “what” and “where.” Fused encoders provide this dual perspective.<span class="math inline">\(^{[4]}\)</span></p>
+</div>
+</div>
+</section>
+<section id="sec-language-backbone" class="level3">
+<h3 class="anchored" data-anchor-id="sec-language-backbone">Component 2: Language Model Backbone</h3>
+<p><strong>Purpose</strong>: Process language instructions and fuse multimodal information.</p>
+<p><strong>Common Choices</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Parameters</th>
+<th>Used In</th>
+<th>Key Feature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Llama 2</strong></td>
+<td>7B</td>
+<td>OpenVLA</td>
+<td>Strong reasoning, open-source</td>
+</tr>
+<tr class="even">
+<td><strong>PaLM-E</strong></td>
+<td>12B-562B</td>
+<td>RT-2</td>
+<td>Massive scale, embodied VLM</td>
+</tr>
+<tr class="odd">
+<td><strong>Gemma</strong></td>
+<td>2B</td>
+<td>π0 (PaliGemma)</td>
+<td>Efficient, Google-optimized</td>
+</tr>
+<tr class="even">
+<td><strong>PaLI-X</strong></td>
+<td>55B</td>
+<td>RT-2</td>
+<td>Vision-language specialist</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Processing Flow</strong>: 1. Language instruction tokenized: “pick up the red mug” → <code>[pick, up, the, red, mug]</code> 2. Vision features projected to language model dimension 3. Combined sequence processed by transformer 4. Output representations condition action generation</p>
+</section>
+<section id="sec-action-decoder" class="level3">
+<h3 class="anchored" data-anchor-id="sec-action-decoder">Component 3: Action Decoder</h3>
+<p>This is where VLA models diverge into two paradigms:</p>
+<section id="paradigm-a-discrete-token-approach-rt-2-openvla" class="level4">
+<h4 class="anchored" data-anchor-id="paradigm-a-discrete-token-approach-rt-2-openvla">Paradigm A: Discrete Token Approach (RT-2, OpenVLA)</h4>
+<p><strong>Core idea</strong>: Treat actions as language.</p>
+<p>Actions are discretized into bins and represented as tokens: - Continuous action: <code>[x=0.342, y=-0.156, z=0.891, ...]</code> - Discretized (256 bins): <code>[token_87, token_102, token_228, ...]</code></p>
+<p><strong>Training</strong>: Same cross-entropy loss as language modeling.</p>
+<p><strong>Advantages</strong>: - Leverages existing LLM architecture and training infrastructure - Simple to implement - Proven to work at scale</p>
+<p><strong>Disadvantages</strong>: - Limited precision (256 bins per dimension) - Poor for high-frequency dexterous control - Action space grows exponentially with dimensions</p>
+</section>
+<section id="paradigm-b-continuous-flow-approach-π0-octo" class="level4">
+<h4 class="anchored" data-anchor-id="paradigm-b-continuous-flow-approach-π0-octo">Paradigm B: Continuous Flow Approach (π0, Octo)</h4>
+<p><strong>Core idea</strong>: Generate smooth action trajectories.</p>
+<p>Uses <strong>flow matching</strong> or <strong>diffusion</strong> to produce continuous outputs:</p>
+<p><span id="eq-flow-matching"><span class="math display">\[
+\frac{d\mathbf{a}}{dt} = v_\theta(\mathbf{a}, t, \mathbf{o}, \mathbf{c})
+\tag{1}\]</span></span></p>
+<p>where <span class="math inline">\(\mathbf{a}\)</span> is the action trajectory, <span class="math inline">\(\mathbf{o}\)</span> is the observation, and <span class="math inline">\(\mathbf{c}\)</span> is the language conditioning.</p>
+<p><strong>Advantages</strong>: - High-frequency control (50-100 Hz) - Precise for dexterous manipulation - Naturally handles action chunking (recall <a href="../1.5-action-chunking/#sec-action-chunking">Part 1.5</a>)</p>
+<p><strong>Disadvantages</strong>: - More complex training - Slower inference (iterative generation) - Requires more compute</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “VLAs Are Just LLMs for Robots”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>While VLAs use similar architectures to LLMs, they face fundamentally different challenges:</p>
+<ol type="1">
+<li><strong>Continuous control</strong>: Text generation is discrete; robot actions are continuous and high-frequency</li>
+<li><strong>Physical constraints</strong>: Language models don’t need to reason about friction, gravity, or collision</li>
+<li><strong>Compounding errors</strong>: As discussed in <a href="../1.5-action-chunking/#sec-compounding">Part 1.5</a>, prediction errors in robotics compound over time — unlike static text generation</li>
+<li><strong>Real-time requirements</strong>: Robots need 10-100 Hz control; language models can take seconds per response</li>
+</ol>
+<p>The architectural similarity is useful (we can leverage pre-training!), but the problem is distinctly different.<span class="math inline">\(^{[5]}\)</span></p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="sec-cotraining" class="level2">
+<h2 class="anchored" data-anchor-id="sec-cotraining">Co-Training: The Secret Sauce</h2>
+<p>The key innovation that makes VLAs work is <strong>co-training</strong> on two complementary data sources.</p>
+<section id="internet-scale-vision-language-data" class="level3">
+<h3 class="anchored" data-anchor-id="internet-scale-vision-language-data">Internet-Scale Vision-Language Data</h3>
+<p><strong>Sources</strong>: LAION (image-text pairs), YouTube (video-text), VQA datasets, image captions</p>
+<p><strong>Scale</strong>: Billions of examples</p>
+<p><strong>Provides</strong>: - Rich semantic knowledge (object properties, relationships, common-sense physics) - Language grounding (understanding diverse instructions) - World knowledge (what objects are typically used for) - Generalization to novel objects</p>
+</section>
+<section id="robot-demonstration-data" class="level3">
+<h3 class="anchored" data-anchor-id="robot-demonstration-data">Robot Demonstration Data</h3>
+<p><strong>Sources</strong>: Human teleoperation, scripted behaviors, RL exploration</p>
+<p><strong>Scale</strong>: Thousands to millions of episodes</p>
+<p><strong>Provides</strong>: - Motor skills and control policies - Physical interaction knowledge - Task-specific behaviors - Embodiment-specific constraints</p>
+</section>
+<section id="the-co-training-recipe" class="level3">
+<h3 class="anchored" data-anchor-id="the-co-training-recipe">The Co-Training Recipe</h3>
+<p><strong>RT-2’s Approach</strong>:<span class="math inline">\(^{[1]}\)</span></p>
+<ol type="1">
+<li>Start with pre-trained VLM (PaLM-E or PaLI-X)</li>
+<li>Convert robot actions to text tokens</li>
+<li>Fine-tune on robot data <strong>while keeping</strong> some web data in the training mix</li>
+<li>This prevents catastrophic forgetting of semantic knowledge</li>
+</ol>
+<p><strong>Result</strong>: The model retains its understanding of “what a rock can be used for” while learning “how to grasp objects.”</p>
+<p><strong>OpenVLA’s Approach</strong>:<span class="math inline">\(^{[4]}\)</span></p>
+<ol type="1">
+<li>Start with Prismatic VLM (pre-trained on image-text pairs)</li>
+<li>Fine-tune on 970k robot trajectories from Open X-Embodiment dataset</li>
+<li>Use LoRA for parameter-efficient adaptation</li>
+<li>Train for 15 days on 64 A100 GPUs</li>
+</ol>
+<p><strong>Result</strong>: 7B parameter model outperforms 55B RT-2-X.</p>
+<div id="fig-cotraining" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cotraining-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="co-training.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cotraining-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Co-training paradigm: Internet-scale vision-language data provides semantic understanding, robot demonstrations provide motor skills. The model learns both simultaneously.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="open-x-embodiment-the-imagenet-of-robotics" class="level3">
+<h3 class="anchored" data-anchor-id="open-x-embodiment-the-imagenet-of-robotics">Open X-Embodiment: The ImageNet of Robotics</h3>
+<p>The <strong>Open X-Embodiment (OXE)</strong> dataset revolutionized VLA training:<span class="math inline">\(^{[6]}\)</span> - <strong>Collaboration</strong>: 33 academic labs worldwide - <strong>Scale</strong>: 1M+ episodes from 22 different robot embodiments - <strong>Diversity</strong>: Multiple tasks, environments, morphologies</p>
+<p><strong>Impact</strong>: - RT-1-X: <strong>50% success rate improvement</strong> across 5 robots - RT-2-X: <strong>3× performance</strong> on multi-embodiment data - Enables zero-shot transfer to new robot platforms</p>
+<p>This dataset is to robotics what ImageNet was to computer vision — a foundation enabling transfer learning at scale.</p>
+</section>
+</section>
+<section id="sec-models" class="level2">
+<h2 class="anchored" data-anchor-id="sec-models">Key VLA Models</h2>
+<p>Let’s examine the landmark models that shaped the field.</p>
+<section id="sec-rt1" class="level3">
+<h3 class="anchored" data-anchor-id="sec-rt1">RT-1: Robotics Transformer (December 2022)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2212.06817">RT-1: Robotics Transformer for Real-World Control at Scale</a><span class="math inline">\(^{[3]}\)</span></p>
+<p><strong>Architecture</strong>: - <strong>Vision</strong>: EfficientNet-B3 (ImageNet pre-trained) → 81 tokens - <strong>TokenLearner</strong>: Compresses 81 tokens → 8 tokens (2.4× faster inference) - <strong>Language Conditioning</strong>: FiLM layers (Feature-wise Linear Modulation) - <strong>Transformer</strong>: 8 layers, 19M parameters - <strong>Actions</strong>: 7 DoF arm + 3 DoF base + mode</p>
+<p><strong>Training Data</strong>: 130k episodes, 700+ tasks, 13 robots over 17 months</p>
+<p><strong>Innovation</strong>: Proved transformers could scale to real-world robot control with natural language conditioning.</p>
+</section>
+<section id="sec-rt2" class="level3">
+<h3 class="anchored" data-anchor-id="sec-rt2">RT-2: Actions as Language (July 2023)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2307.15818">RT-2: Vision-Language-Action Models</a><span class="math inline">\(^{[1]}\)</span></p>
+<p><strong>Key Insight</strong>: Robot actions are just another language.</p>
+<p>Instead of a separate action decoder, RT-2 represents actions as text tokens: - Action: <code>[x, y, z, roll, pitch, yaw, gripper]</code> - Discretized: <code>[87, 102, 228, 156, 91, 205, 127]</code> - As text: <code>"87 102 228 156 91 205 127"</code></p>
+<p>This allows training on both: - Vision-language data: <code>Image → "A dog playing fetch"</code> - Robot data: <code>Image → "87 102 228 156 91 205 127"</code></p>
+<p><strong>Performance</strong>: - <strong>3× improvement</strong> in generalization over RT-1 - <strong>32% → 62%</strong> success on unseen scenarios</p>
+<p><strong>Emergent Capabilities</strong>: - Symbol understanding: Place object on specific number or icon - Semantic reasoning: “Pick the object that could be used as a hammer” → selects rock - Comparative: “Pick the smallest object” - Chain-of-thought: Multi-step reasoning for tool selection</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Key Insight: Web-Scale Pre-Training Transfers to Physical Control
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>RT-2’s most surprising result: Knowledge learned from internet images transfers to physical manipulation. A model pre-trained on “images of rocks used as tools” can figure out how to grasp a rock appropriately — without ever seeing a robot grasp a rock during training.</p>
+<p>This validates the hypothesis that semantic understanding and motor skills can be learned jointly.<span class="math inline">\(^{[1]}\)</span></p>
+</div>
+</div>
+</section>
+<section id="sec-openvla" class="level3">
+<h3 class="anchored" data-anchor-id="sec-openvla">OpenVLA: Open-Source 7B Model (June 2024)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2406.09246">OpenVLA: An Open-Source Vision-Language-Action Model</a><span class="math inline">\(^{[4]}\)</span></p>
+<p><strong>Architecture</strong>: 1. <strong>Fused Vision</strong>: SigLIP + DINOv2 → image patch embeddings 2. <strong>Projector</strong>: Maps visual embeddings to LLM space 3. <strong>Llama 2 7B</strong>: Predicts tokenized actions 4. <strong>Decoder</strong>: Continuous actions from discrete tokens</p>
+<p><strong>Training</strong>: - 970k robot demonstrations (Open X-Embodiment) - 64 A100 GPUs for 15 days - Built on Prismatic VLM</p>
+<p><strong>Performance</strong>: <strong>+16.5%</strong> vs RT-2-X (55B) across 29 tasks with <strong>7× fewer parameters</strong></p>
+<p><strong>Significance</strong>: First major open-source VLA, democratizing research with MIT-licensed checkpoints and training code. Includes LoRA support for easy fine-tuning on consumer GPUs.</p>
+</section>
+<section id="sec-pi0" class="level3">
+<h3 class="anchored" data-anchor-id="sec-pi0">π0 (Pi-Zero): Flow Matching VLA (October 2024)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2410.24164">π₀: A Vision-Language-Action Flow Model</a><span class="math inline">\(^{[7]}\)</span></p>
+<p>Developed by Physical Intelligence, π0 introduces <strong>flow matching</strong> for continuous control.</p>
+<p><strong>Architecture</strong>: - <strong>VLM Backbone</strong>: PaliGemma (SigLIP + Gemma 2B) ≈ 3B parameters - <strong>Action Expert</strong>: 300M parameter flow matching model - <strong>Total</strong>: 3.3B parameters</p>
+<p><strong>Key Innovation</strong>: Instead of discrete tokens, flow matching generates continuous action trajectories at <strong>50 Hz</strong>:</p>
+<p><span id="eq-pi0-action"><span class="math display">\[\mathbf{a}_t = \text{FlowMatch}(\text{noise}, \text{VLM embeddings}, \text{robot state}) \tag{2}\]</span></span></p>
+<p><strong>Training</strong>: 10,000+ hours across 7 robot platforms, 68 tasks</p>
+<p><strong>Capabilities</strong>: Laundry folding, table bussing, grocery bagging, box assembly — with strong zero-shot performance</p>
+<p><strong>Evolution</strong>: π0.5 demonstrates meaningful generalization to entirely new environments</p>
+</section>
+<section id="sec-octo" class="level3">
+<h3 class="anchored" data-anchor-id="sec-octo">Octo: Modular Transformer Policy (May 2024)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2405.12213">Octo: An Open-Source Generalist Robot Policy</a><span class="math inline">\(^{[8]}\)</span></p>
+<p><strong>Architecture</strong>: Transformer-based diffusion policy (recall diffusion from <a href="../1-background/#sec-generative">Part 1</a>)</p>
+<p><strong>Innovation</strong>: Modular attention structure enables efficient cross-embodiment transfer - Robot-agnostic core transformer - Modality-specific tokenizers for different sensors - Two sizes: Octo-Small (27M), Octo-Base (93M)</p>
+<p><strong>Training</strong>: 800k trajectories from Open X-Embodiment</p>
+<p><strong>Flexibility</strong>: - Different camera configurations (workspace or wrist) - Language commands OR goal images - Works on 9 robot platforms without retraining</p>
+<p><strong>Fine-tuning</strong>: Adapts to new robots in <strong>hours on consumer GPUs</strong> with small datasets</p>
+</section>
+</section>
+<section id="sec-performance" class="level2">
+<h2 class="anchored" data-anchor-id="sec-performance">Performance Comparisons</h2>
+<p>How do VLAs compare to the specialized policies from <a href="../1.5-action-chunking/">Part 1.5</a>?</p>
+<section id="success-rates-vla-vs.-specialized-policies" class="level3">
+<h3 class="anchored" data-anchor-id="success-rates-vla-vs.-specialized-policies">Success Rates: VLA vs.&nbsp;Specialized Policies</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 16%">
+<col style="width: 19%">
+<col style="width: 23%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Type</th>
+<th>Parameters</th>
+<th>Success Rate</th>
+<th>Data Efficiency</th>
+<th>Generalization</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>ACT</strong></td>
+<td>Task-specific</td>
+<td>80M</td>
+<td>80-90% (task-specific)</td>
+<td>Excellent (50 demos)</td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td><strong>Diffusion Policy</strong></td>
+<td>Task-specific</td>
+<td>~100M</td>
+<td>55-75% (bimanual)</td>
+<td>Good (100s demos)</td>
+<td>Limited</td>
+</tr>
+<tr class="odd">
+<td><strong>OpenVLA</strong></td>
+<td>Generalist VLA</td>
+<td>7B</td>
+<td>60-80% (multi-task)</td>
+<td>Moderate (970k demos)</td>
+<td>Excellent</td>
+</tr>
+<tr class="even">
+<td><strong>RT-2-X</strong></td>
+<td>Generalist VLA</td>
+<td>55B</td>
+<td>~60% (multi-task)</td>
+<td>Low (large-scale)</td>
+<td>Excellent</td>
+</tr>
+<tr class="odd">
+<td><strong>π0</strong></td>
+<td>Generalist VLA</td>
+<td>3.3B</td>
+<td>~70%+ (multi-task)</td>
+<td>Moderate (10k hours)</td>
+<td>Excellent</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Trade-off</strong>: Task-specific policies (ACT, Diffusion Policy) achieve higher success on their trained tasks but require retraining for each new task. VLAs have lower per-task performance but handle diverse tasks zero-shot.</p>
+</section>
+<section id="head-to-head-comparisons" class="level3">
+<h3 class="anchored" data-anchor-id="head-to-head-comparisons">Head-to-Head Comparisons</h3>
+<p><strong>OpenVLA vs.&nbsp;RT-2-X</strong> (across 29 tasks):<span class="math inline">\(^{[4]}\)</span> - OpenVLA: <strong>+16.5%</strong> absolute improvement - With <strong>7× fewer parameters</strong> (7B vs 55B) - RT-2-X wins only on semantic generalization (benefits from larger internet pre-training)</p>
+<p><strong>OpenVLA vs.&nbsp;Diffusion Policy</strong>: - OpenVLA: <strong>+20.4%</strong> on multi-task scenarios - Diffusion Policy still superior for single-task dexterous manipulation</p>
+<p><strong>π0 vs.&nbsp;Baselines</strong>: - “Large improvements” over OpenVLA, Octo, ACT, and Diffusion Policy<span class="math inline">\(^{[7]}\)</span> - Especially strong on tasks requiring 50 Hz continuous control</p>
+</section>
+<section id="zero-shot-generalization" class="level3">
+<h3 class="anchored" data-anchor-id="zero-shot-generalization">Zero-Shot Generalization</h3>
+<p>This is where VLAs truly shine:</p>
+<p><strong>RT-2 Results</strong>:<span class="math inline">\(^{[1]}\)</span> - Success rate <strong>approximately doubles</strong> vs.&nbsp;RT-1 on unseen scenarios - <strong>32% → 62%</strong> on novel tasks</p>
+<p><strong>OpenVLA Results</strong>:<span class="math inline">\(^{[4]}\)</span> - <strong>85% accuracy</strong> on unseen robot/environment combinations - <strong>15% failure rate</strong> on completely novel scenarios</p>
+<p><strong>Cross-Embodiment Transfer</strong>: - RT-1-X: <strong>+50%</strong> success across 5 different robots<span class="math inline">\(^{[6]}\)</span> - RT-2-X: <strong>3× performance</strong> with multi-embodiment training<span class="math inline">\(^{[6]}\)</span></p>
+</section>
+</section>
+<section id="sec-language" class="level2">
+<h2 class="anchored" data-anchor-id="sec-language">Language Conditioning: Why It Matters</h2>
+<p>Natural language conditioning provides three critical benefits:</p>
+<section id="zero-shot-task-specification" class="level3">
+<h3 class="anchored" data-anchor-id="zero-shot-task-specification">1. Zero-Shot Task Specification</h3>
+<p>Instead of training N models for N tasks, train one model with language:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Same model, different tasks:</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>vla(<span class="st">"pick up the red mug"</span>)       <span class="co"># Task 1</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>vla(<span class="st">"open the drawer"</span>)            <span class="co"># Task 2</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>vla(<span class="st">"fold the towel"</span>)             <span class="co"># Task 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>No retraining needed — just different instructions.</p>
+</section>
+<section id="semantic-understanding-and-reasoning" class="level3">
+<h3 class="anchored" data-anchor-id="semantic-understanding-and-reasoning">2. Semantic Understanding and Reasoning</h3>
+<p>Language models bring common-sense reasoning:</p>
+<p><strong>RT-2 Examples</strong>:<span class="math inline">\(^{[1]}\)</span> - “Pick an object that could serve as a hammer” → selects rock (not wrench!) - “Bring me an energy drink for someone tired” → selects caffeinated beverage - “Put the apple in the bowl marked with the same color” → color matching</p>
+<p>These capabilities emerge from internet-scale pre-training, not robot demonstrations.</p>
+</section>
+<section id="human-robot-communication" class="level3">
+<h3 class="anchored" data-anchor-id="human-robot-communication">3. Human-Robot Communication</h3>
+<p>Natural language is the most intuitive interface: - <strong>No programming</strong>: “Clean the table” vs.&nbsp;scripting task sequences - <strong>Adaptability</strong>: “Put it over there” (gestures) works with vision grounding - <strong>Accessibility</strong>: Non-experts can instruct robots</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Language as a Universal Interface
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine if you could only teach a robot by showing it every possible scenario. You’d need demonstrations for “pick up red mug,” “pick up blue mug,” “pick up red cup,” etc. — combinatorially explosive.</p>
+<p>Language compresses this: “Pick up the [COLOR] [OBJECT]” captures infinite variations. The semantic understanding from language pre-training handles the combinatorics automatically.<span class="math inline">\(^{[2]}\)</span></p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="sec-limitations">Limitations and Open Challenges</h2>
+<p>Despite impressive progress, VLAs face significant limitations:</p>
+<section id="the-deployment-gap" class="level3">
+<h3 class="anchored" data-anchor-id="the-deployment-gap">The Deployment Gap</h3>
+<p><strong>Lab Performance</strong>: 80-90% success on benchmark tasks <strong>Real-World</strong>: Drops to 60-80%, sometimes &lt;30% under distribution shift</p>
+<p>The gap between research demos and production deployment has “never been wider.”<span class="math inline">\(^{[9]}\)</span></p>
+<p><strong>Required Reliability</strong>: Production robotics needs <strong>&gt;99.9%</strong> success <strong>Current VLAs</strong>: Achieve <strong>60-80%</strong> <strong>Impact</strong>: At 95% success with thousands of daily picks = <strong>50+ failures requiring human intervention per day</strong></p>
+</section>
+<section id="inference-latency" class="level3">
+<h3 class="anchored" data-anchor-id="inference-latency">Inference Latency</h3>
+<p><strong>Required for Responsive Control</strong>: 20-100 Hz (10-50ms per action) <strong>Current Performance</strong>: - OpenVLA (7B): ~6 Hz (~167ms) - RT-2 (55B): 1-3 Hz (~333-1000ms) - π0: 10 Hz (~100ms)</p>
+<p><strong>Solution Attempts</strong>: - KV-caching and optimizations: reach 30-50 Hz - Dual-system architectures: separate slow reasoning from fast control - Smaller models (Octo-27M): sacrifice capability for speed</p>
+</section>
+<section id="robustness-issues" class="level3">
+<h3 class="anchored" data-anchor-id="robustness-issues">Robustness Issues</h3>
+<p><strong>Distribution Shift</strong>: Performance drops from <strong>95% to &lt;30%</strong> under camera viewpoint changes<span class="math inline">\(^{[9]}\)</span></p>
+<p><strong>Adversarial Vulnerability</strong>: Models highly susceptible to sensor attacks and adversarial examples</p>
+<p><strong>Perception Failures</strong>: Struggles with: - Partial occlusion - Cluttered scenes - Novel object shapes - Depth estimation</p>
+</section>
+<section id="data-hunger" class="level3">
+<h3 class="anchored" data-anchor-id="data-hunger">Data Hunger</h3>
+<p>Even “data-efficient” VLAs require: - <strong>OpenVLA</strong>: 970k episodes across 22 robots - <strong>π0</strong>: 10,000+ hours of demonstrations - <strong>Fine-tuning</strong>: Still needs 100+ demonstrations per new task</p>
+<p>Compare to: - <strong>ACT</strong>: 50 demonstrations (10 minutes) for 80-90% success - <strong>Human</strong>: A few examples to learn new manipulation</p>
+</section>
+</section>
+<section id="sec-future" class="level2">
+<h2 class="anchored" data-anchor-id="sec-future">The Future of VLAs</h2>
+<p>Recent developments (2024-2025) point toward exciting directions:</p>
+<section id="more-efficient-architectures" class="level3">
+<h3 class="anchored" data-anchor-id="more-efficient-architectures">1. More Efficient Architectures</h3>
+<p><strong>SmolVLA</strong> (450M parameters): Demonstrates that smaller, specialized VLAs can match larger models on specific domains<span class="math inline">\(^{[10]}\)</span></p>
+<p><strong>MiniVLA</strong>: Reduces parameters while maintaining performance through better pre-training<span class="math inline">\(^{[11]}\)</span></p>
+</section>
+<section id="unified-humanoid-control" class="level3">
+<h3 class="anchored" data-anchor-id="unified-humanoid-control">2. Unified Humanoid Control</h3>
+<p><strong>GR00T N1</strong> (NVIDIA): First VLA for full humanoid control (arms, torso, head, 54 DOF)<span class="math inline">\(^{[12]}\)</span></p>
+<p><strong>Helix</strong> (Figure AI): Controls entire humanoid upper body including dexterous hands<span class="math inline">\(^{[13]}\)</span></p>
+</section>
+<section id="real-time-flow-matching" class="level3">
+<h3 class="anchored" data-anchor-id="real-time-flow-matching">3. Real-Time Flow Matching</h3>
+<p><strong>π0-FAST</strong>: 90% compute reduction, enabling production deployment<span class="math inline">\(^{[14]}\)</span></p>
+<p><strong>FAST Action Tokenization</strong>: 15× speedup for discrete approaches<span class="math inline">\(^{[15]}\)</span></p>
+</section>
+<section id="self-improvement-and-rl" class="level3">
+<h3 class="anchored" data-anchor-id="self-improvement-and-rl">4. Self-Improvement and RL</h3>
+<p><strong>VLA-R1</strong>: Integrates reinforcement learning for continuous improvement<span class="math inline">\(^{[16]}\)</span></p>
+<p><strong>Self-Improving VLAs</strong>: Achieve near-saturation (99%) on LIBERO benchmark<span class="math inline">\(^{[17]}\)</span></p>
+</section>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>In Part 4, we’ll explore <strong>Diffusion Policy</strong> in depth — understanding how the diffusion models from image generation (recall the <a href="../0-intro/#sec-diffusion-analogy">diffusion analogy</a> from Part 0) are adapted for robot action generation, and how they compare to the VLA approaches we’ve covered here.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Vision-Language-Action models represent a paradigm shift in robot learning by unifying vision, language, and action in end-to-end foundation models. Unlike the task-specific policies we explored in <a href="../1.5-action-chunking/">Part 1.5</a> (ACT achieves 80-90% success but requires retraining for each task), VLAs trade some task-specific performance for remarkable generalization.</p>
+<p>The key innovation enabling VLAs is <strong>co-training on internet-scale vision-language data and robot demonstrations</strong> (<a href="#fig-cotraining" class="quarto-xref">Figure&nbsp;2</a>). This dual-data approach allows models like RT-2 to inherit semantic understanding from billions of web images while learning motor skills from thousands of robot trajectories. The result: <strong>3× better generalization</strong> and emergent capabilities like reasoning about tool affordances.</p>
+<p>The field has evolved rapidly through three generations:</p>
+<p><strong>RT-1 (2022)</strong> proved transformers could scale to 700+ tasks with natural language conditioning. <strong>RT-2 (2023)</strong> introduced the “actions as language” paradigm, treating robot commands as text tokens and achieving 62% success on novel scenarios (vs.&nbsp;32% for RT-1). <strong>OpenVLA (2024)</strong> democratized the field with the first open-source 7B model that outperforms 55B RT-2-X by +16.5% across 29 tasks. <strong>π0 (2024)</strong> brought flow matching to robotics, generating continuous 50 Hz control via <a href="#eq-flow-matching" class="quarto-xref">Equation&nbsp;1</a> instead of discrete tokens.</p>
+<p>The three-component architecture — vision encoder (<a href="#sec-vision-encoder" class="quarto-xref">Section&nbsp;3.1</a>), language model backbone (<a href="#sec-language-backbone" class="quarto-xref">Section&nbsp;3.2</a>), and action decoder (<a href="#sec-action-decoder" class="quarto-xref">Section&nbsp;3.3</a>) — provides a flexible framework with two main paradigms emerging:</p>
+<p><strong>Discrete token approach</strong> (RT-2, OpenVLA): Leverages LLM infrastructure, simpler training, but limited precision. <strong>Continuous flow approach</strong> (π0, Octo): Better for dexterous manipulation at 50-100 Hz, but more complex and slower to train.</p>
+<p>Language conditioning transforms robot instruction from “programming” to “conversation,” enabling zero-shot task execution, semantic reasoning, and cross-embodiment transfer. The Open X-Embodiment dataset (1M+ episodes, 22 robots) has become the ImageNet of robotics, with cross-embodiment training yielding <strong>50-300% improvements</strong> in success rates.</p>
+<p>Yet significant challenges remain before production deployment:</p>
+<p><strong>The deployment gap</strong>: Lab performance of 80-90% drops to 60-80% in real-world settings, far from the &gt;99.9% reliability required for production. <strong>Inference latency</strong>: Current models run at 1-10 Hz, insufficient for the 20-100 Hz needed for responsive manipulation. <strong>Robustness</strong>: Performance degrades dramatically under distribution shift (95% → &lt;30% with viewpoint changes). <strong>Data efficiency</strong>: VLAs still require hundreds of thousands of demonstrations, compared to ACT’s 50 or human few-shot learning.</p>
+<p>The field is rapidly addressing these limitations through efficient architectures (SmolVLA, MiniVLA), dual-system designs separating reasoning from control (GR00T N1, Helix), real-time flow matching optimization (π0-FAST), and self-improving RL frameworks.</p>
+<p>VLAs excel where generalization matters most: diverse tasks, novel objects, cross-embodiment transfer, and zero-shot understanding. Task-specific policies (ACT, Diffusion Policy) remain superior for single-task deployment requiring maximum reliability. The future likely involves hybrid approaches: VLA foundations providing semantic understanding, specialized modules ensuring high-frequency precision control.</p>
+<p><strong>Next up</strong>: In Part 4, we’ll dive into Diffusion Policy and explore how the same diffusion models that generate photorealistic images can generate precise robot action trajectories — and how this compares to the VLA approaches we’ve examined here.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2307.15818">Brohan, A., et al.&nbsp;“RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control.”</a> <em>arXiv:2307.15818</em>, 2023.</p>
+<p>[2] <a href="https://medium.com/@ian_25476/the-complete-guide-to-vision-language-action-models-how-robots-are-learning-to-think-f1a788d003ed">Loe, I. “The Complete Guide to Vision-Language-Action Models: How Robots Are Learning to Think.”</a> <em>Medium</em>, 2024.</p>
+<p>[3] <a href="https://arxiv.org/abs/2212.06817">Brohan, A., et al.&nbsp;“RT-1: Robotics Transformer for Real-World Control at Scale.”</a> <em>arXiv:2212.06817</em>, 2022.</p>
+<p>[4] <a href="https://arxiv.org/abs/2406.09246">Kim, M., et al.&nbsp;“OpenVLA: An Open-Source Vision-Language-Action Model.”</a> <em>arXiv:2406.09246</em>, 2024.</p>
+<p>[5] <a href="https://rohitbandaru.github.io/blog/Foundation-Models-for-Robotics-VLA/">Bandaru, R. “Foundation Models for Robotics: VLA.”</a> <em>Blog</em>, 2024.</p>
+<p>[6] <a href="https://arxiv.org/abs/2310.08864">Open X-Embodiment Collaboration. “Open X-Embodiment: Robotic Learning Datasets and RT-X Models.”</a> <em>arXiv:2310.08864</em>, 2023.</p>
+<p>[7] <a href="https://arxiv.org/abs/2410.24164">Black, K., et al.&nbsp;“π₀: A Vision-Language-Action Flow Model for General Robot Control.”</a> <em>arXiv:2410.24164</em>, 2024.</p>
+<p>[8] <a href="https://arxiv.org/abs/2405.12213">Ghosh, D., et al.&nbsp;“Octo: An Open-Source Generalist Robot Policy.”</a> <em>arXiv:2405.12213</em>, 2024.</p>
+<p>[9] <a href="https://mbreuss.github.io/blog_post_iclr_26_vla.html">Breuss, M. “State of VLA Research at ICLR 2026.”</a> <em>Blog</em>, 2025.</p>
+<p>[10] <a href="https://huggingface.co/blog/smolvla">Iordanou, A., et al.&nbsp;“SmolVLA: A Compact Vision-Language-Action Model.”</a> <em>Hugging Face Blog</em>, 2025.</p>
+<p>[11] <a href="https://ai.stanford.edu/blog/minivla/">Tan, J., et al.&nbsp;“MiniVLA: A Better VLA with a Smaller Footprint.”</a> <em>Stanford AI Blog</em>, 2024.</p>
+<p>[12] <a href="https://d1qx31qr3h6wln.cloudfront.net/publications/GR00T%20N1%20Whitepaper.pdf">NVIDIA. “GR00T N1: Foundation Model for Humanoid Robots.”</a> <em>Whitepaper</em>, 2025.</p>
+<p>[13] <a href="https://www.figure.ai/news/helix">Figure AI. “Helix: A Vision-Language-Action Model for Generalist Humanoid Control.”</a> <em>Technical Report</em>, 2025.</p>
+<p>[14] <a href="https://huggingface.co/blog/pi0">Physical Intelligence. “π0-FAST: Real-Time Vision-Language-Action.”</a> <em>Hugging Face Blog</em>, 2025.</p>
+<p>[15] <a href="https://arxiv.org/abs/2501.09747">Sun, S., et al.&nbsp;“FAST: Efficient Action Tokenization for Vision-Language-Action Models.”</a> <em>arXiv:2501.09747</em>, 2025.</p>
+<p>[16] <a href="https://arxiv.org/abs/2501.04957">Agrawal, A., et al.&nbsp;“VLA-R1: Integrating Reinforcement Learning with Vision-Language-Action Models.”</a> <em>arXiv:2501.04957</em>, 2025.</p>
+<p>[17] <a href="https://arxiv.org/abs/2412.08821">Chen, X., et al.&nbsp;“Self-Improving Vision-Language-Action Models.”</a> <em>arXiv:2412.08821</em>, 2024.</p>
+<section id="recommended-resources" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-resources">Recommended Resources</h3>
+<p><strong>Interactive Tutorials</strong>: - <a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">LeRobot Robot Learning Tutorial</a> — Hands-on VLA training - <a href="https://github.com/openvla/openvla">OpenVLA GitHub</a> — Complete codebase with examples</p>
+<p><strong>Comprehensive Guides</strong>: - <a href="https://vla-survey.github.io/">Vision-Language-Action Models for Robotics: A Review</a> — IEEE Access 2025 survey - <a href="https://learnopencv.com/vision-language-action-models-lerobot-policy/">LearnOpenCV VLA Tutorial</a> — Detailed architecture walkthrough</p>
+<p><strong>Project Pages</strong>: - <a href="https://robotics-transformer2.github.io/">RT-2 Project Page</a> — Interactive demos - <a href="https://openvla.github.io/">OpenVLA Project Page</a> — Pre-trained models - <a href="https://www.physicalintelligence.company/blog/pi0">Physical Intelligence Blog</a> — π0 system details</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

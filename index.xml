@@ -756,6 +756,604 @@ font-style: inherit;">${HF_USER}</span>/act_policy</span></code></pre></div></di
   <pubDate>Fri, 23 Jan 2026 00:00:00 GMT</pubDate>
 </item>
 <item>
+  <title>Robot Learning Part 3: Vision-Language-Action (VLA) Models</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/robotics/3-vla-models/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>VLA models</strong> unify vision, language, and action in end-to-end neural networks for robotic control</li>
+<li><strong>Co-training</strong> on internet-scale vision-language data + robot demonstrations enables zero-shot generalization</li>
+<li><strong>Key innovation</strong>: Treating robot actions as language tokens (RT-2) or continuous trajectories (π0)</li>
+<li><strong>Performance</strong>: OpenVLA (7B) outperforms RT-2-X (55B) by 16.5% with 7× fewer parameters</li>
+<li><strong>Trade-offs</strong>: VLAs excel at semantic understanding but face deployment challenges (latency, robustness)</li>
+</ul>
+</div>
+</div>
+<section id="sec-what" class="level2">
+<h2 class="anchored" data-anchor-id="sec-what">What Are VLA Models?</h2>
+<p>Imagine you’re teaching someone to cook. You don’t just show them what ingredients look like, or explain recipes in words, or demonstrate knife techniques in isolation. You integrate all three: “See these tomatoes? Dice them like this while following the recipe.” That’s exactly how <strong>Vision-Language-Action (VLA)</strong> models work.</p>
+<p>VLA models are multimodal foundation models that process three inputs together: 1. <strong>Vision</strong>: Camera images of the robot’s environment 2. <strong>Language</strong>: Natural language instructions (“pick up the red mug”) 3. <strong>Proprioception</strong>: Robot’s current state (joint positions, velocities)</p>
+<p>And produce one output: - <strong>Actions</strong>: Executable motor commands to control the robot</p>
+<div id="fig-vla-architecture" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-vla-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/3-vla-models/vla-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-vla-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: VLA model architecture showing the flow from visual observations and language instructions through encoders and language model backbone to action generation.
+</figcaption>
+</figure>
+</div>
+<p>As shown in Figure&nbsp;1, VLAs differ fundamentally from the specialized policies we’ve seen in <a href="../1.5-action-chunking/">Part 1.5 (ACT)</a> and will see in Part 2 (Diffusion Policy). Instead of learning task-specific behaviors, VLAs aim for <strong>generalist intelligence</strong> — a single model that can handle diverse tasks across different environments and robot embodiments.</p>
+<section id="why-vla-models-matter-now" class="level3">
+<h3 class="anchored" data-anchor-id="why-vla-models-matter-now">Why VLA Models Matter Now</h3>
+<p>Recall from <a href="../1-background/#sec-multimodality">Part 1</a> that robot learning faces a fundamental challenge: how do we create policies that generalize beyond their training data? Traditional approaches required collecting demonstrations for every task, on every robot, in every environment.</p>
+<p>VLA models change this equation through <strong>transfer learning</strong>: - Vision encoders pre-trained on billions of images understand object semantics without robot-specific training - Language models pre-trained on internet text understand task instructions and spatial reasoning - Robot demonstrations teach motor skills, but semantic knowledge comes “for free”</p>
+<p><strong>The result</strong>: RT-2 achieves <strong>3× better generalization</strong> than RT-1, with emergent capabilities like reasoning (“pick up an object that could be used as a hammer” → selects a rock).<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The “Unified Brain” Analogy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Traditional robot systems are like separate departments in a company: the vision team processes images, the language team interprets commands, the planning team decides actions. Each hands off to the next, with information lost at every boundary.</p>
+<p>VLA models are like a single expert who sees, understands, and acts simultaneously. When you ask a chef to “dice those tomatoes,” they don’t mentally translate to a planning module that sends commands to a motor control system. They just… do it. VLAs aim for this same integrated intelligence.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-evolution" class="level2">
+<h2 class="anchored" data-anchor-id="sec-evolution">The Evolution of Robot Policies</h2>
+<p>To understand why VLAs represent a paradigm shift, let’s trace the evolution:</p>
+<section id="single-task-policies-act-diffusion-policy" class="level3">
+<h3 class="anchored" data-anchor-id="single-task-policies-act-diffusion-policy">Single-Task Policies (ACT, Diffusion Policy)</h3>
+<p>As we saw in <a href="../1.5-action-chunking/">Part 1.5</a>, ACT achieves impressive <strong>80-90% success</strong> on specific manipulation tasks with just 50 demonstrations. But each task requires: - Task-specific data collection - Separate model training - No transfer between tasks</p>
+<p><strong>Limitation</strong>: You need N models for N tasks.</p>
+</section>
+<section id="multi-task-policies-rt-1" class="level3">
+<h3 class="anchored" data-anchor-id="multi-task-policies-rt-1">Multi-Task Policies (RT-1)</h3>
+<p>RT-1 (2022) demonstrated that a single transformer could handle <strong>700+ tasks</strong> with 130k demonstrations across 13 robots.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D"> This proved task-conditional control was feasible.</p>
+<p><strong>Innovation</strong>: Natural language task specification instead of task IDs.</p>
+<p><strong>Limitation</strong>: Still requires robot demonstrations for every task, even simple variations.</p>
+</section>
+<section id="foundation-model-policies-rt-2-openvla-π0" class="level3">
+<h3 class="anchored" data-anchor-id="foundation-model-policies-rt-2-openvla-π0">Foundation Model Policies (RT-2, OpenVLA, π0)</h3>
+<p>VLA models leverage <strong>vision-language pre-training</strong> to achieve: - Zero-shot execution of novel tasks - Emergent reasoning capabilities - Cross-embodiment transfer - Semantic understanding of objects never seen in robot training</p>
+<p><strong>The leap</strong>: Instead of “learn from robot demos only,” it’s “inherit knowledge from internet-scale data, then specialize to robotics.”</p>
+</section>
+</section>
+<section id="sec-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="sec-architecture">The Three-Component Architecture</h2>
+<p>Modern VLA models follow a consistent design pattern. Let’s understand each component and the design choices.</p>
+<section id="sec-vision-encoder" class="level3">
+<h3 class="anchored" data-anchor-id="sec-vision-encoder">Component 1: Vision Encoder</h3>
+<p><strong>Purpose</strong>: Transform raw pixels into semantic visual representations.</p>
+<p><strong>Common Architectures</strong>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 33%">
+<col style="width: 23%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Encoder</th>
+<th>Pre-training</th>
+<th>Strength</th>
+<th>Used In</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>SigLIP</strong></td>
+<td>Contrastive (image-text pairs)</td>
+<td>Semantic understanding</td>
+<td>OpenVLA, π0</td>
+</tr>
+<tr class="even">
+<td><strong>DINOv2</strong></td>
+<td>Self-supervised</td>
+<td>Spatial relationships</td>
+<td>OpenVLA (fused)</td>
+</tr>
+<tr class="odd">
+<td><strong>EfficientNet</strong></td>
+<td>ImageNet classification</td>
+<td>Efficient inference</td>
+<td>RT-1</td>
+</tr>
+<tr class="even">
+<td><strong>CLIP</strong></td>
+<td>Contrastive</td>
+<td>General vision-language</td>
+<td>Various</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key Design Choice: Fused Encoders</strong></p>
+<p>OpenVLA discovered that combining SigLIP + DINOv2 works better than either alone:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"> - <strong>SigLIP</strong>: Understands “what” objects are (semantic categories) - <strong>DINOv2</strong>: Understands “where” and spatial arrangements - <strong>Together</strong>: Provides both semantic and geometric understanding</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Why Fuse Vision Encoders?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine describing a cluttered desk. One person excels at identifying objects (“That’s a stapler, a mug, and scissors”). Another excels at spatial layout (“The mug is behind the stapler, to the left of the scissors”). Neither description alone is sufficient for manipulation — you need both “what” and “where.” Fused encoders provide this dual perspective.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"></p>
+</div>
+</div>
+</section>
+<section id="sec-language-backbone" class="level3">
+<h3 class="anchored" data-anchor-id="sec-language-backbone">Component 2: Language Model Backbone</h3>
+<p><strong>Purpose</strong>: Process language instructions and fuse multimodal information.</p>
+<p><strong>Common Choices</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Parameters</th>
+<th>Used In</th>
+<th>Key Feature</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Llama 2</strong></td>
+<td>7B</td>
+<td>OpenVLA</td>
+<td>Strong reasoning, open-source</td>
+</tr>
+<tr class="even">
+<td><strong>PaLM-E</strong></td>
+<td>12B-562B</td>
+<td>RT-2</td>
+<td>Massive scale, embodied VLM</td>
+</tr>
+<tr class="odd">
+<td><strong>Gemma</strong></td>
+<td>2B</td>
+<td>π0 (PaliGemma)</td>
+<td>Efficient, Google-optimized</td>
+</tr>
+<tr class="even">
+<td><strong>PaLI-X</strong></td>
+<td>55B</td>
+<td>RT-2</td>
+<td>Vision-language specialist</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Processing Flow</strong>: 1. Language instruction tokenized: “pick up the red mug” → <code>[pick, up, the, red, mug]</code> 2. Vision features projected to language model dimension 3. Combined sequence processed by transformer 4. Output representations condition action generation</p>
+</section>
+<section id="sec-action-decoder" class="level3">
+<h3 class="anchored" data-anchor-id="sec-action-decoder">Component 3: Action Decoder</h3>
+<p>This is where VLA models diverge into two paradigms:</p>
+<section id="paradigm-a-discrete-token-approach-rt-2-openvla" class="level4">
+<h4 class="anchored" data-anchor-id="paradigm-a-discrete-token-approach-rt-2-openvla">Paradigm A: Discrete Token Approach (RT-2, OpenVLA)</h4>
+<p><strong>Core idea</strong>: Treat actions as language.</p>
+<p>Actions are discretized into bins and represented as tokens: - Continuous action: <code>[x=0.342, y=-0.156, z=0.891, ...]</code> - Discretized (256 bins): <code>[token_87, token_102, token_228, ...]</code></p>
+<p><strong>Training</strong>: Same cross-entropy loss as language modeling.</p>
+<p><strong>Advantages</strong>: - Leverages existing LLM architecture and training infrastructure - Simple to implement - Proven to work at scale</p>
+<p><strong>Disadvantages</strong>: - Limited precision (256 bins per dimension) - Poor for high-frequency dexterous control - Action space grows exponentially with dimensions</p>
+</section>
+<section id="paradigm-b-continuous-flow-approach-π0-octo" class="level4">
+<h4 class="anchored" data-anchor-id="paradigm-b-continuous-flow-approach-π0-octo">Paradigm B: Continuous Flow Approach (π0, Octo)</h4>
+<p><strong>Core idea</strong>: Generate smooth action trajectories.</p>
+<p>Uses <strong>flow matching</strong> or <strong>diffusion</strong> to produce continuous outputs:</p>
+<p><span id="eq-flow-matching"><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bd%5Cmathbf%7Ba%7D%7D%7Bdt%7D%20=%20v_%5Ctheta(%5Cmathbf%7Ba%7D,%20t,%20%5Cmathbf%7Bo%7D,%20%5Cmathbf%7Bc%7D)%0A%5Ctag%7B1%7D"></span></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Ba%7D"> is the action trajectory, <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bo%7D"> is the observation, and <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Bc%7D"> is the language conditioning.</p>
+<p><strong>Advantages</strong>: - High-frequency control (50-100 Hz) - Precise for dexterous manipulation - Naturally handles action chunking (recall <a href="../1.5-action-chunking/#sec-action-chunking">Part 1.5</a>)</p>
+<p><strong>Disadvantages</strong>: - More complex training - Slower inference (iterative generation) - Requires more compute</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “VLAs Are Just LLMs for Robots”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>While VLAs use similar architectures to LLMs, they face fundamentally different challenges:</p>
+<ol type="1">
+<li><strong>Continuous control</strong>: Text generation is discrete; robot actions are continuous and high-frequency</li>
+<li><strong>Physical constraints</strong>: Language models don’t need to reason about friction, gravity, or collision</li>
+<li><strong>Compounding errors</strong>: As discussed in <a href="../1.5-action-chunking/#sec-compounding">Part 1.5</a>, prediction errors in robotics compound over time — unlike static text generation</li>
+<li><strong>Real-time requirements</strong>: Robots need 10-100 Hz control; language models can take seconds per response</li>
+</ol>
+<p>The architectural similarity is useful (we can leverage pre-training!), but the problem is distinctly different.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B5%5D%7D"></p>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="sec-cotraining" class="level2">
+<h2 class="anchored" data-anchor-id="sec-cotraining">Co-Training: The Secret Sauce</h2>
+<p>The key innovation that makes VLAs work is <strong>co-training</strong> on two complementary data sources.</p>
+<section id="internet-scale-vision-language-data" class="level3">
+<h3 class="anchored" data-anchor-id="internet-scale-vision-language-data">Internet-Scale Vision-Language Data</h3>
+<p><strong>Sources</strong>: LAION (image-text pairs), YouTube (video-text), VQA datasets, image captions</p>
+<p><strong>Scale</strong>: Billions of examples</p>
+<p><strong>Provides</strong>: - Rich semantic knowledge (object properties, relationships, common-sense physics) - Language grounding (understanding diverse instructions) - World knowledge (what objects are typically used for) - Generalization to novel objects</p>
+</section>
+<section id="robot-demonstration-data" class="level3">
+<h3 class="anchored" data-anchor-id="robot-demonstration-data">Robot Demonstration Data</h3>
+<p><strong>Sources</strong>: Human teleoperation, scripted behaviors, RL exploration</p>
+<p><strong>Scale</strong>: Thousands to millions of episodes</p>
+<p><strong>Provides</strong>: - Motor skills and control policies - Physical interaction knowledge - Task-specific behaviors - Embodiment-specific constraints</p>
+</section>
+<section id="the-co-training-recipe" class="level3">
+<h3 class="anchored" data-anchor-id="the-co-training-recipe">The Co-Training Recipe</h3>
+<p><strong>RT-2’s Approach</strong>:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></p>
+<ol type="1">
+<li>Start with pre-trained VLM (PaLM-E or PaLI-X)</li>
+<li>Convert robot actions to text tokens</li>
+<li>Fine-tune on robot data <strong>while keeping</strong> some web data in the training mix</li>
+<li>This prevents catastrophic forgetting of semantic knowledge</li>
+</ol>
+<p><strong>Result</strong>: The model retains its understanding of “what a rock can be used for” while learning “how to grasp objects.”</p>
+<p><strong>OpenVLA’s Approach</strong>:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"></p>
+<ol type="1">
+<li>Start with Prismatic VLM (pre-trained on image-text pairs)</li>
+<li>Fine-tune on 970k robot trajectories from Open X-Embodiment dataset</li>
+<li>Use LoRA for parameter-efficient adaptation</li>
+<li>Train for 15 days on 64 A100 GPUs</li>
+</ol>
+<p><strong>Result</strong>: 7B parameter model outperforms 55B RT-2-X.</p>
+<div id="fig-cotraining" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cotraining-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/3-vla-models/co-training.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cotraining-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Co-training paradigm: Internet-scale vision-language data provides semantic understanding, robot demonstrations provide motor skills. The model learns both simultaneously.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="open-x-embodiment-the-imagenet-of-robotics" class="level3">
+<h3 class="anchored" data-anchor-id="open-x-embodiment-the-imagenet-of-robotics">Open X-Embodiment: The ImageNet of Robotics</h3>
+<p>The <strong>Open X-Embodiment (OXE)</strong> dataset revolutionized VLA training:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"> - <strong>Collaboration</strong>: 33 academic labs worldwide - <strong>Scale</strong>: 1M+ episodes from 22 different robot embodiments - <strong>Diversity</strong>: Multiple tasks, environments, morphologies</p>
+<p><strong>Impact</strong>: - RT-1-X: <strong>50% success rate improvement</strong> across 5 robots - RT-2-X: <strong>3× performance</strong> on multi-embodiment data - Enables zero-shot transfer to new robot platforms</p>
+<p>This dataset is to robotics what ImageNet was to computer vision — a foundation enabling transfer learning at scale.</p>
+</section>
+</section>
+<section id="sec-models" class="level2">
+<h2 class="anchored" data-anchor-id="sec-models">Key VLA Models</h2>
+<p>Let’s examine the landmark models that shaped the field.</p>
+<section id="sec-rt1" class="level3">
+<h3 class="anchored" data-anchor-id="sec-rt1">RT-1: Robotics Transformer (December 2022)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2212.06817">RT-1: Robotics Transformer for Real-World Control at Scale</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D"></p>
+<p><strong>Architecture</strong>: - <strong>Vision</strong>: EfficientNet-B3 (ImageNet pre-trained) → 81 tokens - <strong>TokenLearner</strong>: Compresses 81 tokens → 8 tokens (2.4× faster inference) - <strong>Language Conditioning</strong>: FiLM layers (Feature-wise Linear Modulation) - <strong>Transformer</strong>: 8 layers, 19M parameters - <strong>Actions</strong>: 7 DoF arm + 3 DoF base + mode</p>
+<p><strong>Training Data</strong>: 130k episodes, 700+ tasks, 13 robots over 17 months</p>
+<p><strong>Innovation</strong>: Proved transformers could scale to real-world robot control with natural language conditioning.</p>
+</section>
+<section id="sec-rt2" class="level3">
+<h3 class="anchored" data-anchor-id="sec-rt2">RT-2: Actions as Language (July 2023)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2307.15818">RT-2: Vision-Language-Action Models</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></p>
+<p><strong>Key Insight</strong>: Robot actions are just another language.</p>
+<p>Instead of a separate action decoder, RT-2 represents actions as text tokens: - Action: <code>[x, y, z, roll, pitch, yaw, gripper]</code> - Discretized: <code>[87, 102, 228, 156, 91, 205, 127]</code> - As text: <code>"87 102 228 156 91 205 127"</code></p>
+<p>This allows training on both: - Vision-language data: <code>Image → "A dog playing fetch"</code> - Robot data: <code>Image → "87 102 228 156 91 205 127"</code></p>
+<p><strong>Performance</strong>: - <strong>3× improvement</strong> in generalization over RT-1 - <strong>32% → 62%</strong> success on unseen scenarios</p>
+<p><strong>Emergent Capabilities</strong>: - Symbol understanding: Place object on specific number or icon - Semantic reasoning: “Pick the object that could be used as a hammer” → selects rock - Comparative: “Pick the smallest object” - Chain-of-thought: Multi-step reasoning for tool selection</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Key Insight: Web-Scale Pre-Training Transfers to Physical Control
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>RT-2’s most surprising result: Knowledge learned from internet images transfers to physical manipulation. A model pre-trained on “images of rocks used as tools” can figure out how to grasp a rock appropriately — without ever seeing a robot grasp a rock during training.</p>
+<p>This validates the hypothesis that semantic understanding and motor skills can be learned jointly.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></p>
+</div>
+</div>
+</section>
+<section id="sec-openvla" class="level3">
+<h3 class="anchored" data-anchor-id="sec-openvla">OpenVLA: Open-Source 7B Model (June 2024)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2406.09246">OpenVLA: An Open-Source Vision-Language-Action Model</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"></p>
+<p><strong>Architecture</strong>: 1. <strong>Fused Vision</strong>: SigLIP + DINOv2 → image patch embeddings 2. <strong>Projector</strong>: Maps visual embeddings to LLM space 3. <strong>Llama 2 7B</strong>: Predicts tokenized actions 4. <strong>Decoder</strong>: Continuous actions from discrete tokens</p>
+<p><strong>Training</strong>: - 970k robot demonstrations (Open X-Embodiment) - 64 A100 GPUs for 15 days - Built on Prismatic VLM</p>
+<p><strong>Performance</strong>: <strong>+16.5%</strong> vs RT-2-X (55B) across 29 tasks with <strong>7× fewer parameters</strong></p>
+<p><strong>Significance</strong>: First major open-source VLA, democratizing research with MIT-licensed checkpoints and training code. Includes LoRA support for easy fine-tuning on consumer GPUs.</p>
+</section>
+<section id="sec-pi0" class="level3">
+<h3 class="anchored" data-anchor-id="sec-pi0">π0 (Pi-Zero): Flow Matching VLA (October 2024)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2410.24164">π₀: A Vision-Language-Action Flow Model</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"></p>
+<p>Developed by Physical Intelligence, π0 introduces <strong>flow matching</strong> for continuous control.</p>
+<p><strong>Architecture</strong>: - <strong>VLM Backbone</strong>: PaliGemma (SigLIP + Gemma 2B) ≈ 3B parameters - <strong>Action Expert</strong>: 300M parameter flow matching model - <strong>Total</strong>: 3.3B parameters</p>
+<p><strong>Key Innovation</strong>: Instead of discrete tokens, flow matching generates continuous action trajectories at <strong>50 Hz</strong>:</p>
+<p><span id="eq-pi0-action"><img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7Ba%7D_t%20=%20%5Ctext%7BFlowMatch%7D(%5Ctext%7Bnoise%7D,%20%5Ctext%7BVLM%20embeddings%7D,%20%5Ctext%7Brobot%20state%7D)%20%5Ctag%7B2%7D"></span></p>
+<p><strong>Training</strong>: 10,000+ hours across 7 robot platforms, 68 tasks</p>
+<p><strong>Capabilities</strong>: Laundry folding, table bussing, grocery bagging, box assembly — with strong zero-shot performance</p>
+<p><strong>Evolution</strong>: π0.5 demonstrates meaningful generalization to entirely new environments</p>
+</section>
+<section id="sec-octo" class="level3">
+<h3 class="anchored" data-anchor-id="sec-octo">Octo: Modular Transformer Policy (May 2024)</h3>
+<p><strong>Paper</strong>: <a href="https://arxiv.org/abs/2405.12213">Octo: An Open-Source Generalist Robot Policy</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B8%5D%7D"></p>
+<p><strong>Architecture</strong>: Transformer-based diffusion policy (recall diffusion from <a href="../1-background/#sec-generative">Part 1</a>)</p>
+<p><strong>Innovation</strong>: Modular attention structure enables efficient cross-embodiment transfer - Robot-agnostic core transformer - Modality-specific tokenizers for different sensors - Two sizes: Octo-Small (27M), Octo-Base (93M)</p>
+<p><strong>Training</strong>: 800k trajectories from Open X-Embodiment</p>
+<p><strong>Flexibility</strong>: - Different camera configurations (workspace or wrist) - Language commands OR goal images - Works on 9 robot platforms without retraining</p>
+<p><strong>Fine-tuning</strong>: Adapts to new robots in <strong>hours on consumer GPUs</strong> with small datasets</p>
+</section>
+</section>
+<section id="sec-performance" class="level2">
+<h2 class="anchored" data-anchor-id="sec-performance">Performance Comparisons</h2>
+<p>How do VLAs compare to the specialized policies from <a href="../1.5-action-chunking/">Part 1.5</a>?</p>
+<section id="success-rates-vla-vs.-specialized-policies" class="level3">
+<h3 class="anchored" data-anchor-id="success-rates-vla-vs.-specialized-policies">Success Rates: VLA vs.&nbsp;Specialized Policies</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 8%">
+<col style="width: 16%">
+<col style="width: 19%">
+<col style="width: 23%">
+<col style="width: 22%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Type</th>
+<th>Parameters</th>
+<th>Success Rate</th>
+<th>Data Efficiency</th>
+<th>Generalization</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>ACT</strong></td>
+<td>Task-specific</td>
+<td>80M</td>
+<td>80-90% (task-specific)</td>
+<td>Excellent (50 demos)</td>
+<td>None</td>
+</tr>
+<tr class="even">
+<td><strong>Diffusion Policy</strong></td>
+<td>Task-specific</td>
+<td>~100M</td>
+<td>55-75% (bimanual)</td>
+<td>Good (100s demos)</td>
+<td>Limited</td>
+</tr>
+<tr class="odd">
+<td><strong>OpenVLA</strong></td>
+<td>Generalist VLA</td>
+<td>7B</td>
+<td>60-80% (multi-task)</td>
+<td>Moderate (970k demos)</td>
+<td>Excellent</td>
+</tr>
+<tr class="even">
+<td><strong>RT-2-X</strong></td>
+<td>Generalist VLA</td>
+<td>55B</td>
+<td>~60% (multi-task)</td>
+<td>Low (large-scale)</td>
+<td>Excellent</td>
+</tr>
+<tr class="odd">
+<td><strong>π0</strong></td>
+<td>Generalist VLA</td>
+<td>3.3B</td>
+<td>~70%+ (multi-task)</td>
+<td>Moderate (10k hours)</td>
+<td>Excellent</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Trade-off</strong>: Task-specific policies (ACT, Diffusion Policy) achieve higher success on their trained tasks but require retraining for each new task. VLAs have lower per-task performance but handle diverse tasks zero-shot.</p>
+</section>
+<section id="head-to-head-comparisons" class="level3">
+<h3 class="anchored" data-anchor-id="head-to-head-comparisons">Head-to-Head Comparisons</h3>
+<p><strong>OpenVLA vs.&nbsp;RT-2-X</strong> (across 29 tasks):<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"> - OpenVLA: <strong>+16.5%</strong> absolute improvement - With <strong>7× fewer parameters</strong> (7B vs 55B) - RT-2-X wins only on semantic generalization (benefits from larger internet pre-training)</p>
+<p><strong>OpenVLA vs.&nbsp;Diffusion Policy</strong>: - OpenVLA: <strong>+20.4%</strong> on multi-task scenarios - Diffusion Policy still superior for single-task dexterous manipulation</p>
+<p><strong>π0 vs.&nbsp;Baselines</strong>: - “Large improvements” over OpenVLA, Octo, ACT, and Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"> - Especially strong on tasks requiring 50 Hz continuous control</p>
+</section>
+<section id="zero-shot-generalization" class="level3">
+<h3 class="anchored" data-anchor-id="zero-shot-generalization">Zero-Shot Generalization</h3>
+<p>This is where VLAs truly shine:</p>
+<p><strong>RT-2 Results</strong>:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> - Success rate <strong>approximately doubles</strong> vs.&nbsp;RT-1 on unseen scenarios - <strong>32% → 62%</strong> on novel tasks</p>
+<p><strong>OpenVLA Results</strong>:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"> - <strong>85% accuracy</strong> on unseen robot/environment combinations - <strong>15% failure rate</strong> on completely novel scenarios</p>
+<p><strong>Cross-Embodiment Transfer</strong>: - RT-1-X: <strong>+50%</strong> success across 5 different robots<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"> - RT-2-X: <strong>3× performance</strong> with multi-embodiment training<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"></p>
+</section>
+</section>
+<section id="sec-language" class="level2">
+<h2 class="anchored" data-anchor-id="sec-language">Language Conditioning: Why It Matters</h2>
+<p>Natural language conditioning provides three critical benefits:</p>
+<section id="zero-shot-task-specification" class="level3">
+<h3 class="anchored" data-anchor-id="zero-shot-task-specification">1. Zero-Shot Task Specification</h3>
+<p>Instead of training N models for N tasks, train one model with language:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Same model, different tasks:</span></span>
+<span id="cb1-2">vla(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"pick up the red mug"</span>)       <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Task 1</span></span>
+<span id="cb1-3">vla(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"open the drawer"</span>)            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Task 2</span></span>
+<span id="cb1-4">vla(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"fold the towel"</span>)             <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Task 3</span></span></code></pre></div></div>
+<p>No retraining needed — just different instructions.</p>
+</section>
+<section id="semantic-understanding-and-reasoning" class="level3">
+<h3 class="anchored" data-anchor-id="semantic-understanding-and-reasoning">2. Semantic Understanding and Reasoning</h3>
+<p>Language models bring common-sense reasoning:</p>
+<p><strong>RT-2 Examples</strong>:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> - “Pick an object that could serve as a hammer” → selects rock (not wrench!) - “Bring me an energy drink for someone tired” → selects caffeinated beverage - “Put the apple in the bowl marked with the same color” → color matching</p>
+<p>These capabilities emerge from internet-scale pre-training, not robot demonstrations.</p>
+</section>
+<section id="human-robot-communication" class="level3">
+<h3 class="anchored" data-anchor-id="human-robot-communication">3. Human-Robot Communication</h3>
+<p>Natural language is the most intuitive interface: - <strong>No programming</strong>: “Clean the table” vs.&nbsp;scripting task sequences - <strong>Adaptability</strong>: “Put it over there” (gestures) works with vision grounding - <strong>Accessibility</strong>: Non-experts can instruct robots</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Language as a Universal Interface
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine if you could only teach a robot by showing it every possible scenario. You’d need demonstrations for “pick up red mug,” “pick up blue mug,” “pick up red cup,” etc. — combinatorially explosive.</p>
+<p>Language compresses this: “Pick up the [COLOR] [OBJECT]” captures infinite variations. The semantic understanding from language pre-training handles the combinatorics automatically.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="sec-limitations">Limitations and Open Challenges</h2>
+<p>Despite impressive progress, VLAs face significant limitations:</p>
+<section id="the-deployment-gap" class="level3">
+<h3 class="anchored" data-anchor-id="the-deployment-gap">The Deployment Gap</h3>
+<p><strong>Lab Performance</strong>: 80-90% success on benchmark tasks <strong>Real-World</strong>: Drops to 60-80%, sometimes &lt;30% under distribution shift</p>
+<p>The gap between research demos and production deployment has “never been wider.”<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"></p>
+<p><strong>Required Reliability</strong>: Production robotics needs <strong>&gt;99.9%</strong> success <strong>Current VLAs</strong>: Achieve <strong>60-80%</strong> <strong>Impact</strong>: At 95% success with thousands of daily picks = <strong>50+ failures requiring human intervention per day</strong></p>
+</section>
+<section id="inference-latency" class="level3">
+<h3 class="anchored" data-anchor-id="inference-latency">Inference Latency</h3>
+<p><strong>Required for Responsive Control</strong>: 20-100 Hz (10-50ms per action) <strong>Current Performance</strong>: - OpenVLA (7B): ~6 Hz (~167ms) - RT-2 (55B): 1-3 Hz (~333-1000ms) - π0: 10 Hz (~100ms)</p>
+<p><strong>Solution Attempts</strong>: - KV-caching and optimizations: reach 30-50 Hz - Dual-system architectures: separate slow reasoning from fast control - Smaller models (Octo-27M): sacrifice capability for speed</p>
+</section>
+<section id="robustness-issues" class="level3">
+<h3 class="anchored" data-anchor-id="robustness-issues">Robustness Issues</h3>
+<p><strong>Distribution Shift</strong>: Performance drops from <strong>95% to &lt;30%</strong> under camera viewpoint changes<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"></p>
+<p><strong>Adversarial Vulnerability</strong>: Models highly susceptible to sensor attacks and adversarial examples</p>
+<p><strong>Perception Failures</strong>: Struggles with: - Partial occlusion - Cluttered scenes - Novel object shapes - Depth estimation</p>
+</section>
+<section id="data-hunger" class="level3">
+<h3 class="anchored" data-anchor-id="data-hunger">Data Hunger</h3>
+<p>Even “data-efficient” VLAs require: - <strong>OpenVLA</strong>: 970k episodes across 22 robots - <strong>π0</strong>: 10,000+ hours of demonstrations - <strong>Fine-tuning</strong>: Still needs 100+ demonstrations per new task</p>
+<p>Compare to: - <strong>ACT</strong>: 50 demonstrations (10 minutes) for 80-90% success - <strong>Human</strong>: A few examples to learn new manipulation</p>
+</section>
+</section>
+<section id="sec-future" class="level2">
+<h2 class="anchored" data-anchor-id="sec-future">The Future of VLAs</h2>
+<p>Recent developments (2024-2025) point toward exciting directions:</p>
+<section id="more-efficient-architectures" class="level3">
+<h3 class="anchored" data-anchor-id="more-efficient-architectures">1. More Efficient Architectures</h3>
+<p><strong>SmolVLA</strong> (450M parameters): Demonstrates that smaller, specialized VLAs can match larger models on specific domains<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B10%5D%7D"></p>
+<p><strong>MiniVLA</strong>: Reduces parameters while maintaining performance through better pre-training<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B11%5D%7D"></p>
+</section>
+<section id="unified-humanoid-control" class="level3">
+<h3 class="anchored" data-anchor-id="unified-humanoid-control">2. Unified Humanoid Control</h3>
+<p><strong>GR00T N1</strong> (NVIDIA): First VLA for full humanoid control (arms, torso, head, 54 DOF)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B12%5D%7D"></p>
+<p><strong>Helix</strong> (Figure AI): Controls entire humanoid upper body including dexterous hands<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B13%5D%7D"></p>
+</section>
+<section id="real-time-flow-matching" class="level3">
+<h3 class="anchored" data-anchor-id="real-time-flow-matching">3. Real-Time Flow Matching</h3>
+<p><strong>π0-FAST</strong>: 90% compute reduction, enabling production deployment<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B14%5D%7D"></p>
+<p><strong>FAST Action Tokenization</strong>: 15× speedup for discrete approaches<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B15%5D%7D"></p>
+</section>
+<section id="self-improvement-and-rl" class="level3">
+<h3 class="anchored" data-anchor-id="self-improvement-and-rl">4. Self-Improvement and RL</h3>
+<p><strong>VLA-R1</strong>: Integrates reinforcement learning for continuous improvement<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B16%5D%7D"></p>
+<p><strong>Self-Improving VLAs</strong>: Achieve near-saturation (99%) on LIBERO benchmark<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B17%5D%7D"></p>
+</section>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>In Part 4, we’ll explore <strong>Diffusion Policy</strong> in depth — understanding how the diffusion models from image generation (recall the <a href="../0-intro/#sec-diffusion-analogy">diffusion analogy</a> from Part 0) are adapted for robot action generation, and how they compare to the VLA approaches we’ve covered here.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Vision-Language-Action models represent a paradigm shift in robot learning by unifying vision, language, and action in end-to-end foundation models. Unlike the task-specific policies we explored in <a href="../1.5-action-chunking/">Part 1.5</a> (ACT achieves 80-90% success but requires retraining for each task), VLAs trade some task-specific performance for remarkable generalization.</p>
+<p>The key innovation enabling VLAs is <strong>co-training on internet-scale vision-language data and robot demonstrations</strong> (Figure&nbsp;2). This dual-data approach allows models like RT-2 to inherit semantic understanding from billions of web images while learning motor skills from thousands of robot trajectories. The result: <strong>3× better generalization</strong> and emergent capabilities like reasoning about tool affordances.</p>
+<p>The field has evolved rapidly through three generations:</p>
+<p><strong>RT-1 (2022)</strong> proved transformers could scale to 700+ tasks with natural language conditioning. <strong>RT-2 (2023)</strong> introduced the “actions as language” paradigm, treating robot commands as text tokens and achieving 62% success on novel scenarios (vs.&nbsp;32% for RT-1). <strong>OpenVLA (2024)</strong> democratized the field with the first open-source 7B model that outperforms 55B RT-2-X by +16.5% across 29 tasks. <strong>π0 (2024)</strong> brought flow matching to robotics, generating continuous 50 Hz control via Equation&nbsp;1 instead of discrete tokens.</p>
+<p>The three-component architecture — vision encoder (Section&nbsp;3.1), language model backbone (Section&nbsp;3.2), and action decoder (Section&nbsp;3.3) — provides a flexible framework with two main paradigms emerging:</p>
+<p><strong>Discrete token approach</strong> (RT-2, OpenVLA): Leverages LLM infrastructure, simpler training, but limited precision. <strong>Continuous flow approach</strong> (π0, Octo): Better for dexterous manipulation at 50-100 Hz, but more complex and slower to train.</p>
+<p>Language conditioning transforms robot instruction from “programming” to “conversation,” enabling zero-shot task execution, semantic reasoning, and cross-embodiment transfer. The Open X-Embodiment dataset (1M+ episodes, 22 robots) has become the ImageNet of robotics, with cross-embodiment training yielding <strong>50-300% improvements</strong> in success rates.</p>
+<p>Yet significant challenges remain before production deployment:</p>
+<p><strong>The deployment gap</strong>: Lab performance of 80-90% drops to 60-80% in real-world settings, far from the &gt;99.9% reliability required for production. <strong>Inference latency</strong>: Current models run at 1-10 Hz, insufficient for the 20-100 Hz needed for responsive manipulation. <strong>Robustness</strong>: Performance degrades dramatically under distribution shift (95% → &lt;30% with viewpoint changes). <strong>Data efficiency</strong>: VLAs still require hundreds of thousands of demonstrations, compared to ACT’s 50 or human few-shot learning.</p>
+<p>The field is rapidly addressing these limitations through efficient architectures (SmolVLA, MiniVLA), dual-system designs separating reasoning from control (GR00T N1, Helix), real-time flow matching optimization (π0-FAST), and self-improving RL frameworks.</p>
+<p>VLAs excel where generalization matters most: diverse tasks, novel objects, cross-embodiment transfer, and zero-shot understanding. Task-specific policies (ACT, Diffusion Policy) remain superior for single-task deployment requiring maximum reliability. The future likely involves hybrid approaches: VLA foundations providing semantic understanding, specialized modules ensuring high-frequency precision control.</p>
+<p><strong>Next up</strong>: In Part 4, we’ll dive into Diffusion Policy and explore how the same diffusion models that generate photorealistic images can generate precise robot action trajectories — and how this compares to the VLA approaches we’ve examined here.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2307.15818">Brohan, A., et al.&nbsp;“RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control.”</a> <em>arXiv:2307.15818</em>, 2023.</p>
+<p>[2] <a href="https://medium.com/@ian_25476/the-complete-guide-to-vision-language-action-models-how-robots-are-learning-to-think-f1a788d003ed">Loe, I. “The Complete Guide to Vision-Language-Action Models: How Robots Are Learning to Think.”</a> <em>Medium</em>, 2024.</p>
+<p>[3] <a href="https://arxiv.org/abs/2212.06817">Brohan, A., et al.&nbsp;“RT-1: Robotics Transformer for Real-World Control at Scale.”</a> <em>arXiv:2212.06817</em>, 2022.</p>
+<p>[4] <a href="https://arxiv.org/abs/2406.09246">Kim, M., et al.&nbsp;“OpenVLA: An Open-Source Vision-Language-Action Model.”</a> <em>arXiv:2406.09246</em>, 2024.</p>
+<p>[5] <a href="https://rohitbandaru.github.io/blog/Foundation-Models-for-Robotics-VLA/">Bandaru, R. “Foundation Models for Robotics: VLA.”</a> <em>Blog</em>, 2024.</p>
+<p>[6] <a href="https://arxiv.org/abs/2310.08864">Open X-Embodiment Collaboration. “Open X-Embodiment: Robotic Learning Datasets and RT-X Models.”</a> <em>arXiv:2310.08864</em>, 2023.</p>
+<p>[7] <a href="https://arxiv.org/abs/2410.24164">Black, K., et al.&nbsp;“π₀: A Vision-Language-Action Flow Model for General Robot Control.”</a> <em>arXiv:2410.24164</em>, 2024.</p>
+<p>[8] <a href="https://arxiv.org/abs/2405.12213">Ghosh, D., et al.&nbsp;“Octo: An Open-Source Generalist Robot Policy.”</a> <em>arXiv:2405.12213</em>, 2024.</p>
+<p>[9] <a href="https://mbreuss.github.io/blog_post_iclr_26_vla.html">Breuss, M. “State of VLA Research at ICLR 2026.”</a> <em>Blog</em>, 2025.</p>
+<p>[10] <a href="https://huggingface.co/blog/smolvla">Iordanou, A., et al.&nbsp;“SmolVLA: A Compact Vision-Language-Action Model.”</a> <em>Hugging Face Blog</em>, 2025.</p>
+<p>[11] <a href="https://ai.stanford.edu/blog/minivla/">Tan, J., et al.&nbsp;“MiniVLA: A Better VLA with a Smaller Footprint.”</a> <em>Stanford AI Blog</em>, 2024.</p>
+<p>[12] <a href="https://d1qx31qr3h6wln.cloudfront.net/publications/GR00T%20N1%20Whitepaper.pdf">NVIDIA. “GR00T N1: Foundation Model for Humanoid Robots.”</a> <em>Whitepaper</em>, 2025.</p>
+<p>[13] <a href="https://www.figure.ai/news/helix">Figure AI. “Helix: A Vision-Language-Action Model for Generalist Humanoid Control.”</a> <em>Technical Report</em>, 2025.</p>
+<p>[14] <a href="https://huggingface.co/blog/pi0">Physical Intelligence. “π0-FAST: Real-Time Vision-Language-Action.”</a> <em>Hugging Face Blog</em>, 2025.</p>
+<p>[15] <a href="https://arxiv.org/abs/2501.09747">Sun, S., et al.&nbsp;“FAST: Efficient Action Tokenization for Vision-Language-Action Models.”</a> <em>arXiv:2501.09747</em>, 2025.</p>
+<p>[16] <a href="https://arxiv.org/abs/2501.04957">Agrawal, A., et al.&nbsp;“VLA-R1: Integrating Reinforcement Learning with Vision-Language-Action Models.”</a> <em>arXiv:2501.04957</em>, 2025.</p>
+<p>[17] <a href="https://arxiv.org/abs/2412.08821">Chen, X., et al.&nbsp;“Self-Improving Vision-Language-Action Models.”</a> <em>arXiv:2412.08821</em>, 2024.</p>
+<section id="recommended-resources" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-resources">Recommended Resources</h3>
+<p><strong>Interactive Tutorials</strong>: - <a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">LeRobot Robot Learning Tutorial</a> — Hands-on VLA training - <a href="https://github.com/openvla/openvla">OpenVLA GitHub</a> — Complete codebase with examples</p>
+<p><strong>Comprehensive Guides</strong>: - <a href="https://vla-survey.github.io/">Vision-Language-Action Models for Robotics: A Review</a> — IEEE Access 2025 survey - <a href="https://learnopencv.com/vision-language-action-models-lerobot-policy/">LearnOpenCV VLA Tutorial</a> — Detailed architecture walkthrough</p>
+<p><strong>Project Pages</strong>: - <a href="https://robotics-transformer2.github.io/">RT-2 Project Page</a> — Interactive demos - <a href="https://openvla.github.io/">OpenVLA Project Page</a> — Pre-trained models - <a href="https://www.physicalintelligence.company/blog/pi0">Physical Intelligence Blog</a> — π0 system details</p>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>robotics</category>
+  <category>VLA</category>
+  <category>transformers</category>
+  <category>foundation-models</category>
+  <category>robot-learning</category>
+  <guid>https://layernorm.dev/posts/robotics/3-vla-models/</guid>
+  <pubDate>Fri, 23 Jan 2026 00:00:00 GMT</pubDate>
+</item>
+<item>
   <title>Robot Learning Part 0: Introduction &amp; Roadmap</title>
   <dc:creator>Hujie Wang</dc:creator>
   <link>https://layernorm.dev/posts/robotics/0-intro/</link>
