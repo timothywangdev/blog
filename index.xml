@@ -12,6 +12,904 @@
 <generator>quarto-1.8.27</generator>
 <lastBuildDate>Tue, 20 Jan 2026 00:00:00 GMT</lastBuildDate>
 <item>
+  <title>Robot Learning Part 0: Introduction &amp; Roadmap</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/robotics/0-intro/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Robot learning</strong> is rapidly evolving with diffusion models and foundation models</li>
+<li><strong>Vision-Language-Action (VLA)</strong> models unify perception, language, and control</li>
+<li><strong>Diffusion Policy</strong> brings the power of diffusion models to robot action generation</li>
+<li>This series documents my journey from diffusion models into robotics research</li>
+</ul>
+</div>
+</div>
+<section id="why-robotics" class="level2">
+<h2 class="anchored" data-anchor-id="why-robotics">Why Robotics?</h2>
+<p>After spending time understanding <a href="../diffusion/1-intro/">diffusion models and flow matching</a>, I realized these techniques are revolutionizing robotics. The same principles that generate images can generate robot actions — and the field is moving fast.</p>
+<p>This series documents my learning journey into robot learning, starting from the foundations and working toward cutting-edge Vision-Language-Action models.</p>
+</section>
+<section id="series-overview-planned" class="level2">
+<h2 class="anchored" data-anchor-id="series-overview-planned">Series Overview (Planned)</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Part</th>
+<th>Topic</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Part 0</strong></td>
+<td>Introduction &amp; Roadmap (this post)</td>
+<td>Published</td>
+</tr>
+<tr class="even">
+<td><strong>Part 1</strong></td>
+<td><a href="../1-background/">Background &amp; Current State of the Field</a></td>
+<td>Published</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 2</strong></td>
+<td><a href="../1-diffusion-policy/">Diffusion Policy: From Images to Actions</a></td>
+<td>Draft</td>
+</tr>
+<tr class="even">
+<td><strong>Part 2</strong></td>
+<td>Vision-Language-Action Models</td>
+<td>Planned</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 3</strong></td>
+<td>Simulation Environments (MuJoCo, Isaac)</td>
+<td>Planned</td>
+</tr>
+<tr class="even">
+<td><strong>Part 4</strong></td>
+<td>Training with LeRobot</td>
+<td>Planned</td>
+</tr>
+<tr class="odd">
+<td><strong>Part 5</strong></td>
+<td>Real-World Deployment</td>
+<td>Planned</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-big-picture-how-diffusion-enters-robotics" class="level2">
+<h2 class="anchored" data-anchor-id="the-big-picture-how-diffusion-enters-robotics">The Big Picture: How Diffusion Enters Robotics</h2>
+<p>In image generation, diffusion models learn to transform noise into images. In robotics, <strong>Diffusion Policy</strong> learns to transform observations into action sequences:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Image Generation</th>
+<th>Robot Control</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Noise → Image</td>
+<td>Observation → Action Trajectory</td>
+</tr>
+<tr class="even">
+<td>Denoise iteratively</td>
+<td>Generate action chunks</td>
+</tr>
+<tr class="odd">
+<td>Handles multimodal outputs</td>
+<td>Handles multimodal action distributions</td>
+</tr>
+</tbody>
+</table>
+<p>The key insight: robot tasks often have multiple valid solutions (many ways to pick up an object), and diffusion naturally handles this multimodality — the same reason it works for images.</p>
+</section>
+<section id="learning-roadmap" class="level2">
+<h2 class="anchored" data-anchor-id="learning-roadmap">Learning Roadmap</h2>
+<section id="phase-1-foundational-papers" class="level3">
+<h3 class="anchored" data-anchor-id="phase-1-foundational-papers">Phase 1: Foundational Papers</h3>
+<p>Start with these to build core understanding:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Paper</th>
+<th>Why Read It</th>
+<th>Link</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Diffusion Policy</strong> (Chi et al., 2023)</td>
+<td>THE foundational paper connecting diffusion to robot control</td>
+<td><a href="https://diffusion-policy.cs.columbia.edu/">Project Page</a> / <a href="https://arxiv.org/abs/2303.04137">arXiv</a></td>
+</tr>
+<tr class="even">
+<td><strong>Octo</strong> (2024)</td>
+<td>Open-source 93M param generalist policy, good baseline</td>
+<td><a href="https://arxiv.org/abs/2405.12213">arXiv</a></td>
+</tr>
+<tr class="odd">
+<td><strong>OpenVLA</strong> (2024)</td>
+<td>Open-source 7B VLA, outperforms RT-2-X with 7x fewer params</td>
+<td><a href="https://arxiv.org/abs/2406.09246">arXiv</a></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="phase-2-core-vla-models" class="level3">
+<h3 class="anchored" data-anchor-id="phase-2-core-vla-models">Phase 2: Core VLA Models</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 28%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Paper</th>
+<th>Key Contribution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>RT-2</strong> (Google DeepMind, 2023)</td>
+<td>First major VLA — co-trained VLM on robot trajectories</td>
+</tr>
+<tr class="even">
+<td><strong>π0 (Pi-Zero)</strong> (Physical Intelligence, 2024)</td>
+<td>Flow-matching for 50Hz continuous actions, 8 embodiments</td>
+</tr>
+<tr class="odd">
+<td><strong>3D Diffusion Policy</strong> (RSS 2024)</td>
+<td>Extends diffusion policy to 3D representations</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="phase-3-cutting-edge-2025" class="level3">
+<h3 class="anchored" data-anchor-id="phase-3-cutting-edge-2025">Phase 3: Cutting Edge (2025)</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Paper</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>GR00T N1</strong> (NVIDIA, March 2025)</td>
+<td>Dual-system VLA for humanoids</td>
+</tr>
+<tr class="even">
+<td><strong>Helix</strong> (Figure AI, Feb 2025)</td>
+<td>First VLA controlling full humanoid upper body</td>
+</tr>
+<tr class="odd">
+<td><strong>SmolVLA</strong> (Hugging Face, 2025)</td>
+<td>450M param compact VLA, trained on LeRobot</td>
+</tr>
+<tr class="even">
+<td><strong>FLOWER</strong> (CoRL 2025)</td>
+<td>Efficient VLA with diffusion head, 950M params</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="survey-papers" class="level3">
+<h3 class="anchored" data-anchor-id="survey-papers">Survey Papers</h3>
+<p>For comprehensive overviews:</p>
+<ul>
+<li><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2025.1606247/full">Diffusion Models for Robotic Manipulation: A Survey</a> (Frontiers, July 2025)</li>
+<li><a href="https://journals.sagepub.com/doi/full/10.1177/02783649241281508">Foundation Models in Robotics</a> (IJRR 2024/2025)</li>
+<li><a href="https://vla-survey.github.io/">VLA Survey</a> — comprehensive VLA review</li>
+</ul>
+</section>
+<section id="curated-paper-lists" class="level3">
+<h3 class="anchored" data-anchor-id="curated-paper-lists">Curated Paper Lists</h3>
+<ul>
+<li><a href="https://github.com/mbreuss/diffusion-literature-for-robotics">mbreuss/diffusion-literature-for-robotics</a> — categorized diffusion + robotics papers</li>
+<li><a href="https://github.com/robotics-survey/Awesome-Robotics-Foundation-Models">Awesome-Robotics-Foundation-Models</a></li>
+<li><a href="https://github.com/HITSZ-Robotics/DiffusionPolicy-Robotics">HITSZ-Robotics/DiffusionPolicy-Robotics</a></li>
+</ul>
+</section>
+</section>
+<section id="tools-frameworks" class="level2">
+<h2 class="anchored" data-anchor-id="tools-frameworks">Tools &amp; Frameworks</h2>
+<section id="simulation-environments" class="level3">
+<h3 class="anchored" data-anchor-id="simulation-environments">Simulation Environments</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 22%">
+<col style="width: 37%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tool</th>
+<th>Best For</th>
+<th>Tradeoffs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>MuJoCo</strong></td>
+<td>RL research, fast iteration</td>
+<td>Most popular (3800+ citations), steep learning curve</td>
+</tr>
+<tr class="even">
+<td><strong>Isaac Lab/Sim</strong> (NVIDIA)</td>
+<td>Massive parallel training (1000s of envs)</td>
+<td>Requires GPU, slower single-instance</td>
+</tr>
+<tr class="odd">
+<td><strong>PyBullet</strong></td>
+<td>Beginners, prototyping</td>
+<td>Easy to start, less accurate</td>
+</tr>
+<tr class="even">
+<td><strong>Gazebo</strong></td>
+<td>Real-world transfer + ROS</td>
+<td>Best ROS integration</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recommendation</strong>: Start with <strong>MuJoCo</strong> for algorithm development. Use <strong>Isaac Lab</strong> when you need scale.</p>
+</section>
+<section id="training-frameworks" class="level3">
+<h3 class="anchored" data-anchor-id="training-frameworks">Training Frameworks</h3>
+<section id="lerobot-hugging-face-start-here" class="level4">
+<h4 class="anchored" data-anchor-id="lerobot-hugging-face-start-here">LeRobot (Hugging Face) — Start Here</h4>
+<p>The most accessible entry point for robot learning research:</p>
+<ul>
+<li><strong>GitHub</strong>: <a href="https://github.com/huggingface/lerobot">huggingface/lerobot</a></li>
+<li><strong>Free Course</strong>: <a href="https://huggingface.co/learn/robotics-course/unit0/1">Hugging Face Robotics Course</a></li>
+<li><strong>Tutorial</strong>: <a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">Robot Learning Tutorial</a></li>
+</ul>
+<p>LeRobot v0.4.0 includes π0, π0.5, GR00T N1.5 policies, and LIBERO/Meta-World simulation support.</p>
+</section>
+<section id="other-tools" class="level4">
+<h4 class="anchored" data-anchor-id="other-tools">Other Tools</h4>
+<ul>
+<li><strong>robomimic</strong> — imitation learning library</li>
+<li><strong>RLlib / Stable-Baselines3</strong> — RL algorithms</li>
+<li><strong>RLDS</strong> — Google’s robot learning dataset format</li>
+</ul>
+</section>
+</section>
+<section id="benchmarks" class="level3">
+<h3 class="anchored" data-anchor-id="benchmarks">Benchmarks</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 44%">
+<col style="width: 28%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Benchmark</th>
+<th>Tasks</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>CALVIN</strong></td>
+<td>34 (language-conditioned)</td>
+<td>Long-horizon, 24hrs play data</td>
+</tr>
+<tr class="even">
+<td><strong>LIBERO</strong></td>
+<td>130+</td>
+<td>Lifelong learning focus</td>
+</tr>
+<tr class="odd">
+<td><strong>RLBench</strong></td>
+<td>100</td>
+<td>Largest variety, motion planning demos</td>
+</tr>
+<tr class="even">
+<td><strong>SimplerEnv</strong></td>
+<td>Google RT tasks</td>
+<td>Simulated version of real robot tasks</td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Benchmark Caveat
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><a href="https://arxiv.org/abs/2510.03827">LIBERO-PRO</a> (2025) showed that many SOTA models with 90%+ accuracy largely rely on task memorization rather than genuine understanding. Keep this in mind when evaluating results.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="hardware-options" class="level2">
+<h2 class="anchored" data-anchor-id="hardware-options">Hardware Options</h2>
+<p>For real-world experiments (optional but valuable):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Hardware</th>
+<th>Cost</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>SO-101</strong></td>
+<td>~$660</td>
+<td><a href="https://github.com/TheRobotStudio/SO-ARM100">GitHub</a>, LeRobot compatible</td>
+</tr>
+<tr class="even">
+<td><strong>Koch v1.1</strong></td>
+<td>~$500</td>
+<td>Good for education</td>
+</tr>
+<tr class="odd">
+<td><strong>AhaRobot</strong></td>
+<td>~$1,000</td>
+<td>Dual-arm mobile, open-source</td>
+</tr>
+<tr class="even">
+<td><strong>ALOHA 2</strong></td>
+<td>~$20k</td>
+<td>Bimanual teleoperation, <a href="https://aloha-2.github.io/">project page</a></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="my-learning-plan" class="level2">
+<h2 class="anchored" data-anchor-id="my-learning-plan">My Learning Plan</h2>
+<p>Here’s my personal roadmap:</p>
+<ol type="1">
+<li><strong>Week 1-2</strong>: Read Diffusion Policy paper thoroughly, run their code</li>
+<li><strong>Week 2-4</strong>: Complete <a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">LeRobot tutorial</a> and <a href="https://huggingface.co/learn/robotics-course/unit0/1">HF Robotics Course</a></li>
+<li><strong>Month 2</strong>: Train policies on LIBERO/CALVIN in simulation</li>
+<li><strong>Month 3+</strong>: Pick a research direction (3D representations, efficiency, real-world transfer)</li>
+<li><strong>Optional</strong>: Build an SO-101 arm (~$660) for real-world experiments</li>
+</ol>
+</section>
+<section id="key-concepts-preview" class="level2">
+<h2 class="anchored" data-anchor-id="key-concepts-preview">Key Concepts Preview</h2>
+<p>Before diving into papers, here are the core concepts you’ll encounter:</p>
+<section id="behavioral-cloning-bc" class="level3">
+<h3 class="anchored" data-anchor-id="behavioral-cloning-bc">Behavioral Cloning (BC)</h3>
+<p>Learning actions directly from expert demonstrations via supervised learning. Simple but struggles with distribution shift.</p>
+</section>
+<section id="diffusion-policy" class="level3">
+<h3 class="anchored" data-anchor-id="diffusion-policy">Diffusion Policy</h3>
+<p>Represents robot policy as a conditional denoising diffusion process. Handles multimodal action distributions gracefully.</p>
+</section>
+<section id="vision-language-action-vla-models" class="level3">
+<h3 class="anchored" data-anchor-id="vision-language-action-vla-models">Vision-Language-Action (VLA) Models</h3>
+<p>End-to-end models that take images + language instructions and output robot actions. Built on pretrained VLMs.</p>
+</section>
+<section id="flow-matching-in-robotics" class="level3">
+<h3 class="anchored" data-anchor-id="flow-matching-in-robotics">Flow Matching in Robotics</h3>
+<p>π0 uses flow matching instead of diffusion for faster inference (50Hz continuous actions).</p>
+</section>
+<section id="sim-to-real-transfer" class="level3">
+<h3 class="anchored" data-anchor-id="sim-to-real-transfer">Sim-to-Real Transfer</h3>
+<p>Training in simulation and deploying on real robots. Domain randomization and system identification are key techniques.</p>
+</section>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>In Part 1, we’ll dive deep into <strong>Diffusion Policy</strong> — understanding exactly how diffusion models are adapted for robot control, the key design choices (action chunking, receding horizon), and why it outperforms prior methods.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Robot learning is at an exciting inflection point. Diffusion models and foundation models are enabling robots to learn complex manipulation tasks from demonstrations. The tooling (LeRobot, MuJoCo) and hardware (SO-101) have become accessible enough for individual researchers to contribute.</p>
+<p>This series will document the journey from understanding these methods to implementing and experimenting with them.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ul>
+<li>Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.” IJRR 2024.</li>
+<li>Kim, M., et al.&nbsp;“OpenVLA: An Open-Source Vision-Language-Action Model.” arXiv 2024.</li>
+<li>Black, K., et al.&nbsp;“π0: A Vision-Language-Action Flow Model for General Robot Control.” 2024.</li>
+<li><a href="https://github.com/huggingface/lerobot">LeRobot Documentation</a></li>
+<li><a href="https://huggingface.co/learn/robotics-course/">Hugging Face Robotics Course</a></li>
+</ul>
+
+
+</section>
+
+ ]]></description>
+  <category>robotics</category>
+  <category>diffusion-policy</category>
+  <category>VLA</category>
+  <category>robot-learning</category>
+  <guid>https://layernorm.dev/posts/robotics/0-intro/</guid>
+  <pubDate>Tue, 20 Jan 2026 00:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Robot Learning Part 1: Background &amp; Current State of the Field</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/robotics/1-background/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Classical robotics</strong> relies on hand-crafted dynamics models — works for factories, fails for kitchens</li>
+<li><strong>Reinforcement Learning (RL)</strong> learns from rewards but needs millions of trials — impractical for real robots</li>
+<li><strong>Behavioral Cloning (BC)</strong> learns from demonstrations via supervised learning — the foundation of modern robot learning</li>
+<li><strong>Multimodality</strong> (multiple valid solutions) breaks naive BC; expressive models like diffusion handle it well</li>
+<li>This post builds the conceptual foundation for understanding Diffusion Policy in <a href="../1-diffusion-policy/">Part 2</a></li>
+</ul>
+</div>
+</div>
+<section id="sec-why" class="level2">
+<h2 class="anchored" data-anchor-id="sec-why">Why This Post?</h2>
+<p>In <a href="../0-intro/">Part 0</a>, we surveyed the robot learning landscape. Before diving into Diffusion Policy, we need to understand the problems it solves. This post answers three questions:</p>
+<ol type="1">
+<li><strong>Why learning?</strong> What’s wrong with classical robotics?</li>
+<li><strong>Why not RL?</strong> What makes reinforcement learning hard for real robots?</li>
+<li><strong>Why diffusion?</strong> What problem does it solve that simpler approaches can’t?</li>
+</ol>
+<p>The structure follows the excellent <a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> by Capuano et al., which covers these topics with hands-on LeRobot code.</p>
+</section>
+<section id="sec-classical" class="level2">
+<h2 class="anchored" data-anchor-id="sec-classical">Classical Robotics: Why We Need Learning</h2>
+<section id="the-traditional-approach" class="level3">
+<h3 class="anchored" data-anchor-id="the-traditional-approach">The Traditional Approach</h3>
+<p>For decades, robotics has relied on <strong>explicit dynamics models</strong>. The idea: if we know how the robot and environment behave, we can compute the right actions analytically.</p>
+<p>Mathematically, we model the system as a differential equation. The state <img src="https://latex.codecogs.com/png.latex?x"> (robot joint positions, object locations, etc.) evolves according to:</p>
+<p><span id="eq-dynamics"><img src="https://latex.codecogs.com/png.latex?%0A%5Cdot%7Bx%7D%20=%20f(x,%20u)%0A%5Ctag%7B1%7D"></span></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?u"> is the control input (motor torques, joint velocities) and <img src="https://latex.codecogs.com/png.latex?f"> is a <em>known</em> function describing the physics. Given this model, we have powerful tools:</p>
+<ul>
+<li><strong>Motion planning</strong> — find collision-free paths to the goal</li>
+<li><strong>Trajectory optimization</strong> — compute optimal control sequences</li>
+<li><strong>Feedback control</strong> — stabilize using PID, LQR, or MPC</li>
+</ul>
+<p>This works beautifully for <strong>structured environments</strong>: industrial arms on assembly lines (known geometry), drones following GPS waypoints (simple dynamics), or self-driving on HD-mapped highways.</p>
+</section>
+<section id="sec-classical-limits" class="level3">
+<h3 class="anchored" data-anchor-id="sec-classical-limits">Where Classical Methods Fail</h3>
+<p>But consider these tasks:</p>
+<ul>
+<li><strong>Folding laundry</strong> — deformable objects with infinite configurations</li>
+<li><strong>Cooking in a home kitchen</strong> — unstructured layouts, variable ingredients</li>
+<li><strong>Manipulating novel objects</strong> — no pre-built model exists</li>
+</ul>
+<p>The problem is <strong>modeling complexity</strong>. Writing down <img src="https://latex.codecogs.com/png.latex?f(x,%20u)"> in Equation&nbsp;1 for cloth dynamics involves partial differential equations with unknown material properties. Contact-rich manipulation requires modeling friction, deformation, and object geometry — which vary across objects. Even if we could write these models, they wouldn’t generalize.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The Core Insight
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Instead of hand-engineering dynamics models that won’t generalize, <strong>learn the mapping from observations to actions directly from data</strong>.</p>
+<p>This is the paradigm shift that enables robots to operate in unstructured, real-world environments.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-rl" class="level2">
+<h2 class="anchored" data-anchor-id="sec-rl">Reinforcement Learning: The Theory</h2>
+<p>If we’re going to learn, how? The natural framework is <strong>Reinforcement Learning (RL)</strong> — learning from trial and error.</p>
+<section id="sec-mdp" class="level3">
+<h3 class="anchored" data-anchor-id="sec-mdp">The MDP Framework</h3>
+<p>Robot learning is formalized as a <strong>Markov Decision Process (MDP)</strong>, which captures the essential structure of sequential decision-making:</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Definition: Markov Decision Process
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>An MDP is defined by the tuple <img src="https://latex.codecogs.com/png.latex?(%5Cmathcal%7BS%7D,%20%5Cmathcal%7BA%7D,%20p,%20r,%20%5Cgamma)">:</p>
+<ul>
+<li><strong>State</strong> <img src="https://latex.codecogs.com/png.latex?s_t%20%5Cin%20%5Cmathcal%7BS%7D"> — everything relevant about the robot and environment</li>
+<li><strong>Action</strong> <img src="https://latex.codecogs.com/png.latex?a_t%20%5Cin%20%5Cmathcal%7BA%7D"> — motor commands, joint velocities, gripper controls</li>
+<li><strong>Transition</strong> <img src="https://latex.codecogs.com/png.latex?p(s_%7Bt+1%7D%20%7C%20s_t,%20a_t)"> — probability of next state given current state and action</li>
+<li><strong>Reward</strong> <img src="https://latex.codecogs.com/png.latex?r(s_t,%20a_t)%20%5Cin%20%5Cmathbb%7BR%7D"> — scalar feedback signal for task success</li>
+<li><strong>Discount</strong> <img src="https://latex.codecogs.com/png.latex?%5Cgamma%20%5Cin%20%5B0,%201%5D"> — how much to value future vs.&nbsp;immediate rewards</li>
+</ul>
+</div>
+</div>
+<p>A <strong>policy</strong> <img src="https://latex.codecogs.com/png.latex?%5Cpi(a_t%20%7C%20s_t)"> maps states to actions (possibly stochastically). The RL objective is to find the policy that maximizes expected cumulative discounted reward:</p>
+<p><span id="eq-rl-objective"><img src="https://latex.codecogs.com/png.latex?%0A%5Cpi%5E*%20=%20%5Carg%5Cmax_%5Cpi%20%5Cmathbb%7BE%7D_%7B%5Cpi%7D%5Cleft%5B%20%5Csum_%7Bt=0%7D%5E%7BT%7D%20%5Cgamma%5Et%20r(s_t,%20a_t)%20%5Cright%5D%0A%5Ctag%7B2%7D"></span></p>
+<p>In words: find the action-selection strategy that collects the most reward over time.</p>
+</section>
+<section id="sec-rl-challenges" class="level3">
+<h3 class="anchored" data-anchor-id="sec-rl-challenges">Why RL is Hard for Real Robots</h3>
+<p>RL has achieved remarkable results — mastering Atari games<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D">, defeating world champions at Go<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D">, and training simulated humanoids to walk. But these successes share a common thread: <strong>cheap, fast simulation</strong>. For real robots, RL faces fundamental challenges:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 42%">
+<col style="width: 57%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Challenge</th>
+<th>Why It’s Hard</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Sample inefficiency</strong></td>
+<td>RL algorithms often need millions of environment interactions. Real robots can’t run 24/7 for months.</td>
+</tr>
+<tr class="even">
+<td><strong>Reward specification</strong></td>
+<td>What’s the reward for “fold the shirt nicely”? Designing rewards that capture human intent is notoriously difficult.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"></td>
+</tr>
+<tr class="odd">
+<td><strong>Safety</strong></td>
+<td>Random exploration can damage the robot, break objects, or harm humans nearby.</td>
+</tr>
+<tr class="even">
+<td><strong>Sim-to-real gap</strong></td>
+<td>Policies trained in simulation often fail on real hardware due to modeling errors.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B5%5D%7D"></td>
+</tr>
+</tbody>
+</table>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The Scale Problem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Training a simulated humanoid to walk takes approximately 10 billion environment steps.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"> At real-time (1 step per 0.01s), that’s roughly <strong>3,000 years</strong> of continuous robot operation. Even with 100 robots running in parallel, we’d need 30 years.</p>
+</div>
+</div>
+<p>Research has made progress on each challenge — sample-efficient algorithms (SAC, TD3), offline RL, sim-to-real transfer with domain randomization — but contact-rich manipulation remains difficult. This motivates a different approach.</p>
+</section>
+</section>
+<section id="sec-imitation" class="level2">
+<h2 class="anchored" data-anchor-id="sec-imitation">Imitation Learning: Learning from Demonstrations</h2>
+<p>What if we skip the reward function entirely and learn directly from expert demonstrations?</p>
+<section id="sec-bc" class="level3">
+<h3 class="anchored" data-anchor-id="sec-bc">Behavioral Cloning</h3>
+<p><strong>Behavioral Cloning (BC)</strong> is the simplest form of imitation learning: treat it as supervised learning.</p>
+<p>Given a dataset of expert demonstrations — state-action pairs collected from a human teleoperating the robot:</p>
+<p><span id="eq-demo-dataset"><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BD%7D%20=%20%5C%7B(s_1,%20a_1),%20(s_2,%20a_2),%20%5Cldots,%20(s_N,%20a_N)%5C%7D%0A%5Ctag%7B3%7D"></span></p>
+<p>We train a neural network policy <img src="https://latex.codecogs.com/png.latex?%5Cpi_%5Ctheta"> to predict the expert’s action given the state. The loss is simply mean squared error:</p>
+<p><span id="eq-bc-loss"><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7B(s,a)%20%5Csim%20%5Cmathcal%7BD%7D%7D%20%5Cleft%5B%20%5C%7C%20%5Cpi_%5Ctheta(s)%20-%20a%20%5C%7C%5E2%20%5Cright%5D%0A%5Ctag%7B4%7D"></span></p>
+<p>That’s it. Standard supervised learning — no reward function, no environment interaction during training, no exploration.</p>
+</section>
+<section id="sec-bc-advantages" class="level3">
+<h3 class="anchored" data-anchor-id="sec-bc-advantages">Why BC Works for Robotics</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 45%">
+<col style="width: 54%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Advantage</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Data efficient</strong></td>
+<td>Hundreds of demonstrations, not millions of trials</td>
+</tr>
+<tr class="even">
+<td><strong>No reward design</strong></td>
+<td>Demonstrations <em>implicitly</em> encode the task objective</td>
+</tr>
+<tr class="odd">
+<td><strong>Safe data collection</strong></td>
+<td>Human teleoperates; robot never explores randomly</td>
+</tr>
+<tr class="even">
+<td><strong>Works with real hardware</strong></td>
+<td>Collect demos on the real robot, train offline</td>
+</tr>
+</tbody>
+</table>
+<p>This explains BC’s popularity: it lets us leverage human expertise directly, avoiding RL’s sample efficiency and reward design problems.</p>
+</section>
+<section id="sec-distribution-shift" class="level3">
+<h3 class="anchored" data-anchor-id="sec-distribution-shift">The Distribution Shift Problem</h3>
+<p>BC has a fundamental issue that limited its effectiveness for years: <strong>compounding errors</strong> due to distribution shift.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"></p>
+<p>Here’s the problem. During training, the policy sees states from the expert’s trajectory — the states a skilled human visits while performing the task. During deployment, the robot executes its <em>own</em> policy, which makes small mistakes. These mistakes push the robot into states the expert never visited. The policy was never trained on these states, so it makes worse predictions, leading to worse states, and so on:</p>
+<div id="fig-distribution-shift" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-distribution-shift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/1-background/distribution-shift.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-distribution-shift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Distribution shift: during training the policy sees expert states (green region), but at deployment small errors push the robot into unfamiliar states where predictions get progressively worse.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>The Quadratic Error Bound
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Ross et al.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"> proved that BC’s error grows <strong>quadratically</strong> with the task horizon <img src="https://latex.codecogs.com/png.latex?T">. If the policy makes error <img src="https://latex.codecogs.com/png.latex?%5Cvarepsilon"> per step, the total error scales as <img src="https://latex.codecogs.com/png.latex?O(T%5E2%20%5Cvarepsilon)">, not <img src="https://latex.codecogs.com/png.latex?O(T%5Cvarepsilon)"> as you might hope. For long-horizon tasks, this is catastrophic.</p>
+</div>
+</div>
+<p><strong>Solutions</strong> to distribution shift include:</p>
+<ol type="1">
+<li><strong>DAgger</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"> — iteratively collect more demonstrations in states the learned policy visits</li>
+<li><strong>Action chunking</strong> — predict sequences of actions, reducing the number of decision points</li>
+<li><strong>Expressive policy classes</strong> — handle multimodal action distributions (more on this next)</li>
+</ol>
+</section>
+</section>
+<section id="sec-multimodality" class="level2">
+<h2 class="anchored" data-anchor-id="sec-multimodality">The Multimodality Problem</h2>
+<p>Distribution shift isn’t the only issue. Even with perfect training data coverage, naive BC fails on a surprisingly common class of problems.</p>
+<section id="sec-averaging" class="level3">
+<h3 class="anchored" data-anchor-id="sec-averaging">Why Averaging Fails</h3>
+<p>Consider picking up a mug. A human might:</p>
+<ul>
+<li>Grasp the handle from the left</li>
+<li>Grasp the handle from the right</li>
+<li>Grasp the body with a power grip</li>
+<li>Pinch the rim</li>
+</ul>
+<p>All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss?</p>
+<p>The network learns to predict the <strong>average</strong> action — reaching for somewhere <em>between</em> all the options, which corresponds to <strong>none of them</strong>. The robot might reach toward the center of the mug and miss everything.</p>
+<div id="fig-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/1-background/multimodality-problem.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid “average” prediction (red dotted) that results from MSE training.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “Just Collect Consistent Data”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A natural reaction is “just have demonstrators use the same strategy.” But multimodality is unavoidable in real-world manipulation. Even the same person grasping the same mug will vary their approach based on subtle factors (arm position, comfort, habit). Eliminating multimodality requires unrealistic constraints on data collection.</p>
+</div>
+</div>
+</section>
+<section id="sec-policy-representations" class="level3">
+<h3 class="anchored" data-anchor-id="sec-policy-representations">From Deterministic to Probabilistic Policies</h3>
+<p>The solution is to represent the policy as a <strong>probability distribution</strong> over actions, not a single prediction. Different architectures handle multimodality with varying success:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 34%">
+<col style="width: 51%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Representation</th>
+<th>Handles Multimodality?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>MLP + MSE loss</strong></td>
+<td>No</td>
+<td>Averages modes together</td>
+</tr>
+<tr class="even">
+<td><strong>Gaussian policy</strong></td>
+<td>Poorly</td>
+<td>Can only model one “bump”</td>
+</tr>
+<tr class="odd">
+<td><strong>Mixture of Gaussians</strong></td>
+<td>Somewhat</td>
+<td>Fixed number of modes, must choose in advance</td>
+</tr>
+<tr class="even">
+<td><strong>VAE</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B8%5D%7D"></td>
+<td>Better</td>
+<td>Latent space can capture structure</td>
+</tr>
+<tr class="odd">
+<td><strong>Diffusion models</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"></td>
+<td>Excellent</td>
+<td>Learns arbitrary distributions</td>
+</tr>
+</tbody>
+</table>
+<p>This is why Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> works so well — diffusion models are <em>designed</em> to learn complex, multimodal distributions. They represent the entire action distribution, not just its mean.</p>
+</section>
+</section>
+<section id="sec-generative" class="level2">
+<h2 class="anchored" data-anchor-id="sec-generative">Generative Models: A Preview</h2>
+<p>Before diving into Diffusion Policy in <a href="../1-diffusion-policy/">Part 2</a>, let’s preview the generative modeling approaches used in robot learning.</p>
+<section id="variational-autoencoders-vae" class="level3">
+<h3 class="anchored" data-anchor-id="variational-autoencoders-vae">Variational Autoencoders (VAE)</h3>
+<p>VAEs learn a compressed <strong>latent space</strong> that captures the structure of the data:</p>
+<ul>
+<li><strong>Encoder</strong> <img src="https://latex.codecogs.com/png.latex?q_%5Cphi(z%20%7C%20x)">: compress observation <img src="https://latex.codecogs.com/png.latex?x"> to latent code <img src="https://latex.codecogs.com/png.latex?z"></li>
+<li><strong>Decoder</strong> <img src="https://latex.codecogs.com/png.latex?p_%5Ctheta(x%20%7C%20z)">: reconstruct observation from latent</li>
+<li><strong>Sampling</strong>: draw <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)">, then decode to generate new data</li>
+</ul>
+<p><strong>In robotics</strong>: ACT (Action Chunking with Transformers)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B8%5D%7D"> uses a conditional VAE to generate action sequences. The latent variable captures <em>which</em> strategy to use (left grasp vs.&nbsp;right grasp), while the decoder generates the full action trajectory for that strategy.</p>
+</section>
+<section id="diffusion-models" class="level3">
+<h3 class="anchored" data-anchor-id="diffusion-models">Diffusion Models</h3>
+<p>Diffusion models learn to reverse a noise-adding process:</p>
+<ol type="1">
+<li><strong>Forward process</strong>: Gradually add Gaussian noise to data until it becomes pure noise</li>
+<li><strong>Reverse process</strong>: Train a neural network to denoise step-by-step</li>
+<li><strong>Sampling</strong>: Start from noise, iteratively denoise to generate a sample</li>
+</ol>
+<p><strong>In robotics</strong>: Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> generates action trajectories by denoising. Each “sample” from the diffusion model is a full action sequence.</p>
+</section>
+<section id="flow-matching" class="level3">
+<h3 class="anchored" data-anchor-id="flow-matching">Flow Matching</h3>
+<p>Flow matching learns a direct, continuous transformation from noise to data:</p>
+<p><span id="eq-flow-ode"><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bdx%7D%7Bdt%7D%20=%20v_%5Ctheta(x,%20t)%0A%5Ctag%7B5%7D"></span></p>
+<p>where <img src="https://latex.codecogs.com/png.latex?v_%5Ctheta"> is a learned velocity field. Simpler training than diffusion, often faster inference.</p>
+<p><strong>In robotics</strong>: π₀<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B10%5D%7D"> uses flow matching to achieve 50Hz real-time control, enabling continuous, smooth actions rather than discrete action chunks.</p>
+</section>
+</section>
+<section id="sec-prerequisites" class="level2">
+<h2 class="anchored" data-anchor-id="sec-prerequisites">Prerequisites Summary</h2>
+<p>Before proceeding to <a href="../1-diffusion-policy/">Part 2: Diffusion Policy</a>, ensure you’re comfortable with:</p>
+<section id="mathematical-background" class="level3">
+<h3 class="anchored" data-anchor-id="mathematical-background">Mathematical Background</h3>
+<ul>
+<li><strong>Probability</strong>: expectations, conditional distributions, Bayes’ rule, sampling</li>
+<li><strong>Neural networks</strong>: loss functions, gradient descent, basic architectures (MLP, CNN, Transformer)</li>
+<li><strong>Control vocabulary</strong>: state, action, policy, trajectory (the MDP formalism from Section&nbsp;3.1)</li>
+</ul>
+</section>
+<section id="conceptual-understanding" class="level3">
+<h3 class="anchored" data-anchor-id="conceptual-understanding">Conceptual Understanding</h3>
+<ul>
+<li>Why classical robotics struggles with unstructured tasks (Section&nbsp;2.2)</li>
+<li>The trade-offs between RL and imitation learning (Section&nbsp;3.2 vs. Section&nbsp;4.2)</li>
+<li>Why multimodal action distributions break naive BC (Section&nbsp;5)</li>
+<li>The basic idea behind generative models (Section&nbsp;6)</li>
+</ul>
+</section>
+<section id="recommended-resources" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-resources">Recommended Resources</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Resource</th>
+<th>Focus</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></td>
+<td>Comprehensive coverage with LeRobot code</td>
+</tr>
+<tr class="even">
+<td><a href="https://underactuated.mit.edu/imitation.html">MIT Underactuated Robotics Ch. 21</a></td>
+<td>Imitation learning theory</td>
+</tr>
+<tr class="odd">
+<td><a href="https://lilianweng.github.io/posts/2018-04-08-policy-gradient/">Lilian Weng’s Policy Gradient Post</a></td>
+<td>RL foundations</td>
+</tr>
+<tr class="even">
+<td><a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/">What are Diffusion Models?</a></td>
+<td>Diffusion intuition</td>
+</tr>
+<tr class="odd">
+<td><a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">LeRobot Tutorial</a></td>
+<td>Hands-on practice</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="sec-next" class="level2">
+<h2 class="anchored" data-anchor-id="sec-next">What’s Next?</h2>
+<p>With this foundation, we’re ready for <a href="../1-diffusion-policy/">Part 2: Diffusion Policy</a>. We’ll see how diffusion models elegantly solve the multimodality problem and why “generating actions like generating images” is such a powerful idea.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Classical robotics works when we can write down the dynamics — factory floors, not kitchens. RL learns without explicit models but demands millions of trials and carefully designed rewards, making it impractical for real robots learning contact-rich manipulation.</p>
+<p>Imitation learning sidesteps these issues by learning directly from demonstrations, but faces two challenges: <strong>distribution shift</strong> (errors compound as the robot visits unfamiliar states) and <strong>multimodality</strong> (averaging over multiple valid strategies produces invalid actions).</p>
+<p>The key insight: we need policy representations expressive enough to capture <em>distributions</em> over actions, not just point predictions. Diffusion models provide exactly this — which is why Diffusion Policy has become the foundation of modern robot learning. In Part 2, we’ll see precisely how.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2510.12403">Capuano, F., Pascal, C., Zouitine, A., Wolf, T., &amp; Aractingi, M. “Robot Learning: A Tutorial.”</a> <em>arXiv:2510.12403</em>, 2025.</p>
+<p>[2] <a href="https://www.nature.com/articles/nature14236">Mnih, V., et al.&nbsp;“Human-level control through deep reinforcement learning.”</a> <em>Nature</em>, 2015.</p>
+<p>[3] <a href="https://www.nature.com/articles/nature16961">Silver, D., et al.&nbsp;“Mastering the game of Go with deep neural networks and tree search.”</a> <em>Nature</em>, 2016.</p>
+<p>[4] <a href="https://arxiv.org/abs/1611.08219">Hadfield-Menell, D., et al.&nbsp;“The Off-Switch Game.”</a> <em>IJCAI</em>, 2017. (On reward misspecification)</p>
+<p>[5] <a href="https://arxiv.org/abs/2009.13303">Zhao, W., et al.&nbsp;“Sim-to-Real Transfer in Deep Reinforcement Learning for Robotics: A Survey.”</a> <em>arXiv</em>, 2020.</p>
+<p>[6] <a href="https://arxiv.org/abs/1707.06347">Schulman, J., et al.&nbsp;“Proximal Policy Optimization Algorithms.”</a> <em>arXiv</em>, 2017.</p>
+<p>[7] <a href="https://arxiv.org/abs/1011.0686">Ross, S., Gordon, G., &amp; Bagnell, J. A. “A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning.”</a> <em>AISTATS</em>, 2011. (DAgger paper)</p>
+<p>[8] <a href="https://arxiv.org/abs/2304.13705">Zhao, T., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>RSS</em>, 2023. (ACT paper)</p>
+<p>[9] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
+<p>[10] <a href="https://arxiv.org/abs/2410.24164">Black, K., et al.&nbsp;“π₀: A Vision-Language-Action Flow Model for General Robot Control.”</a> <em>arXiv</em>, 2024.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>robotics</category>
+  <category>reinforcement-learning</category>
+  <category>imitation-learning</category>
+  <category>robot-learning</category>
+  <guid>https://layernorm.dev/posts/robotics/1-background/</guid>
+  <pubDate>Tue, 20 Jan 2026 00:00:00 GMT</pubDate>
+</item>
+<item>
   <title>Diffusion &amp; Flow Matching Part 11: Building an Image Generator</title>
   <dc:creator>Hujie Wang</dc:creator>
   <link>https://layernorm.dev/posts/diffusion/11-practical-flow-matching/</link>
