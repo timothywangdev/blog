@@ -16,17 +16,23 @@ toc: true
 - **Trade-off**: ACT is faster and more data-efficient than Diffusion Policy, but less flexible for highly multimodal behaviors
 :::
 
-## Why Action Chunking Matters
+## Why Action Chunking Matters {#sec-why}
 
-Imagine teaching a robot to pick up a mug. In traditional behavioral cloning, the robot predicts one tiny action at a time — 50 micro-adjustments per second. Each prediction is an opportunity for error. Over a 10-second task, that's **500 chances to drift off course**. Errors compound exponentially, and the robot quickly enters states it never saw during training.
+Imagine teaching a robot to pick up a mug. In traditional behavioral cloning (recall from [Part 1](../1-background/#sec-imitation)), the robot predicts one tiny action at a time — 50 micro-adjustments per second. Each prediction is an opportunity for error. Over a 10-second task, that's **500 chances to drift off course**. Errors compound exponentially, and the robot quickly enters states it never saw during training.
 
 **Action chunking** solves this elegantly: instead of predicting the next 0.02 seconds of motion, predict the **next 2 seconds** all at once. The effective decision-making horizon drops from 500 steps to just 5. Compounding errors are reduced by a factor of 100.
 
+::: {.callout-tip appearance="simple"}
+## Intuition: Chunking in Human Cognition
+
+This mirrors how humans naturally organize information. We don't memorize phone numbers as 10 individual digits — we chunk them into groups (e.g., area code + prefix + line). Similarly, skilled pianists don't think about individual finger movements; they execute entire musical phrases as cohesive units. Action chunking brings this same principle to robot learning.$^{[3]}$
+:::
+
 This single idea — predicting action *sequences* instead of single actions — is the foundation of Action Chunking with Transformers (ACT), one of the most influential recent breakthroughs in robot imitation learning.
 
-## The Problem with Single-Step Prediction
+## The Problem with Single-Step Prediction {#sec-problem}
 
-### Compounding Errors in Behavioral Cloning
+### Compounding Errors in Behavioral Cloning {#sec-compounding}
 
 Standard behavioral cloning treats robot learning as supervised learning: given observation $o_t$, predict action $a_t$. Simple, right?
 
@@ -39,7 +45,13 @@ The problem: **errors compound over time**. Here's why:
 
 For a 10-second task at 50Hz (500 timesteps), this compounds into catastrophic failure.
 
-### The Non-Markovian Problem
+::: {.callout-tip appearance="simple"}
+## Intuition: The Steering Wheel Analogy
+
+Think of driving a car. If your steering is off by 1 degree, you barely notice after 10 feet. But after a mile, you've drifted into another lane entirely. In robot learning, each prediction is like a tiny steering adjustment. Small errors accumulate until the robot is completely off track — trying to grasp objects that aren't there or colliding with obstacles.
+:::
+
+### The Non-Markovian Problem {#sec-non-markovian}
 
 There's a deeper issue: human demonstrations aren't perfectly Markovian. Consider a human pausing mid-motion before continuing. The observation is identical during the pause and when movement resumes, yet the action should be different.
 
@@ -55,14 +67,18 @@ Robot manipulation is inherently sequential:
 
 Single-step policies must learn these temporal patterns implicitly through recurrent architectures or history stacking. Action chunking makes temporal structure **explicit** by predicting entire motion sequences.
 
-## Action Chunking: The Core Idea
+## Action Chunking: The Core Idea {#sec-action-chunking}
 
 ### From Points to Trajectories
 
-Action chunking changes the learning objective:
+Action chunking changes the learning objective from predicting individual actions to predicting sequences:
 
-- **Standard BC**: $\pi(a_t | o_t)$ — predict single action
-- **Action Chunking**: $\pi(a_{t:t+k} | o_t)$ — predict k-step action sequence
+$$
+\begin{aligned}
+\text{Standard BC:} \quad & \pi(a_t | o_t) && \text{(predict single action)} \\
+\text{Action Chunking:} \quad & \pi(a_{t:t+k} | o_t) && \text{(predict k-step sequence)}
+\end{aligned}
+$$ {#eq-chunking-objective}
 
 At timestep $t$, the policy outputs $k$ future actions: $[a_t, a_{t+1}, ..., a_{t+k-1}]$.
 
@@ -75,9 +91,11 @@ Consider a 10-second manipulation task:
 | Single-step | 50Hz | 500 | 500 | 500 |
 | Action chunking (k=100) | 50Hz | 500 | 5 | 5 |
 
-The robot still executes 500 actions, but makes only **5 high-level decisions** instead of 500 micro-decisions. Compounding errors are reduced by **100×**.
+**Key insight**: The robot still executes 500 actions, but makes only **5 high-level decisions** instead of 500 micro-decisions. Compounding errors are reduced by **100×**.
 
-### Receding Horizon Control
+![Horizon reduction through action chunking: A 500-step task becomes only 5 decision points when predicting chunks of k=100 actions, dramatically reducing compounding errors.](horizon-reduction.png){#fig-horizon-reduction}
+
+### Receding Horizon Control {#sec-receding-horizon}
 
 Action chunking implements a form of **receding horizon control** (also called Model Predictive Control):
 
@@ -88,9 +106,15 @@ Action chunking implements a form of **receding horizon control** (also called M
 
 This balances **planning** (looking ahead) with **reactivity** (incorporating new observations).
 
-## ACT Architecture
+::: {.callout-tip appearance="simple"}
+## Intuition: Driving Down a Highway
 
-Action Chunking with Transformers (ACT) was introduced in the 2023 paper ["Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware"](https://arxiv.org/abs/2304.13705) by Tony Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn. It combines action chunking with a Conditional Variational Autoencoder (CVAE) and Transformer architecture.
+When you drive, you don't just focus on the next foot of road — you look ahead several car lengths to plan your path. But you don't execute your entire plan rigidly. As you move forward and gain new information (a car changing lanes, brake lights ahead), you continuously update your plan. The "horizon" of your planning window moves forward with you, always looking ahead but constantly adapting.$^{[4]}$
+:::
+
+## ACT Architecture {#sec-architecture}
+
+Action Chunking with Transformers (ACT) was introduced in the 2023 paper ["Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware"](https://arxiv.org/abs/2304.13705) by Tony Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn.$^{[1]}$ It combines action chunking with a Conditional Variational Autoencoder (CVAE) and Transformer architecture adapted from DETR (DEtection TRansformer).$^{[5]}$
 
 ### System Overview
 
@@ -102,13 +126,13 @@ As shown in @fig-act-architecture, ACT consists of three main components:
 2. **CVAE Encoder** (training only): Encodes demonstrated action sequences into latent variable $z$
 3. **Policy Decoder**: Transformer generates k-step action sequences conditioned on images, joint positions, and $z$
 
-### The Role of CVAE
+### The Role of CVAE {#sec-cvae}
 
 Why use a Variational Autoencoder instead of simple supervised learning?
 
 #### The Multimodality Problem
 
-Human demonstrations exhibit natural variability:
+Recall from [Part 1](../1-background/#sec-multimodality) that human demonstrations exhibit natural variability:
 
 - **Task strategies**: Different valid approaches to the same task
 - **Execution speed**: Hurried vs. careful movements
@@ -116,30 +140,56 @@ Human demonstrations exhibit natural variability:
 
 Standard supervised learning averages these variations, often producing infeasible "middle ground" actions. The CVAE solves this by modeling the **distribution** of valid action sequences.
 
+::: {.callout-tip appearance="simple"}
+## Intuition: The Style Variable
+
+Think of the latent variable $z$ as capturing *how* you perform a task, separate from *what* task you're doing. When placing a mug, $z$ might encode:
+- Approach from left vs. right
+- Fast, confident motion vs. slow, careful placement
+- High arc trajectory vs. low, direct path
+
+During training, the CVAE learns that all these styles are valid. During inference, setting $z=0$ (the prior mean) produces the "average" style that works robustly.$^{[6]}$
+:::
+
 #### How CVAE Works
 
 **Training:**
 
-The encoder takes the current observation and the **actual demonstrated action sequence** and compresses them into a latent variable $z \sim \mathcal{N}(\mu, \sigma^2)$:
+The encoder takes the current observation $o_t$ and the **actual demonstrated action sequence** $a_{t:t+k}$ and compresses them into a latent variable:
 
-$$z = \mu + \sigma \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, 1)$$
+$$z \sim q_\phi(z | o_t, a_{t:t+k}) = \mathcal{N}(\mu_\phi(o_t, a_{t:t+k}), \sigma_\phi^2(o_t, a_{t:t+k}))$$ {#eq-cvae-encoder}
 
-This **reparameterization trick** enables gradient flow through the stochastic sampling.
+To enable backpropagation through this stochastic sampling, we use the **reparameterization trick**:
 
-The decoder takes $z$ and the current observation and predicts the action sequence. The training loss has two terms:
+$$z = \mu + \sigma \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, 1)$$ {#eq-reparameterization}
 
-$$\mathcal{L} = \mathcal{L}_{\text{reconst}} + \beta \cdot \mathcal{L}_{\text{KL}}$$
+This separates the randomness ($\epsilon$, which has no learnable parameters) from the deterministic transformations of $\mu$ and $\sigma$ (which can be optimized via gradients).
 
-- **Reconstruction loss** ($L_1$ norm): Ensures accurate action prediction
-- **KL divergence**: Regularizes the latent distribution toward a standard Gaussian prior
+The decoder takes $z$ and the current observation and predicts the action sequence:
+
+$$a_{t:t+k} \sim p_\theta(a_{t:t+k} | o_t, z)$$ {#eq-cvae-decoder}
+
+The training loss has two terms:
+
+$$\mathcal{L} = \mathcal{L}_{\text{reconst}} + \beta \cdot \mathcal{L}_{\text{KL}}$$ {#eq-cvae-loss}
+
+where:
+- **Reconstruction loss** ($L_1$ norm): $\mathcal{L}_{\text{reconst}} = \|a_{t:t+k} - \hat{a}_{t:t+k}\|_1$ ensures accurate action prediction
+- **KL divergence**: $\mathcal{L}_{\text{KL}} = D_{KL}(q_\phi(z|o_t, a_{t:t+k}) \| \mathcal{N}(0, I))$ regularizes the latent distribution toward a standard Gaussian prior
 
 **Inference:**
 
 At deployment, the encoder is **not used** (we don't have ground-truth actions). Instead:
 
-1. Sample $z \sim \mathcal{N}(0, 1)$ from the prior
+1. Sample $z \sim \mathcal{N}(0, 1)$ from the prior (or simply set $z=0$)
 2. Pass $z$ and current observation through the decoder
 3. Get the k-step action sequence
+
+::: {.callout-warning}
+## Common Misconception: "CVAE Generates Different Behaviors at Test Time"
+
+At inference, ACT actually uses a **deterministic** $z=0$, not random samples. The CVAE's role is during *training* — it helps the decoder learn to generate valid actions despite variability in demonstrations. By forcing the encoder to compress diverse demonstrations into a well-structured latent space, the decoder becomes robust to demonstration noise. At test time, $z=0$ produces reliable, consistent behavior.$^{[6]}$
+:::
 
 #### What Does z Represent?
 
@@ -154,46 +204,51 @@ By sampling different $z$ values during training, the model learns to generate d
 
 ### Transformer Architecture
 
-ACT adapts the DETR (DEtection TRansformer) architecture for action prediction:
+ACT adapts the DETR (DEtection TRansformer) architecture$^{[5]}$ for action prediction:
 
 **Encoder:**
-- 4 layers, 8 attention heads
-- Input: concatenated vision features (1200×512), joint positions (512), and $z$ (512)
-- Output: fused multi-modal representation
+- 4 layers, 8 attention heads, 512 hidden dimensions
+- Input: concatenated vision features (1200×512 from 4 cameras), joint positions (512), and $z$ (512)
+- Output: fused multi-modal representation (1202×512)
 
 **Decoder:**
-- 7 layers, 8 attention heads
+- 7 layers, 8 attention heads, 512 hidden dimensions
 - Uses fixed sinusoidal positional embeddings as queries
 - Cross-attends to encoder output
-- Output: k×14 dimensional tensor (k timesteps × 14 joint positions)
+- Output: k×14 dimensional tensor (k timesteps × 14 joint positions for bimanual robot)
 
 **Total parameters**: ~80 million (lightweight compared to VLA models with billions)
 
-### Temporal Ensembling
+### Temporal Ensembling {#sec-temporal-ensembling}
 
-A key innovation: ACT queries the policy at **every timestep**, producing overlapping action chunks. These are combined using exponential weighting:
+Here's where ACT gets particularly clever. Instead of predicting a chunk once every k timesteps, ACT queries the policy at **every timestep**, producing overlapping action chunks.
 
-$$a_t = \frac{\sum_{i=0}^{k-1} w_i \cdot A_t[i]}{\sum_{i=0}^{k-1} w_i}, \quad w_i = \exp(-m \cdot i)$$
+![Temporal ensembling: At each timestep, multiple overlapping predictions exist for the same future action. These are combined using exponential weights that favor recent predictions.](temporal-ensembling.png){#fig-temporal-ensembling}
+
+These are combined using exponential weighting:
+
+$$a_t = \frac{\sum_{i=0}^{k-1} w_i \cdot A_t[i]}{\sum_{i=0}^{k-1} w_i}, \quad w_i = \exp(-m \cdot i)$$ {#eq-temporal-ensembling}
 
 where:
 - $A_t[i]$ is the predicted action for timestep $t$ from the chunk generated $i$ steps ago
 - $m$ is a hyperparameter controlling how quickly new predictions are incorporated
+- Smaller $m$ means faster incorporation of new observations
+
+**Why this works**: Imagine multiple painters sketching the same portrait from slightly different angles. Each sketch captures the subject differently, but averaging them reduces individual errors while preserving essential features. Temporal ensembling does the same for actions — multiple predictions for the same timestep are blended, with more recent predictions weighted higher.
 
 **Benefits:**
-- **Smoothness**: Averages out prediction noise
-- **Consistency**: Reduces modeling errors
-- **Performance gain**: 3-4% improvement over no ensembling
+- **Smoothness**: Averages out prediction noise without introducing bias
+- **Consistency**: Reduces modeling errors from any single prediction
+- **Performance gain**: 3-4% improvement over no ensembling$^{[1]}$
 
-This is analogous to a painter making multiple preliminary sketches and blending them into the final stroke — each individual prediction contributes, but recent predictions have higher weight.
-
-## Training ACT
+## Training ACT {#sec-training}
 
 ### Data Requirements
 
 ACT is remarkably data-efficient:
 
 - **50 demonstrations per task** (8-14 seconds each)
-- **Total collection time**: 10-20 minutes
+- **Total collection time**: 10-20 minutes of human demonstrations
 - **Control frequency**: 50Hz
 - **Action space**: 14D absolute joint positions (2 arms × 7 DOF each)
 
@@ -234,28 +289,34 @@ python imitate_episodes.py \
 
 ### Critical Training Tips
 
-From the official repository:
+From the [official repository](https://github.com/tonyzhaozh/act):
 
 > "If your ACT policy is jerky or pauses in the middle of an episode, just train for longer! Success rate and smoothness can improve way after loss plateaus."
 
 **Practical guidelines:**
 - Train for **5000+ epochs** for real-world tasks (not just until loss plateaus)
-- Use **L1 loss** (not L2) for precise positioning tasks
+- Use **L1 loss** (not L2) for precise positioning tasks — L1 provides better gradients for exact alignment
 - Set **β=10** for KL weight (balances reconstruction vs. regularization)
-- CVAE is **essential for human data** (drops from 35% to 2% success without it)
+- CVAE is **essential for human data** (drops from 35% to 2% success without it)$^{[1]}$
 
-## Performance Results
+::: {.callout-important}
+## Key Insight: Train Past Loss Plateau
+
+One of the most important practical findings: smoothness and success rate continue improving for thousands of epochs *after* the reconstruction loss has plateaued. The policy is learning subtle temporal coordination that doesn't show up in per-timestep error metrics. Always train longer than you think you need.
+:::
+
+## Performance Results {#sec-results}
 
 ### Benchmark Tasks
 
 ACT was evaluated on **6 real-world** fine manipulation tasks:
 
-- Threading cable ties
+- Threading cable ties through small holes
 - Slotting batteries with millimeter precision
 - Opening translucent condiment cups (requires pinching, prying, tearing)
 - Inserting power cables
-- Sliding Ziploc bags
-- Wiping spills
+- Sliding Ziploc bags closed
+- Wiping spills with bimanual coordination
 
 ### Success Rates
 
@@ -272,7 +333,7 @@ These results represent **dramatic improvements** over:
 - RT-1 (discretized actions)
 - VINN (non-parametric retrieval)
 
-### Ablation Study Highlights
+### Ablation Study Highlights {#sec-ablations}
 
 **Impact of chunk size**:
 
@@ -283,7 +344,7 @@ These results represent **dramatic improvements** over:
 | k=50 | 38% |
 | **k=100** | **44%** |
 
-The jump from 1% to 44% shows that **action chunking is transformative**, not just a marginal improvement.
+The jump from **1% to 44%** shows that action chunking is transformative, not just a marginal improvement. This 44× improvement validates the core insight: predicting sequences dramatically reduces compounding errors.
 
 **Impact of CVAE**:
 - With CVAE: 35.3% success
@@ -293,9 +354,9 @@ The jump from 1% to 44% shows that **action chunking is transformative**, not ju
 - With ensembling: 38.6%
 - Without ensembling: 35.3%
 
-## ACT vs Diffusion Policy
+## ACT vs Diffusion Policy {#sec-comparison}
 
-Both ACT and Diffusion Policy use action chunking, but differ in the generative model:
+Both ACT and Diffusion Policy (which we'll cover in [Part 2](../2-diffusion-policy/)) use action chunking, but differ in the generative model:
 
 | Aspect | ACT | Diffusion Policy |
 |--------|-----|------------------|
@@ -322,9 +383,9 @@ Both ACT and Diffusion Policy use action chunking, but differ in the generative 
 - More training data is available
 - Flexibility and adaptability matter more than speed
 
-**Example**: ACT sometimes "freezes" mid-task on repetitive up-down motions, while Diffusion Policy handles these smoothly. However, ACT trains faster and requires less data.
+**Example**: ACT sometimes "freezes" mid-task on repetitive up-down motions, while Diffusion Policy handles these smoothly. However, ACT trains faster and requires less data.$^{[2]}$
 
-## The ALOHA System
+## The ALOHA System {#sec-aloha}
 
 ACT was developed as part of the [ALOHA (A Low-cost Open-source Hardware System for Bimanual Teleoperation)](https://tonyzhaozh.github.io/aloha/) project, which makes bimanual manipulation research accessible.
 
@@ -350,7 +411,7 @@ The system extends to mobile manipulation with **co-training**: combining static
 - Lifting wine glass while wiping with other hand
 - Multi-step cooking sequences
 
-## Using ACT with LeRobot
+## Using ACT with LeRobot {#sec-lerobot}
 
 The easiest way to get started with ACT is through [LeRobot](https://huggingface.co/docs/lerobot/en/act), Hugging Face's robot learning framework.
 
@@ -378,21 +439,7 @@ LeRobot provides pre-trained ACT policies on HuggingFace Hub:
 - [lerobot/act_aloha_sim_insertion_human](https://huggingface.co/lerobot/act_aloha_sim_insertion_human)
 - [lerobot/act_aloha_sim_transfer_cube_human](https://huggingface.co/lerobot/act_aloha_sim_transfer_cube_human)
 
-## Key Takeaways
-
-1. **Action chunking is transformative**: The 1% → 44% success rate improvement shows this is the right abstraction for imitation learning
-
-2. **CVAE handles human variability**: Separating style ($z$) from task execution enables learning from noisy, variable demonstrations
-
-3. **Temporal ensembling matters**: Combining overlapping predictions improves smoothness and reduces errors by 3-4%
-
-4. **Train longer than loss suggests**: Smoothness and success rate improve well after reconstruction loss plateaus
-
-5. **Data efficiency is remarkable**: 50 demonstrations (10 minutes of human time) achieve 80-90% success on contact-rich manipulation
-
-6. **Speed vs. flexibility trade-off**: ACT is faster and more data-efficient than Diffusion Policy, but less flexible for highly multimodal behaviors
-
-## Limitations and Future Work
+## Limitations and Future Work {#sec-limitations}
 
 **Current limitations**:
 - **Repetitive motions**: Can freeze mid-task on cyclic movements
@@ -400,26 +447,29 @@ LeRobot provides pre-trained ACT policies on HuggingFace Hub:
 - **Per-task training**: Original ACT is not multi-task (though extensions exist)
 
 **Recent extensions**:
-- **Bi-ACT**: Incorporates force/torque feedback
-- **NL-ACT**: Adds natural language conditioning
+- **Bi-ACT**: Incorporates force/torque feedback for contact-rich tasks
+- **NL-ACT**: Adds natural language conditioning for instruction following
 - **One ACT Play**: Learns from single demonstrations
-- **3D-ACT**: Uses point cloud inputs instead of RGB
+- **3D-ACT**: Uses point cloud inputs instead of RGB images
 
-## What's Next?
+## What's Next? {#sec-next}
 
-In Part 2, we'll explore **Diffusion Policy** in depth — understanding how diffusion models are adapted for action generation, why they handle multimodality better than VAEs, and how they compare to ACT in practice.
+In [Part 2](../2-diffusion-policy/), we'll explore **Diffusion Policy** in depth — understanding how diffusion models are adapted for action generation, why they handle multimodality better than VAEs, and how they compare to ACT in practice.
 
 ::: {.callout-note appearance="simple"}
 ## Summary
 
-Action Chunking with Transformers (ACT) demonstrates that the right abstraction can transform learning efficiency. By predicting action sequences instead of single actions:
+Action Chunking with Transformers (ACT) demonstrates that the right abstraction can transform learning efficiency. By predicting action sequences instead of single actions, we achieve three key benefits:
 
-- **Horizon reduction**: Compounding errors drop by 100× (from 500 decisions to 5)
-- **Temporal coherence**: Explicit modeling of motion primitives and temporal dependencies
-- **Data efficiency**: 80-90% success with just 10 minutes of human demonstrations
-- **Practical deployment**: Fast inference (0.01s) enables real-time 50Hz control
+**Horizon reduction**: Compounding errors drop by 100× (from 500 decisions to 5 when k=100). This directly addresses the exponential error growth problem in behavioral cloning.
 
-The combination of action chunking, CVAE for handling demonstration variability, and temporal ensembling for smoothness creates a powerful framework for learning precise manipulation from limited data.
+**Temporal coherence**: Explicit modeling of motion primitives and temporal dependencies. The policy learns to generate smooth, coordinated motion sequences rather than disconnected micro-actions.
+
+**Data efficiency**: 80-90% success with just 10 minutes of human demonstrations. The CVAE framework handles demonstration variability, while temporal ensembling ensures smooth execution.
+
+**Practical deployment**: Fast inference (0.01s per forward pass) enables real-time 50Hz control on consumer hardware.
+
+The combination of action chunking ([@eq-chunking-objective]), CVAE for handling demonstration variability ([@eq-cvae-loss]), and temporal ensembling for smoothness ([@eq-temporal-ensembling]) creates a powerful framework for learning precise manipulation from limited data.
 
 Whether you're building research systems or deploying real robots, ACT provides a practical, accessible entry point into modern imitation learning. The [LeRobot implementation](https://huggingface.co/docs/lerobot/en/act) and [ALOHA hardware designs](https://tonyzhaozh.github.io/aloha/) make it easier than ever to experiment with these techniques.
 
@@ -428,13 +478,22 @@ Whether you're building research systems or deploying real robots, ACT provides 
 
 ## References
 
-[1] [Zhao, T. Z., et al. "Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware."](https://arxiv.org/abs/2304.13705) *RSS*, 2023.
+[1] [Zhao, T. Z., et al. "Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware."](https://arxiv.org/abs/2304.13705) *Robotics: Science and Systems (RSS)*, 2023.
 
-[2] [Chi, C., et al. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion."](https://arxiv.org/abs/2303.04137) *RSS*, 2023.
+[2] [Chi, C., et al. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion."](https://arxiv.org/abs/2303.04137) *Robotics: Science and Systems (RSS)*, 2023.
+
+[3] [Miller, G. A. "The Magical Number Seven, Plus or Minus Two: Some Limits on Our Capacity for Processing Information."](https://psychclassics.yorku.ca/Miller/) *Psychological Review* 63(2), 1956.
+
+[4] [Camacho, E. F., & Alba, C. B. "Model Predictive Control."](https://link.springer.com/book/10.1007/978-0-85729-398-5) *Springer*, 2013.
+
+[5] [Carion, N., et al. "End-to-End Object Detection with Transformers (DETR)."](https://arxiv.org/abs/2005.12872) *ECCV*, 2020.
+
+[6] [Kingma, D. P., & Welling, M. "Auto-Encoding Variational Bayes."](https://arxiv.org/abs/1312.6114) *ICLR*, 2014.
 
 ### Recommended Resources
 
 - [ALOHA Project Website](https://tonyzhaozh.github.io/aloha/) — Hardware designs and demonstration videos
 - [ACT Official GitHub Repository](https://github.com/tonyzhaozh/act) — Original implementation
 - [LeRobot ACT Documentation](https://huggingface.co/docs/lerobot/en/act) — Easiest way to get started
-- [The importance of action chunking in imitation learning](https://www.haonanyu.blog/post/action_chunking/) — Technical deep dive
+- [The importance of action chunking in imitation learning](https://www.haonanyu.blog/post/action_chunking/) — Technical deep dive by Haonan Yu
+- [Dissecting ACT](https://blog.phospho.ai/dissecting-action-chunking-with-transformers-act-precision-imitation-learning-for-robotic-manipulation/) — Detailed technical breakdown
