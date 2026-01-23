@@ -4,7 +4,6 @@ author: "Hujie Wang"
 date: "2026-01-20"
 categories: [robotics, diffusion-policy, VLA, robot-learning]
 toc: true
-draft: true
 ---
 
 ::: {.callout-note appearance="simple"}
@@ -26,9 +25,9 @@ This series documents my learning journey into robot learning, starting from the
 
 | Part | Topic | Status |
 |------|-------|--------|
-| **Part 0** | Introduction & Roadmap (this post) | Draft |
-| **Part 0.5** | [Prerequisites & Background](../0.5-prerequisites/) | Draft |
-| **Part 1** | [Diffusion Policy: From Images to Actions](../1-diffusion-policy/) | Draft |
+| **Part 0** | Introduction & Roadmap (this post) | Published |
+| **Part 1** | [Background & Current State of the Field](../1-background/) | Published |
+| **Part 2** | [Diffusion Policy: From Images to Actions](../1-diffusion-policy/) | Draft |
 | **Part 2** | Vision-Language-Action Models | Planned |
 | **Part 3** | Simulation Environments (MuJoCo, Isaac) | Planned |
 | **Part 4** | Training with LeRobot | Planned |

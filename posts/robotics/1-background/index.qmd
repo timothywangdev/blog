@@ -1,10 +1,9 @@
 ---
-title: "Robot Learning Part 0.5: Prerequisites & Background"
-author: "Timothy Wang"
+title: "Robot Learning Part 1: Background & Current State of the Field"
+author: "Hujie Wang"
 date: "2026-01-20"
 categories: [robotics, reinforcement-learning, imitation-learning, robot-learning]
 toc: true
-draft: true
 ---
 
 ::: {.callout-note appearance="simple"}
@@ -14,7 +13,7 @@ draft: true
 - **Reinforcement Learning (RL)** learns from rewards but needs millions of trials — impractical for real robots
 - **Behavioral Cloning (BC)** learns from demonstrations via supervised learning — the foundation of modern robot learning
 - **Multimodality** (multiple valid solutions) breaks naive BC; expressive models like diffusion handle it well
-- This post builds the conceptual foundation for understanding Diffusion Policy in [Part 1](../1-diffusion-policy/)
+- This post builds the conceptual foundation for understanding Diffusion Policy in [Part 2](../1-diffusion-policy/)
 :::
 
 ## Why This Post? {#sec-why}
@@ -206,7 +205,7 @@ This is why Diffusion Policy$^{[9]}$ works so well — diffusion models are *des
 
 ## Generative Models: A Preview {#sec-generative}
 
-Before diving into Diffusion Policy in [Part 1](../1-diffusion-policy/), let's preview the generative modeling approaches used in robot learning.
+Before diving into Diffusion Policy in [Part 2](../1-diffusion-policy/), let's preview the generative modeling approaches used in robot learning.
 
 ### Variational Autoencoders (VAE)
 
@@ -242,7 +241,7 @@ where $v_\theta$ is a learned velocity field. Simpler training than diffusion, o
 
 ## Prerequisites Summary {#sec-prerequisites}
 
-Before proceeding to [Part 1: Diffusion Policy](../1-diffusion-policy/), ensure you're comfortable with:
+Before proceeding to [Part 2: Diffusion Policy](../1-diffusion-policy/), ensure you're comfortable with:
 
 ### Mathematical Background
 
@@ -269,7 +268,7 @@ Before proceeding to [Part 1: Diffusion Policy](../1-diffusion-policy/), ensure 
 
 ## What's Next? {#sec-next}
 
-With this foundation, we're ready for [Part 1: Diffusion Policy](../1-diffusion-policy/). We'll see how diffusion models elegantly solve the multimodality problem and why "generating actions like generating images" is such a powerful idea.
+With this foundation, we're ready for [Part 2: Diffusion Policy](../1-diffusion-policy/). We'll see how diffusion models elegantly solve the multimodality problem and why "generating actions like generating images" is such a powerful idea.
 
 ::: {.callout-note appearance="simple"}
 ## Summary
@@ -278,7 +277,7 @@ Classical robotics works when we can write down the dynamics — factory floors,
 
 Imitation learning sidesteps these issues by learning directly from demonstrations, but faces two challenges: **distribution shift** (errors compound as the robot visits unfamiliar states) and **multimodality** (averaging over multiple valid strategies produces invalid actions).
 
-The key insight: we need policy representations expressive enough to capture *distributions* over actions, not just point predictions. Diffusion models provide exactly this — which is why Diffusion Policy has become the foundation of modern robot learning. In Part 1, we'll see precisely how.
+The key insight: we need policy representations expressive enough to capture *distributions* over actions, not just point predictions. Diffusion models provide exactly this — which is why Diffusion Policy has become the foundation of modern robot learning. In Part 2, we'll see precisely how.
 :::
 
 ## References
