@@ -29,6 +29,7 @@ This series documents my journey into robot learning, starting from the foundati
 |------|-------|--------|
 | **Part 0** | Introduction & Roadmap (this post) | Published |
 | **Part 1** | [Background & Current State of the Field](../1-background/) | Published |
+| **Part 1.5** | [Action Chunking with Transformers (ACT)](../1.5-action-chunking/) | Published |
 | **Part 2** | [Diffusion Policy: From Images to Actions](../1-diffusion-policy/) | Draft |
 | **Part 3** | Vision-Language-Action Models | Planned |
 | **Part 4** | Simulation Environments (MuJoCo, Isaac) | Planned |
