@@ -18,13 +18,23 @@ toc: true
 
 ## Why This Post? {#sec-why}
 
-In [Part 0](../0-intro/), we surveyed the robot learning landscape. Before diving into Diffusion Policy, we need to understand the problems it solves. This post answers three questions:
+In [Part 0](../0-intro/), we surveyed the robot learning landscape and saw how diffusion models are revolutionizing robotic manipulation. But to truly understand *why* Diffusion Policy works so well, we need to step back and examine the evolution of robot learning approaches.
 
-1. **Why learning?** What's wrong with classical robotics?
-2. **Why not RL?** What makes reinforcement learning hard for real robots?
-3. **Why diffusion?** What problem does it solve that simpler approaches can't?
+This post builds the conceptual foundation by answering three essential questions:
 
-The structure follows the excellent [Robot Learning: A Tutorial](https://arxiv.org/abs/2510.12403)$^{[1]}$ by Capuano et al., which covers these topics with hands-on LeRobot code.
+1. **Why learning?** What fundamental limitations make classical robotics struggle with everyday tasks?
+2. **Why not RL?** What makes reinforcement learning impractical for real-world robot manipulation?
+3. **Why diffusion?** What specific problem does it solve that simpler imitation learning approaches cannot handle?
+
+By the end, you'll understand why generating actions like generating images is such a powerful idea — and why it took the field decades to arrive at this solution.
+
+::: {.callout-tip appearance="simple"}
+## For Readers in a Hurry
+
+If you're already familiar with RL/imitation learning basics, you can skip to @sec-multimodality to see the core problem that diffusion models solve. The key insight: naive behavioral cloning averages over valid strategies, producing invalid actions. Diffusion models represent the full action distribution, naturally handling multimodality.
+:::
+
+**This post follows the structure of** [Robot Learning: A Tutorial](https://arxiv.org/abs/2510.12403)$^{[1]}$ **by Capuano et al., which provides hands-on LeRobot code for these concepts.**
 
 ## Classical Robotics: Why We Need Learning {#sec-classical}
 
@@ -106,7 +116,13 @@ RL has achieved remarkable results — mastering Atari games$^{[2]}$, defeating 
 ::: {.callout-tip appearance="simple"}
 ## Intuition: The Scale Problem
 
-Training a simulated humanoid to walk takes approximately 10 billion environment steps.$^{[6]}$ At real-time (1 step per 0.01s), that's roughly **3,000 years** of continuous robot operation. Even with 100 robots running in parallel, we'd need 30 years.
+Consider these stark comparisons:
+
+- **Atari games**: Rainbow DQN needs ~18 million frames (**83 hours** of gameplay) to match human performance. Most humans master these games in **minutes**.$^{[11]}$
+- **Simulated walking**: Training a humanoid to walk requires ~10 billion environment steps.$^{[6]}$ At real-time, that's **3,000 years** of continuous operation. Even with 100 robots in parallel: 30 years.
+- **Comparison to humans**: A baby learns to grasp objects after seeing just a few examples. RL systems need millions of attempts.
+
+The gap between human sample efficiency and RL is not merely quantitative — it's fundamental. Natural intelligence extracts far more signal from far less data.
 :::
 
 Research has made progress on each challenge — sample-efficient algorithms (SAC, TD3), offline RL, sim-to-real transfer with domain randomization — but contact-rich manipulation remains difficult. This motivates a different approach.
@@ -170,28 +186,57 @@ Distribution shift isn't the only issue. Even with perfect training data coverag
 
 ### Why Averaging Fails {#sec-averaging}
 
-Consider picking up a mug. A human might:
+The multimodality problem is best understood through concrete examples:
+
+**Example 1: Obstacle Avoidance**
+
+A mobile robot approaches a box blocking its path. The demonstrations show two valid strategies: go left around the obstacle OR go right around it. What does naive behavioral cloning learn?
+
+![Obstacle avoidance multimodality: both "go left" and "go right" are valid strategies, but their average produces "go straight" — directly into the obstacle.](obstacle-avoidance-multimodality.png){#fig-obstacle-multimodality}
+
+As @fig-obstacle-multimodality illustrates, it averages: "go left" + "go right" = "go straight" — directly into the obstacle! While both modes are acceptable, their mean is catastrophic.
+
+**Example 2: Grasping a Mug**
+
+Consider picking up a coffee mug. A human might:
 
 - Grasp the handle from the left
 - Grasp the handle from the right
-- Grasp the body with a power grip
-- Pinch the rim
+- Grab the body with a power grip
+- Pinch the rim with a precision grip
 
-All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss?
+All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss (mean squared error)?
 
-The network learns to predict the **average** action — reaching for somewhere *between* all the options, which corresponds to **none of them**. The robot might reach toward the center of the mug and miss everything.
+The network learns to predict the **average** action — reaching for somewhere *between* all the options, which corresponds to **none of them**. The robot reaches toward the center of the mug and grasps nothing.
+
+**Example 3: Intersection Navigation**
+
+From autonomous driving research:$^{[12]}$ At an intersection, demonstrations show turning left, going straight, and turning right (depending on destination). Standard behavioral cloning "primarily follows a single trajectory" — it collapses to one mode and fails to generalize. The robot gets stuck, unable to make different decisions at the same location.
 
 ![The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid "average" prediction (red dotted) that results from MSE training.](multimodality-problem.png){#fig-multimodality}
 
 ::: {.callout-warning}
 ## Common Misconception: "Just Collect Consistent Data"
 
-A natural reaction is "just have demonstrators use the same strategy." But multimodality is unavoidable in real-world manipulation. Even the same person grasping the same mug will vary their approach based on subtle factors (arm position, comfort, habit). Eliminating multimodality requires unrealistic constraints on data collection.
+A natural reaction is: "Just have demonstrators use the same strategy every time." But multimodality is **fundamentally unavoidable** in real-world manipulation:
+
+1. **Inherent task ambiguity**: Many tasks have multiple equally valid solutions (push object left vs. right, approach from front vs. side)
+2. **Human variation**: Even the same person performing the same task varies their approach based on subtle factors — arm configuration, starting pose, comfort, or unconscious habit
+3. **Environmental differences**: Small changes in object placement, lighting, or scene clutter naturally lead to different valid strategies
+
+Attempting to eliminate multimodality would require:
+- Rigidly controlling demonstrator behavior (often impossible)
+- Restricting tasks to those with single solutions (defeats the purpose of learning-based approaches)
+- Collecting unrealistically large datasets where one mode dominates by sheer numbers
+
+The right solution isn't to eliminate multimodality — it's to use policy representations that can handle it.
 :::
 
 ### From Deterministic to Probabilistic Policies {#sec-policy-representations}
 
 The solution is to represent the policy as a **probability distribution** over actions, not a single prediction. Different architectures handle multimodality with varying success:
+
+![Comparison of policy representations: Gaussian policies capture one mode, mixture models need fixed K components, while diffusion models naturally sample from arbitrary multimodal distributions.](policy-representations-comparison.png){#fig-policy-representations}
 
 | Representation | Handles Multimodality? | Notes |
 |----------------|------------------------|-------|
@@ -200,6 +245,8 @@ The solution is to represent the policy as a **probability distribution** over a
 | **Mixture of Gaussians** | Somewhat | Fixed number of modes, must choose in advance |
 | **VAE**$^{[8]}$ | Better | Latent space can capture structure |
 | **Diffusion models**$^{[9]}$ | Excellent | Learns arbitrary distributions |
+
+As illustrated in @fig-policy-representations, diffusion models are fundamentally different. Unlike Gaussian policies (single mode) or mixture models (fixed K modes), diffusion generates diverse samples by starting each inference from different random noise. The denoising process naturally explores multiple modes without averaging them away.
 
 This is why Diffusion Policy$^{[9]}$ works so well — diffusion models are *designed* to learn complex, multimodal distributions. They represent the entire action distribution, not just its mean.
 
@@ -219,13 +266,23 @@ VAEs learn a compressed **latent space** that captures the structure of the data
 
 ### Diffusion Models
 
-Diffusion models learn to reverse a noise-adding process:
+Diffusion models learn to reverse a noise-adding process. Think of it like a painter creating a portrait:
 
-1. **Forward process**: Gradually add Gaussian noise to data until it becomes pure noise
-2. **Reverse process**: Train a neural network to denoise step-by-step
-3. **Sampling**: Start from noise, iteratively denoise to generate a sample
+::: {.callout-tip appearance="simple"}
+## The Painter Analogy
 
-**In robotics**: Diffusion Policy$^{[9]}$ generates action trajectories by denoising. Each "sample" from the diffusion model is a full action sequence.
+A skilled painter doesn't create pixel-perfect details immediately. They start with rough outlines and gradually refine through many small adjustments — adding shadows here, highlighting there — until the final image emerges. Diffusion works similarly: starting from pure noise, the model iteratively removes noise through learned denoising steps until coherent data appears.
+:::
+
+**The technical process:**
+
+1. **Forward process**: Gradually add Gaussian noise to data until it becomes pure random noise
+2. **Reverse process**: Train a neural network $\epsilon_\theta$ to predict and remove noise step-by-step
+3. **Sampling**: Start from random noise, iteratively denoise to generate a sample
+
+**Why this handles multimodality:** Each sampling run starts from different random noise, naturally exploring different modes of the distribution. The denoising process acts like gradient descent on a learned energy landscape — different initializations converge to different modes without averaging them together.
+
+**In robotics**: Diffusion Policy$^{[9]}$ generates action trajectories by denoising. Given an observation (camera image + robot state), it samples from the conditional distribution $p(\text{actions} | \text{observation})$ by starting with random noise and iteratively refining it into a plausible action sequence.
 
 ### Flow Matching
 
@@ -301,3 +358,7 @@ The key insight: we need policy representations expressive enough to capture *di
 [9] [Chi, C., et al. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion."](https://arxiv.org/abs/2303.04137) *RSS*, 2023.
 
 [10] [Black, K., et al. "π₀: A Vision-Language-Action Flow Model for General Robot Control."](https://arxiv.org/abs/2410.24164) *arXiv*, 2024.
+
+[11] [Irpan, A. "Deep Reinforcement Learning Doesn't Work Yet."](https://www.alexirpan.com/2018/02/14/rl-hard.html) Blog post, 2018.
+
+[12] [Codevilla, F., et al. "Exploring the Limitations of Behavior Cloning for Autonomous Driving."](https://openaccess.thecvf.com/content_ICCV_2019/papers/Codevilla_Exploring_the_Limitations_of_Behavior_Cloning_for_Autonomous_Driving_ICCV_2019_paper.pdf) *ICCV*, 2019.

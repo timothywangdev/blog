@@ -15,11 +15,13 @@ toc: true
 - This series documents my journey from diffusion models into robotics research
 :::
 
-## Why Robotics?
+## Why Robot Learning Matters Now
 
-After spending time understanding [diffusion models and flow matching](../diffusion/1-intro/), I realized these techniques are revolutionizing robotics. The same principles that generate images can generate robot actions — and the field is moving fast.
+After spending time understanding [diffusion models and flow matching](../../diffusion/1-intro/), I realized these same techniques are revolutionizing robotics. The same principles that generate photorealistic images from noise can generate precise robot actions from observations — and the field is moving remarkably fast.
 
-This series documents my learning journey into robot learning, starting from the foundations and working toward cutting-edge Vision-Language-Action models.
+What makes this moment particularly exciting? For decades, robots excelled at repetitive factory tasks but struggled with everyday manipulation — folding laundry, cooking meals, clearing tables. That's changing. Recent breakthroughs in Vision-Language-Action (VLA) models are enabling robots to understand natural language instructions, perceive complex scenes, and execute dexterous manipulation tasks that seemed impossible just a few years ago.
+
+This series documents my journey into robot learning, starting from the foundations and working toward understanding these cutting-edge VLA models.
 
 ## Series Overview (Planned)
 
@@ -28,22 +30,49 @@ This series documents my learning journey into robot learning, starting from the
 | **Part 0** | Introduction & Roadmap (this post) | Published |
 | **Part 1** | [Background & Current State of the Field](../1-background/) | Published |
 | **Part 2** | [Diffusion Policy: From Images to Actions](../1-diffusion-policy/) | Draft |
-| **Part 2** | Vision-Language-Action Models | Planned |
-| **Part 3** | Simulation Environments (MuJoCo, Isaac) | Planned |
-| **Part 4** | Training with LeRobot | Planned |
-| **Part 5** | Real-World Deployment | Planned |
+| **Part 3** | Vision-Language-Action Models | Planned |
+| **Part 4** | Simulation Environments (MuJoCo, Isaac) | Planned |
+| **Part 5** | Training with LeRobot | Planned |
+| **Part 6** | Real-World Deployment | Planned |
 
-## The Big Picture: How Diffusion Enters Robotics
+## The Big Picture: From Images to Actions
 
-In image generation, diffusion models learn to transform noise into images. In robotics, **Diffusion Policy** learns to transform observations into action sequences:
+Here's the core idea that connects image generation to robot control: **the same denoising process that creates images can generate robot actions**.
 
-| Image Generation | Robot Control |
-|------------------|---------------|
-| Noise → Image | Observation → Action Trajectory |
-| Denoise iteratively | Generate action chunks |
-| Handles multimodal outputs | Handles multimodal action distributions |
+### How VLA Models Work
 
-The key insight: robot tasks often have multiple valid solutions (many ways to pick up an object), and diffusion naturally handles this multimodality — the same reason it works for images.
+Vision-Language-Action models integrate three capabilities into a unified system:
+
+![VLA model architecture: visual observations and language instructions are processed through a vision encoder and language model backbone to generate robot actions.](vla-pipeline.png){#fig-vla-pipeline}
+
+As shown in @fig-vla-pipeline, the pipeline flows as follows:
+
+1. **Vision Encoder**: Processes camera images into visual embeddings (using models like SigLIP or DINOv2)
+2. **Language Model Backbone**: Combines visual embeddings with natural language instructions (e.g., Llama 7B)
+3. **Action Decoder**: Translates the model's output into executable robot commands
+
+This architecture enables robots to understand both *what they see* and *what they're asked to do*, then generate appropriate actions — all in one end-to-end system.
+
+### The Diffusion Analogy
+
+Think of a painter creating a portrait. They don't paint pixel-perfect details immediately — they start with rough outlines, gradually refining through many small adjustments until the final image emerges. Diffusion models work similarly: starting from pure noise, they iteratively remove noise through learned denoising steps until a coherent image appears.
+
+**Diffusion Policy** applies this exact principle to robotics:
+
+| Image Diffusion | Action Diffusion |
+|-----------------|------------------|
+| Random pixels → Photorealistic image | Random actions → Precise trajectory |
+| Conditioned on text prompt | Conditioned on visual observation |
+| Iterative denoising | Iterative action refinement |
+| Handles multiple valid images | Handles multiple valid action sequences |
+
+### Why This Matters: The Multimodality Problem
+
+Consider a robot picking up a mug. A human might grasp the handle from the left, from the right, or grab the body directly — all equally valid. Traditional methods (like simple supervised learning) average these strategies together, producing an invalid "middle" action where the robot reaches between all options and grasps nothing.
+
+Diffusion models elegantly solve this. Just as they can generate many different images from the same text prompt, they can generate different action strategies from the same observation. Each denoising process starts from random noise, naturally exploring different modes of the action distribution without collapsing to a useless average.
+
+**The result**: Diffusion Policy achieves an average **46.9% improvement** over prior methods across manipulation benchmarks.$^{[1]}$
 
 ## Learning Roadmap
 
@@ -180,15 +209,25 @@ In Part 1, we'll dive deep into **Diffusion Policy** — understanding exactly h
 ::: {.callout-note appearance="simple"}
 ## Summary
 
-Robot learning is at an exciting inflection point. Diffusion models and foundation models are enabling robots to learn complex manipulation tasks from demonstrations. The tooling (LeRobot, MuJoCo) and hardware (SO-101) have become accessible enough for individual researchers to contribute.
+Robot learning is at an exciting inflection point. The convergence of three trends makes this the right time to dive in:
 
-This series will document the journey from understanding these methods to implementing and experimenting with them.
+1. **Algorithmic breakthroughs**: Diffusion models and flow matching provide expressive policies that handle real-world complexity
+2. **Foundation models**: Vision-Language-Action models leverage pretrained VLMs, dramatically reducing training data requirements
+3. **Accessible tools**: Open frameworks (LeRobot), simulation (MuJoCo, Isaac), and affordable hardware (SO-101) lower the barrier to entry
+
+The field has matured from laboratory demos to practical systems. Physical Intelligence's π0 controls 8 different robot embodiments. Figure AI's humanoids perform household tasks. OpenVLA provides an open-source 7B parameter model anyone can fine-tune.
+
+This series will take you from the fundamentals (why learning-based approaches? why diffusion?) through the mathematics and implementation details, eventually reaching cutting-edge VLA models. Whether you're an ML engineer wanting practical insights, a researcher seeking intuition, or a curious developer exploring the field — there's a path for you here.
+
+**Next up**: In [Part 1](../1-background/), we'll build the conceptual foundation by understanding why classical robotics struggles, what makes reinforcement learning impractical for real robots, and why multimodal action distributions require expressive generative models.
 :::
 
 ## References
 
-- Chi, C., et al. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion." IJRR 2024.
-- Kim, M., et al. "OpenVLA: An Open-Source Vision-Language-Action Model." arXiv 2024.
-- Black, K., et al. "π0: A Vision-Language-Action Flow Model for General Robot Control." 2024.
-- [LeRobot Documentation](https://github.com/huggingface/lerobot)
-- [Hugging Face Robotics Course](https://huggingface.co/learn/robotics-course/)
+[1] [Chi, C., et al. "Diffusion Policy: Visuomotor Policy Learning via Action Diffusion."](https://arxiv.org/abs/2303.04137) *RSS*, 2023.
+
+### Recommended Starting Points
+
+- [LeRobot Documentation](https://github.com/huggingface/lerobot) — Open-source robot learning framework
+- [Hugging Face Robotics Course](https://huggingface.co/learn/robotics-course/) — Free, hands-on tutorials
+- [Robot Learning: A Tutorial (Capuano et al.)](https://arxiv.org/abs/2510.12403) — Comprehensive survey with code
