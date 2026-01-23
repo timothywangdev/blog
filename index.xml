@@ -10,7 +10,661 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.27</generator>
-<lastBuildDate>Tue, 20 Jan 2026 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Fri, 23 Jan 2026 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>Robot Learning Part 1.5: Action Chunking with Transformers (ACT)</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/robotics/1.5-action-chunking/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Action chunking</strong> predicts sequences of actions instead of single actions, dramatically reducing compounding errors</li>
+<li><strong>ACT</strong> combines CVAE + Transformers to achieve 80-90% success with just 50 demonstrations (10 minutes of data)</li>
+<li><strong>Key innovation</strong>: Temporal ensembling with receding horizon control enables smooth, precise manipulation</li>
+<li><strong>Performance</strong>: Chunk size k=100 improves success from 1% to 44% — action chunking is transformative</li>
+<li><strong>Trade-off</strong>: ACT is faster and more data-efficient than Diffusion Policy, but less flexible for highly multimodal behaviors</li>
+</ul>
+</div>
+</div>
+<section id="why-action-chunking-matters" class="level2">
+<h2 class="anchored" data-anchor-id="why-action-chunking-matters">Why Action Chunking Matters</h2>
+<p>Imagine teaching a robot to pick up a mug. In traditional behavioral cloning, the robot predicts one tiny action at a time — 50 micro-adjustments per second. Each prediction is an opportunity for error. Over a 10-second task, that’s <strong>500 chances to drift off course</strong>. Errors compound exponentially, and the robot quickly enters states it never saw during training.</p>
+<p><strong>Action chunking</strong> solves this elegantly: instead of predicting the next 0.02 seconds of motion, predict the <strong>next 2 seconds</strong> all at once. The effective decision-making horizon drops from 500 steps to just 5. Compounding errors are reduced by a factor of 100.</p>
+<p>This single idea — predicting action <em>sequences</em> instead of single actions — is the foundation of Action Chunking with Transformers (ACT), one of the most influential recent breakthroughs in robot imitation learning.</p>
+</section>
+<section id="the-problem-with-single-step-prediction" class="level2">
+<h2 class="anchored" data-anchor-id="the-problem-with-single-step-prediction">The Problem with Single-Step Prediction</h2>
+<section id="compounding-errors-in-behavioral-cloning" class="level3">
+<h3 class="anchored" data-anchor-id="compounding-errors-in-behavioral-cloning">Compounding Errors in Behavioral Cloning</h3>
+<p>Standard behavioral cloning treats robot learning as supervised learning: given observation <img src="https://latex.codecogs.com/png.latex?o_t">, predict action <img src="https://latex.codecogs.com/png.latex?a_t">. Simple, right?</p>
+<p>The problem: <strong>errors compound over time</strong>. Here’s why:</p>
+<ol type="1">
+<li><strong>Distribution shift</strong>: Even a tiny prediction error moves the robot slightly off the demonstrated trajectory</li>
+<li><strong>Novel states</strong>: The robot enters states not present in the training data</li>
+<li><strong>More errors</strong>: Predictions from these novel states are even less accurate</li>
+<li><strong>Exponential divergence</strong>: In continuous control, errors grow exponentially with task horizon</li>
+</ol>
+<p>For a 10-second task at 50Hz (500 timesteps), this compounds into catastrophic failure.</p>
+</section>
+<section id="the-non-markovian-problem" class="level3">
+<h3 class="anchored" data-anchor-id="the-non-markovian-problem">The Non-Markovian Problem</h3>
+<p>There’s a deeper issue: human demonstrations aren’t perfectly Markovian. Consider a human pausing mid-motion before continuing. The observation is identical during the pause and when movement resumes, yet the action should be different.</p>
+<p><strong>Single-step prediction cannot solve this</strong> — it’s theoretically impossible to map identical observations to different actions. The policy needs temporal context: “I’ve been stationary for 1 second, time to move” versus “I just started the pause.”</p>
+</section>
+<section id="temporal-dependencies-matter" class="level3">
+<h3 class="anchored" data-anchor-id="temporal-dependencies-matter">Temporal Dependencies Matter</h3>
+<p>Robot manipulation is inherently sequential:</p>
+<ul>
+<li><strong>Reaching</strong>: Smooth acceleration and deceleration phases</li>
+<li><strong>Grasping</strong>: Coordinated finger closure over time</li>
+<li><strong>Placement</strong>: Gradual force application to avoid dropping objects</li>
+</ul>
+<p>Single-step policies must learn these temporal patterns implicitly through recurrent architectures or history stacking. Action chunking makes temporal structure <strong>explicit</strong> by predicting entire motion sequences.</p>
+</section>
+</section>
+<section id="action-chunking-the-core-idea" class="level2">
+<h2 class="anchored" data-anchor-id="action-chunking-the-core-idea">Action Chunking: The Core Idea</h2>
+<section id="from-points-to-trajectories" class="level3">
+<h3 class="anchored" data-anchor-id="from-points-to-trajectories">From Points to Trajectories</h3>
+<p>Action chunking changes the learning objective:</p>
+<ul>
+<li><strong>Standard BC</strong>: <img src="https://latex.codecogs.com/png.latex?%5Cpi(a_t%20%7C%20o_t)"> — predict single action</li>
+<li><strong>Action Chunking</strong>: <img src="https://latex.codecogs.com/png.latex?%5Cpi(a_%7Bt:t+k%7D%20%7C%20o_t)"> — predict k-step action sequence</li>
+</ul>
+<p>At timestep <img src="https://latex.codecogs.com/png.latex?t">, the policy outputs <img src="https://latex.codecogs.com/png.latex?k"> future actions: <img src="https://latex.codecogs.com/png.latex?%5Ba_t,%20a_%7Bt+1%7D,%20...,%20a_%7Bt+k-1%7D%5D">.</p>
+</section>
+<section id="how-horizon-reduction-works" class="level3">
+<h3 class="anchored" data-anchor-id="how-horizon-reduction-works">How Horizon Reduction Works</h3>
+<p>Consider a 10-second manipulation task:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 14%">
+<col style="width: 20%">
+<col style="width: 18%">
+<col style="width: 15%">
+<col style="width: 30%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Approach</th>
+<th>Control Freq</th>
+<th>Total Steps</th>
+<th>Decisions</th>
+<th>Error Opportunities</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Single-step</td>
+<td>50Hz</td>
+<td>500</td>
+<td>500</td>
+<td>500</td>
+</tr>
+<tr class="even">
+<td>Action chunking (k=100)</td>
+<td>50Hz</td>
+<td>500</td>
+<td>5</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p>The robot still executes 500 actions, but makes only <strong>5 high-level decisions</strong> instead of 500 micro-decisions. Compounding errors are reduced by <strong>100×</strong>.</p>
+</section>
+<section id="receding-horizon-control" class="level3">
+<h3 class="anchored" data-anchor-id="receding-horizon-control">Receding Horizon Control</h3>
+<p>Action chunking implements a form of <strong>receding horizon control</strong> (also called Model Predictive Control):</p>
+<ol type="1">
+<li><strong>Plan</strong>: Generate a sequence of k future actions</li>
+<li><strong>Execute</strong>: Perform only the first few actions</li>
+<li><strong>Replan</strong>: Get a new observation and generate a new sequence</li>
+<li><strong>Repeat</strong>: The planning horizon continuously “recedes” forward</li>
+</ol>
+<p>This balances <strong>planning</strong> (looking ahead) with <strong>reactivity</strong> (incorporating new observations).</p>
+</section>
+</section>
+<section id="act-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="act-architecture">ACT Architecture</h2>
+<p>Action Chunking with Transformers (ACT) was introduced in the 2023 paper <a href="https://arxiv.org/abs/2304.13705">“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware”</a> by Tony Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn. It combines action chunking with a Conditional Variational Autoencoder (CVAE) and Transformer architecture.</p>
+<section id="system-overview" class="level3">
+<h3 class="anchored" data-anchor-id="system-overview">System Overview</h3>
+<div id="fig-act-architecture" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-act-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/1.5-action-chunking/act-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-act-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vision encoders, joint positions are embedded, and a style variable z is sampled. A transformer encoder fuses these features, then a transformer decoder generates k-step action sequences.
+</figcaption>
+</figure>
+</div>
+<p>As shown in Figure&nbsp;1, ACT consists of three main components:</p>
+<ol type="1">
+<li><strong>Vision Backbone</strong>: ResNet-18 processes RGB images from 4 camera views</li>
+<li><strong>CVAE Encoder</strong> (training only): Encodes demonstrated action sequences into latent variable <img src="https://latex.codecogs.com/png.latex?z"></li>
+<li><strong>Policy Decoder</strong>: Transformer generates k-step action sequences conditioned on images, joint positions, and <img src="https://latex.codecogs.com/png.latex?z"></li>
+</ol>
+</section>
+<section id="the-role-of-cvae" class="level3">
+<h3 class="anchored" data-anchor-id="the-role-of-cvae">The Role of CVAE</h3>
+<p>Why use a Variational Autoencoder instead of simple supervised learning?</p>
+<section id="the-multimodality-problem" class="level4">
+<h4 class="anchored" data-anchor-id="the-multimodality-problem">The Multimodality Problem</h4>
+<p>Human demonstrations exhibit natural variability:</p>
+<ul>
+<li><strong>Task strategies</strong>: Different valid approaches to the same task</li>
+<li><strong>Execution speed</strong>: Hurried vs.&nbsp;careful movements</li>
+<li><strong>Motion style</strong>: Direct paths vs.&nbsp;cautious, curved trajectories</li>
+</ul>
+<p>Standard supervised learning averages these variations, often producing infeasible “middle ground” actions. The CVAE solves this by modeling the <strong>distribution</strong> of valid action sequences.</p>
+</section>
+<section id="how-cvae-works" class="level4">
+<h4 class="anchored" data-anchor-id="how-cvae-works">How CVAE Works</h4>
+<p><strong>Training:</strong></p>
+<p>The encoder takes the current observation and the <strong>actual demonstrated action sequence</strong> and compresses them into a latent variable <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20%5Cmathcal%7BN%7D(%5Cmu,%20%5Csigma%5E2)">:</p>
+<p><img src="https://latex.codecogs.com/png.latex?z%20=%20%5Cmu%20+%20%5Csigma%20%5Ccdot%20%5Cepsilon,%20%5Cquad%20%5Cepsilon%20%5Csim%20%5Cmathcal%7BN%7D(0,%201)"></p>
+<p>This <strong>reparameterization trick</strong> enables gradient flow through the stochastic sampling.</p>
+<p>The decoder takes <img src="https://latex.codecogs.com/png.latex?z"> and the current observation and predicts the action sequence. The training loss has two terms:</p>
+<p><img src="https://latex.codecogs.com/png.latex?%5Cmathcal%7BL%7D%20=%20%5Cmathcal%7BL%7D_%7B%5Ctext%7Breconst%7D%7D%20+%20%5Cbeta%20%5Ccdot%20%5Cmathcal%7BL%7D_%7B%5Ctext%7BKL%7D%7D"></p>
+<ul>
+<li><strong>Reconstruction loss</strong> (<img src="https://latex.codecogs.com/png.latex?L_1"> norm): Ensures accurate action prediction</li>
+<li><strong>KL divergence</strong>: Regularizes the latent distribution toward a standard Gaussian prior</li>
+</ul>
+<p><strong>Inference:</strong></p>
+<p>At deployment, the encoder is <strong>not used</strong> (we don’t have ground-truth actions). Instead:</p>
+<ol type="1">
+<li>Sample <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20%5Cmathcal%7BN%7D(0,%201)"> from the prior</li>
+<li>Pass <img src="https://latex.codecogs.com/png.latex?z"> and current observation through the decoder</li>
+<li>Get the k-step action sequence</li>
+</ol>
+</section>
+<section id="what-does-z-represent" class="level4">
+<h4 class="anchored" data-anchor-id="what-does-z-represent">What Does z Represent?</h4>
+<p>The latent variable <img src="https://latex.codecogs.com/png.latex?z"> captures <strong>stylistic variations</strong> in execution:</p>
+<ul>
+<li>Execution speed (fast vs.&nbsp;slow)</li>
+<li>Movement smoothness (jerky vs.&nbsp;fluid)</li>
+<li>Force profiles (aggressive vs.&nbsp;gentle)</li>
+<li>Task decomposition strategies</li>
+</ul>
+<p>By sampling different <img src="https://latex.codecogs.com/png.latex?z"> values during training, the model learns to generate diverse but valid behaviors. During inference, using <img src="https://latex.codecogs.com/png.latex?z=0"> (the prior mean) produces the “average” execution style.</p>
+</section>
+</section>
+<section id="transformer-architecture" class="level3">
+<h3 class="anchored" data-anchor-id="transformer-architecture">Transformer Architecture</h3>
+<p>ACT adapts the DETR (DEtection TRansformer) architecture for action prediction:</p>
+<p><strong>Encoder:</strong> - 4 layers, 8 attention heads - Input: concatenated vision features (1200×512), joint positions (512), and <img src="https://latex.codecogs.com/png.latex?z"> (512) - Output: fused multi-modal representation</p>
+<p><strong>Decoder:</strong> - 7 layers, 8 attention heads - Uses fixed sinusoidal positional embeddings as queries - Cross-attends to encoder output - Output: k×14 dimensional tensor (k timesteps × 14 joint positions)</p>
+<p><strong>Total parameters</strong>: ~80 million (lightweight compared to VLA models with billions)</p>
+</section>
+<section id="temporal-ensembling" class="level3">
+<h3 class="anchored" data-anchor-id="temporal-ensembling">Temporal Ensembling</h3>
+<p>A key innovation: ACT queries the policy at <strong>every timestep</strong>, producing overlapping action chunks. These are combined using exponential weighting:</p>
+<p><img src="https://latex.codecogs.com/png.latex?a_t%20=%20%5Cfrac%7B%5Csum_%7Bi=0%7D%5E%7Bk-1%7D%20w_i%20%5Ccdot%20A_t%5Bi%5D%7D%7B%5Csum_%7Bi=0%7D%5E%7Bk-1%7D%20w_i%7D,%20%5Cquad%20w_i%20=%20%5Cexp(-m%20%5Ccdot%20i)"></p>
+<p>where: - <img src="https://latex.codecogs.com/png.latex?A_t%5Bi%5D"> is the predicted action for timestep <img src="https://latex.codecogs.com/png.latex?t"> from the chunk generated <img src="https://latex.codecogs.com/png.latex?i"> steps ago - <img src="https://latex.codecogs.com/png.latex?m"> is a hyperparameter controlling how quickly new predictions are incorporated</p>
+<p><strong>Benefits:</strong> - <strong>Smoothness</strong>: Averages out prediction noise - <strong>Consistency</strong>: Reduces modeling errors - <strong>Performance gain</strong>: 3-4% improvement over no ensembling</p>
+<p>This is analogous to a painter making multiple preliminary sketches and blending them into the final stroke — each individual prediction contributes, but recent predictions have higher weight.</p>
+</section>
+</section>
+<section id="training-act" class="level2">
+<h2 class="anchored" data-anchor-id="training-act">Training ACT</h2>
+<section id="data-requirements" class="level3">
+<h3 class="anchored" data-anchor-id="data-requirements">Data Requirements</h3>
+<p>ACT is remarkably data-efficient:</p>
+<ul>
+<li><strong>50 demonstrations per task</strong> (8-14 seconds each)</li>
+<li><strong>Total collection time</strong>: 10-20 minutes</li>
+<li><strong>Control frequency</strong>: 50Hz</li>
+<li><strong>Action space</strong>: 14D absolute joint positions (2 arms × 7 DOF each)</li>
+</ul>
+</section>
+<section id="training-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="training-configuration">Training Configuration</h3>
+<p>Key hyperparameters from the <a href="https://github.com/tonyzhaozh/act">official implementation</a>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1">chunk_size <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">100</span>          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Predict 2 seconds ahead (100 steps at 50Hz)</span></span>
+<span id="cb1-2">hidden_dim <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">512</span>          <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Transformer hidden dimension</span></span>
+<span id="cb1-3">num_encoder_layers <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">4</span></span>
+<span id="cb1-4">num_decoder_layers <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">7</span></span>
+<span id="cb1-5">nheads <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span>                <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Multi-head attention heads</span></span>
+<span id="cb1-6">dim_feedforward <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3200</span></span>
+<span id="cb1-7">kl_weight <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span>            <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># β in the KL divergence term</span></span>
+<span id="cb1-8">learning_rate <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1e-5</span></span>
+<span id="cb1-9">batch_size <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span></span>
+<span id="cb1-10">epochs <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2000</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span><span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5000</span>        <span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Train longer for smoothness</span></span></code></pre></div></div>
+</section>
+<section id="training-procedure" class="level3">
+<h3 class="anchored" data-anchor-id="training-procedure">Training Procedure</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">python</span> imitate_episodes.py <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--task_name</span> sim_transfer_cube_scripted <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--ckpt_dir</span> checkpoints <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--policy_class</span> ACT <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--kl_weight</span> 10 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--chunk_size</span> 100 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--hidden_dim</span> 512 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--batch_size</span> 8 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-9">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--num_epochs</span> 2000 <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb2-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--lr</span> 1e-5</span></code></pre></div></div>
+<p><strong>Training time</strong>: ~5 hours on RTX 2080 Ti <strong>Inference time</strong>: 0.01 seconds per forward pass (supports 50Hz control)</p>
+</section>
+<section id="critical-training-tips" class="level3">
+<h3 class="anchored" data-anchor-id="critical-training-tips">Critical Training Tips</h3>
+<p>From the official repository:</p>
+<blockquote class="blockquote">
+<p>“If your ACT policy is jerky or pauses in the middle of an episode, just train for longer! Success rate and smoothness can improve way after loss plateaus.”</p>
+</blockquote>
+<p><strong>Practical guidelines:</strong> - Train for <strong>5000+ epochs</strong> for real-world tasks (not just until loss plateaus) - Use <strong>L1 loss</strong> (not L2) for precise positioning tasks - Set <strong>β=10</strong> for KL weight (balances reconstruction vs.&nbsp;regularization) - CVAE is <strong>essential for human data</strong> (drops from 35% to 2% success without it)</p>
+</section>
+</section>
+<section id="performance-results" class="level2">
+<h2 class="anchored" data-anchor-id="performance-results">Performance Results</h2>
+<section id="benchmark-tasks" class="level3">
+<h3 class="anchored" data-anchor-id="benchmark-tasks">Benchmark Tasks</h3>
+<p>ACT was evaluated on <strong>6 real-world</strong> fine manipulation tasks:</p>
+<ul>
+<li>Threading cable ties</li>
+<li>Slotting batteries with millimeter precision</li>
+<li>Opening translucent condiment cups (requires pinching, prying, tearing)</li>
+<li>Inserting power cables</li>
+<li>Sliding Ziploc bags</li>
+<li>Wiping spills</li>
+</ul>
+</section>
+<section id="success-rates" class="level3">
+<h3 class="anchored" data-anchor-id="success-rates">Success Rates</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>ACT Success</th>
+<th>Best Baseline</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Slide Ziploc</td>
+<td>88%</td>
+<td>27%</td>
+</tr>
+<tr class="even">
+<td>Slot Battery</td>
+<td><strong>96%</strong></td>
+<td>2%</td>
+</tr>
+<tr class="odd">
+<td>Open Cup</td>
+<td>84%</td>
+<td>0%</td>
+</tr>
+<tr class="even">
+<td>Thread Ties</td>
+<td><strong>92%</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>These results represent <strong>dramatic improvements</strong> over: - BC-ConvMLP (standard behavior cloning) - BeT (Behavior Transformers with history) - RT-1 (discretized actions) - VINN (non-parametric retrieval)</p>
+</section>
+<section id="ablation-study-highlights" class="level3">
+<h3 class="anchored" data-anchor-id="ablation-study-highlights">Ablation Study Highlights</h3>
+<p><strong>Impact of chunk size</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Chunk Size</th>
+<th>Success Rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>k=1 (single-step)</td>
+<td>1%</td>
+</tr>
+<tr class="even">
+<td>k=10</td>
+<td>12%</td>
+</tr>
+<tr class="odd">
+<td>k=50</td>
+<td>38%</td>
+</tr>
+<tr class="even">
+<td><strong>k=100</strong></td>
+<td><strong>44%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The jump from 1% to 44% shows that <strong>action chunking is transformative</strong>, not just a marginal improvement.</p>
+<p><strong>Impact of CVAE</strong>: - With CVAE: 35.3% success - Without CVAE: 2% success</p>
+<p><strong>Impact of temporal ensembling</strong>: - With ensembling: 38.6% - Without ensembling: 35.3%</p>
+</section>
+</section>
+<section id="act-vs-diffusion-policy" class="level2">
+<h2 class="anchored" data-anchor-id="act-vs-diffusion-policy">ACT vs Diffusion Policy</h2>
+<p>Both ACT and Diffusion Policy use action chunking, but differ in the generative model:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 16%">
+<col style="width: 58%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Aspect</th>
+<th>ACT</th>
+<th>Diffusion Policy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Generative Model</strong></td>
+<td>Conditional VAE</td>
+<td>Diffusion Model</td>
+</tr>
+<tr class="even">
+<td><strong>Inference</strong></td>
+<td>1 forward pass</td>
+<td>16-100 denoising steps</td>
+</tr>
+<tr class="odd">
+<td><strong>Speed</strong></td>
+<td>Fast (0.01s)</td>
+<td>Slower (0.16s)</td>
+</tr>
+<tr class="even">
+<td><strong>Data Efficiency</strong></td>
+<td>High (50 demos)</td>
+<td>Moderate (more data needed)</td>
+</tr>
+<tr class="odd">
+<td><strong>Multimodality</strong></td>
+<td>Good (but unimodal at inference)</td>
+<td>Excellent</td>
+</tr>
+<tr class="even">
+<td><strong>Training Time</strong></td>
+<td>Fast (5 hours)</td>
+<td>Slower</td>
+</tr>
+<tr class="odd">
+<td><strong>Parameters</strong></td>
+<td>~80M</td>
+<td>Similar</td>
+</tr>
+<tr class="even">
+<td><strong>Consistency</strong></td>
+<td>High (rigid adherence to demos)</td>
+<td>Flexible, adaptive</td>
+</tr>
+</tbody>
+</table>
+<section id="when-to-choose-each" class="level3">
+<h3 class="anchored" data-anchor-id="when-to-choose-each">When to Choose Each</h3>
+<p><strong>Use ACT when</strong>: - Fast training and inference are critical - Data is limited (50-100 demonstrations) - Tasks require consistent, repeatable execution - Precision bimanual manipulation is needed</p>
+<p><strong>Use Diffusion Policy when</strong>: - Highly multimodal behavior is needed - Tasks involve extensive repetitive motions - More training data is available - Flexibility and adaptability matter more than speed</p>
+<p><strong>Example</strong>: ACT sometimes “freezes” mid-task on repetitive up-down motions, while Diffusion Policy handles these smoothly. However, ACT trains faster and requires less data.</p>
+</section>
+</section>
+<section id="the-aloha-system" class="level2">
+<h2 class="anchored" data-anchor-id="the-aloha-system">The ALOHA System</h2>
+<p>ACT was developed as part of the <a href="https://tonyzhaozh.github.io/aloha/">ALOHA (A Low-cost Open-source Hardware System for Bimanual Teleoperation)</a> project, which makes bimanual manipulation research accessible.</p>
+<section id="hardware-specifications" class="level3">
+<h3 class="anchored" data-anchor-id="hardware-specifications">Hardware Specifications</h3>
+<ul>
+<li><strong>Cost</strong>: &lt;$20,000 per system (each arm ~$5,000)</li>
+<li><strong>Tracking error</strong>: &lt;2cm (average 0.68cm)</li>
+<li><strong>Control frequency</strong>: 50Hz</li>
+<li><strong>Cameras</strong>: 4 RGB at 480×640 resolution</li>
+<li><strong>DOF</strong>: 14 total (2 arms × 7 DOF each)</li>
+</ul>
+</section>
+<section id="mobile-aloha-results" class="level3">
+<h3 class="anchored" data-anchor-id="mobile-aloha-results">Mobile ALOHA Results</h3>
+<p>The system extends to mobile manipulation with <strong>co-training</strong>: combining static and mobile demonstrations improves both.</p>
+<p><strong>Co-training gains</strong>: - Average improvement: <strong>34%</strong> across tasks - Individual task boosts: +45%, +20%, +80%, +95%, +80%</p>
+<p><strong>Mobile tasks (&gt;80% success)</strong>: - Sautéing and serving shrimp - Opening two-door wall cabinets - Lifting wine glass while wiping with other hand - Multi-step cooking sequences</p>
+</section>
+</section>
+<section id="using-act-with-lerobot" class="level2">
+<h2 class="anchored" data-anchor-id="using-act-with-lerobot">Using ACT with LeRobot</h2>
+<p>The easiest way to get started with ACT is through <a href="https://huggingface.co/docs/lerobot/en/act">LeRobot</a>, Hugging Face’s robot learning framework.</p>
+<section id="installation" class="level3">
+<h3 class="anchored" data-anchor-id="installation">Installation</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">pip</span> install lerobot</span></code></pre></div></div>
+</section>
+<section id="training" class="level3">
+<h3 class="anchored" data-anchor-id="training">Training</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">lerobot-train</span> <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb4-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--dataset.repo_id</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">${HF_USER}</span>/your_dataset <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb4-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--policy.type</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>act <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb4-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--output_dir</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>outputs/train/act_your_dataset <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb4-5">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--policy.device</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>cuda <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb4-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--wandb.enable</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span>true <span class="dt" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">\</span></span>
+<span id="cb4-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--policy.repo_id</span><span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">=</span><span class="va" style="color: #111111;
+background-color: null;
+font-style: inherit;">${HF_USER}</span>/act_policy</span></code></pre></div></div>
+</section>
+<section id="pre-trained-models" class="level3">
+<h3 class="anchored" data-anchor-id="pre-trained-models">Pre-trained Models</h3>
+<p>LeRobot provides pre-trained ACT policies on HuggingFace Hub: - <a href="https://huggingface.co/lerobot/act_aloha_sim_insertion_human">lerobot/act_aloha_sim_insertion_human</a> - <a href="https://huggingface.co/lerobot/act_aloha_sim_transfer_cube_human">lerobot/act_aloha_sim_transfer_cube_human</a></p>
+</section>
+</section>
+<section id="key-takeaways" class="level2">
+<h2 class="anchored" data-anchor-id="key-takeaways">Key Takeaways</h2>
+<ol type="1">
+<li><p><strong>Action chunking is transformative</strong>: The 1% → 44% success rate improvement shows this is the right abstraction for imitation learning</p></li>
+<li><p><strong>CVAE handles human variability</strong>: Separating style (<img src="https://latex.codecogs.com/png.latex?z">) from task execution enables learning from noisy, variable demonstrations</p></li>
+<li><p><strong>Temporal ensembling matters</strong>: Combining overlapping predictions improves smoothness and reduces errors by 3-4%</p></li>
+<li><p><strong>Train longer than loss suggests</strong>: Smoothness and success rate improve well after reconstruction loss plateaus</p></li>
+<li><p><strong>Data efficiency is remarkable</strong>: 50 demonstrations (10 minutes of human time) achieve 80-90% success on contact-rich manipulation</p></li>
+<li><p><strong>Speed vs.&nbsp;flexibility trade-off</strong>: ACT is faster and more data-efficient than Diffusion Policy, but less flexible for highly multimodal behaviors</p></li>
+</ol>
+</section>
+<section id="limitations-and-future-work" class="level2">
+<h2 class="anchored" data-anchor-id="limitations-and-future-work">Limitations and Future Work</h2>
+<p><strong>Current limitations</strong>: - <strong>Repetitive motions</strong>: Can freeze mid-task on cyclic movements - <strong>Multi-modal scenarios</strong>: Inference uses single <img src="https://latex.codecogs.com/png.latex?z"> sample (unimodal) - <strong>Per-task training</strong>: Original ACT is not multi-task (though extensions exist)</p>
+<p><strong>Recent extensions</strong>: - <strong>Bi-ACT</strong>: Incorporates force/torque feedback - <strong>NL-ACT</strong>: Adds natural language conditioning - <strong>One ACT Play</strong>: Learns from single demonstrations - <strong>3D-ACT</strong>: Uses point cloud inputs instead of RGB</p>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>In Part 2, we’ll explore <strong>Diffusion Policy</strong> in depth — understanding how diffusion models are adapted for action generation, why they handle multimodality better than VAEs, and how they compare to ACT in practice.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Action Chunking with Transformers (ACT) demonstrates that the right abstraction can transform learning efficiency. By predicting action sequences instead of single actions:</p>
+<ul>
+<li><strong>Horizon reduction</strong>: Compounding errors drop by 100× (from 500 decisions to 5)</li>
+<li><strong>Temporal coherence</strong>: Explicit modeling of motion primitives and temporal dependencies</li>
+<li><strong>Data efficiency</strong>: 80-90% success with just 10 minutes of human demonstrations</li>
+<li><strong>Practical deployment</strong>: Fast inference (0.01s) enables real-time 50Hz control</li>
+</ul>
+<p>The combination of action chunking, CVAE for handling demonstration variability, and temporal ensembling for smoothness creates a powerful framework for learning precise manipulation from limited data.</p>
+<p>Whether you’re building research systems or deploying real robots, ACT provides a practical, accessible entry point into modern imitation learning. The <a href="https://huggingface.co/docs/lerobot/en/act">LeRobot implementation</a> and <a href="https://tonyzhaozh.github.io/aloha/">ALOHA hardware designs</a> make it easier than ever to experiment with these techniques.</p>
+<p><strong>Next up</strong>: In <a href="../2-diffusion-policy/">Part 2</a>, we’ll dive into Diffusion Policy and understand why diffusion models are becoming the gold standard for robot action generation.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2304.13705">Zhao, T. Z., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>RSS</em>, 2023.</p>
+<p>[2] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
+<section id="recommended-resources" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-resources">Recommended Resources</h3>
+<ul>
+<li><a href="https://tonyzhaozh.github.io/aloha/">ALOHA Project Website</a> — Hardware designs and demonstration videos</li>
+<li><a href="https://github.com/tonyzhaozh/act">ACT Official GitHub Repository</a> — Original implementation</li>
+<li><a href="https://huggingface.co/docs/lerobot/en/act">LeRobot ACT Documentation</a> — Easiest way to get started</li>
+<li><a href="https://www.haonanyu.blog/post/action_chunking/">The importance of action chunking in imitation learning</a> — Technical deep dive</li>
+</ul>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>robotics</category>
+  <category>transformers</category>
+  <category>imitation-learning</category>
+  <category>VAE</category>
+  <category>robot-learning</category>
+  <guid>https://layernorm.dev/posts/robotics/1.5-action-chunking/</guid>
+  <pubDate>Fri, 23 Jan 2026 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Robot Learning Part 0: Introduction &amp; Roadmap</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -67,26 +721,31 @@
 <td>Published</td>
 </tr>
 <tr class="odd">
+<td><strong>Part 1.5</strong></td>
+<td><a href="../1.5-action-chunking/">Action Chunking with Transformers (ACT)</a></td>
+<td>Published</td>
+</tr>
+<tr class="even">
 <td><strong>Part 2</strong></td>
 <td><a href="../1-diffusion-policy/">Diffusion Policy: From Images to Actions</a></td>
 <td>Draft</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Part 3</strong></td>
 <td>Vision-Language-Action Models</td>
 <td>Planned</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><strong>Part 4</strong></td>
 <td>Simulation Environments (MuJoCo, Isaac)</td>
 <td>Planned</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><strong>Part 5</strong></td>
 <td>Training with LeRobot</td>
 <td>Planned</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><strong>Part 6</strong></td>
 <td>Real-World Deployment</td>
 <td>Planned</td>
