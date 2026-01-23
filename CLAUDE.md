@@ -6,10 +6,11 @@
 
 ## Working Style
 
-- **Use parallel agents**: When researching topics or gathering information, always launch multiple Task agents in parallel (3-4 simultaneously) rather than sequentially. This applies to:
-  - Researching different aspects of a topic
-  - Searching for papers, tutorials, and explanations
-  - Gathering information from multiple sources
+- **Use multiple agents in parallel whenever possible**: Always prefer launching multiple Task agents in parallel rather than sequentially. This applies to:
+  - **Research tasks**: Launch 3-4 agents simultaneously to explore different aspects of a topic, search for papers/tutorials, or gather information from multiple sources
+  - **Independent operations**: If tasks don't depend on each other's results, run them in parallel (e.g., reading multiple files, searching different codebases, fetching multiple web resources)
+  - **Exploratory work**: When investigating a codebase or concept, spawn parallel agents to examine different areas simultaneously
+  - **General rule**: If you can launch tasks in parallel without waiting for sequential results, do it. Maximize parallelism for performance.
 
 - **Draft posts with /polish**: When creating or editing blog posts, follow the guidelines in `.claude/commands/polish.md`
 
