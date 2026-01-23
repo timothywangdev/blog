@@ -363,57 +363,56 @@ window.Quarto = {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#why-action-chunking-matters" id="toc-why-action-chunking-matters" class="nav-link active" data-scroll-target="#why-action-chunking-matters">Why Action Chunking Matters</a></li>
-  <li><a href="#the-problem-with-single-step-prediction" id="toc-the-problem-with-single-step-prediction" class="nav-link" data-scroll-target="#the-problem-with-single-step-prediction">The Problem with Single-Step Prediction</a>
+  <li><a href="#sec-why" id="toc-sec-why" class="nav-link active" data-scroll-target="#sec-why">Why Action Chunking Matters</a></li>
+  <li><a href="#sec-problem" id="toc-sec-problem" class="nav-link" data-scroll-target="#sec-problem">The Problem with Single-Step Prediction</a>
   <ul class="collapse">
-  <li><a href="#compounding-errors-in-behavioral-cloning" id="toc-compounding-errors-in-behavioral-cloning" class="nav-link" data-scroll-target="#compounding-errors-in-behavioral-cloning">Compounding Errors in Behavioral Cloning</a></li>
-  <li><a href="#the-non-markovian-problem" id="toc-the-non-markovian-problem" class="nav-link" data-scroll-target="#the-non-markovian-problem">The Non-Markovian Problem</a></li>
+  <li><a href="#sec-compounding" id="toc-sec-compounding" class="nav-link" data-scroll-target="#sec-compounding">Compounding Errors in Behavioral Cloning</a></li>
+  <li><a href="#sec-non-markovian" id="toc-sec-non-markovian" class="nav-link" data-scroll-target="#sec-non-markovian">The Non-Markovian Problem</a></li>
   <li><a href="#temporal-dependencies-matter" id="toc-temporal-dependencies-matter" class="nav-link" data-scroll-target="#temporal-dependencies-matter">Temporal Dependencies Matter</a></li>
   </ul></li>
-  <li><a href="#action-chunking-the-core-idea" id="toc-action-chunking-the-core-idea" class="nav-link" data-scroll-target="#action-chunking-the-core-idea">Action Chunking: The Core Idea</a>
+  <li><a href="#sec-action-chunking" id="toc-sec-action-chunking" class="nav-link" data-scroll-target="#sec-action-chunking">Action Chunking: The Core Idea</a>
   <ul class="collapse">
   <li><a href="#from-points-to-trajectories" id="toc-from-points-to-trajectories" class="nav-link" data-scroll-target="#from-points-to-trajectories">From Points to Trajectories</a></li>
   <li><a href="#how-horizon-reduction-works" id="toc-how-horizon-reduction-works" class="nav-link" data-scroll-target="#how-horizon-reduction-works">How Horizon Reduction Works</a></li>
-  <li><a href="#receding-horizon-control" id="toc-receding-horizon-control" class="nav-link" data-scroll-target="#receding-horizon-control">Receding Horizon Control</a></li>
+  <li><a href="#sec-receding-horizon" id="toc-sec-receding-horizon" class="nav-link" data-scroll-target="#sec-receding-horizon">Receding Horizon Control</a></li>
   </ul></li>
-  <li><a href="#act-architecture" id="toc-act-architecture" class="nav-link" data-scroll-target="#act-architecture">ACT Architecture</a>
+  <li><a href="#sec-architecture" id="toc-sec-architecture" class="nav-link" data-scroll-target="#sec-architecture">ACT Architecture</a>
   <ul class="collapse">
   <li><a href="#system-overview" id="toc-system-overview" class="nav-link" data-scroll-target="#system-overview">System Overview</a></li>
-  <li><a href="#the-role-of-cvae" id="toc-the-role-of-cvae" class="nav-link" data-scroll-target="#the-role-of-cvae">The Role of CVAE</a></li>
+  <li><a href="#sec-cvae" id="toc-sec-cvae" class="nav-link" data-scroll-target="#sec-cvae">The Role of CVAE</a></li>
   <li><a href="#transformer-architecture" id="toc-transformer-architecture" class="nav-link" data-scroll-target="#transformer-architecture">Transformer Architecture</a></li>
-  <li><a href="#temporal-ensembling" id="toc-temporal-ensembling" class="nav-link" data-scroll-target="#temporal-ensembling">Temporal Ensembling</a></li>
+  <li><a href="#sec-temporal-ensembling" id="toc-sec-temporal-ensembling" class="nav-link" data-scroll-target="#sec-temporal-ensembling">Temporal Ensembling</a></li>
   </ul></li>
-  <li><a href="#training-act" id="toc-training-act" class="nav-link" data-scroll-target="#training-act">Training ACT</a>
+  <li><a href="#sec-training" id="toc-sec-training" class="nav-link" data-scroll-target="#sec-training">Training ACT</a>
   <ul class="collapse">
   <li><a href="#data-requirements" id="toc-data-requirements" class="nav-link" data-scroll-target="#data-requirements">Data Requirements</a></li>
   <li><a href="#training-configuration" id="toc-training-configuration" class="nav-link" data-scroll-target="#training-configuration">Training Configuration</a></li>
   <li><a href="#training-procedure" id="toc-training-procedure" class="nav-link" data-scroll-target="#training-procedure">Training Procedure</a></li>
   <li><a href="#critical-training-tips" id="toc-critical-training-tips" class="nav-link" data-scroll-target="#critical-training-tips">Critical Training Tips</a></li>
   </ul></li>
-  <li><a href="#performance-results" id="toc-performance-results" class="nav-link" data-scroll-target="#performance-results">Performance Results</a>
+  <li><a href="#sec-results" id="toc-sec-results" class="nav-link" data-scroll-target="#sec-results">Performance Results</a>
   <ul class="collapse">
   <li><a href="#benchmark-tasks" id="toc-benchmark-tasks" class="nav-link" data-scroll-target="#benchmark-tasks">Benchmark Tasks</a></li>
   <li><a href="#success-rates" id="toc-success-rates" class="nav-link" data-scroll-target="#success-rates">Success Rates</a></li>
-  <li><a href="#ablation-study-highlights" id="toc-ablation-study-highlights" class="nav-link" data-scroll-target="#ablation-study-highlights">Ablation Study Highlights</a></li>
+  <li><a href="#sec-ablations" id="toc-sec-ablations" class="nav-link" data-scroll-target="#sec-ablations">Ablation Study Highlights</a></li>
   </ul></li>
-  <li><a href="#act-vs-diffusion-policy" id="toc-act-vs-diffusion-policy" class="nav-link" data-scroll-target="#act-vs-diffusion-policy">ACT vs Diffusion Policy</a>
+  <li><a href="#sec-comparison" id="toc-sec-comparison" class="nav-link" data-scroll-target="#sec-comparison">ACT vs Diffusion Policy</a>
   <ul class="collapse">
   <li><a href="#when-to-choose-each" id="toc-when-to-choose-each" class="nav-link" data-scroll-target="#when-to-choose-each">When to Choose Each</a></li>
   </ul></li>
-  <li><a href="#the-aloha-system" id="toc-the-aloha-system" class="nav-link" data-scroll-target="#the-aloha-system">The ALOHA System</a>
+  <li><a href="#sec-aloha" id="toc-sec-aloha" class="nav-link" data-scroll-target="#sec-aloha">The ALOHA System</a>
   <ul class="collapse">
   <li><a href="#hardware-specifications" id="toc-hardware-specifications" class="nav-link" data-scroll-target="#hardware-specifications">Hardware Specifications</a></li>
   <li><a href="#mobile-aloha-results" id="toc-mobile-aloha-results" class="nav-link" data-scroll-target="#mobile-aloha-results">Mobile ALOHA Results</a></li>
   </ul></li>
-  <li><a href="#using-act-with-lerobot" id="toc-using-act-with-lerobot" class="nav-link" data-scroll-target="#using-act-with-lerobot">Using ACT with LeRobot</a>
+  <li><a href="#sec-lerobot" id="toc-sec-lerobot" class="nav-link" data-scroll-target="#sec-lerobot">Using ACT with LeRobot</a>
   <ul class="collapse">
   <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation">Installation</a></li>
   <li><a href="#training" id="toc-training" class="nav-link" data-scroll-target="#training">Training</a></li>
   <li><a href="#pre-trained-models" id="toc-pre-trained-models" class="nav-link" data-scroll-target="#pre-trained-models">Pre-trained Models</a></li>
   </ul></li>
-  <li><a href="#key-takeaways" id="toc-key-takeaways" class="nav-link" data-scroll-target="#key-takeaways">Key Takeaways</a></li>
-  <li><a href="#limitations-and-future-work" id="toc-limitations-and-future-work" class="nav-link" data-scroll-target="#limitations-and-future-work">Limitations and Future Work</a></li>
-  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
+  <li><a href="#sec-limitations" id="toc-sec-limitations" class="nav-link" data-scroll-target="#sec-limitations">Limitations and Future Work</a></li>
+  <li><a href="#sec-next" id="toc-sec-next" class="nav-link" data-scroll-target="#sec-next">What’s Next?</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a>
   <ul class="collapse">
   <li><a href="#recommended-resources" id="toc-recommended-resources" class="nav-link" data-scroll-target="#recommended-resources">Recommended Resources</a></li>
@@ -482,16 +481,29 @@ window.Quarto = {
 </ul>
 </div>
 </div>
-<section id="why-action-chunking-matters" class="level2">
-<h2 class="anchored" data-anchor-id="why-action-chunking-matters">Why Action Chunking Matters</h2>
-<p>Imagine teaching a robot to pick up a mug. In traditional behavioral cloning, the robot predicts one tiny action at a time — 50 micro-adjustments per second. Each prediction is an opportunity for error. Over a 10-second task, that’s <strong>500 chances to drift off course</strong>. Errors compound exponentially, and the robot quickly enters states it never saw during training.</p>
+<section id="sec-why" class="level2">
+<h2 class="anchored" data-anchor-id="sec-why">Why Action Chunking Matters</h2>
+<p>Imagine teaching a robot to pick up a mug. In traditional behavioral cloning (recall from <a href="../1-background/#sec-imitation">Part 1</a>), the robot predicts one tiny action at a time — 50 micro-adjustments per second. Each prediction is an opportunity for error. Over a 10-second task, that’s <strong>500 chances to drift off course</strong>. Errors compound exponentially, and the robot quickly enters states it never saw during training.</p>
 <p><strong>Action chunking</strong> solves this elegantly: instead of predicting the next 0.02 seconds of motion, predict the <strong>next 2 seconds</strong> all at once. The effective decision-making horizon drops from 500 steps to just 5. Compounding errors are reduced by a factor of 100.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Chunking in Human Cognition
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This mirrors how humans naturally organize information. We don’t memorize phone numbers as 10 individual digits — we chunk them into groups (e.g., area code + prefix + line). Similarly, skilled pianists don’t think about individual finger movements; they execute entire musical phrases as cohesive units. Action chunking brings this same principle to robot learning.<span class="math inline">\(^{[3]}\)</span></p>
+</div>
+</div>
 <p>This single idea — predicting action <em>sequences</em> instead of single actions — is the foundation of Action Chunking with Transformers (ACT), one of the most influential recent breakthroughs in robot imitation learning.</p>
 </section>
-<section id="the-problem-with-single-step-prediction" class="level2">
-<h2 class="anchored" data-anchor-id="the-problem-with-single-step-prediction">The Problem with Single-Step Prediction</h2>
-<section id="compounding-errors-in-behavioral-cloning" class="level3">
-<h3 class="anchored" data-anchor-id="compounding-errors-in-behavioral-cloning">Compounding Errors in Behavioral Cloning</h3>
+<section id="sec-problem" class="level2">
+<h2 class="anchored" data-anchor-id="sec-problem">The Problem with Single-Step Prediction</h2>
+<section id="sec-compounding" class="level3">
+<h3 class="anchored" data-anchor-id="sec-compounding">Compounding Errors in Behavioral Cloning</h3>
 <p>Standard behavioral cloning treats robot learning as supervised learning: given observation <span class="math inline">\(o_t\)</span>, predict action <span class="math inline">\(a_t\)</span>. Simple, right?</p>
 <p>The problem: <strong>errors compound over time</strong>. Here’s why:</p>
 <ol type="1">
@@ -501,9 +513,22 @@ window.Quarto = {
 <li><strong>Exponential divergence</strong>: In continuous control, errors grow exponentially with task horizon</li>
 </ol>
 <p>For a 10-second task at 50Hz (500 timesteps), this compounds into catastrophic failure.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The Steering Wheel Analogy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of driving a car. If your steering is off by 1 degree, you barely notice after 10 feet. But after a mile, you’ve drifted into another lane entirely. In robot learning, each prediction is like a tiny steering adjustment. Small errors accumulate until the robot is completely off track — trying to grasp objects that aren’t there or colliding with obstacles.</p>
+</div>
+</div>
 </section>
-<section id="the-non-markovian-problem" class="level3">
-<h3 class="anchored" data-anchor-id="the-non-markovian-problem">The Non-Markovian Problem</h3>
+<section id="sec-non-markovian" class="level3">
+<h3 class="anchored" data-anchor-id="sec-non-markovian">The Non-Markovian Problem</h3>
 <p>There’s a deeper issue: human demonstrations aren’t perfectly Markovian. Consider a human pausing mid-motion before continuing. The observation is identical during the pause and when movement resumes, yet the action should be different.</p>
 <p><strong>Single-step prediction cannot solve this</strong> — it’s theoretically impossible to map identical observations to different actions. The policy needs temporal context: “I’ve been stationary for 1 second, time to move” versus “I just started the pause.”</p>
 </section>
@@ -518,15 +543,17 @@ window.Quarto = {
 <p>Single-step policies must learn these temporal patterns implicitly through recurrent architectures or history stacking. Action chunking makes temporal structure <strong>explicit</strong> by predicting entire motion sequences.</p>
 </section>
 </section>
-<section id="action-chunking-the-core-idea" class="level2">
-<h2 class="anchored" data-anchor-id="action-chunking-the-core-idea">Action Chunking: The Core Idea</h2>
+<section id="sec-action-chunking" class="level2">
+<h2 class="anchored" data-anchor-id="sec-action-chunking">Action Chunking: The Core Idea</h2>
 <section id="from-points-to-trajectories" class="level3">
 <h3 class="anchored" data-anchor-id="from-points-to-trajectories">From Points to Trajectories</h3>
-<p>Action chunking changes the learning objective:</p>
-<ul>
-<li><strong>Standard BC</strong>: <span class="math inline">\(\pi(a_t | o_t)\)</span> — predict single action</li>
-<li><strong>Action Chunking</strong>: <span class="math inline">\(\pi(a_{t:t+k} | o_t)\)</span> — predict k-step action sequence</li>
-</ul>
+<p>Action chunking changes the learning objective from predicting individual actions to predicting sequences:</p>
+<p><span id="eq-chunking-objective"><span class="math display">\[
+\begin{aligned}
+\text{Standard BC:} \quad &amp; \pi(a_t | o_t) &amp;&amp; \text{(predict single action)} \\
+\text{Action Chunking:} \quad &amp; \pi(a_{t:t+k} | o_t) &amp;&amp; \text{(predict k-step sequence)}
+\end{aligned}
+\tag{1}\]</span></span></p>
 <p>At timestep <span class="math inline">\(t\)</span>, the policy outputs <span class="math inline">\(k\)</span> future actions: <span class="math inline">\([a_t, a_{t+1}, ..., a_{t+k-1}]\)</span>.</p>
 </section>
 <section id="how-horizon-reduction-works" class="level3">
@@ -566,10 +593,20 @@ window.Quarto = {
 </tr>
 </tbody>
 </table>
-<p>The robot still executes 500 actions, but makes only <strong>5 high-level decisions</strong> instead of 500 micro-decisions. Compounding errors are reduced by <strong>100×</strong>.</p>
+<p><strong>Key insight</strong>: The robot still executes 500 actions, but makes only <strong>5 high-level decisions</strong> instead of 500 micro-decisions. Compounding errors are reduced by <strong>100×</strong>.</p>
+<div id="fig-horizon-reduction" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-horizon-reduction-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="horizon-reduction.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-horizon-reduction-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Horizon reduction through action chunking: A 500-step task becomes only 5 decision points when predicting chunks of k=100 actions, dramatically reducing compounding errors.
+</figcaption>
+</figure>
+</div>
 </section>
-<section id="receding-horizon-control" class="level3">
-<h3 class="anchored" data-anchor-id="receding-horizon-control">Receding Horizon Control</h3>
+<section id="sec-receding-horizon" class="level3">
+<h3 class="anchored" data-anchor-id="sec-receding-horizon">Receding Horizon Control</h3>
 <p>Action chunking implements a form of <strong>receding horizon control</strong> (also called Model Predictive Control):</p>
 <ol type="1">
 <li><strong>Plan</strong>: Generate a sequence of k future actions</li>
@@ -578,11 +615,24 @@ window.Quarto = {
 <li><strong>Repeat</strong>: The planning horizon continuously “recedes” forward</li>
 </ol>
 <p>This balances <strong>planning</strong> (looking ahead) with <strong>reactivity</strong> (incorporating new observations).</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Driving Down a Highway
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When you drive, you don’t just focus on the next foot of road — you look ahead several car lengths to plan your path. But you don’t execute your entire plan rigidly. As you move forward and gain new information (a car changing lanes, brake lights ahead), you continuously update your plan. The “horizon” of your planning window moves forward with you, always looking ahead but constantly adapting.<span class="math inline">\(^{[4]}\)</span></p>
+</div>
+</div>
 </section>
 </section>
-<section id="act-architecture" class="level2">
-<h2 class="anchored" data-anchor-id="act-architecture">ACT Architecture</h2>
-<p>Action Chunking with Transformers (ACT) was introduced in the 2023 paper <a href="https://arxiv.org/abs/2304.13705">“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware”</a> by Tony Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn. It combines action chunking with a Conditional Variational Autoencoder (CVAE) and Transformer architecture.</p>
+<section id="sec-architecture" class="level2">
+<h2 class="anchored" data-anchor-id="sec-architecture">ACT Architecture</h2>
+<p>Action Chunking with Transformers (ACT) was introduced in the 2023 paper <a href="https://arxiv.org/abs/2304.13705">“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware”</a> by Tony Z. Zhao, Vikash Kumar, Sergey Levine, and Chelsea Finn.<span class="math inline">\(^{[1]}\)</span> It combines action chunking with a Conditional Variational Autoencoder (CVAE) and Transformer architecture adapted from DETR (DEtection TRansformer).<span class="math inline">\(^{[5]}\)</span></p>
 <section id="system-overview" class="level3">
 <h3 class="anchored" data-anchor-id="system-overview">System Overview</h3>
 <div id="fig-act-architecture" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -591,49 +641,77 @@ window.Quarto = {
 <img src="act-architecture.png" class="img-fluid figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-act-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vision encoders, joint positions are embedded, and a style variable z is sampled. A transformer encoder fuses these features, then a transformer decoder generates k-step action sequences.
+Figure&nbsp;2: ACT architecture: Images from 4 cameras pass through ResNet-18 vision encoders, joint positions are embedded, and a style variable z is sampled. A transformer encoder fuses these features, then a transformer decoder generates k-step action sequences.
 </figcaption>
 </figure>
 </div>
-<p>As shown in <a href="#fig-act-architecture" class="quarto-xref">Figure&nbsp;1</a>, ACT consists of three main components:</p>
+<p>As shown in <a href="#fig-act-architecture" class="quarto-xref">Figure&nbsp;2</a>, ACT consists of three main components:</p>
 <ol type="1">
 <li><strong>Vision Backbone</strong>: ResNet-18 processes RGB images from 4 camera views</li>
 <li><strong>CVAE Encoder</strong> (training only): Encodes demonstrated action sequences into latent variable <span class="math inline">\(z\)</span></li>
 <li><strong>Policy Decoder</strong>: Transformer generates k-step action sequences conditioned on images, joint positions, and <span class="math inline">\(z\)</span></li>
 </ol>
 </section>
-<section id="the-role-of-cvae" class="level3">
-<h3 class="anchored" data-anchor-id="the-role-of-cvae">The Role of CVAE</h3>
+<section id="sec-cvae" class="level3">
+<h3 class="anchored" data-anchor-id="sec-cvae">The Role of CVAE</h3>
 <p>Why use a Variational Autoencoder instead of simple supervised learning?</p>
 <section id="the-multimodality-problem" class="level4">
 <h4 class="anchored" data-anchor-id="the-multimodality-problem">The Multimodality Problem</h4>
-<p>Human demonstrations exhibit natural variability:</p>
+<p>Recall from <a href="../1-background/#sec-multimodality">Part 1</a> that human demonstrations exhibit natural variability:</p>
 <ul>
 <li><strong>Task strategies</strong>: Different valid approaches to the same task</li>
 <li><strong>Execution speed</strong>: Hurried vs.&nbsp;careful movements</li>
 <li><strong>Motion style</strong>: Direct paths vs.&nbsp;cautious, curved trajectories</li>
 </ul>
 <p>Standard supervised learning averages these variations, often producing infeasible “middle ground” actions. The CVAE solves this by modeling the <strong>distribution</strong> of valid action sequences.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: The Style Variable
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of the latent variable <span class="math inline">\(z\)</span> as capturing <em>how</em> you perform a task, separate from <em>what</em> task you’re doing. When placing a mug, <span class="math inline">\(z\)</span> might encode: - Approach from left vs.&nbsp;right - Fast, confident motion vs.&nbsp;slow, careful placement - High arc trajectory vs.&nbsp;low, direct path</p>
+<p>During training, the CVAE learns that all these styles are valid. During inference, setting <span class="math inline">\(z=0\)</span> (the prior mean) produces the “average” style that works robustly.<span class="math inline">\(^{[6]}\)</span></p>
+</div>
+</div>
 </section>
 <section id="how-cvae-works" class="level4">
 <h4 class="anchored" data-anchor-id="how-cvae-works">How CVAE Works</h4>
 <p><strong>Training:</strong></p>
-<p>The encoder takes the current observation and the <strong>actual demonstrated action sequence</strong> and compresses them into a latent variable <span class="math inline">\(z \sim \mathcal{N}(\mu, \sigma^2)\)</span>:</p>
-<p><span class="math display">\[z = \mu + \sigma \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, 1)\]</span></p>
-<p>This <strong>reparameterization trick</strong> enables gradient flow through the stochastic sampling.</p>
-<p>The decoder takes <span class="math inline">\(z\)</span> and the current observation and predicts the action sequence. The training loss has two terms:</p>
-<p><span class="math display">\[\mathcal{L} = \mathcal{L}_{\text{reconst}} + \beta \cdot \mathcal{L}_{\text{KL}}\]</span></p>
-<ul>
-<li><strong>Reconstruction loss</strong> (<span class="math inline">\(L_1\)</span> norm): Ensures accurate action prediction</li>
-<li><strong>KL divergence</strong>: Regularizes the latent distribution toward a standard Gaussian prior</li>
-</ul>
+<p>The encoder takes the current observation <span class="math inline">\(o_t\)</span> and the <strong>actual demonstrated action sequence</strong> <span class="math inline">\(a_{t:t+k}\)</span> and compresses them into a latent variable:</p>
+<p><span id="eq-cvae-encoder"><span class="math display">\[z \sim q_\phi(z | o_t, a_{t:t+k}) = \mathcal{N}(\mu_\phi(o_t, a_{t:t+k}), \sigma_\phi^2(o_t, a_{t:t+k})) \tag{2}\]</span></span></p>
+<p>To enable backpropagation through this stochastic sampling, we use the <strong>reparameterization trick</strong>:</p>
+<p><span id="eq-reparameterization"><span class="math display">\[z = \mu + \sigma \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, 1) \tag{3}\]</span></span></p>
+<p>This separates the randomness (<span class="math inline">\(\epsilon\)</span>, which has no learnable parameters) from the deterministic transformations of <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> (which can be optimized via gradients).</p>
+<p>The decoder takes <span class="math inline">\(z\)</span> and the current observation and predicts the action sequence:</p>
+<p><span id="eq-cvae-decoder"><span class="math display">\[a_{t:t+k} \sim p_\theta(a_{t:t+k} | o_t, z) \tag{4}\]</span></span></p>
+<p>The training loss has two terms:</p>
+<p><span id="eq-cvae-loss"><span class="math display">\[\mathcal{L} = \mathcal{L}_{\text{reconst}} + \beta \cdot \mathcal{L}_{\text{KL}} \tag{5}\]</span></span></p>
+<p>where: - <strong>Reconstruction loss</strong> (<span class="math inline">\(L_1\)</span> norm): <span class="math inline">\(\mathcal{L}_{\text{reconst}} = \|a_{t:t+k} - \hat{a}_{t:t+k}\|_1\)</span> ensures accurate action prediction - <strong>KL divergence</strong>: <span class="math inline">\(\mathcal{L}_{\text{KL}} = D_{KL}(q_\phi(z|o_t, a_{t:t+k}) \| \mathcal{N}(0, I))\)</span> regularizes the latent distribution toward a standard Gaussian prior</p>
 <p><strong>Inference:</strong></p>
 <p>At deployment, the encoder is <strong>not used</strong> (we don’t have ground-truth actions). Instead:</p>
 <ol type="1">
-<li>Sample <span class="math inline">\(z \sim \mathcal{N}(0, 1)\)</span> from the prior</li>
+<li>Sample <span class="math inline">\(z \sim \mathcal{N}(0, 1)\)</span> from the prior (or simply set <span class="math inline">\(z=0\)</span>)</li>
 <li>Pass <span class="math inline">\(z\)</span> and current observation through the decoder</li>
 <li>Get the k-step action sequence</li>
 </ol>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “CVAE Generates Different Behaviors at Test Time”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>At inference, ACT actually uses a <strong>deterministic</strong> <span class="math inline">\(z=0\)</span>, not random samples. The CVAE’s role is during <em>training</em> — it helps the decoder learn to generate valid actions despite variability in demonstrations. By forcing the encoder to compress diverse demonstrations into a well-structured latent space, the decoder becomes robust to demonstration noise. At test time, <span class="math inline">\(z=0\)</span> produces reliable, consistent behavior.<span class="math inline">\(^{[6]}\)</span></p>
+</div>
+</div>
 </section>
 <section id="what-does-z-represent" class="level4">
 <h4 class="anchored" data-anchor-id="what-does-z-represent">What Does z Represent?</h4>
@@ -649,28 +727,39 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 </section>
 <section id="transformer-architecture" class="level3">
 <h3 class="anchored" data-anchor-id="transformer-architecture">Transformer Architecture</h3>
-<p>ACT adapts the DETR (DEtection TRansformer) architecture for action prediction:</p>
-<p><strong>Encoder:</strong> - 4 layers, 8 attention heads - Input: concatenated vision features (1200×512), joint positions (512), and <span class="math inline">\(z\)</span> (512) - Output: fused multi-modal representation</p>
-<p><strong>Decoder:</strong> - 7 layers, 8 attention heads - Uses fixed sinusoidal positional embeddings as queries - Cross-attends to encoder output - Output: k×14 dimensional tensor (k timesteps × 14 joint positions)</p>
+<p>ACT adapts the DETR (DEtection TRansformer) architecture<span class="math inline">\(^{[5]}\)</span> for action prediction:</p>
+<p><strong>Encoder:</strong> - 4 layers, 8 attention heads, 512 hidden dimensions - Input: concatenated vision features (1200×512 from 4 cameras), joint positions (512), and <span class="math inline">\(z\)</span> (512) - Output: fused multi-modal representation (1202×512)</p>
+<p><strong>Decoder:</strong> - 7 layers, 8 attention heads, 512 hidden dimensions - Uses fixed sinusoidal positional embeddings as queries - Cross-attends to encoder output - Output: k×14 dimensional tensor (k timesteps × 14 joint positions for bimanual robot)</p>
 <p><strong>Total parameters</strong>: ~80 million (lightweight compared to VLA models with billions)</p>
 </section>
-<section id="temporal-ensembling" class="level3">
-<h3 class="anchored" data-anchor-id="temporal-ensembling">Temporal Ensembling</h3>
-<p>A key innovation: ACT queries the policy at <strong>every timestep</strong>, producing overlapping action chunks. These are combined using exponential weighting:</p>
-<p><span class="math display">\[a_t = \frac{\sum_{i=0}^{k-1} w_i \cdot A_t[i]}{\sum_{i=0}^{k-1} w_i}, \quad w_i = \exp(-m \cdot i)\]</span></p>
-<p>where: - <span class="math inline">\(A_t[i]\)</span> is the predicted action for timestep <span class="math inline">\(t\)</span> from the chunk generated <span class="math inline">\(i\)</span> steps ago - <span class="math inline">\(m\)</span> is a hyperparameter controlling how quickly new predictions are incorporated</p>
-<p><strong>Benefits:</strong> - <strong>Smoothness</strong>: Averages out prediction noise - <strong>Consistency</strong>: Reduces modeling errors - <strong>Performance gain</strong>: 3-4% improvement over no ensembling</p>
-<p>This is analogous to a painter making multiple preliminary sketches and blending them into the final stroke — each individual prediction contributes, but recent predictions have higher weight.</p>
+<section id="sec-temporal-ensembling" class="level3">
+<h3 class="anchored" data-anchor-id="sec-temporal-ensembling">Temporal Ensembling</h3>
+<p>Here’s where ACT gets particularly clever. Instead of predicting a chunk once every k timesteps, ACT queries the policy at <strong>every timestep</strong>, producing overlapping action chunks.</p>
+<div id="fig-temporal-ensembling" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-temporal-ensembling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="temporal-ensembling.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-temporal-ensembling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Temporal ensembling: At each timestep, multiple overlapping predictions exist for the same future action. These are combined using exponential weights that favor recent predictions.
+</figcaption>
+</figure>
+</div>
+<p>These are combined using exponential weighting:</p>
+<p><span id="eq-temporal-ensembling"><span class="math display">\[a_t = \frac{\sum_{i=0}^{k-1} w_i \cdot A_t[i]}{\sum_{i=0}^{k-1} w_i}, \quad w_i = \exp(-m \cdot i) \tag{6}\]</span></span></p>
+<p>where: - <span class="math inline">\(A_t[i]\)</span> is the predicted action for timestep <span class="math inline">\(t\)</span> from the chunk generated <span class="math inline">\(i\)</span> steps ago - <span class="math inline">\(m\)</span> is a hyperparameter controlling how quickly new predictions are incorporated - Smaller <span class="math inline">\(m\)</span> means faster incorporation of new observations</p>
+<p><strong>Why this works</strong>: Imagine multiple painters sketching the same portrait from slightly different angles. Each sketch captures the subject differently, but averaging them reduces individual errors while preserving essential features. Temporal ensembling does the same for actions — multiple predictions for the same timestep are blended, with more recent predictions weighted higher.</p>
+<p><strong>Benefits:</strong> - <strong>Smoothness</strong>: Averages out prediction noise without introducing bias - <strong>Consistency</strong>: Reduces modeling errors from any single prediction - <strong>Performance gain</strong>: 3-4% improvement over no ensembling<span class="math inline">\(^{[1]}\)</span></p>
 </section>
 </section>
-<section id="training-act" class="level2">
-<h2 class="anchored" data-anchor-id="training-act">Training ACT</h2>
+<section id="sec-training" class="level2">
+<h2 class="anchored" data-anchor-id="sec-training">Training ACT</h2>
 <section id="data-requirements" class="level3">
 <h3 class="anchored" data-anchor-id="data-requirements">Data Requirements</h3>
 <p>ACT is remarkably data-efficient:</p>
 <ul>
 <li><strong>50 demonstrations per task</strong> (8-14 seconds each)</li>
-<li><strong>Total collection time</strong>: 10-20 minutes</li>
+<li><strong>Total collection time</strong>: 10-20 minutes of human demonstrations</li>
 <li><strong>Control frequency</strong>: 50Hz</li>
 <li><strong>Action space</strong>: 14D absolute joint positions (2 arms × 7 DOF each)</li>
 </ul>
@@ -705,25 +794,38 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 </section>
 <section id="critical-training-tips" class="level3">
 <h3 class="anchored" data-anchor-id="critical-training-tips">Critical Training Tips</h3>
-<p>From the official repository:</p>
+<p>From the <a href="https://github.com/tonyzhaozh/act">official repository</a>:</p>
 <blockquote class="blockquote">
 <p>“If your ACT policy is jerky or pauses in the middle of an episode, just train for longer! Success rate and smoothness can improve way after loss plateaus.”</p>
 </blockquote>
-<p><strong>Practical guidelines:</strong> - Train for <strong>5000+ epochs</strong> for real-world tasks (not just until loss plateaus) - Use <strong>L1 loss</strong> (not L2) for precise positioning tasks - Set <strong>β=10</strong> for KL weight (balances reconstruction vs.&nbsp;regularization) - CVAE is <strong>essential for human data</strong> (drops from 35% to 2% success without it)</p>
+<p><strong>Practical guidelines:</strong> - Train for <strong>5000+ epochs</strong> for real-world tasks (not just until loss plateaus) - Use <strong>L1 loss</strong> (not L2) for precise positioning tasks — L1 provides better gradients for exact alignment - Set <strong>β=10</strong> for KL weight (balances reconstruction vs.&nbsp;regularization) - CVAE is <strong>essential for human data</strong> (drops from 35% to 2% success without it)<span class="math inline">\(^{[1]}\)</span></p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Key Insight: Train Past Loss Plateau
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>One of the most important practical findings: smoothness and success rate continue improving for thousands of epochs <em>after</em> the reconstruction loss has plateaued. The policy is learning subtle temporal coordination that doesn’t show up in per-timestep error metrics. Always train longer than you think you need.</p>
+</div>
+</div>
 </section>
 </section>
-<section id="performance-results" class="level2">
-<h2 class="anchored" data-anchor-id="performance-results">Performance Results</h2>
+<section id="sec-results" class="level2">
+<h2 class="anchored" data-anchor-id="sec-results">Performance Results</h2>
 <section id="benchmark-tasks" class="level3">
 <h3 class="anchored" data-anchor-id="benchmark-tasks">Benchmark Tasks</h3>
 <p>ACT was evaluated on <strong>6 real-world</strong> fine manipulation tasks:</p>
 <ul>
-<li>Threading cable ties</li>
+<li>Threading cable ties through small holes</li>
 <li>Slotting batteries with millimeter precision</li>
 <li>Opening translucent condiment cups (requires pinching, prying, tearing)</li>
 <li>Inserting power cables</li>
-<li>Sliding Ziploc bags</li>
-<li>Wiping spills</li>
+<li>Sliding Ziploc bags closed</li>
+<li>Wiping spills with bimanual coordination</li>
 </ul>
 </section>
 <section id="success-rates" class="level3">
@@ -761,8 +863,8 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 </table>
 <p>These results represent <strong>dramatic improvements</strong> over: - BC-ConvMLP (standard behavior cloning) - BeT (Behavior Transformers with history) - RT-1 (discretized actions) - VINN (non-parametric retrieval)</p>
 </section>
-<section id="ablation-study-highlights" class="level3">
-<h3 class="anchored" data-anchor-id="ablation-study-highlights">Ablation Study Highlights</h3>
+<section id="sec-ablations" class="level3">
+<h3 class="anchored" data-anchor-id="sec-ablations">Ablation Study Highlights</h3>
 <p><strong>Impact of chunk size</strong>:</p>
 <table class="caption-top table">
 <thead>
@@ -790,14 +892,14 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 </tr>
 </tbody>
 </table>
-<p>The jump from 1% to 44% shows that <strong>action chunking is transformative</strong>, not just a marginal improvement.</p>
+<p>The jump from <strong>1% to 44%</strong> shows that action chunking is transformative, not just a marginal improvement. This 44× improvement validates the core insight: predicting sequences dramatically reduces compounding errors.</p>
 <p><strong>Impact of CVAE</strong>: - With CVAE: 35.3% success - Without CVAE: 2% success</p>
 <p><strong>Impact of temporal ensembling</strong>: - With ensembling: 38.6% - Without ensembling: 35.3%</p>
 </section>
 </section>
-<section id="act-vs-diffusion-policy" class="level2">
-<h2 class="anchored" data-anchor-id="act-vs-diffusion-policy">ACT vs Diffusion Policy</h2>
-<p>Both ACT and Diffusion Policy use action chunking, but differ in the generative model:</p>
+<section id="sec-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="sec-comparison">ACT vs Diffusion Policy</h2>
+<p>Both ACT and Diffusion Policy (which we’ll cover in <a href="../2-diffusion-policy/">Part 2</a>) use action chunking, but differ in the generative model:</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -858,11 +960,11 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 <h3 class="anchored" data-anchor-id="when-to-choose-each">When to Choose Each</h3>
 <p><strong>Use ACT when</strong>: - Fast training and inference are critical - Data is limited (50-100 demonstrations) - Tasks require consistent, repeatable execution - Precision bimanual manipulation is needed</p>
 <p><strong>Use Diffusion Policy when</strong>: - Highly multimodal behavior is needed - Tasks involve extensive repetitive motions - More training data is available - Flexibility and adaptability matter more than speed</p>
-<p><strong>Example</strong>: ACT sometimes “freezes” mid-task on repetitive up-down motions, while Diffusion Policy handles these smoothly. However, ACT trains faster and requires less data.</p>
+<p><strong>Example</strong>: ACT sometimes “freezes” mid-task on repetitive up-down motions, while Diffusion Policy handles these smoothly. However, ACT trains faster and requires less data.<span class="math inline">\(^{[2]}\)</span></p>
 </section>
 </section>
-<section id="the-aloha-system" class="level2">
-<h2 class="anchored" data-anchor-id="the-aloha-system">The ALOHA System</h2>
+<section id="sec-aloha" class="level2">
+<h2 class="anchored" data-anchor-id="sec-aloha">The ALOHA System</h2>
 <p>ACT was developed as part of the <a href="https://tonyzhaozh.github.io/aloha/">ALOHA (A Low-cost Open-source Hardware System for Bimanual Teleoperation)</a> project, which makes bimanual manipulation research accessible.</p>
 <section id="hardware-specifications" class="level3">
 <h3 class="anchored" data-anchor-id="hardware-specifications">Hardware Specifications</h3>
@@ -881,8 +983,8 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 <p><strong>Mobile tasks (&gt;80% success)</strong>: - Sautéing and serving shrimp - Opening two-door wall cabinets - Lifting wine glass while wiping with other hand - Multi-step cooking sequences</p>
 </section>
 </section>
-<section id="using-act-with-lerobot" class="level2">
-<h2 class="anchored" data-anchor-id="using-act-with-lerobot">Using ACT with LeRobot</h2>
+<section id="sec-lerobot" class="level2">
+<h2 class="anchored" data-anchor-id="sec-lerobot">Using ACT with LeRobot</h2>
 <p>The easiest way to get started with ACT is through <a href="https://huggingface.co/docs/lerobot/en/act">LeRobot</a>, Hugging Face’s robot learning framework.</p>
 <section id="installation" class="level3">
 <h3 class="anchored" data-anchor-id="installation">Installation</h3>
@@ -903,25 +1005,14 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 <p>LeRobot provides pre-trained ACT policies on HuggingFace Hub: - <a href="https://huggingface.co/lerobot/act_aloha_sim_insertion_human">lerobot/act_aloha_sim_insertion_human</a> - <a href="https://huggingface.co/lerobot/act_aloha_sim_transfer_cube_human">lerobot/act_aloha_sim_transfer_cube_human</a></p>
 </section>
 </section>
-<section id="key-takeaways" class="level2">
-<h2 class="anchored" data-anchor-id="key-takeaways">Key Takeaways</h2>
-<ol type="1">
-<li><p><strong>Action chunking is transformative</strong>: The 1% → 44% success rate improvement shows this is the right abstraction for imitation learning</p></li>
-<li><p><strong>CVAE handles human variability</strong>: Separating style (<span class="math inline">\(z\)</span>) from task execution enables learning from noisy, variable demonstrations</p></li>
-<li><p><strong>Temporal ensembling matters</strong>: Combining overlapping predictions improves smoothness and reduces errors by 3-4%</p></li>
-<li><p><strong>Train longer than loss suggests</strong>: Smoothness and success rate improve well after reconstruction loss plateaus</p></li>
-<li><p><strong>Data efficiency is remarkable</strong>: 50 demonstrations (10 minutes of human time) achieve 80-90% success on contact-rich manipulation</p></li>
-<li><p><strong>Speed vs.&nbsp;flexibility trade-off</strong>: ACT is faster and more data-efficient than Diffusion Policy, but less flexible for highly multimodal behaviors</p></li>
-</ol>
-</section>
-<section id="limitations-and-future-work" class="level2">
-<h2 class="anchored" data-anchor-id="limitations-and-future-work">Limitations and Future Work</h2>
+<section id="sec-limitations" class="level2">
+<h2 class="anchored" data-anchor-id="sec-limitations">Limitations and Future Work</h2>
 <p><strong>Current limitations</strong>: - <strong>Repetitive motions</strong>: Can freeze mid-task on cyclic movements - <strong>Multi-modal scenarios</strong>: Inference uses single <span class="math inline">\(z\)</span> sample (unimodal) - <strong>Per-task training</strong>: Original ACT is not multi-task (though extensions exist)</p>
-<p><strong>Recent extensions</strong>: - <strong>Bi-ACT</strong>: Incorporates force/torque feedback - <strong>NL-ACT</strong>: Adds natural language conditioning - <strong>One ACT Play</strong>: Learns from single demonstrations - <strong>3D-ACT</strong>: Uses point cloud inputs instead of RGB</p>
+<p><strong>Recent extensions</strong>: - <strong>Bi-ACT</strong>: Incorporates force/torque feedback for contact-rich tasks - <strong>NL-ACT</strong>: Adds natural language conditioning for instruction following - <strong>One ACT Play</strong>: Learns from single demonstrations - <strong>3D-ACT</strong>: Uses point cloud inputs instead of RGB images</p>
 </section>
-<section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>In Part 2, we’ll explore <strong>Diffusion Policy</strong> in depth — understanding how diffusion models are adapted for action generation, why they handle multimodality better than VAEs, and how they compare to ACT in practice.</p>
+<section id="sec-next" class="level2">
+<h2 class="anchored" data-anchor-id="sec-next">What’s Next?</h2>
+<p>In <a href="../2-diffusion-policy/">Part 2</a>, we’ll explore <strong>Diffusion Policy</strong> in depth — understanding how diffusion models are adapted for action generation, why they handle multimodality better than VAEs, and how they compare to ACT in practice.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -932,14 +1023,12 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Action Chunking with Transformers (ACT) demonstrates that the right abstraction can transform learning efficiency. By predicting action sequences instead of single actions:</p>
-<ul>
-<li><strong>Horizon reduction</strong>: Compounding errors drop by 100× (from 500 decisions to 5)</li>
-<li><strong>Temporal coherence</strong>: Explicit modeling of motion primitives and temporal dependencies</li>
-<li><strong>Data efficiency</strong>: 80-90% success with just 10 minutes of human demonstrations</li>
-<li><strong>Practical deployment</strong>: Fast inference (0.01s) enables real-time 50Hz control</li>
-</ul>
-<p>The combination of action chunking, CVAE for handling demonstration variability, and temporal ensembling for smoothness creates a powerful framework for learning precise manipulation from limited data.</p>
+<p>Action Chunking with Transformers (ACT) demonstrates that the right abstraction can transform learning efficiency. By predicting action sequences instead of single actions, we achieve three key benefits:</p>
+<p><strong>Horizon reduction</strong>: Compounding errors drop by 100× (from 500 decisions to 5 when k=100). This directly addresses the exponential error growth problem in behavioral cloning.</p>
+<p><strong>Temporal coherence</strong>: Explicit modeling of motion primitives and temporal dependencies. The policy learns to generate smooth, coordinated motion sequences rather than disconnected micro-actions.</p>
+<p><strong>Data efficiency</strong>: 80-90% success with just 10 minutes of human demonstrations. The CVAE framework handles demonstration variability, while temporal ensembling ensures smooth execution.</p>
+<p><strong>Practical deployment</strong>: Fast inference (0.01s per forward pass) enables real-time 50Hz control on consumer hardware.</p>
+<p>The combination of action chunking (<a href="#eq-chunking-objective" class="quarto-xref">Equation&nbsp;1</a>), CVAE for handling demonstration variability (<a href="#eq-cvae-loss" class="quarto-xref">Equation&nbsp;5</a>), and temporal ensembling for smoothness (<a href="#eq-temporal-ensembling" class="quarto-xref">Equation&nbsp;6</a>) creates a powerful framework for learning precise manipulation from limited data.</p>
 <p>Whether you’re building research systems or deploying real robots, ACT provides a practical, accessible entry point into modern imitation learning. The <a href="https://huggingface.co/docs/lerobot/en/act">LeRobot implementation</a> and <a href="https://tonyzhaozh.github.io/aloha/">ALOHA hardware designs</a> make it easier than ever to experiment with these techniques.</p>
 <p><strong>Next up</strong>: In <a href="../2-diffusion-policy/">Part 2</a>, we’ll dive into Diffusion Policy and understand why diffusion models are becoming the gold standard for robot action generation.</p>
 </div>
@@ -947,15 +1036,20 @@ Figure&nbsp;1: ACT architecture: Images from 4 cameras pass through ResNet-18 vi
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
-<p>[1] <a href="https://arxiv.org/abs/2304.13705">Zhao, T. Z., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>RSS</em>, 2023.</p>
-<p>[2] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
+<p>[1] <a href="https://arxiv.org/abs/2304.13705">Zhao, T. Z., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>Robotics: Science and Systems (RSS)</em>, 2023.</p>
+<p>[2] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>Robotics: Science and Systems (RSS)</em>, 2023.</p>
+<p>[3] <a href="https://psychclassics.yorku.ca/Miller/">Miller, G. A. “The Magical Number Seven, Plus or Minus Two: Some Limits on Our Capacity for Processing Information.”</a> <em>Psychological Review</em> 63(2), 1956.</p>
+<p>[4] <a href="https://link.springer.com/book/10.1007/978-0-85729-398-5">Camacho, E. F., &amp; Alba, C. B. “Model Predictive Control.”</a> <em>Springer</em>, 2013.</p>
+<p>[5] <a href="https://arxiv.org/abs/2005.12872">Carion, N., et al.&nbsp;“End-to-End Object Detection with Transformers (DETR).”</a> <em>ECCV</em>, 2020.</p>
+<p>[6] <a href="https://arxiv.org/abs/1312.6114">Kingma, D. P., &amp; Welling, M. “Auto-Encoding Variational Bayes.”</a> <em>ICLR</em>, 2014.</p>
 <section id="recommended-resources" class="level3">
 <h3 class="anchored" data-anchor-id="recommended-resources">Recommended Resources</h3>
 <ul>
 <li><a href="https://tonyzhaozh.github.io/aloha/">ALOHA Project Website</a> — Hardware designs and demonstration videos</li>
 <li><a href="https://github.com/tonyzhaozh/act">ACT Official GitHub Repository</a> — Original implementation</li>
 <li><a href="https://huggingface.co/docs/lerobot/en/act">LeRobot ACT Documentation</a> — Easiest way to get started</li>
-<li><a href="https://www.haonanyu.blog/post/action_chunking/">The importance of action chunking in imitation learning</a> — Technical deep dive</li>
+<li><a href="https://www.haonanyu.blog/post/action_chunking/">The importance of action chunking in imitation learning</a> — Technical deep dive by Haonan Yu</li>
+<li><a href="https://blog.phospho.ai/dissecting-action-chunking-with-transformers-act-precision-imitation-learning-for-robotic-manipulation/">Dissecting ACT</a> — Detailed technical breakdown</li>
 </ul>
 
 
