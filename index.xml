@@ -39,10 +39,11 @@
 </ul>
 </div>
 </div>
-<section id="why-robotics" class="level2">
-<h2 class="anchored" data-anchor-id="why-robotics">Why Robotics?</h2>
-<p>After spending time understanding <a href="../diffusion/1-intro/">diffusion models and flow matching</a>, I realized these techniques are revolutionizing robotics. The same principles that generate images can generate robot actions — and the field is moving fast.</p>
-<p>This series documents my learning journey into robot learning, starting from the foundations and working toward cutting-edge Vision-Language-Action models.</p>
+<section id="why-robot-learning-matters-now" class="level2">
+<h2 class="anchored" data-anchor-id="why-robot-learning-matters-now">Why Robot Learning Matters Now</h2>
+<p>After spending time understanding <a href="../../diffusion/1-intro/">diffusion models and flow matching</a>, I realized these same techniques are revolutionizing robotics. The same principles that generate photorealistic images from noise can generate precise robot actions from observations — and the field is moving remarkably fast.</p>
+<p>What makes this moment particularly exciting? For decades, robots excelled at repetitive factory tasks but struggled with everyday manipulation — folding laundry, cooking meals, clearing tables. That’s changing. Recent breakthroughs in Vision-Language-Action (VLA) models are enabling robots to understand natural language instructions, perceive complex scenes, and execute dexterous manipulation tasks that seemed impossible just a few years ago.</p>
+<p>This series documents my journey into robot learning, starting from the foundations and working toward understanding these cutting-edge VLA models.</p>
 </section>
 <section id="series-overview-planned" class="level2">
 <h2 class="anchored" data-anchor-id="series-overview-planned">Series Overview (Planned)</h2>
@@ -71,54 +72,93 @@
 <td>Draft</td>
 </tr>
 <tr class="even">
-<td><strong>Part 2</strong></td>
+<td><strong>Part 3</strong></td>
 <td>Vision-Language-Action Models</td>
 <td>Planned</td>
 </tr>
 <tr class="odd">
-<td><strong>Part 3</strong></td>
+<td><strong>Part 4</strong></td>
 <td>Simulation Environments (MuJoCo, Isaac)</td>
 <td>Planned</td>
 </tr>
 <tr class="even">
-<td><strong>Part 4</strong></td>
+<td><strong>Part 5</strong></td>
 <td>Training with LeRobot</td>
 <td>Planned</td>
 </tr>
 <tr class="odd">
-<td><strong>Part 5</strong></td>
+<td><strong>Part 6</strong></td>
 <td>Real-World Deployment</td>
 <td>Planned</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="the-big-picture-how-diffusion-enters-robotics" class="level2">
-<h2 class="anchored" data-anchor-id="the-big-picture-how-diffusion-enters-robotics">The Big Picture: How Diffusion Enters Robotics</h2>
-<p>In image generation, diffusion models learn to transform noise into images. In robotics, <strong>Diffusion Policy</strong> learns to transform observations into action sequences:</p>
+<section id="the-big-picture-from-images-to-actions" class="level2">
+<h2 class="anchored" data-anchor-id="the-big-picture-from-images-to-actions">The Big Picture: From Images to Actions</h2>
+<p>Here’s the core idea that connects image generation to robot control: <strong>the same denoising process that creates images can generate robot actions</strong>.</p>
+<section id="how-vla-models-work" class="level3">
+<h3 class="anchored" data-anchor-id="how-vla-models-work">How VLA Models Work</h3>
+<p>Vision-Language-Action models integrate three capabilities into a unified system:</p>
+<div id="fig-vla-pipeline" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-vla-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/0-intro/vla-pipeline.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-vla-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: VLA model architecture: visual observations and language instructions are processed through a vision encoder and language model backbone to generate robot actions.
+</figcaption>
+</figure>
+</div>
+<p>As shown in Figure&nbsp;1, the pipeline flows as follows:</p>
+<ol type="1">
+<li><strong>Vision Encoder</strong>: Processes camera images into visual embeddings (using models like SigLIP or DINOv2)</li>
+<li><strong>Language Model Backbone</strong>: Combines visual embeddings with natural language instructions (e.g., Llama 7B)</li>
+<li><strong>Action Decoder</strong>: Translates the model’s output into executable robot commands</li>
+</ol>
+<p>This architecture enables robots to understand both <em>what they see</em> and <em>what they’re asked to do</em>, then generate appropriate actions — all in one end-to-end system.</p>
+</section>
+<section id="the-diffusion-analogy" class="level3">
+<h3 class="anchored" data-anchor-id="the-diffusion-analogy">The Diffusion Analogy</h3>
+<p>Think of a painter creating a portrait. They don’t paint pixel-perfect details immediately — they start with rough outlines, gradually refining through many small adjustments until the final image emerges. Diffusion models work similarly: starting from pure noise, they iteratively remove noise through learned denoising steps until a coherent image appears.</p>
+<p><strong>Diffusion Policy</strong> applies this exact principle to robotics:</p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 48%">
+<col style="width: 51%">
+</colgroup>
 <thead>
 <tr class="header">
-<th>Image Generation</th>
-<th>Robot Control</th>
+<th>Image Diffusion</th>
+<th>Action Diffusion</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Noise → Image</td>
-<td>Observation → Action Trajectory</td>
+<td>Random pixels → Photorealistic image</td>
+<td>Random actions → Precise trajectory</td>
 </tr>
 <tr class="even">
-<td>Denoise iteratively</td>
-<td>Generate action chunks</td>
+<td>Conditioned on text prompt</td>
+<td>Conditioned on visual observation</td>
 </tr>
 <tr class="odd">
-<td>Handles multimodal outputs</td>
-<td>Handles multimodal action distributions</td>
+<td>Iterative denoising</td>
+<td>Iterative action refinement</td>
+</tr>
+<tr class="even">
+<td>Handles multiple valid images</td>
+<td>Handles multiple valid action sequences</td>
 </tr>
 </tbody>
 </table>
-<p>The key insight: robot tasks often have multiple valid solutions (many ways to pick up an object), and diffusion naturally handles this multimodality — the same reason it works for images.</p>
+</section>
+<section id="why-this-matters-the-multimodality-problem" class="level3">
+<h3 class="anchored" data-anchor-id="why-this-matters-the-multimodality-problem">Why This Matters: The Multimodality Problem</h3>
+<p>Consider a robot picking up a mug. A human might grasp the handle from the left, from the right, or grab the body directly — all equally valid. Traditional methods (like simple supervised learning) average these strategies together, producing an invalid “middle” action where the robot reaches between all options and grasps nothing.</p>
+<p>Diffusion models elegantly solve this. Just as they can generate many different images from the same text prompt, they can generate different action strategies from the same observation. Each denoising process starts from random noise, naturally exploring different modes of the action distribution without collapsing to a useless average.</p>
+<p><strong>The result</strong>: Diffusion Policy achieves an average <strong>46.9% improvement</strong> over prior methods across manipulation benchmarks.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></p>
+</section>
 </section>
 <section id="learning-roadmap" class="level2">
 <h2 class="anchored" data-anchor-id="learning-roadmap">Learning Roadmap</h2>
@@ -431,22 +471,31 @@
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Robot learning is at an exciting inflection point. Diffusion models and foundation models are enabling robots to learn complex manipulation tasks from demonstrations. The tooling (LeRobot, MuJoCo) and hardware (SO-101) have become accessible enough for individual researchers to contribute.</p>
-<p>This series will document the journey from understanding these methods to implementing and experimenting with them.</p>
+<p>Robot learning is at an exciting inflection point. The convergence of three trends makes this the right time to dive in:</p>
+<ol type="1">
+<li><strong>Algorithmic breakthroughs</strong>: Diffusion models and flow matching provide expressive policies that handle real-world complexity</li>
+<li><strong>Foundation models</strong>: Vision-Language-Action models leverage pretrained VLMs, dramatically reducing training data requirements</li>
+<li><strong>Accessible tools</strong>: Open frameworks (LeRobot), simulation (MuJoCo, Isaac), and affordable hardware (SO-101) lower the barrier to entry</li>
+</ol>
+<p>The field has matured from laboratory demos to practical systems. Physical Intelligence’s π0 controls 8 different robot embodiments. Figure AI’s humanoids perform household tasks. OpenVLA provides an open-source 7B parameter model anyone can fine-tune.</p>
+<p>This series will take you from the fundamentals (why learning-based approaches? why diffusion?) through the mathematics and implementation details, eventually reaching cutting-edge VLA models. Whether you’re an ML engineer wanting practical insights, a researcher seeking intuition, or a curious developer exploring the field — there’s a path for you here.</p>
+<p><strong>Next up</strong>: In <a href="../1-background/">Part 1</a>, we’ll build the conceptual foundation by understanding why classical robotics struggles, what makes reinforcement learning impractical for real robots, and why multimodal action distributions require expressive generative models.</p>
 </div>
 </div>
 </section>
 <section id="references" class="level2">
 <h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
+<section id="recommended-starting-points" class="level3">
+<h3 class="anchored" data-anchor-id="recommended-starting-points">Recommended Starting Points</h3>
 <ul>
-<li>Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.” IJRR 2024.</li>
-<li>Kim, M., et al.&nbsp;“OpenVLA: An Open-Source Vision-Language-Action Model.” arXiv 2024.</li>
-<li>Black, K., et al.&nbsp;“π0: A Vision-Language-Action Flow Model for General Robot Control.” 2024.</li>
-<li><a href="https://github.com/huggingface/lerobot">LeRobot Documentation</a></li>
-<li><a href="https://huggingface.co/learn/robotics-course/">Hugging Face Robotics Course</a></li>
+<li><a href="https://github.com/huggingface/lerobot">LeRobot Documentation</a> — Open-source robot learning framework</li>
+<li><a href="https://huggingface.co/learn/robotics-course/">Hugging Face Robotics Course</a> — Free, hands-on tutorials</li>
+<li><a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial (Capuano et al.)</a> — Comprehensive survey with code</li>
 </ul>
 
 
+</section>
 </section>
 
  ]]></description>
@@ -488,13 +537,28 @@
 </div>
 <section id="sec-why" class="level2">
 <h2 class="anchored" data-anchor-id="sec-why">Why This Post?</h2>
-<p>In <a href="../0-intro/">Part 0</a>, we surveyed the robot learning landscape. Before diving into Diffusion Policy, we need to understand the problems it solves. This post answers three questions:</p>
+<p>In <a href="../0-intro/">Part 0</a>, we surveyed the robot learning landscape and saw how diffusion models are revolutionizing robotic manipulation. But to truly understand <em>why</em> Diffusion Policy works so well, we need to step back and examine the evolution of robot learning approaches.</p>
+<p>This post builds the conceptual foundation by answering three essential questions:</p>
 <ol type="1">
-<li><strong>Why learning?</strong> What’s wrong with classical robotics?</li>
-<li><strong>Why not RL?</strong> What makes reinforcement learning hard for real robots?</li>
-<li><strong>Why diffusion?</strong> What problem does it solve that simpler approaches can’t?</li>
+<li><strong>Why learning?</strong> What fundamental limitations make classical robotics struggle with everyday tasks?</li>
+<li><strong>Why not RL?</strong> What makes reinforcement learning impractical for real-world robot manipulation?</li>
+<li><strong>Why diffusion?</strong> What specific problem does it solve that simpler imitation learning approaches cannot handle?</li>
 </ol>
-<p>The structure follows the excellent <a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> by Capuano et al., which covers these topics with hands-on LeRobot code.</p>
+<p>By the end, you’ll understand why generating actions like generating images is such a powerful idea — and why it took the field decades to arrive at this solution.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>For Readers in a Hurry
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you’re already familiar with RL/imitation learning basics, you can skip to Section&nbsp;5 to see the core problem that diffusion models solve. The key insight: naive behavioral cloning averages over valid strategies, producing invalid actions. Diffusion models represent the full action distribution, naturally handling multimodality.</p>
+</div>
+</div>
+<p><strong>This post follows the structure of</strong> <a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> <strong>by Capuano et al., which provides hands-on LeRobot code for these concepts.</strong></p>
 </section>
 <section id="sec-classical" class="level2">
 <h2 class="anchored" data-anchor-id="sec-classical">Classical Robotics: Why We Need Learning</h2>
@@ -609,7 +673,13 @@
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Training a simulated humanoid to walk takes approximately 10 billion environment steps.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"> At real-time (1 step per 0.01s), that’s roughly <strong>3,000 years</strong> of continuous robot operation. Even with 100 robots running in parallel, we’d need 30 years.</p>
+<p>Consider these stark comparisons:</p>
+<ul>
+<li><strong>Atari games</strong>: Rainbow DQN needs ~18 million frames (<strong>83 hours</strong> of gameplay) to match human performance. Most humans master these games in <strong>minutes</strong>.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B11%5D%7D"></li>
+<li><strong>Simulated walking</strong>: Training a humanoid to walk requires ~10 billion environment steps.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"> At real-time, that’s <strong>3,000 years</strong> of continuous operation. Even with 100 robots in parallel: 30 years.</li>
+<li><strong>Comparison to humans</strong>: A baby learns to grasp objects after seeing just a few examples. RL systems need millions of attempts.</li>
+</ul>
+<p>The gap between human sample efficiency and RL is not merely quantitative — it’s fundamental. Natural intelligence extracts far more signal from far less data.</p>
 </div>
 </div>
 <p>Research has made progress on each challenge — sample-efficient algorithms (SAC, TD3), offline RL, sim-to-real transfer with domain randomization — but contact-rich manipulation remains difficult. This motivates a different approach.</p>
@@ -701,22 +771,39 @@ Figure&nbsp;1: Distribution shift: during training the policy sees expert states
 <p>Distribution shift isn’t the only issue. Even with perfect training data coverage, naive BC fails on a surprisingly common class of problems.</p>
 <section id="sec-averaging" class="level3">
 <h3 class="anchored" data-anchor-id="sec-averaging">Why Averaging Fails</h3>
-<p>Consider picking up a mug. A human might:</p>
+<p>The multimodality problem is best understood through concrete examples:</p>
+<p><strong>Example 1: Obstacle Avoidance</strong></p>
+<p>A mobile robot approaches a box blocking its path. The demonstrations show two valid strategies: go left around the obstacle OR go right around it. What does naive behavioral cloning learn?</p>
+<div id="fig-obstacle-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-obstacle-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/1-background/obstacle-avoidance-multimodality.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-obstacle-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Obstacle avoidance multimodality: both “go left” and “go right” are valid strategies, but their average produces “go straight” — directly into the obstacle.
+</figcaption>
+</figure>
+</div>
+<p>As Figure&nbsp;2 illustrates, it averages: “go left” + “go right” = “go straight” — directly into the obstacle! While both modes are acceptable, their mean is catastrophic.</p>
+<p><strong>Example 2: Grasping a Mug</strong></p>
+<p>Consider picking up a coffee mug. A human might:</p>
 <ul>
 <li>Grasp the handle from the left</li>
 <li>Grasp the handle from the right</li>
-<li>Grasp the body with a power grip</li>
-<li>Pinch the rim</li>
+<li>Grab the body with a power grip</li>
+<li>Pinch the rim with a precision grip</li>
 </ul>
-<p>All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss?</p>
-<p>The network learns to predict the <strong>average</strong> action — reaching for somewhere <em>between</em> all the options, which corresponds to <strong>none of them</strong>. The robot might reach toward the center of the mug and miss everything.</p>
+<p>All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss (mean squared error)?</p>
+<p>The network learns to predict the <strong>average</strong> action — reaching for somewhere <em>between</em> all the options, which corresponds to <strong>none of them</strong>. The robot reaches toward the center of the mug and grasps nothing.</p>
+<p><strong>Example 3: Intersection Navigation</strong></p>
+<p>From autonomous driving research:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B12%5D%7D"> At an intersection, demonstrations show turning left, going straight, and turning right (depending on destination). Standard behavioral cloning “primarily follows a single trajectory” — it collapses to one mode and fails to generalize. The robot gets stuck, unable to make different decisions at the same location.</p>
 <div id="fig-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="https://layernorm.dev/posts/robotics/1-background/multimodality-problem.png" class="img-fluid figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid “average” prediction (red dotted) that results from MSE training.
+Figure&nbsp;3: The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid “average” prediction (red dotted) that results from MSE training.
 </figcaption>
 </figure>
 </div>
@@ -730,13 +817,30 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>A natural reaction is “just have demonstrators use the same strategy.” But multimodality is unavoidable in real-world manipulation. Even the same person grasping the same mug will vary their approach based on subtle factors (arm position, comfort, habit). Eliminating multimodality requires unrealistic constraints on data collection.</p>
+<p>A natural reaction is: “Just have demonstrators use the same strategy every time.” But multimodality is <strong>fundamentally unavoidable</strong> in real-world manipulation:</p>
+<ol type="1">
+<li><strong>Inherent task ambiguity</strong>: Many tasks have multiple equally valid solutions (push object left vs.&nbsp;right, approach from front vs.&nbsp;side)</li>
+<li><strong>Human variation</strong>: Even the same person performing the same task varies their approach based on subtle factors — arm configuration, starting pose, comfort, or unconscious habit</li>
+<li><strong>Environmental differences</strong>: Small changes in object placement, lighting, or scene clutter naturally lead to different valid strategies</li>
+</ol>
+<p>Attempting to eliminate multimodality would require: - Rigidly controlling demonstrator behavior (often impossible) - Restricting tasks to those with single solutions (defeats the purpose of learning-based approaches) - Collecting unrealistically large datasets where one mode dominates by sheer numbers</p>
+<p>The right solution isn’t to eliminate multimodality — it’s to use policy representations that can handle it.</p>
 </div>
 </div>
 </section>
 <section id="sec-policy-representations" class="level3">
 <h3 class="anchored" data-anchor-id="sec-policy-representations">From Deterministic to Probabilistic Policies</h3>
 <p>The solution is to represent the policy as a <strong>probability distribution</strong> over actions, not a single prediction. Different architectures handle multimodality with varying success:</p>
+<div id="fig-policy-representations" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-policy-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/1-background/policy-representations-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-policy-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Comparison of policy representations: Gaussian policies capture one mode, mixture models need fixed K components, while diffusion models naturally sample from arbitrary multimodal distributions.
+</figcaption>
+</figure>
+</div>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 34%">
@@ -778,6 +882,7 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 </tr>
 </tbody>
 </table>
+<p>As illustrated in Figure&nbsp;4, diffusion models are fundamentally different. Unlike Gaussian policies (single mode) or mixture models (fixed K modes), diffusion generates diverse samples by starting each inference from different random noise. The denoising process naturally explores multiple modes without averaging them away.</p>
 <p>This is why Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> works so well — diffusion models are <em>designed</em> to learn complex, multimodal distributions. They represent the entire action distribution, not just its mean.</p>
 </section>
 </section>
@@ -796,13 +901,28 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 </section>
 <section id="diffusion-models" class="level3">
 <h3 class="anchored" data-anchor-id="diffusion-models">Diffusion Models</h3>
-<p>Diffusion models learn to reverse a noise-adding process:</p>
+<p>Diffusion models learn to reverse a noise-adding process. Think of it like a painter creating a portrait:</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Painter Analogy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A skilled painter doesn’t create pixel-perfect details immediately. They start with rough outlines and gradually refine through many small adjustments — adding shadows here, highlighting there — until the final image emerges. Diffusion works similarly: starting from pure noise, the model iteratively removes noise through learned denoising steps until coherent data appears.</p>
+</div>
+</div>
+<p><strong>The technical process:</strong></p>
 <ol type="1">
-<li><strong>Forward process</strong>: Gradually add Gaussian noise to data until it becomes pure noise</li>
-<li><strong>Reverse process</strong>: Train a neural network to denoise step-by-step</li>
-<li><strong>Sampling</strong>: Start from noise, iteratively denoise to generate a sample</li>
+<li><strong>Forward process</strong>: Gradually add Gaussian noise to data until it becomes pure random noise</li>
+<li><strong>Reverse process</strong>: Train a neural network <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_%5Ctheta"> to predict and remove noise step-by-step</li>
+<li><strong>Sampling</strong>: Start from random noise, iteratively denoise to generate a sample</li>
 </ol>
-<p><strong>In robotics</strong>: Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> generates action trajectories by denoising. Each “sample” from the diffusion model is a full action sequence.</p>
+<p><strong>Why this handles multimodality:</strong> Each sampling run starts from different random noise, naturally exploring different modes of the distribution. The denoising process acts like gradient descent on a learned energy landscape — different initializations converge to different modes without averaging them together.</p>
+<p><strong>In robotics</strong>: Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> generates action trajectories by denoising. Given an observation (camera image + robot state), it samples from the conditional distribution <img src="https://latex.codecogs.com/png.latex?p(%5Ctext%7Bactions%7D%20%7C%20%5Ctext%7Bobservation%7D)"> by starting with random noise and iteratively refining it into a plausible action sequence.</p>
 </section>
 <section id="flow-matching" class="level3">
 <h3 class="anchored" data-anchor-id="flow-matching">Flow Matching</h3>
@@ -897,6 +1017,8 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 <p>[8] <a href="https://arxiv.org/abs/2304.13705">Zhao, T., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>RSS</em>, 2023. (ACT paper)</p>
 <p>[9] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
 <p>[10] <a href="https://arxiv.org/abs/2410.24164">Black, K., et al.&nbsp;“π₀: A Vision-Language-Action Flow Model for General Robot Control.”</a> <em>arXiv</em>, 2024.</p>
+<p>[11] <a href="https://www.alexirpan.com/2018/02/14/rl-hard.html">Irpan, A. “Deep Reinforcement Learning Doesn’t Work Yet.”</a> Blog post, 2018.</p>
+<p>[12] <a href="https://openaccess.thecvf.com/content_ICCV_2019/papers/Codevilla_Exploring_the_Limitations_of_Behavior_Cloning_for_Autonomous_Driving_ICCV_2019_paper.pdf">Codevilla, F., et al.&nbsp;“Exploring the Limitations of Behavior Cloning for Autonomous Driving.”</a> <em>ICCV</em>, 2019.</p>
 
 
 </section>

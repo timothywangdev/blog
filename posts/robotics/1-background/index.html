@@ -429,13 +429,28 @@ window.Quarto = {
 </div>
 <section id="sec-why" class="level2">
 <h2 class="anchored" data-anchor-id="sec-why">Why This Post?</h2>
-<p>In <a href="../0-intro/">Part 0</a>, we surveyed the robot learning landscape. Before diving into Diffusion Policy, we need to understand the problems it solves. This post answers three questions:</p>
+<p>In <a href="../0-intro/">Part 0</a>, we surveyed the robot learning landscape and saw how diffusion models are revolutionizing robotic manipulation. But to truly understand <em>why</em> Diffusion Policy works so well, we need to step back and examine the evolution of robot learning approaches.</p>
+<p>This post builds the conceptual foundation by answering three essential questions:</p>
 <ol type="1">
-<li><strong>Why learning?</strong> What’s wrong with classical robotics?</li>
-<li><strong>Why not RL?</strong> What makes reinforcement learning hard for real robots?</li>
-<li><strong>Why diffusion?</strong> What problem does it solve that simpler approaches can’t?</li>
+<li><strong>Why learning?</strong> What fundamental limitations make classical robotics struggle with everyday tasks?</li>
+<li><strong>Why not RL?</strong> What makes reinforcement learning impractical for real-world robot manipulation?</li>
+<li><strong>Why diffusion?</strong> What specific problem does it solve that simpler imitation learning approaches cannot handle?</li>
 </ol>
-<p>The structure follows the excellent <a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><span class="math inline">\(^{[1]}\)</span> by Capuano et al., which covers these topics with hands-on LeRobot code.</p>
+<p>By the end, you’ll understand why generating actions like generating images is such a powerful idea — and why it took the field decades to arrive at this solution.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>For Readers in a Hurry
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you’re already familiar with RL/imitation learning basics, you can skip to <a href="#sec-multimodality" class="quarto-xref">Section&nbsp;5</a> to see the core problem that diffusion models solve. The key insight: naive behavioral cloning averages over valid strategies, producing invalid actions. Diffusion models represent the full action distribution, naturally handling multimodality.</p>
+</div>
+</div>
+<p><strong>This post follows the structure of</strong> <a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><span class="math inline">\(^{[1]}\)</span> <strong>by Capuano et al., which provides hands-on LeRobot code for these concepts.</strong></p>
 </section>
 <section id="sec-classical" class="level2">
 <h2 class="anchored" data-anchor-id="sec-classical">Classical Robotics: Why We Need Learning</h2>
@@ -554,7 +569,13 @@ window.Quarto = {
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Training a simulated humanoid to walk takes approximately 10 billion environment steps.<span class="math inline">\(^{[6]}\)</span> At real-time (1 step per 0.01s), that’s roughly <strong>3,000 years</strong> of continuous robot operation. Even with 100 robots running in parallel, we’d need 30 years.</p>
+<p>Consider these stark comparisons:</p>
+<ul>
+<li><strong>Atari games</strong>: Rainbow DQN needs ~18 million frames (<strong>83 hours</strong> of gameplay) to match human performance. Most humans master these games in <strong>minutes</strong>.<span class="math inline">\(^{[11]}\)</span></li>
+<li><strong>Simulated walking</strong>: Training a humanoid to walk requires ~10 billion environment steps.<span class="math inline">\(^{[6]}\)</span> At real-time, that’s <strong>3,000 years</strong> of continuous operation. Even with 100 robots in parallel: 30 years.</li>
+<li><strong>Comparison to humans</strong>: A baby learns to grasp objects after seeing just a few examples. RL systems need millions of attempts.</li>
+</ul>
+<p>The gap between human sample efficiency and RL is not merely quantitative — it’s fundamental. Natural intelligence extracts far more signal from far less data.</p>
 </div>
 </div>
 <p>Research has made progress on each challenge — sample-efficient algorithms (SAC, TD3), offline RL, sim-to-real transfer with domain randomization — but contact-rich manipulation remains difficult. This motivates a different approach.</p>
@@ -650,22 +671,39 @@ Figure&nbsp;1: Distribution shift: during training the policy sees expert states
 <p>Distribution shift isn’t the only issue. Even with perfect training data coverage, naive BC fails on a surprisingly common class of problems.</p>
 <section id="sec-averaging" class="level3">
 <h3 class="anchored" data-anchor-id="sec-averaging">Why Averaging Fails</h3>
-<p>Consider picking up a mug. A human might:</p>
+<p>The multimodality problem is best understood through concrete examples:</p>
+<p><strong>Example 1: Obstacle Avoidance</strong></p>
+<p>A mobile robot approaches a box blocking its path. The demonstrations show two valid strategies: go left around the obstacle OR go right around it. What does naive behavioral cloning learn?</p>
+<div id="fig-obstacle-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-obstacle-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="obstacle-avoidance-multimodality.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-obstacle-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Obstacle avoidance multimodality: both “go left” and “go right” are valid strategies, but their average produces “go straight” — directly into the obstacle.
+</figcaption>
+</figure>
+</div>
+<p>As <a href="#fig-obstacle-multimodality" class="quarto-xref">Figure&nbsp;2</a> illustrates, it averages: “go left” + “go right” = “go straight” — directly into the obstacle! While both modes are acceptable, their mean is catastrophic.</p>
+<p><strong>Example 2: Grasping a Mug</strong></p>
+<p>Consider picking up a coffee mug. A human might:</p>
 <ul>
 <li>Grasp the handle from the left</li>
 <li>Grasp the handle from the right</li>
-<li>Grasp the body with a power grip</li>
-<li>Pinch the rim</li>
+<li>Grab the body with a power grip</li>
+<li>Pinch the rim with a precision grip</li>
 </ul>
-<p>All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss?</p>
-<p>The network learns to predict the <strong>average</strong> action — reaching for somewhere <em>between</em> all the options, which corresponds to <strong>none of them</strong>. The robot might reach toward the center of the mug and miss everything.</p>
+<p>All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss (mean squared error)?</p>
+<p>The network learns to predict the <strong>average</strong> action — reaching for somewhere <em>between</em> all the options, which corresponds to <strong>none of them</strong>. The robot reaches toward the center of the mug and grasps nothing.</p>
+<p><strong>Example 3: Intersection Navigation</strong></p>
+<p>From autonomous driving research:<span class="math inline">\(^{[12]}\)</span> At an intersection, demonstrations show turning left, going straight, and turning right (depending on destination). Standard behavioral cloning “primarily follows a single trajectory” — it collapses to one mode and fails to generalize. The robot gets stuck, unable to make different decisions at the same location.</p>
 <div id="fig-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="multimodality-problem.png" class="img-fluid figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid “average” prediction (red dotted) that results from MSE training.
+Figure&nbsp;3: The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid “average” prediction (red dotted) that results from MSE training.
 </figcaption>
 </figure>
 </div>
@@ -679,13 +717,30 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>A natural reaction is “just have demonstrators use the same strategy.” But multimodality is unavoidable in real-world manipulation. Even the same person grasping the same mug will vary their approach based on subtle factors (arm position, comfort, habit). Eliminating multimodality requires unrealistic constraints on data collection.</p>
+<p>A natural reaction is: “Just have demonstrators use the same strategy every time.” But multimodality is <strong>fundamentally unavoidable</strong> in real-world manipulation:</p>
+<ol type="1">
+<li><strong>Inherent task ambiguity</strong>: Many tasks have multiple equally valid solutions (push object left vs.&nbsp;right, approach from front vs.&nbsp;side)</li>
+<li><strong>Human variation</strong>: Even the same person performing the same task varies their approach based on subtle factors — arm configuration, starting pose, comfort, or unconscious habit</li>
+<li><strong>Environmental differences</strong>: Small changes in object placement, lighting, or scene clutter naturally lead to different valid strategies</li>
+</ol>
+<p>Attempting to eliminate multimodality would require: - Rigidly controlling demonstrator behavior (often impossible) - Restricting tasks to those with single solutions (defeats the purpose of learning-based approaches) - Collecting unrealistically large datasets where one mode dominates by sheer numbers</p>
+<p>The right solution isn’t to eliminate multimodality — it’s to use policy representations that can handle it.</p>
 </div>
 </div>
 </section>
 <section id="sec-policy-representations" class="level3">
 <h3 class="anchored" data-anchor-id="sec-policy-representations">From Deterministic to Probabilistic Policies</h3>
 <p>The solution is to represent the policy as a <strong>probability distribution</strong> over actions, not a single prediction. Different architectures handle multimodality with varying success:</p>
+<div id="fig-policy-representations" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-policy-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="policy-representations-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-policy-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Comparison of policy representations: Gaussian policies capture one mode, mixture models need fixed K components, while diffusion models naturally sample from arbitrary multimodal distributions.
+</figcaption>
+</figure>
+</div>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 34%">
@@ -727,6 +782,7 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 </tr>
 </tbody>
 </table>
+<p>As illustrated in <a href="#fig-policy-representations" class="quarto-xref">Figure&nbsp;4</a>, diffusion models are fundamentally different. Unlike Gaussian policies (single mode) or mixture models (fixed K modes), diffusion generates diverse samples by starting each inference from different random noise. The denoising process naturally explores multiple modes without averaging them away.</p>
 <p>This is why Diffusion Policy<span class="math inline">\(^{[9]}\)</span> works so well — diffusion models are <em>designed</em> to learn complex, multimodal distributions. They represent the entire action distribution, not just its mean.</p>
 </section>
 </section>
@@ -745,13 +801,28 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 </section>
 <section id="diffusion-models" class="level3">
 <h3 class="anchored" data-anchor-id="diffusion-models">Diffusion Models</h3>
-<p>Diffusion models learn to reverse a noise-adding process:</p>
+<p>Diffusion models learn to reverse a noise-adding process. Think of it like a painter creating a portrait:</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Painter Analogy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A skilled painter doesn’t create pixel-perfect details immediately. They start with rough outlines and gradually refine through many small adjustments — adding shadows here, highlighting there — until the final image emerges. Diffusion works similarly: starting from pure noise, the model iteratively removes noise through learned denoising steps until coherent data appears.</p>
+</div>
+</div>
+<p><strong>The technical process:</strong></p>
 <ol type="1">
-<li><strong>Forward process</strong>: Gradually add Gaussian noise to data until it becomes pure noise</li>
-<li><strong>Reverse process</strong>: Train a neural network to denoise step-by-step</li>
-<li><strong>Sampling</strong>: Start from noise, iteratively denoise to generate a sample</li>
+<li><strong>Forward process</strong>: Gradually add Gaussian noise to data until it becomes pure random noise</li>
+<li><strong>Reverse process</strong>: Train a neural network <span class="math inline">\(\epsilon_\theta\)</span> to predict and remove noise step-by-step</li>
+<li><strong>Sampling</strong>: Start from random noise, iteratively denoise to generate a sample</li>
 </ol>
-<p><strong>In robotics</strong>: Diffusion Policy<span class="math inline">\(^{[9]}\)</span> generates action trajectories by denoising. Each “sample” from the diffusion model is a full action sequence.</p>
+<p><strong>Why this handles multimodality:</strong> Each sampling run starts from different random noise, naturally exploring different modes of the distribution. The denoising process acts like gradient descent on a learned energy landscape — different initializations converge to different modes without averaging them together.</p>
+<p><strong>In robotics</strong>: Diffusion Policy<span class="math inline">\(^{[9]}\)</span> generates action trajectories by denoising. Given an observation (camera image + robot state), it samples from the conditional distribution <span class="math inline">\(p(\text{actions} | \text{observation})\)</span> by starting with random noise and iteratively refining it into a plausible action sequence.</p>
 </section>
 <section id="flow-matching" class="level3">
 <h3 class="anchored" data-anchor-id="flow-matching">Flow Matching</h3>
@@ -848,6 +919,8 @@ Figure&nbsp;2: The multimodality problem: three valid grasping strategies (blue,
 <p>[8] <a href="https://arxiv.org/abs/2304.13705">Zhao, T., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>RSS</em>, 2023. (ACT paper)</p>
 <p>[9] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
 <p>[10] <a href="https://arxiv.org/abs/2410.24164">Black, K., et al.&nbsp;“π₀: A Vision-Language-Action Flow Model for General Robot Control.”</a> <em>arXiv</em>, 2024.</p>
+<p>[11] <a href="https://www.alexirpan.com/2018/02/14/rl-hard.html">Irpan, A. “Deep Reinforcement Learning Doesn’t Work Yet.”</a> Blog post, 2018.</p>
+<p>[12] <a href="https://openaccess.thecvf.com/content_ICCV_2019/papers/Codevilla_Exploring_the_Limitations_of_Behavior_Cloning_for_Autonomous_Driving_ICCV_2019_paper.pdf">Codevilla, F., et al.&nbsp;“Exploring the Limitations of Behavior Cloning for Autonomous Driving.”</a> <em>ICCV</em>, 2019.</p>
 
 
 </section>
