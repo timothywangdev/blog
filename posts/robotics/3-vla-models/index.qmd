@@ -139,43 +139,56 @@ This is where VLA models diverge into two paradigms:
 
 **Core idea**: Treat actions as language.
 
+::: {.callout-tip appearance="simple"}
+## Analogy: Learning Language #51
+
+Imagine hiring someone fluent in 50 languages to learn language #51. RT-2 works the same way — pre-trained on millions of internet images and text, it learns the "language of robot actions" faster because it already understands what objects are and what words mean.
+:::
+
 Actions are discretized into bins and represented as tokens:
 - Continuous action: `[x=0.342, y=-0.156, z=0.891, ...]`
 - Discretized (256 bins): `[token_87, token_102, token_228, ...]`
+- As text sequence: `"87 102 228..."`
 
-**Training**: Same cross-entropy loss as language modeling.
+**Training**: Same cross-entropy loss as language modeling — treating robot movements as another language to predict.
 
 **Advantages**:
 - Leverages existing LLM architecture and training infrastructure
-- Simple to implement
-- Proven to work at scale
+- Simple to implement (no new architectures needed)
+- Proven to work at scale (billions of parameters)
 
 **Disadvantages**:
-- Limited precision (256 bins per dimension)
-- Poor for high-frequency dexterous control
+- Limited precision: ±0.5cm, ±3° quantization errors
+- Poor for high-frequency dexterous control (autoregressive generation is slow)
 - Action space grows exponentially with dimensions
 
 #### Paradigm B: Continuous Flow Approach (π0, Octo)
 
 **Core idea**: Generate smooth action trajectories.
 
-Uses **flow matching** or **diffusion** to produce continuous outputs:
+::: {.callout-tip appearance="simple"}
+## Analogy: LEGO vs Clay
+
+Discrete tokens are like building with LEGO blocks — you have 256 fixed sizes per dimension, making the math simple but sacrificing precision. Flow matching is like sculpting with clay — smooth, continuous, precise, but requires more skill to train.
+:::
+
+**Mathematical formulation**: Flow matching learns a velocity field that continuously transforms random noise into target actions:
 
 $$
 \frac{d\mathbf{a}}{dt} = v_\theta(\mathbf{a}, t, \mathbf{o}, \mathbf{c})
 $$ {#eq-flow-matching}
 
-where $\mathbf{a}$ is the action trajectory, $\mathbf{o}$ is the observation, and $\mathbf{c}$ is the language conditioning.
+where $v_\theta$ is the learned velocity field that transforms noise $\mathbf{a}$ over time $t$, conditioned on visual observation $\mathbf{o}$ and language instruction $\mathbf{c}$.
 
 **Advantages**:
-- High-frequency control (50-100 Hz)
-- Precise for dexterous manipulation
+- High-frequency control (50-100 Hz) for responsive manipulation
+- No quantization errors — physically plausible smooth movements
 - Naturally handles action chunking (recall [Part 1.5](../1.5-action-chunking/#sec-action-chunking))
 
 **Disadvantages**:
-- More complex training
-- Slower inference (iterative generation)
-- Requires more compute
+- More complex training (requires learning continuous transformations)
+- Slower inference (iterative generation through denoising steps)
+- Can degrade language understanding if not carefully designed
 
 ::: {.callout-warning}
 ## Common Misconception: "VLAs Are Just LLMs for Robots"
@@ -192,7 +205,15 @@ The architectural similarity is useful (we can leverage pre-training!), but the 
 
 ## Co-Training: The Secret Sauce {#sec-cotraining}
 
-The key innovation that makes VLAs work is **co-training** on two complementary data sources.
+RT-2's emergent capabilities raise an obvious question: how does a model learn both "what a rock is" and "how to grasp it"? The answer lies in **co-training** — simultaneously learning from two complementary data sources that each provide different types of knowledge.
+
+::: {.callout-tip appearance="simple"}
+## Intuition: Book Knowledge + Practice
+
+Internet data is like reading books about physics, nutrition, and object categories. Robot demonstrations are like hands-on practice in the kitchen. You need both: books teach you *what* ingredients do, practice teaches you *how* to chop them. Co-training gives robots this dual learning path.
+:::
+
+Let's understand what each data source provides:
 
 ### Internet-Scale Vision-Language Data
 
@@ -256,7 +277,7 @@ This dataset is to robotics what ImageNet was to computer vision — a foundatio
 
 ## Key VLA Models {#sec-models}
 
-Let's examine the landmark models that shaped the field.
+With the architecture and training principles established, let's trace the field's evolution through landmark models. Each represents a key innovation: RT-1 proved transformers scale to real robots, RT-2 unified actions with language, OpenVLA democratized access, π0 introduced flow matching, and Octo enabled cross-embodiment transfer.
 
 ### RT-1: Robotics Transformer (December 2022) {#sec-rt1}
 
@@ -292,11 +313,28 @@ This allows training on both:
 - **3× improvement** in generalization over RT-1
 - **32% → 62%** success on unseen scenarios
 
-**Emergent Capabilities**:
-- Symbol understanding: Place object on specific number or icon
-- Semantic reasoning: "Pick the object that could be used as a hammer" → selects rock
-- Comparative: "Pick the smallest object"
-- Chain-of-thought: Multi-step reasoning for tool selection
+**Emergent Capabilities** (never explicitly trained):
+
+1. **Semantic reasoning**: "Pick up the object that could serve as a hammer"
+   - Sees: [rock, banana, tissue box]
+   - Selects: Rock (understanding hard + heavy = hammer-like)
+   - Not just pattern matching — reasoning about tool affordances
+
+2. **Mathematical understanding**: "Move the banana to the sum of two plus one"
+   - Computes: 2 + 1 = 3
+   - Moves banana to location marked "3"
+
+3. **Symbol recognition**: "Place the apple in the bowl marked with the same color"
+   - Recognizes apple is red
+   - Finds red-marked bowl
+   - Executes color matching
+
+4. **Comparative reasoning**: "Pick up the bag about to fall off the table"
+   - Evaluates spatial stability
+   - Predicts future state
+   - Prioritizes urgent action
+
+These capabilities emerge from internet-scale pre-training, not robot demonstrations. RT-2 learned what rocks, numbers, and colors *mean* from billions of web images — robot training only taught it *how to move*.
 
 ::: {.callout-important}
 ## Key Insight: Web-Scale Pre-Training Transfers to Physical Control
@@ -458,7 +496,17 @@ Language compresses this: "Pick up the [COLOR] [OBJECT]" captures infinite varia
 
 ## Limitations and Open Challenges {#sec-limitations}
 
-Despite impressive progress, VLAs face significant limitations:
+Despite impressive progress, VLAs face significant limitations. Understanding these challenges is crucial for realistic deployment expectations.
+
+::: {.callout-warning}
+## Common Misconception: "VLAs Always Follow Language Instructions"
+
+Recent research reveals a surprising finding: vision-only models can achieve success rates close to language-conditioned baselines (44.6% vs 47.8%). This "vision shortcut problem" means VLAs sometimes ignore language instructions entirely, relying instead on visual correlations learned from training data.
+
+**Why this happens**: In goal-driven datasets, language instructions are highly predictable from visual observations alone. The model learns "when I see a mug, grasp it" rather than "when instructed to grasp the mug, do so." Minor changes in instruction phrasing or background can cause catastrophic failures.
+
+**Implication**: VLAs may succeed in controlled labs but fail when language precision matters — exactly when you need them most in real-world scenarios with novel instructions.
+:::
 
 ### The Deployment Gap
 
@@ -506,6 +554,20 @@ Even "data-efficient" VLAs require:
 Compare to:
 - **ACT**: 50 demonstrations (10 minutes) for 80-90% success
 - **Human**: A few examples to learn new manipulation
+
+::: {.callout-important}
+## When NOT to Use VLAs
+
+Based on current limitations, avoid VLAs for:
+
+- **Safety-critical applications** without human oversight (>99.9% reliability required, VLAs achieve 60-80%)
+- **High-frequency control** tasks requiring sub-100ms response times (current VLAs run at 6-10 Hz)
+- **Single-task deployment** where maximum reliability matters more than generalization (use ACT or Diffusion Policy instead)
+- **Completely novel embodiments** not represented in training data (zero-shot transfer fails without similar robots in OXE dataset)
+- **Precision-critical tasks** where ±0.5cm error is unacceptable (discrete tokenization limits accuracy)
+
+VLAs excel at: diverse tasks, novel objects, semantic reasoning, and zero-shot execution. Specialized policies excel at: maximum reliability, high-frequency control, and minimal data requirements. Choose based on your constraints.
+:::
 
 ## The Future of VLAs {#sec-future}
 
