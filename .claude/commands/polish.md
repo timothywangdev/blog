@@ -173,13 +173,47 @@ Write as if explaining to a brilliant but exhausted PhD student at 2am. They can
 - Save images in the same directory as the post (e.g., `posts/diffusion/1-intro/diagram.png`)
 - Use descriptive filenames (e.g., `score-function-vector-field.png`, not `fig1.png`)
 
+**Professional diagram requirements** (critical - images must look like academic paper figures):
+
+- **Style**: Clean vector-style technical illustrations, NOT photorealistic AI art
+- **Aesthetic**: Simple geometric shapes, flat colors, thin black outlines, clear sans-serif labels
+- **No AI look**: Avoid gradients, 3D effects, glossy rendering, overly polished/rendered appearance
+- **Academic standard**: Should look like figures from IEEE/ACM/NeurIPS papers - professional, minimal, clear
+- **Technical detail**: Include sufficient detail for clarity:
+  - Proper labels on all components
+  - Clear arrows showing data/information flow
+  - Annotations explaining key elements
+  - Legend if needed for clarity
+- **Block diagram style**: For architecture diagrams, use simple rectangular boxes with rounded corners
+- **Process flow style**: For sequential processes, use clear horizontal/vertical flow with connecting arrows
+- **Comparison style**: For before/after or A vs B, use side-by-side layouts with clear delineation
+
+**Bad examples** (what to avoid):
+
+- Overly artistic/stylized renders that look AI-generated
+- Photorealistic 3D graphics
+- Busy backgrounds or decorative elements
+- Unclear or missing labels
+- Gradients and shadows that distract from content
+
+**Good examples** (aim for):
+
+- Clean block diagrams with flat colors
+- Simple flowcharts with clear arrows
+- Minimal line drawings with precise labels
+- Vector-style illustrations like hand-drawn technical diagrams
+
 **Quality control:**
 
 - **Inspect after generation**: Read/view the generated image to verify:
   - Correct labels and clear visualization
   - **Mathematical correctness**: Arrow directions, signs, relationships must be accurate (e.g., positive divergence = arrows pointing outward, not inward)
+  - **Professional appearance**: Looks like a research paper figure, not AI art
+  - **Sufficient technical detail**: All components are properly labeled and explained
   - Matches the concept being explained
-- If not satisfactory, regenerate with an improved prompt. Repeat until the image is suitable.
+- **If the image looks AI-generated or unprofessional**: Regenerate with a prompt emphasizing "clean vector-style technical illustration", "academic paper figure aesthetic", "simple flat design", "no 3D effects", "no gradients"
+- If not satisfactory after 2 attempts, consider describing a simpler diagram or using text explanation instead
+- Repeat until the image meets professional standards
 
 ### Discoverability
 
