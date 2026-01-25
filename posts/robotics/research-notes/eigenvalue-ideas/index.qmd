@@ -1,0 +1,285 @@
+---
+title: "Research Notes: Eigenvalue Research Ideas — Novel Breakthroughs"
+author: "Hujie Wang"
+date: "2026-01-25"
+categories: [robotics, research-ideas, eigenvalues, SSM, private]
+toc: true
+draft: true
+listing: false
+---
+
+::: {.callout-warning appearance="default"}
+## Private Research Notes
+
+This post contains novel research directions derived from eigenvalue dynamics insights. Keep draft until ideas are explored/published.
+:::
+
+## Research Directions: What's Underexplored {#sec-research}
+
+Based on the eigenvalue convergence analysis, here are concrete research directions.
+
+### 1. Eigenvalue-Constrained Policy Learning
+
+**Hypothesis**: Constraining policy networks to have eigenvalues near the unit circle (with complex components) will improve training stability and sample efficiency.
+
+**Approach**:
+```python
+class EigenvalueConstrainedRNN(nn.Module):
+    def __init__(self, hidden_dim, target_radius=0.99):
+        # Parameterize W via eigenvalue decomposition
+        self.eigenvalues = nn.Parameter(
+            torch.complex(
+                torch.ones(hidden_dim) * target_radius,  # magnitude
+                torch.randn(hidden_dim) * 0.1  # phase
+            )
+        )
+        self.eigenvectors = nn.Parameter(torch.randn(hidden_dim, hidden_dim))
+
+    def get_W(self):
+        # W = V @ diag(λ) @ V^{-1}
+        V = self.eigenvectors
+        D = torch.diag(self.eigenvalues)
+        return V @ D @ torch.linalg.inv(V)
+```
+
+**Why unexplored**: Most work constrains to orthogonal/unitary matrices (eigenvalues *exactly* on unit circle). Allowing eigenvalues *near* unit circle with learned positioning may be more expressive.
+
+**Key experiments**:
+
+1. Compare eigenvalue-constrained vs. unconstrained RNN on long-horizon manipulation
+2. Measure gradient norm statistics during training
+3. Test sample efficiency on contact-rich tasks
+
+---
+
+### 2. Multi-Scale Oscillatory Dynamics
+
+**Hypothesis**: Different timescales of robot control (1 Hz for planning, 50 Hz for execution) may benefit from oscillators at corresponding frequencies.
+
+**Approach**: Design SSMs with eigenvalues at multiple frequency bands:
+
+- Low-frequency eigenvalues for planning/goal representation
+- High-frequency eigenvalues for fast motor corrections
+- Learnable routing between scales
+
+**Connection to neuroscience**: Motor cortex shows oscillations at multiple frequencies (beta, gamma bands) with different functional roles.
+
+**Architecture sketch**:
+
+```python
+class MultiScaleSSM(nn.Module):
+    def __init__(self):
+        # Slow dynamics (1-5 Hz) for goals/plans
+        self.slow_ssm = SSM(eigenvalue_range=(0.98, 1.0), freq_range=(1, 5))
+
+        # Fast dynamics (20-50 Hz) for corrections
+        self.fast_ssm = SSM(eigenvalue_range=(0.95, 0.99), freq_range=(20, 50))
+
+        # Routing network
+        self.router = nn.Sequential(
+            nn.Linear(obs_dim, hidden_dim),
+            nn.Softmax(dim=-1)
+        )
+
+    def forward(self, obs):
+        slow_out = self.slow_ssm(obs)
+        fast_out = self.fast_ssm(obs)
+        weights = self.router(obs)
+        return weights[:, 0:1] * slow_out + weights[:, 1:2] * fast_out
+```
+
+---
+
+### 3. CPG + SSM Hybrid for Locomotion
+
+**Hypothesis**: Combining explicit CPG structure (for rhythmic base pattern) with SSM flexibility (for adaptation) will outperform either alone.
+
+**Approach**:
+
+```
+Input → SSM Encoder → CPG Parameters → CPG Oscillators → SSM Correction → Action
+                         ↑                                    |
+                         └─────── Feedback ──────────────────┘
+```
+
+**Why promising**:
+
+- CPG-RL shows benefits of oscillatory structure for locomotion
+- SSMs show benefits of learned dynamics for diverse tasks
+- No work (to my knowledge) combines them
+
+**Concrete experiment**:
+
+1. Baseline: CPG-RL on quadruped locomotion (IsaacGym)
+2. Variant A: Replace RL with imitation learning on SSM policy
+3. Variant B: CPG-SSM hybrid with learnable coupling
+4. Compare: Robustness to terrain, sample efficiency, generalization
+
+---
+
+### 4. Eigenvalue Adaptation for Online Learning
+
+**Hypothesis**: Adapting eigenvalues online (not just weights) could enable fast adaptation to new dynamics.
+
+**Intuition**: If you encounter a new object with different dynamics, you may need oscillators at different frequencies. Eigenvalue adaptation changes the "frequency content" of your internal model.
+
+**Connection to cerebellum**: Cerebellar learning may effectively adapt the eigenvalue spectrum of motor cortex dynamics through its modulating influence.
+
+**Implementation approach**:
+
+```python
+class AdaptiveEigenvalueSSM(nn.Module):
+    def __init__(self):
+        # Base eigenvalues (learned during training)
+        self.base_eigenvalues = nn.Parameter(...)
+
+        # Context-dependent modulation
+        self.eigenvalue_adapter = nn.Sequential(
+            nn.Linear(context_dim, hidden_dim),
+            nn.Tanh()  # Bounded modulation
+        )
+
+    def forward(self, x, context):
+        # Modulate eigenvalues based on context
+        delta = self.eigenvalue_adapter(context) * 0.1  # Small changes
+        adapted_eigenvalues = self.base_eigenvalues + delta
+
+        # Use adapted eigenvalues for dynamics
+        return self.ssm_forward(x, adapted_eigenvalues)
+```
+
+**Test case**: Object manipulation with varying masses/dynamics. Can eigenvalue adaptation enable faster zero-shot transfer than weight adaptation?
+
+---
+
+### 5. Grounded Language via Oscillatory Binding
+
+**Hypothesis**: Language-conditioned robot control may benefit from oscillatory "binding" — using phase synchronization to link linguistic concepts to motor primitives.
+
+**Inspiration**: Neuroscience theories propose that neural oscillations bind distributed representations. A word like "cup" might phase-lock oscillators in visual, motor, and semantic regions.
+
+**Approach**: VLA architecture where language tokens modulate SSM eigenvalue phases, creating dynamic binding between concepts and actions.
+
+```python
+class OscillatoryVLA(nn.Module):
+    def __init__(self):
+        self.vision_encoder = ViT()
+        self.language_encoder = BERT()
+
+        # Motor SSM with complex eigenvalues
+        self.motor_ssm = ComplexSSM()
+
+        # Language-to-phase modulation
+        self.phase_modulator = nn.Linear(language_dim, n_oscillators)
+
+    def forward(self, image, text):
+        v = self.vision_encoder(image)
+        l = self.language_encoder(text)
+
+        # Language modulates oscillator phases
+        phase_shifts = self.phase_modulator(l)
+
+        # Run motor SSM with phase-shifted eigenvalues
+        return self.motor_ssm(v, phase_shifts=phase_shifts)
+```
+
+**Why novel**: Current VLAs treat language as conditioning input. Oscillatory binding treats it as **synchronization signal**.
+
+---
+
+### 6. Continuous-Time Flow Matching with SSM Backbone
+
+**Hypothesis**: Replacing Transformer/U-Net backbones in diffusion/flow policies with SSMs will improve both efficiency and trajectory smoothness.
+
+**Why it might work**:
+
+- Flow matching learns velocity fields — inherently continuous-time
+- SSMs are continuous-time models (discretized for training)
+- Natural alignment that Transformers lack
+
+**Initial evidence**: Physical Intelligence's π0 uses flow matching and achieves high control frequencies. Adding SSM backbone might push this further.
+
+**Experiment design**:
+
+1. Take standard Flow Matching policy (Chi et al.)
+2. Replace U-Net with Mamba/S4 backbone
+3. Compare: Trajectory smoothness, inference speed, sample efficiency
+4. Test on: LIBERO, RLBench, real robot
+
+---
+
+### 7. Task-Organized Latent Spaces via Eigenvalue Clustering
+
+**Hypothesis**: Regularizing policy latent spaces to exhibit task clustering (like motor cortex) will improve skill composition and transfer.
+
+**Inspiration**: Solla's work shows that different motor tasks cluster distinctly in the neural manifold. This isn't just dimensionality reduction — it's **semantic organization**.
+
+**Approach**:
+
+```python
+def eigenvalue_clustering_loss(ssm_eigenvalues, task_labels):
+    """
+    Encourage same-task SSM states to have similar eigenvalue spectra.
+    """
+    unique_tasks = task_labels.unique()
+
+    # Intra-task: similar eigenvalues
+    intra_loss = 0
+    for task in unique_tasks:
+        task_eigs = ssm_eigenvalues[task_labels == task]
+        centroid = task_eigs.mean(dim=0)
+        intra_loss += ((task_eigs - centroid) ** 2).sum(dim=1).mean()
+
+    # Inter-task: distinct eigenvalues
+    centroids = [ssm_eigenvalues[task_labels == t].mean(0)
+                 for t in unique_tasks]
+    inter_loss = -pairwise_distance(centroids).mean()
+
+    return intra_loss + 0.1 * inter_loss
+```
+
+**Why promising**: If eigenvalue spectra cluster by task, you might:
+
+- **Interpolate** between tasks by interpolating eigenvalues
+- **Transfer** by matching eigenvalue distributions
+- **Compose** skills via eigenvalue combinations
+
+---
+
+## The Meta-Insight
+
+The eigenvalue perspective suggests a **design principle**: instead of hoping good dynamics emerge from end-to-end training, **parameterize and constrain the eigenvalue spectrum directly**.
+
+This is analogous to how:
+
+- Attention mechanisms directly parameterize "what to attend to"
+- Positional encodings directly parameterize "where in sequence"
+- SSMs directly parameterize "how to remember"
+
+Eigenvalues are the natural parameterization for recurrent dynamics. Robotics may benefit from making this explicit.
+
+---
+
+## Priority Ranking
+
+| Direction | Novelty | Feasibility | Impact | Priority |
+|-----------|---------|-------------|--------|----------|
+| Flow Matching + SSM | High | Medium | High | **1** |
+| CPG-SSM Hybrid | High | High | High | **2** |
+| Multi-scale oscillatory | Medium | High | Medium | **3** |
+| Eigenvalue adaptation | High | Medium | Medium | **4** |
+| Eigenvalue-constrained policy | Medium | High | Medium | **5** |
+| Oscillatory binding VLA | High | Low | High | **6** |
+| Task-organized eigenvalues | Medium | Medium | Medium | **7** |
+
+---
+
+## Next Steps
+
+1. **Start with Direction 6** (Flow Matching + SSM): Clear implementation path, measurable improvement
+2. **Parallel exploration of Direction 3** (CPG-SSM): Could be transformative for locomotion
+3. **Build infrastructure**: Eigenvalue visualization, spectrum tracking during training
+
+---
+
+*These ideas derive from [Part 6: Eigenvalue Dynamics](../../6-eigenvalue-dynamics/). Keep private until explored.*

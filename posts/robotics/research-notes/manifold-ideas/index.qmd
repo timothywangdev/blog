@@ -1,0 +1,250 @@
+---
+title: "Research Notes: Neural Manifold Research Ideas — Novel Breakthroughs"
+author: "Hujie Wang"
+date: "2026-01-25"
+categories: [robotics, research-ideas, manifolds, private]
+toc: true
+draft: true
+listing: false
+---
+
+::: {.callout-warning appearance="default"}
+## Private Research Notes
+
+This post contains novel research directions derived from neural manifold insights. Keep draft until ideas are explored/published.
+:::
+
+## Research Directions: Novel Breakthroughs {#sec-research}
+
+Based on the gaps between neuroscience findings and current robot learning, here are concrete research opportunities.
+
+### Direction 1: Curvature-Adaptive Latent Spaces
+
+**Hypothesis**: Different skills require different latent geometries. A "pick and place" skill may be linear; a "screw insertion" skill may be hyperbolic (hierarchical); a "polishing" skill may be spherical (cyclic).
+
+**Approach**: Learn **per-skill curvature** in a mixed-curvature VAE:
+
+```python
+class CurvatureAdaptiveVAE(nn.Module):
+    def __init__(self, n_skills):
+        # Each skill gets its own curvature (learnable)
+        self.curvatures = nn.Parameter(torch.zeros(n_skills))
+
+    def decode(self, z, skill_id):
+        kappa = self.curvatures[skill_id]
+        if kappa > 0:
+            # Spherical geometry
+            return self.spherical_decode(z, kappa)
+        elif kappa < 0:
+            # Hyperbolic geometry
+            return self.hyperbolic_decode(z, -kappa)
+        else:
+            # Euclidean
+            return self.euclidean_decode(z)
+```
+
+**Why unexplored**: Most work assumes fixed geometry. Adaptive geometry could match architecture to task structure.
+
+**Key papers to build on**:
+
+- Mixed-curvature VAEs (Skopek et al., 2020)
+- Hyperspherical VAE (Davidson et al., 2018)
+
+---
+
+### Direction 2: Manifold-Constrained Diffusion Policies
+
+**Hypothesis**: Diffusion policies denoise in Euclidean space, but the true action manifold may be curved. Constraining diffusion to the manifold could improve sample quality.
+
+**Approach**: **Riemannian Flow Matching** on learned manifolds:
+
+1. Learn the action manifold structure from demonstrations
+2. Define flow matching on this manifold (not $\mathbb{R}^n$)
+3. Denoise along geodesics, not straight lines
+
+**Recent evidence**: SphereAR achieves SOTA image generation with Riemannian flow matching on hyperspheres. Same principle could apply to action generation.
+
+**Concrete experiment**:
+
+1. Train standard diffusion policy on manipulation task
+2. Learn manifold structure of action space using CEBRA
+3. Retrain with Riemannian flow matching on learned manifold
+4. Compare sample quality, success rate, smoothness
+
+---
+
+### Direction 3: Manifold Expansion for Continual Skill Learning
+
+**Hypothesis**: New skills should **expand** the manifold, not distort existing regions. This is how motor cortex learns — the manifold grows to accommodate new patterns.
+
+**Approach**:
+
+```python
+def continual_learning_step(model, new_data, old_anchor_points):
+    # 1. Encode new data
+    new_embeddings = model.encode(new_data)
+
+    # 2. Ensure old anchor points haven't moved
+    old_embeddings = model.encode(old_anchor_points)
+    anchor_loss = manifold_preservation_loss(
+        old_embeddings,
+        original_anchor_embeddings
+    )
+
+    # 3. Encourage new embeddings to be *near but distinct* from old
+    expansion_loss = encourage_manifold_expansion(
+        new_embeddings,
+        old_embeddings
+    )
+
+    # 4. Standard task loss
+    task_loss = compute_task_loss(model, new_data)
+
+    return task_loss + anchor_loss + expansion_loss
+```
+
+**Why promising**: Addresses catastrophic forgetting as a **geometric** problem, not a weight-protection problem.
+
+**Connection to literature**:
+
+- "Geometry of Abstraction" paper (2024) argues forgetting arises from flat manifolds
+- Solla's lab shows manifold stability over 2 years despite neuron turnover
+
+---
+
+### Direction 4: Cross-Embodiment Transfer via Manifold Warping
+
+**Hypothesis**: Different robots have different action manifolds, but these manifolds may have **shared structure** that can be aligned.
+
+**Approach**: Learn diffeomorphisms (smooth invertible maps) between robot manifolds:
+
+1. Collect demonstrations on source robot
+2. Identify manifold structure (CEBRA, LFADS)
+3. Learn diffeomorphism $\phi: \mathcal{M}_{\text{source}} \to \mathcal{M}_{\text{target}}$
+4. Transform source policy through $\phi$
+
+**Recent evidence**: Latent Action Diffusion achieves 13% improved manipulation by aligning latent spaces across embodiments. Full manifold warping could improve further.
+
+**Concrete benchmark**:
+
+- Source: Franka Panda demonstrations
+- Targets: UR5, xArm6, Sawyer
+- Metric: Zero-shot transfer success rate vs. fine-tuned baseline
+
+---
+
+### Direction 5: Neural Manifold-Inspired World Models
+
+**Hypothesis**: World models should predict on **manifolds**, not in full state space. This matches how motor cortex represents only task-relevant dimensions.
+
+**Approach**:
+
+```
+Observation → Manifold Encoder → Latent State (on manifold)
+                                        ↓
+                               Manifold Dynamics Model
+                                        ↓
+                               Next Latent State (on manifold)
+                                        ↓
+                               Action Decoder
+```
+
+**Advantage**: Prediction happens in low-dimensional manifold space — computationally efficient and naturally filters irrelevant variation.
+
+**Key design choices**:
+
+- What manifold structure? (hypersphere, product manifold, learned)
+- How to enforce manifold constraint in dynamics model?
+- Integration with model-based RL (DreamerV3, TD-MPC2)
+
+---
+
+### Direction 6: Geodesic Skill Composition
+
+**Hypothesis**: Complex skills can be synthesized by **navigating** the skill manifold — moving along geodesics between simple skills.
+
+**Approach**:
+
+1. Embed primitive skills as points on a hypersphere
+2. Define skill composition as geodesic paths: $\text{skill}_{\text{new}} = \text{geodesic}(\text{skill}_1, \text{skill}_2, t)$
+3. Learn a **router** that selects geodesic endpoints based on task description
+
+**Analogy**: Word2Vec showed $\text{king} - \text{man} + \text{woman} = \text{queen}$. Can we achieve $\text{reach} + \text{grasp} = \text{pick}$ via manifold arithmetic?
+
+**Experiment design**:
+
+1. Train skill embeddings on diverse manipulation primitives
+2. Test interpolation: does geodesic($\text{reach}$, $\text{grasp}$, 0.5) produce meaningful motion?
+3. Test composition: can VLM select geodesic endpoints from language?
+
+---
+
+### Direction 7: Biologically-Inspired Skill Hierarchy
+
+**Hypothesis**: Motor cortex has **task-independent temporal modes** and **task-specific modulation**. This suggests a two-level architecture:
+
+**Level 1: Fixed Temporal Primitives** (like CPGs or SSMs with fixed eigenvalues)
+
+- Provide stable oscillatory bases at multiple frequencies
+- Never change during learning
+- Inspired by Solla's "task-independent neural modes"
+
+**Level 2: Task-Specific Gain Modulation**
+
+- Learns which primitives to activate and with what gain
+- All adaptation happens here
+- Fast to learn because it's within the existing manifold
+
+```python
+class BiologicalSkillNetwork(nn.Module):
+    def __init__(self):
+        # Level 1: Fixed (frozen after initialization)
+        self.temporal_primitives = FixedSSM(eigenvalues=COMPLEX_UNIT_CIRCLE)
+
+        # Level 2: Learnable
+        self.task_modulator = nn.Sequential(
+            nn.Linear(task_embedding_dim, n_primitives),
+            nn.Softmax(dim=-1)  # Which primitives to use
+        )
+
+    def forward(self, state, task_embedding):
+        # Get primitive outputs (fixed dynamics)
+        primitives = self.temporal_primitives(state)  # [batch, n_primitives, action_dim]
+
+        # Modulate by task
+        weights = self.task_modulator(task_embedding)  # [batch, n_primitives]
+
+        # Weighted combination
+        action = (weights.unsqueeze(-1) * primitives).sum(dim=1)
+        return action
+```
+
+**Why promising**: Matches the neuroscience finding that ~60% of variance is task-independent. Current architectures don't exploit this structure.
+
+---
+
+## Priority Ranking
+
+Based on novelty, feasibility, and potential impact:
+
+| Direction | Novelty | Feasibility | Impact | Priority |
+|-----------|---------|-------------|--------|----------|
+| Manifold-constrained diffusion | High | Medium | High | **1** |
+| Biologically-inspired hierarchy | High | High | High | **2** |
+| Geodesic skill composition | High | Medium | Medium | **3** |
+| Manifold expansion continual learning | Medium | High | High | **4** |
+| Cross-embodiment warping | Medium | Medium | High | **5** |
+| Curvature-adaptive VAE | Medium | High | Medium | **6** |
+| Manifold world models | Medium | Low | High | **7** |
+
+---
+
+## Next Steps
+
+1. **Start with Direction 2** (Biologically-inspired hierarchy): Clearest connection to neuroscience, most feasible to implement
+2. **Parallel exploration of Direction 1** (Manifold-constrained diffusion): Highest novelty if it works
+3. **Build infrastructure for manifold analysis**: CEBRA/LFADS on robot demonstrations
+
+---
+
+*These ideas derive from [Part 7: Neural Manifolds](../../7-neural-manifolds/) and [Part 6: Eigenvalue Dynamics](../../6-eigenvalue-dynamics/). Keep private until explored.*

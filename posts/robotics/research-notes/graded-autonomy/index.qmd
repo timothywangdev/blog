@@ -1,0 +1,187 @@
+---
+title: "Research Notes: Graded Autonomy — The $20M Insight"
+author: "Hujie Wang"
+date: "2026-01-25"
+categories: [robotics, research-ideas, confidence, autonomy, private]
+toc: true
+draft: true
+listing: false
+---
+
+::: {.callout-warning appearance="default"}
+## Private Research Notes
+
+This post contains a novel research direction derived from the architectural principles analysis. Keep draft until ideas are explored/published.
+:::
+
+## The Real Opportunity: Graded Autonomy {#sec-graded-autonomy}
+
+::: {.callout-important appearance="default"}
+## The $20M Insight
+
+After validating the six architectural principles against industry implementations, I realized the individual principles are **largely commoditized**. NVIDIA, Figure, and Physical Intelligence have all implemented hierarchical architectures. The real opportunity is what **none of them have**: a principled system for **graded autonomy based on confidence**.
+:::
+
+### What Current Systems Do (Binary)
+
+Every deployed robot system I've studied has binary decision-making:
+
+```
+if confidence > threshold:
+    execute_action()
+else:
+    stop_and_ask_for_help()
+```
+
+This is architecturally primitive. It leads to:
+- **False stops**: Robot freezes on slightly novel but safe situations
+- **False continues**: Robot proceeds on genuinely dangerous situations that happen to look familiar
+- **No graceful degradation**: No middle ground between full autonomy and full stop
+
+### What the Brain Does (Graded)
+
+The motor system has at least **five distinct operating modes** based on confidence:
+
+| Confidence | Brain Response | Timescale | Mechanism |
+|------------|---------------|-----------|-----------|
+| **Very High** | Ballistic movements, minimal feedback | 100-200ms | Prepared motor programs |
+| **High** | Normal feedback control | 50-100ms | Standard sensorimotor loop |
+| **Medium** | Increased stiffness, slower movements | Variable | Co-contraction, reduced gain |
+| **Low** | Switch to visual guidance, exploration | 500ms+ | Attentional shift, explicit planning |
+| **Very Low** | Freeze, seek information, abort | Immediate | Protective reflexes + cortical override |
+
+The transitions between modes are **continuous**, not discrete. And critically, **different body parts can be in different modes simultaneously** — your hand can be in exploratory mode while your arm is in confident execution mode.
+
+### Engineering Proposal: Graded Autonomy Controller
+
+```python
+class GradedAutonomyController:
+    """
+    Maps confidence to a continuous spectrum of behaviors,
+    not binary act/stop decisions.
+    """
+
+    def __init__(self):
+        self.confidence_estimator = EnsembleForwardModel()
+        self.chunk_size_schedule = [100, 50, 20, 10, 5, 1]  # frames
+        self.stiffness_schedule = [0.2, 0.4, 0.6, 0.8, 1.0]  # normalized
+
+    def get_operating_mode(self, confidence: float) -> dict:
+        """
+        Returns continuous parameters, not discrete modes.
+        """
+        return {
+            # Longer chunks when confident, shorter when uncertain
+            'chunk_length': self._interpolate(confidence,
+                                              self.chunk_size_schedule),
+
+            # Higher stiffness (impedance) when uncertain
+            'stiffness': self._interpolate(1 - confidence,
+                                           self.stiffness_schedule),
+
+            # Feedback gain: higher when uncertain
+            'feedback_gain': 0.1 + 0.9 * (1 - confidence),
+
+            # Attention: where to look based on prediction error location
+            'attention_weight': self._compute_attention(confidence),
+
+            # Speed: slower when uncertain
+            'velocity_scale': 0.3 + 0.7 * confidence,
+
+            # Exploration: add noise to gather information when uncertain
+            'exploration_noise': 0.1 * (1 - confidence) ** 2,
+        }
+
+    def should_request_help(self, confidence: float,
+                           confidence_history: list) -> bool:
+        """
+        Only request help if confidence is LOW AND NOT IMPROVING.
+        This prevents unnecessary interruptions during learning.
+        """
+        if confidence > 0.3:
+            return False
+        if len(confidence_history) < 5:
+            return confidence < 0.1
+
+        # Check if confidence is trending up (robot is figuring it out)
+        trend = np.polyfit(range(5), confidence_history[-5:], 1)[0]
+        return trend < 0.01  # Only ask if not improving
+```
+
+### Why This Matters
+
+**Current state-of-the-art failure mode**: π0 achieves only 16.7% success on out-of-distribution tasks (Penn evaluation). When it fails, it fails completely — there's no graceful degradation.
+
+**What graded autonomy provides**:
+1. **Safer exploration**: Robot can probe uncertain situations at low speed/high stiffness
+2. **Faster recovery**: Instead of stopping, robot can adapt behavior and continue
+3. **Better human collaboration**: Gradual handoff to human, not abrupt stops
+4. **Online learning**: Uncertainty drives exploration, which generates learning signal
+
+### The Integration Stack
+
+The real architecture isn't the 6 principles separately — it's how they **interact through confidence**:
+
+```
+                    ┌─────────────────────────────┐
+                    │  Confidence Estimator       │
+                    │  (Principle 6 + Ensemble)   │
+                    └─────────────┬───────────────┘
+                                  │
+            ┌─────────────────────┼─────────────────────┐
+            │                     │                     │
+            ▼                     ▼                     ▼
+   ┌────────────────┐   ┌────────────────┐   ┌────────────────┐
+   │ Chunk Length   │   │ Stiffness      │   │ Exploration    │
+   │ (Principle 2)  │   │ (Impedance)    │   │ Noise          │
+   └────────────────┘   └────────────────┘   └────────────────┘
+            │                     │                     │
+            └─────────────────────┼─────────────────────┘
+                                  │
+                                  ▼
+                    ┌─────────────────────────────┐
+                    │  Cerebellar Correction      │
+                    │  (Principle 1)              │
+                    │  Correction magnitude       │
+                    │  scales with uncertainty    │
+                    └─────────────────────────────┘
+                                  │
+                                  ▼
+                    ┌─────────────────────────────┐
+                    │  Manifold Constraint        │
+                    │  (Principle 4)              │
+                    │  Tighter constraint when    │
+                    │  uncertain (stay safe)      │
+                    └─────────────────────────────┘
+```
+
+**Key insight**: Confidence doesn't just trigger help requests — it **modulates every component** of the system. This is how the brain works, and no robot system does it.
+
+### Falsification Criteria
+
+This graded autonomy hypothesis would be refuted if:
+
+1. Binary confidence thresholds outperform continuous modulation on deployment robustness
+2. The computational overhead of continuous confidence estimation exceeds the benefits
+3. Users prefer predictable (binary) robot behavior over adaptive (graded) behavior
+
+---
+
+## Priority Assessment
+
+| Aspect | Rating | Notes |
+|--------|--------|-------|
+| Novelty | **High** | No deployed system does graded autonomy |
+| Feasibility | **High** | Builds on existing confidence estimation |
+| Impact | **Very High** | Could solve deployment gap |
+| Competition | **Low** | Industry focused on raw capability |
+
+## Next Steps
+
+1. **Benchmark**: Compare binary vs. graded autonomy on OOD tasks
+2. **User study**: Do operators prefer graded robot behavior?
+3. **Integration**: Test confidence-modulated manifold constraints
+
+---
+
+*This idea derives from [Part 5: Architectural Principles](../../5-neuro-inspired-architectures/). Keep private until explored.*

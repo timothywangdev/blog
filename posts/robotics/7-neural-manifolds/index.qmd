@@ -1,0 +1,613 @@
+---
+title: "Robot Learning Part 7: Neural Manifolds — The Geometry of Skill Representation"
+author: "Hujie Wang"
+date: "2026-01-25"
+categories: [robotics, neuroscience, manifolds, dimensionality-reduction, motor-control, robot-learning]
+toc: true
+draft: false
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **Motor cortex operates on low-dimensional manifolds**: Despite 100+ neurons, population activity lives on ~10-12 dimensional surfaces capturing 70-85% of variance
+- **Manifolds have geometric semantics**: Different tasks cluster distinctly — task similarity = spatial proximity in the manifold
+- **Manifolds are stable but neurons are not**: Over 2+ years, individual neurons turn over while manifold structure persists — the geometry, not the neurons, is the fundamental computational object
+- **Manifolds are intrinsically nonlinear**: Latest research shows neural manifolds are curved, not flat — linear methods overestimate dimensionality by 2-3x
+- **Learning is constrained by manifold geometry**: Within-manifold adaptation takes minutes; outside-manifold learning takes days
+- **Implications for robotics**: Nonlinear latent spaces, task-clustered representations, manifold-based continual learning, and cross-embodiment transfer via geometric alignment
+:::
+
+## Introduction: Beyond Eigenvalues to Geometry {#sec-intro}
+
+In [Part 6](../6-eigenvalue-dynamics/), we explored how **eigenvalues** control the dynamics of neural circuits and RNNs. We saw that eigenvalues near the unit circle with imaginary components produce stable, oscillatory dynamics — the "sweet spot" discovered independently by evolution and ML optimization.
+
+But dynamics tell only half the story. The eigenvalue spectrum determines *how* trajectories evolve over time. What about *where* they live? What's the shape of the space containing these trajectories?
+
+This is where **neural manifolds** enter the picture.
+
+Consider: motor cortex has millions of neurons. Yet when we record from 100+ neurons during reaching, we find that the population activity — a point in 100-dimensional space — actually traces paths on a surface of only 10-12 dimensions. The activity is **constrained** to a low-dimensional manifold embedded in the high-dimensional neural state space.
+
+This post explores what we know about these manifolds and — more importantly — what they suggest for **novel robotics architectures**. The neuroscience findings point toward design principles that current robot learning systems don't exploit:
+
+1. **Manifold stability** despite component turnover → continual learning without catastrophic forgetting
+2. **Task clustering** in geometric space → skill composition via manifold navigation
+3. **Intrinsic nonlinearity** → inadequacy of linear latent spaces
+4. **Learning constraints** tied to manifold geometry → transfer learning depends on geometric alignment
+
+::: {.callout-tip appearance="simple"}
+## For Robotics Researchers
+
+This post is written to inspire **novel architectures** for robot learning. The neuroscience isn't just analogy — it provides concrete mathematical constraints that current systems violate. I'll highlight specific research opportunities throughout, including unexplored combinations of manifold geometry with diffusion policies, SSMs, and cross-embodiment transfer.
+:::
+
+## What Is a Neural Manifold? {#sec-definition}
+
+### The Intuition: A Curved Surface in High-Dimensional Space
+
+Imagine you're tracking 100 neurons during a reaching movement. At each moment, you have 100 firing rates — a point in 100-dimensional space. As time passes, this point traces a trajectory.
+
+Here's the surprise: despite having 100 dimensions available, the trajectory stays close to a **surface** of much lower dimension — like a 2D sheet embedded in 3D space, but with 10-12 dimensions embedded in 100.
+
+::: {.callout-note appearance="simple"}
+## Why "Manifold" and Not "Subspace"?
+
+A **subspace** is flat — like a plane through the origin. A **manifold** can be curved — like the surface of a sphere.
+
+Recent evidence$^{[1]}$ shows neural manifolds are genuinely curved (nonlinear), not flat (linear). This matters because:
+
+- **Flat**: PCA captures the structure perfectly
+- **Curved**: PCA wastes dimensions approximating curvature; nonlinear methods needed
+
+Think of approximating Earth's surface. Locally, it looks flat (PCA works). Globally, it's curved (need geodesics, not straight lines).
+:::
+
+### Formal Definition
+
+A **$d$-dimensional manifold** $\mathcal{M}$ embedded in $\mathbb{R}^n$ (where $d < n$) is a set that locally looks like $\mathbb{R}^d$. More precisely, for every point $p \in \mathcal{M}$, there exists a neighborhood that can be smoothly mapped to an open set in $\mathbb{R}^d$.
+
+For neural data:
+
+- $n$ = number of recorded neurons (e.g., 100)
+- $d$ = intrinsic dimensionality of the manifold (e.g., 10-12)
+- The **neural state** at time $t$ is $\mathbf{x}(t) \in \mathbb{R}^n$
+- The **constraint**: $\mathbf{x}(t) \in \mathcal{M}$ for all $t$ (approximately)
+
+The manifold $\mathcal{M}$ represents the **space of possible neural states** — the repertoire of activity patterns the circuit can produce.
+
+### Why Low-Dimensional? {#sec-why-low-dim}
+
+Three complementary explanations:
+
+**1. Redundancy in Neural Coding**
+
+Motor cortex controls ~50 muscles with millions of neurons. This creates massive redundancy — many neurons must co-vary to produce coherent muscle commands. The co-variation patterns define the manifold.
+
+**2. Connectivity Constraints**
+
+Neurons don't connect randomly. Structured connectivity (excitation/inhibition balance, sparse connections, Dale's law) limits the patterns of activity that can emerge.$^{[2]}$
+
+**3. Task Constraints**
+
+Most motor tasks have low intrinsic dimensionality. Reaching to 8 targets in a plane requires perhaps 3-4 degrees of freedom. Neural activity reflecting these tasks inherits their dimensionality.
+
+::: {.callout-important appearance="default"}
+## Key Insight: Dimensionality Is Task-Dependent
+
+The manifold dimensionality isn't fixed — it reflects the complexity of the behavioral repertoire:
+
+| Behavioral Context | Typical Manifold Dimensionality |
+|-------------------|--------------------------------|
+| Simple reaching | 6-10 dimensions |
+| Multi-task reaching + grasping | 12-15 dimensions |
+| Complex manipulation | 15-20 dimensions |
+
+**Implication for robotics**: Policy latent spaces should scale with task complexity, not be fixed a priori.
+:::
+
+## Discovering Manifolds: The Methods {#sec-methods}
+
+Before diving into findings, we need to understand how neuroscientists extract manifolds from spike data. These same methods apply to analyzing robot policy latent spaces.
+
+### Principal Component Analysis (PCA): The Baseline
+
+PCA finds orthogonal directions of maximum variance:
+
+$$\mathbf{X}_{\text{reduced}} = \mathbf{W}_{\text{PCA}}^\top \mathbf{X}$$
+
+where $\mathbf{W}_{\text{PCA}}$ contains the top $k$ principal components.
+
+**Strengths:**
+
+- Computationally efficient
+- Interpretable (variance explained)
+- Establishes baseline dimensionality
+
+**Critical Limitations:**
+
+1. **Conflates signal and noise**: PCA captures all variance, including spiking noise
+2. **Assumes linearity**: Can't capture curved manifolds efficiently
+3. **Arbitrary cutoffs**: "90% variance explained" is unprincipled
+4. **Overestimates dimensionality**: For curved manifolds, PCA needs extra dimensions to approximate curvature$^{[1]}$
+
+::: {.callout-warning appearance="simple"}
+## PCA Dimensionality Is Often Wrong
+
+Research comparing linear and nonlinear methods$^{[1]}$ found:
+
+- Linear manifolds (PCA) required 10-20 dimensions
+- Nonlinear manifolds (Isomap) achieved same reconstruction with **considerably fewer** dimensions
+- True intrinsic dimensionality may be **2-3x lower** than PCA suggests
+
+**Implication**: If your robot policy uses a VAE with linear decoder, you may need 2-3x more latent dimensions than necessary.
+:::
+
+### GPFA: Gaussian Process Factor Analysis
+
+**Key paper**: Yu et al. (2009)$^{[3]}$
+
+GPFA improves on PCA by:
+
+1. **Separating signal from noise**: Explicit noise model for each neuron
+2. **Temporal smoothing**: Gaussian process prior on latent trajectories
+3. **Joint optimization**: Smoothing and dimensionality reduction happen simultaneously
+
+The model:
+
+$$\mathbf{y}_t = \mathbf{C}\mathbf{x}_t + \mathbf{d} + \boldsymbol{\epsilon}_t, \quad \mathbf{x} \sim \mathcal{GP}(0, K)$$
+
+where:
+
+- $\mathbf{y}_t$ = observed spike counts
+- $\mathbf{x}_t$ = latent state (on manifold)
+- $\mathbf{C}$ = loading matrix
+- $K$ = Gaussian process kernel (controls smoothness)
+
+**Advantage**: Different latent dimensions can have different timescales — capturing both fast oscillations and slow drifts.
+
+### LFADS: Latent Factor Analysis via Dynamical Systems
+
+**Key paper**: Pandarinath et al. (2018)$^{[4]}$
+
+LFADS goes further by assuming latent dynamics arise from a **dynamical system**:
+
+1. **Encoder**: Bidirectional RNN encodes full spike sequence
+2. **Generator**: RNN produces latent dynamics from initial conditions
+3. **Decoder**: Maps latent states to firing rates
+
+**Key advantage**: Extracts **single-trial** dynamics (no trial averaging), enabling:
+
+- Precise firing rate estimates
+- Inference of trial-specific perturbations
+- "Stitching" non-simultaneous recordings
+
+**For robotics**: LFADS-style architectures could extract consistent latent dynamics from diverse robot demonstrations.
+
+### CEBRA: Contrastive Embedding from Behavior and Neural Analysis
+
+**Key paper**: Schneider, Lee & Mathis (2023)$^{[5]}$ — *Nature*
+
+CEBRA uses **contrastive learning** to find embeddings that align neural activity with behavior:
+
+$$\mathcal{L}_{\text{CEBRA}} = -\log \frac{\exp(\text{sim}(z_i, z_j^+)/\tau)}{\sum_k \exp(\text{sim}(z_i, z_k)/\tau)}$$
+
+where positive pairs $(z_i, z_j^+)$ share behavioral context.
+
+**Three modes:**
+
+1. **CEBRA-Time**: Self-supervised using temporal structure
+2. **CEBRA-Behavior**: Supervised using behavioral labels
+3. **CEBRA-Hybrid**: Combines both
+
+**Key result**: CEBRA finds **consistent embeddings across animals** — the same behavioral states map to the same latent locations despite different neurons being recorded.
+
+::: {.callout-tip appearance="simple"}
+## Method Selection Guide
+
+| Goal | Recommended Method |
+|------|-------------------|
+| Quick exploration, trial-averaged | PCA |
+| Single-trial trajectories | GPFA |
+| Inferring underlying dynamics | LFADS |
+| Behavior-aligned embeddings | CEBRA |
+| Cross-subject consistency | CEBRA |
+| Nonlinear manifold discovery | Isomap, UMAP, CEBRA |
+:::
+
+## Key Findings from Solla's Lab {#sec-solla}
+
+Sara Solla's group at Northwestern, with collaborators Juan Gallego, Matthew Perich, and Lee Miller, has produced foundational work on neural manifolds. Their findings have direct implications for robot learning.
+
+### Finding 1: Task Clustering with Semantic Structure
+
+**Paper**: Gallego et al. (2017)$^{[6]}$ — *Neuron*
+
+When monkeys perform different motor tasks (wrist movements, reaching, grasping), the neural activity during each task occupies a **distinct region** of the manifold.
+
+**Key results:**
+
+- Just 3 neural modes reveal target-specific clusters for an 8-target reach task
+- Task clusters are **geometrically organized** — similar tasks are spatially closer
+- During preparation, clusters separate before movement begins
+
+::: {.callout-important appearance="default"}
+## Implication for Robotics: Skill Embedding Should Have Geometric Semantics
+
+Current robot policies learn latent spaces where different skills may be randomly scattered. Solla's findings suggest they should be **geometrically organized**:
+
+- Similar skills → nearby embeddings
+- Skill families → distinct clusters
+- Skill composition → paths between clusters
+
+**Novel direction**: Regularize policy latent spaces to exhibit task clustering, enabling:
+
+1. **Skill interpolation** via geodesic paths
+2. **Skill transfer** by moving along the manifold
+3. **Novel skill synthesis** via geometric composition
+:::
+
+### Finding 2: Multi-Year Manifold Stability
+
+**Paper**: Gallego et al. (2020)$^{[7]}$ — *Nature Neuroscience*
+
+Recording from the same brain regions for **up to 2 years**, they found:
+
+| Metric | Value |
+|--------|-------|
+| Recording duration | Up to 2 years |
+| Aligned latent dynamics similarity | 0.93 ± 0.03 |
+| Unaligned similarity | 0.38 ± 0.14 |
+| Decoder stability | Maintained across entire period |
+
+**Critical finding**: Despite **steady neuron turnover** (neurons die, move, change tuning), the **manifold structure remained stable**. Decoders based on manifold dynamics worked for years; decoders based on individual neurons degraded within weeks.
+
+::: {.callout-important appearance="default"}
+## Implication for Robotics: Stability Should Be Geometric, Not Weight-Based
+
+Current continual learning methods (EWC, PackNet) protect specific weights or parameters. But Solla's finding suggests the **manifold geometry** is the fundamental invariant.
+
+**Novel direction**: Continual learning via **manifold preservation**:
+
+1. Don't protect weights — protect the **geometric structure** of the latent manifold
+2. New skills should expand the manifold, not distort existing regions
+3. Catastrophic forgetting = manifold distortion; prevention = geometry constraints
+
+This is the "geometry of abstraction" perspective$^{[8]}$: forgetting arises from flat temporal manifolds; curvature prevents it.
+:::
+
+### Finding 3: Manifolds Are Intrinsically Nonlinear
+
+**Paper**: Fortunato et al. (2024)$^{[1]}$ — *bioRxiv*
+
+Analyzing data across monkey, mouse, and human motor cortex:
+
+- Nonlinear methods (Isomap) explain same variance with **fewer dimensions**
+- **Nonlinearity index** (linear/nonlinear dimensionality ratio) increases with neuron count
+- Nonlinearity increases during **complex tasks**
+
+**Quantitative result**: True intrinsic dimensionality plateaus at 30-40 neurons for nonlinear methods; linear methods keep increasing even with 65-250 neurons.
+
+::: {.callout-important appearance="default"}
+## Implication for Robotics: Linear VAEs Are Insufficient
+
+Most robot policies use VAEs with linear decoders or assume Euclidean latent spaces. This is fundamentally mismatched to the nonlinear manifold structure that motor systems use.
+
+**Novel direction**: **Riemannian VAEs** and **hyperspherical latent spaces**:
+
+1. **Hyperspherical VAE (S-VAE)**$^{[9]}$: Uses von Mises-Fisher distribution on the unit sphere
+2. **Hyperbolic VAE**: Poincaré ball geometry for hierarchical skill structure
+3. **Mixed-curvature VAE**$^{[10]}$: Different latent dimensions have different (learnable) curvatures
+
+The latent space geometry should match the task structure, not be assumed Euclidean.
+:::
+
+### Finding 4: The Sadtler Learning Constraint
+
+**Paper**: Sadtler et al. (2014)$^{[11]}$ — *Nature*
+
+Using brain-computer interfaces, they tested how quickly subjects could learn new neural-to-cursor mappings:
+
+| Perturbation Type | Learning Time | Success |
+|------------------|---------------|---------|
+| **Within-manifold** (remap existing patterns) | Minutes | Full recovery |
+| **Outside-manifold** (generate new patterns) | Days | Partial at best |
+
+**Interpretation**: The existing manifold structure **constrains** what can be quickly learned. Generating truly new activity patterns requires restructuring the manifold — a much slower process.
+
+::: {.callout-important appearance="default"}
+## Implication for Robotics: Transfer Depends on Manifold Alignment
+
+This explains why:
+
+- **In-domain transfer works**: Source and target tasks share manifold structure
+- **Cross-domain transfer fails**: Different domains have different manifolds
+
+**Novel direction**: **Manifold alignment for transfer learning**:
+
+1. Measure manifold similarity before attempting transfer
+2. Learn transformations that align source → target manifolds
+3. For cross-embodiment transfer, align manifolds rather than raw actions
+
+Recent work on latent action alignment$^{[12]}$ uses GAN + cycle consistency to align different robot embodiments — directly implementing manifold alignment.
+:::
+
+### Finding 5: Task-Independent Neural Modes
+
+**Paper**: Gallego et al. (2018)$^{[13]}$ — *Nature Communications*
+
+Across different tasks, two sets of neural modes are **shared**:
+
+1. **Temporal modes**: Capture generic timing features (the "when")
+2. **Output modes**: Provide task-independent mapping to muscles (the "how")
+
+Task-specific modulation happens **within** this shared basis — only ~40% of variance is task-specific.
+
+**Quantitative result**: A 12-dimensional manifold captures 73.4 ± 6.5% of variance across all tasks; 83% of this is shared across tasks.
+
+::: {.callout-important appearance="default"}
+## Implication for Robotics: Shared Temporal Bases + Task Modulation
+
+This suggests robot policies should have:
+
+1. **Fixed temporal basis** (like SSMs with fixed eigenvalues) — the "when"
+2. **Shared motor primitives** — the "how"
+3. **Task-specific modulation** — combining the shared bases differently
+
+**Novel direction**: **SSM + Task Embedding** architecture:
+
+```
+Input → SSM (fixed eigenvalues) → Shared Motor Primitives → Task Embedding Modulation → Action
+```
+
+The SSM provides stable temporal structure; task embeddings modulate which modes activate.
+:::
+
+## Implications for Robot Learning {#sec-implications}
+
+Let's synthesize the neuroscience findings into concrete architectural principles.
+
+### Principle 1: Nonlinear Latent Manifolds
+
+**Problem**: Most robot policies use VAEs with Gaussian priors and linear decoders — implicitly assuming flat Euclidean latent spaces.
+
+**Solution**: Use curved latent geometries:
+
+| Geometry | Good For | Implementation |
+|----------|----------|----------------|
+| **Hypersphere** $\mathcal{S}^{d-1}$ | Cyclic/periodic skills | von Mises-Fisher VAE |
+| **Hyperbolic** $\mathcal{B}^d$ | Hierarchical skill trees | Poincaré VAE |
+| **Mixed-curvature** | Complex skill structures | Product of manifolds |
+
+**Concrete approach**:
+
+```python
+class HypersphericalVAE(nn.Module):
+    def __init__(self, latent_dim):
+        # Encoder outputs mean direction μ and concentration κ
+        self.encoder = Encoder()
+        self.mu_head = nn.Linear(hidden, latent_dim)
+        self.kappa_head = nn.Linear(hidden, 1)
+
+    def reparameterize(self, mu, kappa):
+        # Sample from von Mises-Fisher distribution
+        return sample_vmf(mu / mu.norm(), kappa)
+```
+
+### Principle 2: Task-Clustered Representations
+
+**Problem**: Policy latent spaces have no geometric organization — similar tasks aren't necessarily nearby.
+
+**Solution**: Add manifold regularization to encourage task clustering:
+
+```python
+def manifold_clustering_loss(latent_states, task_labels):
+    """
+    Pull same-task embeddings together; push different-task embeddings apart.
+    """
+    unique_tasks = task_labels.unique()
+
+    # Intra-task: minimize spread
+    intra_loss = 0
+    centroids = []
+    for task in unique_tasks:
+        mask = (task_labels == task)
+        task_states = latent_states[mask]
+        centroid = task_states.mean(dim=0)
+        centroids.append(centroid)
+        intra_loss += ((task_states - centroid) ** 2).sum(dim=1).mean()
+
+    # Inter-task: maximize separation (contrastive)
+    centroids = torch.stack(centroids)
+    inter_loss = -torch.pdist(centroids).mean()
+
+    return intra_loss + 0.1 * inter_loss
+```
+
+### Principle 3: Geodesic Skill Interpolation
+
+**Problem**: Linear interpolation in curved latent spaces produces unrealistic intermediate states.
+
+**Solution**: Interpolate along geodesics (shortest paths on the manifold):
+
+For hyperspherical latent space:
+
+$$\mathbf{z}(t) = \frac{\sin((1-t)\theta)}{\sin\theta}\mathbf{z}_1 + \frac{\sin(t\theta)}{\sin\theta}\mathbf{z}_2$$
+
+where $\theta = \arccos(\mathbf{z}_1 \cdot \mathbf{z}_2)$ is the angle between endpoints.
+
+**Application**: Smooth skill blending by traversing geodesics between skill embeddings.
+
+### Principle 4: Manifold-Constrained Continual Learning
+
+**Problem**: Standard continual learning protects weights (EWC) or activations, but forgetting is fundamentally **geometric** — distortion of the latent manifold.
+
+**Solution**: Constrain new learning to preserve manifold geometry:
+
+```python
+def manifold_preservation_loss(old_states, new_states):
+    """
+    Preserve pairwise distances in the manifold.
+    Inspired by Solla's finding that manifold structure is stable.
+    """
+    # Compute pairwise geodesic distances
+    old_distances = pairwise_geodesic_distance(old_states)
+    new_distances = pairwise_geodesic_distance(new_states)
+
+    # Penalize distance distortion
+    return ((old_distances - new_distances) ** 2).mean()
+```
+
+### Principle 5: Cross-Embodiment Transfer via Manifold Alignment
+
+**Problem**: Different robot embodiments have different state/action spaces — transfer requires more than weight sharing.
+
+**Solution**: Align manifolds across embodiments, then transfer in latent space:
+
+**Recent approach** (Wang et al., 2024)$^{[12]}$:
+
+1. Train encoders to map both robots to **shared latent manifold**
+2. Use GAN + cycle consistency to ensure alignment
+3. Train policy in **latent space**
+4. For transfer: only retrain target decoder
+
+**Result**: Transfer from simulated Panda → real xArm6 without task-specific data.
+
+## Manifold-Aware Architectures {#sec-architectures}
+
+### Architecture 1: Hyperspherical Skill VAE
+
+Combines hyperspherical latent space with skill-conditioned decoding:
+
+```
+Observation → Encoder → μ, κ → Sample from S^(d-1) → Skill-Conditioned Decoder → Action
+                              ↑
+                         Task Embedding
+```
+
+**Advantages**:
+
+- Natural for cyclic skills (gait, manipulation rhythms)
+- Bounded latent space (no exploding activations)
+- Geodesic interpolation enables smooth skill blending
+
+### Architecture 2: Manifold-SSM Hybrid
+
+Combines State Space Models (Part 6) with manifold-structured latent spaces:
+
+```
+Observation → SSM Encoder (fixed eigenvalues) → Manifold Projection → Task Modulation → Action
+                                                    ↓
+                                            Hypersphere/Hyperbolic
+```
+
+**Rationale**:
+
+- SSM provides stable temporal dynamics (eigenvalue control)
+- Manifold projection constrains representations
+- Task modulation selects which modes activate
+
+### Architecture 3: Contrastive Skill Embedding (CEBRA-style)
+
+Uses contrastive learning to align skill embeddings with behavior:
+
+```python
+class ContrastiveSkillEncoder(nn.Module):
+    def forward(self, observation, behavior_context):
+        # Encode to hypersphere
+        z = self.encoder(observation)
+        z = F.normalize(z, dim=-1)  # Project to unit sphere
+
+        # Contrastive loss: same behavior → same z
+        return z
+
+    def contrastive_loss(self, z, behavior_labels):
+        # InfoNCE loss with behavior-defined positives
+        positives = (behavior_labels.unsqueeze(0) == behavior_labels.unsqueeze(1))
+        # ... standard contrastive computation
+```
+
+**Advantage**: Learns embeddings where behavioral similarity = geometric proximity.
+
+## Conclusion {#sec-conclusion}
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Neural manifolds provide a **geometric perspective** on motor control that complements the eigenvalue dynamics of Part 6:
+
+**Key neuroscience findings:**
+
+1. **Low dimensionality**: 10-12 dimensions capture 70-85% of motor cortex variance
+2. **Task clustering**: Similar tasks are geometrically nearby
+3. **Multi-year stability**: Manifold persists despite neuron turnover
+4. **Intrinsic nonlinearity**: Manifolds are curved, not flat
+5. **Learning constraints**: Within-manifold learning is fast; outside-manifold is slow
+
+**Implications for robotics:**
+
+1. Use **nonlinear latent spaces** (hyperspherical, hyperbolic, mixed-curvature)
+2. **Regularize for task clustering** — geometric organization enables composition
+3. Address continual learning as **manifold preservation**, not weight protection
+4. Enable transfer via **manifold alignment** across embodiments
+5. Design architectures with **fixed temporal bases + task modulation**
+
+The meta-insight: **geometry matters as much as dynamics**. Current robot learning systems largely ignore the geometric structure of skill representations. The neuroscience suggests this is a missed opportunity — and the gap between these findings and current practice offers rich territory for novel architectures.
+:::
+
+::: {.callout-note appearance="simple"}
+## What's Next
+
+This series has explored the bridge between neuroscience and robot learning:
+
+- [Part 1: Diffusion Policy](../1-diffusion-policy/) — Generative models for action
+- [Part 1.5: ACT](../1.5-action-chunking/) — Action chunking with Transformers
+- [Part 3: VLA Models](../3-vla-models/) — Vision-language-action integration
+- [Part 4: Brain Motor Control](../4-brain-motor-control/) — Neuroscience foundations
+- [Part 5: Architectural Principles](../5-neuro-inspired-architectures/) — Engineering implications
+- [Part 6: Eigenvalue Dynamics](../6-eigenvalue-dynamics/) — The mathematical bridge
+- **Part 7: Neural Manifolds** — The geometry of skill representation (this post)
+
+The combination of **eigenvalue-controlled dynamics** (Part 6) operating **on curved manifolds** (this post) provides a unified framework for understanding motor computation — both biological and artificial.
+
+The neuroscience provides concrete constraints; the engineering challenge is to exploit them. The gap between what we know about biological motor systems and what current robot learning architectures use offers rich territory for innovation.
+:::
+
+## References {#sec-references}
+
+[1] [Fortunato, Bennasar-Vázquez, Park, et al. (2024). Nonlinear Manifolds Underlie Neural Population Activity During Behaviour. *bioRxiv*.](https://www.biorxiv.org/content/10.1101/2023.07.18.549575v3)
+
+[2] [Hennequin, Vogels & Gerstner (2014). Optimal Control of Transient Dynamics in Balanced Networks. *Neuron*.](https://www.sciencedirect.com/science/article/pii/S0896627314003602)
+
+[3] [Yu et al. (2009). Gaussian-Process Factor Analysis for Low-Dimensional Single-Trial Analysis of Neural Population Activity. *J Neurophysiol*.](https://journals.physiology.org/doi/full/10.1152/jn.90941.2008)
+
+[4] [Pandarinath et al. (2018). Inferring Single-Trial Neural Population Dynamics Using Sequential Auto-Encoders. *Nature Methods*.](https://www.nature.com/articles/s41592-018-0109-9)
+
+[5] [Schneider, Lee & Mathis (2023). Learnable Latent Embeddings for Joint Behavioural and Neural Analysis. *Nature*.](https://www.nature.com/articles/s41586-023-06031-6)
+
+[6] [Gallego, Perich, Miller & Solla (2017). Neural Manifolds for the Control of Movement. *Neuron*.](https://www.sciencedirect.com/science/article/pii/S0896627317304634)
+
+[7] [Gallego, Perich, Chowdhury, Solla & Miller (2020). Long-term Stability of Cortical Population Dynamics Underlying Consistent Behavior. *Nature Neuroscience*.](https://www.nature.com/articles/s41593-019-0555-4)
+
+[8] [The Geometry of Abstraction: Continual Learning via Recursive Quotienting (2024). *arXiv*.](https://arxiv.org/abs/2512.18471)
+
+[9] [Davidson et al. (2018). Hyperspherical Variational Auto-Encoders. *UAI*.](https://arxiv.org/abs/1804.00891)
+
+[10] [Skopek et al. (2020). Mixed-Curvature Variational Autoencoders. *ICLR*.](https://openreview.net/forum?id=S1g6xeSKDS)
+
+[11] [Sadtler et al. (2014). Neural Constraints on Learning. *Nature*.](https://www.nature.com/articles/nature13665)
+
+[12] [Wang et al. (2024). Cross-Embodiment Robot Manipulation Skill Transfer Using Latent Space Alignment. *arXiv*.](https://arxiv.org/abs/2406.01968)
+
+[13] [Gallego et al. (2018). Cortical Population Activity Within a Preserved Neural Manifold Underlies Multiple Motor Behaviors. *Nature Communications*.](https://www.nature.com/articles/s41467-018-06560-z)
+
+[14] [SphereAR (2025). Riemannian Flow Matching on Hyperspheres. *arXiv*.](https://arxiv.org/abs/2509.24335)
+
+[15] [Latent Action Diffusion (2024). Cross-Embodiment Manipulation via Latent Action Alignment.](https://mimicrobotics.github.io/lad/)
+
+[16] [Belkin et al. (2006). Manifold Regularization: A Geometric Framework for Learning from Labeled and Unlabeled Examples. *JMLR*.](https://dl.acm.org/doi/10.5555/1248547.1248632)
+
+[17] [Wang & Isola (2020). Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere. *ICML*.](https://arxiv.org/abs/2005.10242)
+
+---
+
+*This post explores the geometry of neural representations for motor control. For the dynamics perspective, see [Part 6](../6-eigenvalue-dynamics/). For neuroscience background, see [Part 4](../4-brain-motor-control/). For practical robot learning methods, see [Part 1: Diffusion Policy](../1-diffusion-policy/) and [Part 3: VLA Models](../3-vla-models/).*
