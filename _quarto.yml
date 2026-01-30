@@ -1,7 +1,5 @@
 project:
   type: website
-  render:
-    - "!**/_substack.qmd"
   resources:
     - "CNAME"
 
