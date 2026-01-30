@@ -1,0 +1,104 @@
+/*-- scss:defaults --*/
+
+// Color palette inspired by Ahead of Robotics Substack
+$crimson: #c5030c;
+$crimson-dark: #a00209;
+$crimson-light: #e8353e;
+
+// Primary colors
+$primary: $crimson;
+$link-color: $crimson;
+
+/*-- scss:rules --*/
+
+// Links
+a {
+  color: $crimson;
+
+  &:hover {
+    color: $crimson-dark;
+  }
+}
+
+// Headings accent
+h2 {
+  border-bottom: 2px solid $crimson;
+  padding-bottom: 0.3em;
+}
+
+// Category badges
+.quarto-category {
+  background-color: rgba($crimson, 0.1);
+  color: $crimson;
+
+  &:hover {
+    background-color: rgba($crimson, 0.2);
+    color: $crimson-dark;
+  }
+}
+
+// Post listing
+.quarto-post {
+  .listing-category .listing-category-item {
+    background-color: rgba($crimson, 0.1);
+    color: $crimson;
+
+    &:hover {
+      background-color: rgba($crimson, 0.2);
+    }
+  }
+}
+
+// TOC active state
+.sidebar nav[role=doc-toc] ul > li > a {
+  &:hover {
+    color: $crimson;
+  }
+
+  &.active {
+    color: $crimson;
+    border-left-color: $crimson;
+  }
+}
+
+// Buttons
+.btn-primary {
+  background-color: $crimson;
+  border-color: $crimson;
+
+  &:hover {
+    background-color: $crimson-dark;
+    border-color: $crimson-dark;
+  }
+}
+
+// Blockquotes
+blockquote {
+  border-left-color: $crimson;
+}
+
+// Code color
+code {
+  color: $crimson-dark;
+}
+
+// Callouts
+.callout {
+  border-left-color: $crimson;
+}
+
+// Selection
+::selection {
+  background-color: rgba($crimson, 0.2);
+}
+
+// Navbar link hover
+.navbar-nav .nav-link:hover {
+  color: $crimson;
+}
+
+// Search focus
+.aa-Form:focus-within {
+  border-color: $crimson;
+  box-shadow: 0 0 0 2px rgba($crimson, 0.2);
+}

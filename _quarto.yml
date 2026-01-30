@@ -23,8 +23,8 @@ website:
 format:
   html:
     theme:
-      light: flatly
-      dark: darkly
+      light: [flatly, custom-theme.scss]
+      dark: [darkly, custom-theme.scss]
     highlight-style: atom-one
     code-copy: true
     code-overflow: wrap
