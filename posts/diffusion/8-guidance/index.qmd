@@ -23,6 +23,8 @@ So far, the generative models we have discussed are all **unconditional** models
 
 To avoid notation and terminology clash with the use of the word "**conditional**" to refer to conditioning on $z \sim p_{data}$, we will use the term "**guided**" to refer specifically to conditioning on $y$.
 
+![**Classifier-Free Guidance (CFG) concept.** Left: The data distribution can be "sliced" by labels — $p(z|y=\text{dog})$ contains only dog images, etc. Right: CFG amplifies the conditioning direction by extrapolating beyond the conditional vector field $u(x|y)$.](cfg-concept.png){#fig-cfg-concept}
+
 ::: {#guided-generation .callout-note appearance="simple"}
 
 Def: Guided Generative Model
@@ -241,6 +243,8 @@ $$
 2. With probability $\eta$ (typically 10-20%), replace $y$ with $\emptyset$
 3. Minimize the CFM loss: $\|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2$
 
+![**CFG training workflow.** The key idea is label dropout: with probability η, drop the label and pass ∅ instead. The target vector field $u_{target}(x|z)$ remains the same regardless — what changes is the model input.](cfg-training.png){#fig-cfg-training}
+
 **Why does this work?** The target $u_t^{target}(x | z)$ is always the same — it doesn't depend on $y$. What changes is the **model input**:
 
 - When we keep $y$: the model learns $u_t^\theta(x | y) \approx$ conditional vector field
@@ -275,6 +279,8 @@ The guidance scale $w$ controls the strength of conditioning:
 - $w = 1$: No amplification (standard conditional generation)
 - $w > 1$: Amplified conditioning (sharper, more "on-prompt" samples)
 - $w \gg 1$: Over-saturation (artifacts, reduced diversity)
+
+![**Effect of guidance scale *w*.** As *w* increases, the guided vector field ũ extrapolates further beyond the conditional direction, strengthening adherence to the prompt — but too much leads to artifacts.](cfg-guidance-scale.png){#fig-guidance-scale}
 
 ::: {.callout-warning appearance="simple"}
 ## What about non-Gaussian flows?
