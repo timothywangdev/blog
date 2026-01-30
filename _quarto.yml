@@ -4,7 +4,7 @@ project:
     - "CNAME"
 
 website:
-  title: "LayerNorm"
+  title: "Foundation Models & Robotics"
   description: "Exploring state-of-the-art AI models"
   site-url: https://layernorm.dev
   favicon: images/ahead-of-robotics-logo-square.png
@@ -18,7 +18,7 @@ website:
       - icon: rss
         href: index.xml
   page-footer:
-    center: "Copyright 2025, LayerNorm"
+    center: "Copyright 2025, Foundation Models & Robotics"
 
 format:
   html:
