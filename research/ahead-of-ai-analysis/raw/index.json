@@ -1,0 +1,1307 @@
+{
+  "scrapedOn": "2026-01-27T18:08:43.608Z",
+  "source": "https://magazine.sebastianraschka.com",
+  "totalArticles": 65,
+  "articles": [
+    {
+      "index": 2,
+      "title": "The State Of LLMs 2025: Progress, Problems, and Predictions",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/state-of-llms-2025",
+      "filename": "02-the-state-of-llms-2025-progress-problems-and-predictions.md",
+      "imageCount": 28,
+      "wordCount": 6857,
+      "hasPaywall": false
+    },
+    {
+      "index": 2,
+      "title": "The State Of LLMs 2025: Progress, Problems, and Predictions",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/state-of-llms-2025",
+      "filename": "02-the-state-of-llms-2025-progress-problems-and-predictions.md",
+      "imageCount": 28,
+      "wordCount": 6857,
+      "hasPaywall": false
+    },
+    {
+      "index": 1,
+      "title": "Categories of Inference-Time Scaling for Improved LLM Reasoning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/categories-of-inference-time-scaling",
+      "filename": "01-categories-of-inference-time-scaling-for-improved-llm-reason.md",
+      "imageCount": 17,
+      "wordCount": 7335,
+      "hasPaywall": false
+    },
+    {
+      "index": 1,
+      "title": "Categories of Inference-Time Scaling for Improved LLM Reasoning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/categories-of-inference-time-scaling",
+      "filename": "01-categories-of-inference-time-scaling-for-improved-llm-reason.md",
+      "imageCount": 17,
+      "wordCount": 7335,
+      "hasPaywall": false
+    },
+    {
+      "index": 3,
+      "title": "LLM Research Papers: The 2025 List (July to December)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-papers-2025-part2",
+      "filename": "03-llm-research-papers-the-2025-list-july-to-december.md",
+      "imageCount": 16,
+      "wordCount": 3314,
+      "hasPaywall": false
+    },
+    {
+      "index": 3,
+      "title": "LLM Research Papers: The 2025 List (July to December)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-papers-2025-part2",
+      "filename": "03-llm-research-papers-the-2025-list-july-to-december.md",
+      "imageCount": 16,
+      "wordCount": 3314,
+      "hasPaywall": false
+    },
+    {
+      "index": 4,
+      "title": "From DeepSeek V3 to V3.2: Architecture, Sparse Attention, and RL Updates",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/technical-deepseek",
+      "filename": "04-from-deepseek-v3-to-v3-2-architecture-sparse-attention-and-r.md",
+      "imageCount": 22,
+      "wordCount": 5889,
+      "hasPaywall": false
+    },
+    {
+      "index": 4,
+      "title": "From DeepSeek V3 to V3.2: Architecture, Sparse Attention, and RL Updates",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/technical-deepseek",
+      "filename": "04-from-deepseek-v3-to-v3-2-architecture-sparse-attention-and-r.md",
+      "imageCount": 22,
+      "wordCount": 5889,
+      "hasPaywall": false
+    },
+    {
+      "index": 5,
+      "title": "Beyond Standard LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/beyond-standard-llms",
+      "filename": "05-beyond-standard-llms.md",
+      "imageCount": 28,
+      "wordCount": 7404,
+      "hasPaywall": false
+    },
+    {
+      "index": 5,
+      "title": "Beyond Standard LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/beyond-standard-llms",
+      "filename": "05-beyond-standard-llms.md",
+      "imageCount": 28,
+      "wordCount": 7404,
+      "hasPaywall": false
+    },
+    {
+      "index": 6,
+      "title": "Understanding the 4 Main Approaches to LLM Evaluation (From Scratch)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-evaluation-4-approaches",
+      "filename": "06-understanding-the-4-main-approaches-to-llm-evaluation-from-s.md",
+      "imageCount": 18,
+      "wordCount": 6473,
+      "hasPaywall": false
+    },
+    {
+      "index": 6,
+      "title": "Understanding the 4 Main Approaches to LLM Evaluation (From Scratch)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-evaluation-4-approaches",
+      "filename": "06-understanding-the-4-main-approaches-to-llm-evaluation-from-s.md",
+      "imageCount": 18,
+      "wordCount": 6473,
+      "hasPaywall": false
+    },
+    {
+      "index": 7,
+      "title": "Understanding and Implementing Qwen3 From Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/qwen3-from-scratch",
+      "filename": "07-understanding-and-implementing-qwen3-from-scratch.md",
+      "imageCount": 21,
+      "wordCount": 7964,
+      "hasPaywall": false
+    },
+    {
+      "index": 7,
+      "title": "Understanding and Implementing Qwen3 From Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/qwen3-from-scratch",
+      "filename": "07-understanding-and-implementing-qwen3-from-scratch.md",
+      "imageCount": 21,
+      "wordCount": 7964,
+      "hasPaywall": false
+    },
+    {
+      "index": 8,
+      "title": "From GPT-2 to gpt-oss: Analyzing the Architectural Advances",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/from-gpt-2-to-gpt-oss-analyzing-the",
+      "filename": "08-from-gpt-2-to-gpt-oss-analyzing-the-architectural-advances.md",
+      "imageCount": 26,
+      "wordCount": 5647,
+      "hasPaywall": false
+    },
+    {
+      "index": 8,
+      "title": "From GPT-2 to gpt-oss: Analyzing the Architectural Advances",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/from-gpt-2-to-gpt-oss-analyzing-the",
+      "filename": "08-from-gpt-2-to-gpt-oss-analyzing-the-architectural-advances.md",
+      "imageCount": 26,
+      "wordCount": 5647,
+      "hasPaywall": false
+    },
+    {
+      "index": 9,
+      "title": "The Big LLM Architecture Comparison",
+      "date": "FEB 5, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/the-big-llm-architecture-comparison",
+      "filename": "09-the-big-llm-architecture-comparison.md",
+      "imageCount": 60,
+      "wordCount": 12056,
+      "hasPaywall": false
+    },
+    {
+      "index": 9,
+      "title": "The Big LLM Architecture Comparison",
+      "date": "FEB 5, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/the-big-llm-architecture-comparison",
+      "filename": "09-the-big-llm-architecture-comparison.md",
+      "imageCount": 60,
+      "wordCount": 12056,
+      "hasPaywall": false
+    },
+    {
+      "index": 10,
+      "title": "LLM Research Papers: The 2025 List (January to June)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-papers-2025-list-one",
+      "filename": "10-llm-research-papers-the-2025-list-january-to-june.md",
+      "imageCount": 11,
+      "wordCount": 4119,
+      "hasPaywall": false
+    },
+    {
+      "index": 10,
+      "title": "LLM Research Papers: The 2025 List (January to June)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-papers-2025-list-one",
+      "filename": "10-llm-research-papers-the-2025-list-january-to-june.md",
+      "imageCount": 11,
+      "wordCount": 4119,
+      "hasPaywall": false
+    },
+    {
+      "index": 11,
+      "title": "Understanding and Coding the KV Cache in LLMs from Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/coding-the-kv-cache-in-llms",
+      "filename": "11-understanding-and-coding-the-kv-cache-in-llms-from-scratch.md",
+      "imageCount": 15,
+      "wordCount": 3110,
+      "hasPaywall": false
+    },
+    {
+      "index": 11,
+      "title": "Understanding and Coding the KV Cache in LLMs from Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/coding-the-kv-cache-in-llms",
+      "filename": "11-understanding-and-coding-the-kv-cache-in-llms-from-scratch.md",
+      "imageCount": 15,
+      "wordCount": 3110,
+      "hasPaywall": false
+    },
+    {
+      "index": 12,
+      "title": "Coding LLMs from the Ground Up: A Complete Course",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/coding-llms-from-the-ground-up",
+      "filename": "12-coding-llms-from-the-ground-up-a-complete-course.md",
+      "imageCount": 1,
+      "wordCount": 1017,
+      "hasPaywall": false
+    },
+    {
+      "index": 12,
+      "title": "Coding LLMs from the Ground Up: A Complete Course",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/coding-llms-from-the-ground-up",
+      "filename": "12-coding-llms-from-the-ground-up-a-complete-course.md",
+      "imageCount": 1,
+      "wordCount": 1017,
+      "hasPaywall": false
+    },
+    {
+      "index": 13,
+      "title": "The State of Reinforcement Learning for LLM Reasoning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/the-state-of-llm-reasoning-model-training",
+      "filename": "13-the-state-of-reinforcement-learning-for-llm-reasoning.md",
+      "imageCount": 36,
+      "wordCount": 7957,
+      "hasPaywall": false
+    },
+    {
+      "index": 13,
+      "title": "The State of Reinforcement Learning for LLM Reasoning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/the-state-of-llm-reasoning-model-training",
+      "filename": "13-the-state-of-reinforcement-learning-for-llm-reasoning.md",
+      "imageCount": 36,
+      "wordCount": 7957,
+      "hasPaywall": false
+    },
+    {
+      "index": 14,
+      "title": "First Look at Reasoning From Scratch: Chapter 1",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/first-look-at-reasoning-from-scratch",
+      "filename": "14-first-look-at-reasoning-from-scratch-chapter-1.md",
+      "imageCount": 7,
+      "wordCount": 3935,
+      "hasPaywall": false
+    },
+    {
+      "index": 14,
+      "title": "First Look at Reasoning From Scratch: Chapter 1",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/first-look-at-reasoning-from-scratch",
+      "filename": "14-first-look-at-reasoning-from-scratch-chapter-1.md",
+      "imageCount": 7,
+      "wordCount": 3935,
+      "hasPaywall": false
+    },
+    {
+      "index": 15,
+      "title": "The State of LLM Reasoning Model Inference",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/state-of-llm-reasoning-and-inference-scaling",
+      "filename": "15-the-state-of-llm-reasoning-model-inference.md",
+      "imageCount": 26,
+      "wordCount": 4627,
+      "hasPaywall": false
+    },
+    {
+      "index": 15,
+      "title": "The State of LLM Reasoning Model Inference",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/state-of-llm-reasoning-and-inference-scaling",
+      "filename": "15-the-state-of-llm-reasoning-model-inference.md",
+      "imageCount": 26,
+      "wordCount": 4627,
+      "hasPaywall": false
+    },
+    {
+      "index": 16,
+      "title": "Understanding Reasoning LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-reasoning-llms",
+      "filename": "16-understanding-reasoning-llms.md",
+      "imageCount": 18,
+      "wordCount": 4363,
+      "hasPaywall": false
+    },
+    {
+      "index": 16,
+      "title": "Understanding Reasoning LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-reasoning-llms",
+      "filename": "16-understanding-reasoning-llms.md",
+      "imageCount": 18,
+      "wordCount": 4363,
+      "hasPaywall": false
+    },
+    {
+      "index": 17,
+      "title": "Noteworthy AI Research Papers of 2024 (Part Two)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-papers-2024-part-2",
+      "filename": "17-noteworthy-ai-research-papers-of-2024-part-two.md",
+      "imageCount": 22,
+      "wordCount": 5751,
+      "hasPaywall": false
+    },
+    {
+      "index": 17,
+      "title": "Noteworthy AI Research Papers of 2024 (Part Two)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-papers-2024-part-2",
+      "filename": "17-noteworthy-ai-research-papers-of-2024-part-two.md",
+      "imageCount": 22,
+      "wordCount": 5751,
+      "hasPaywall": false
+    },
+    {
+      "index": 18,
+      "title": "Noteworthy AI Research Papers of 2024 (Part One)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-papers-2024-part-1",
+      "filename": "18-noteworthy-ai-research-papers-of-2024-part-one.md",
+      "imageCount": 11,
+      "wordCount": 3402,
+      "hasPaywall": false
+    },
+    {
+      "index": 18,
+      "title": "Noteworthy AI Research Papers of 2024 (Part One)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-papers-2024-part-1",
+      "filename": "18-noteworthy-ai-research-papers-of-2024-part-one.md",
+      "imageCount": 11,
+      "wordCount": 3402,
+      "hasPaywall": false
+    },
+    {
+      "index": 19,
+      "title": "LLM Research Papers: The 2024 List",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-papers-the-2024-list",
+      "filename": "19-llm-research-papers-the-2024-list.md",
+      "imageCount": 2,
+      "wordCount": 6515,
+      "hasPaywall": false
+    },
+    {
+      "index": 19,
+      "title": "LLM Research Papers: The 2024 List",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-papers-the-2024-list",
+      "filename": "19-llm-research-papers-the-2024-list.md",
+      "imageCount": 2,
+      "wordCount": 6515,
+      "hasPaywall": false
+    },
+    {
+      "index": 20,
+      "title": "Understanding Multimodal LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-multimodal-llms",
+      "filename": "20-understanding-multimodal-llms.md",
+      "imageCount": 31,
+      "wordCount": 5021,
+      "hasPaywall": false
+    },
+    {
+      "index": 20,
+      "title": "Understanding Multimodal LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-multimodal-llms",
+      "filename": "20-understanding-multimodal-llms.md",
+      "imageCount": 31,
+      "wordCount": 5021,
+      "hasPaywall": false
+    },
+    {
+      "index": 21,
+      "title": "Building A GPT-Style LLM Classifier From Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/building-a-gpt-style-llm-classifier",
+      "filename": "21-building-a-gpt-style-llm-classifier-from-scratch.md",
+      "imageCount": 21,
+      "wordCount": 4475,
+      "hasPaywall": false
+    },
+    {
+      "index": 21,
+      "title": "Building A GPT-Style LLM Classifier From Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/building-a-gpt-style-llm-classifier",
+      "filename": "21-building-a-gpt-style-llm-classifier-from-scratch.md",
+      "imageCount": 21,
+      "wordCount": 4475,
+      "hasPaywall": false
+    },
+    {
+      "index": 22,
+      "title": "Building LLMs from the Ground Up: A 3-hour Coding Workshop",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/building-llms-from-the-ground-up",
+      "filename": "22-building-llms-from-the-ground-up-a-3-hour-coding-workshop.md",
+      "imageCount": 1,
+      "wordCount": 355,
+      "hasPaywall": false
+    },
+    {
+      "index": 22,
+      "title": "Building LLMs from the Ground Up: A 3-hour Coding Workshop",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/building-llms-from-the-ground-up",
+      "filename": "22-building-llms-from-the-ground-up-a-3-hour-coding-workshop.md",
+      "imageCount": 1,
+      "wordCount": 355,
+      "hasPaywall": false
+    },
+    {
+      "index": 23,
+      "title": "New LLM Pre-training and Post-training Paradigms",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/new-llm-pre-training-and-post-training",
+      "filename": "23-new-llm-pre-training-and-post-training-paradigms.md",
+      "imageCount": 21,
+      "wordCount": 4595,
+      "hasPaywall": false
+    },
+    {
+      "index": 23,
+      "title": "New LLM Pre-training and Post-training Paradigms",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/new-llm-pre-training-and-post-training",
+      "filename": "23-new-llm-pre-training-and-post-training-paradigms.md",
+      "imageCount": 21,
+      "wordCount": 4595,
+      "hasPaywall": false
+    },
+    {
+      "index": 24,
+      "title": "Instruction Pretraining LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/instruction-pretraining-llms",
+      "filename": "24-instruction-pretraining-llms.md",
+      "imageCount": 18,
+      "wordCount": 6797,
+      "hasPaywall": false
+    },
+    {
+      "index": 24,
+      "title": "Instruction Pretraining LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/instruction-pretraining-llms",
+      "filename": "24-instruction-pretraining-llms.md",
+      "imageCount": 18,
+      "wordCount": 6797,
+      "hasPaywall": false
+    },
+    {
+      "index": 25,
+      "title": "Developing an LLM: Building, Training, Finetuning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llms-building-training-finetuning",
+      "filename": "25-developing-an-llm-building-training-finetuning.md",
+      "imageCount": 0,
+      "wordCount": 204,
+      "hasPaywall": false
+    },
+    {
+      "index": 25,
+      "title": "Developing an LLM: Building, Training, Finetuning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llms-building-training-finetuning",
+      "filename": "25-developing-an-llm-building-training-finetuning.md",
+      "imageCount": 0,
+      "wordCount": 204,
+      "hasPaywall": false
+    },
+    {
+      "index": 26,
+      "title": "LLM Research Insights: Instruction Masking and New LoRA Finetuning Experiments",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-insights-instruction",
+      "filename": "26-llm-research-insights-instruction-masking-and-new-lora-finet.md",
+      "imageCount": 19,
+      "wordCount": 4398,
+      "hasPaywall": false
+    },
+    {
+      "index": 26,
+      "title": "LLM Research Insights: Instruction Masking and New LoRA Finetuning Experiments",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-research-insights-instruction",
+      "filename": "26-llm-research-insights-instruction-masking-and-new-lora-finet.md",
+      "imageCount": 19,
+      "wordCount": 4398,
+      "hasPaywall": false
+    },
+    {
+      "index": 27,
+      "title": "How Good Are the Latest Open LLMs? And Is DPO Better Than PPO?",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/how-good-are-the-latest-open-llms",
+      "filename": "27-how-good-are-the-latest-open-llms-and-is-dpo-better-than-ppo.md",
+      "imageCount": 19,
+      "wordCount": 5651,
+      "hasPaywall": false
+    },
+    {
+      "index": 27,
+      "title": "How Good Are the Latest Open LLMs? And Is DPO Better Than PPO?",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/how-good-are-the-latest-open-llms",
+      "filename": "27-how-good-are-the-latest-open-llms-and-is-dpo-better-than-ppo.md",
+      "imageCount": 19,
+      "wordCount": 5651,
+      "hasPaywall": false
+    },
+    {
+      "index": 28,
+      "title": "Using and Finetuning Pretrained Transformers",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/using-and-finetuning-pretrained-transformers",
+      "filename": "28-using-and-finetuning-pretrained-transformers.md",
+      "imageCount": 9,
+      "wordCount": 3541,
+      "hasPaywall": false
+    },
+    {
+      "index": 28,
+      "title": "Using and Finetuning Pretrained Transformers",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/using-and-finetuning-pretrained-transformers",
+      "filename": "28-using-and-finetuning-pretrained-transformers.md",
+      "imageCount": 9,
+      "wordCount": 3541,
+      "hasPaywall": false
+    },
+    {
+      "index": 29,
+      "title": "Tips for LLM Pretraining and Evaluating Reward Models",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/tips-for-llm-pretraining-and-evaluating-rms",
+      "filename": "29-tips-for-llm-pretraining-and-evaluating-reward-models.md",
+      "imageCount": 15,
+      "wordCount": 5333,
+      "hasPaywall": false
+    },
+    {
+      "index": 29,
+      "title": "Tips for LLM Pretraining and Evaluating Reward Models",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/tips-for-llm-pretraining-and-evaluating-rms",
+      "filename": "29-tips-for-llm-pretraining-and-evaluating-reward-models.md",
+      "imageCount": 15,
+      "wordCount": 5333,
+      "hasPaywall": false
+    },
+    {
+      "index": 30,
+      "title": "A LoRA Successor, Small Finetuned LLMs Vs Generalist LLMs, and Transparent LLM Research",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-in-february-2024",
+      "filename": "30-a-lora-successor-small-finetuned-llms-vs-generalist-llms-and.md",
+      "imageCount": 18,
+      "wordCount": 5229,
+      "hasPaywall": false
+    },
+    {
+      "index": 30,
+      "title": "A LoRA Successor, Small Finetuned LLMs Vs Generalist LLMs, and Transparent LLM Research",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-in-february-2024",
+      "filename": "30-a-lora-successor-small-finetuned-llms-vs-generalist-llms-and.md",
+      "imageCount": 18,
+      "wordCount": 5229,
+      "hasPaywall": false
+    },
+    {
+      "index": 31,
+      "title": "Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/lora-and-dora-from-scratch",
+      "filename": "31-improving-lora-implementing-weight-decomposed-low-rank-adapt.md",
+      "imageCount": 13,
+      "wordCount": 3241,
+      "hasPaywall": false
+    },
+    {
+      "index": 31,
+      "title": "Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/lora-and-dora-from-scratch",
+      "filename": "31-improving-lora-implementing-weight-decomposed-low-rank-adapt.md",
+      "imageCount": 13,
+      "wordCount": 3241,
+      "hasPaywall": false
+    },
+    {
+      "index": 32,
+      "title": "Model Merging, Mixtures of Experts, and Towards Smaller LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-in-january-2024",
+      "filename": "32-model-merging-mixtures-of-experts-and-towards-smaller-llms.md",
+      "imageCount": 21,
+      "wordCount": 5792,
+      "hasPaywall": false
+    },
+    {
+      "index": 32,
+      "title": "Model Merging, Mixtures of Experts, and Towards Smaller LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-in-january-2024",
+      "filename": "32-model-merging-mixtures-of-experts-and-towards-smaller-llms.md",
+      "imageCount": 21,
+      "wordCount": 5792,
+      "hasPaywall": false
+    },
+    {
+      "index": 33,
+      "title": "Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-and-coding-self-attention",
+      "filename": "33-understanding-and-coding-self-attention-multi-head-attention.md",
+      "imageCount": 21,
+      "wordCount": 4997,
+      "hasPaywall": false
+    },
+    {
+      "index": 33,
+      "title": "Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-and-coding-self-attention",
+      "filename": "33-understanding-and-coding-self-attention-multi-head-attention.md",
+      "imageCount": 21,
+      "wordCount": 4997,
+      "hasPaywall": false
+    },
+    {
+      "index": 34,
+      "title": "Ten Noteworthy AI Research Papers of 2023",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/10-ai-research-papers-2023",
+      "filename": "34-ten-noteworthy-ai-research-papers-of-2023.md",
+      "imageCount": 27,
+      "wordCount": 4553,
+      "hasPaywall": false
+    },
+    {
+      "index": 34,
+      "title": "Ten Noteworthy AI Research Papers of 2023",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/10-ai-research-papers-2023",
+      "filename": "34-ten-noteworthy-ai-research-papers-of-2023.md",
+      "imageCount": 27,
+      "wordCount": 4553,
+      "hasPaywall": false
+    },
+    {
+      "index": 35,
+      "title": "Tackling Hallucinations, Boosting Reasoning Abilities, and New Insights into the Transformer Architecture",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-in-november-2023",
+      "filename": "35-tackling-hallucinations-boosting-reasoning-abilities-and-new.md",
+      "imageCount": 19,
+      "wordCount": 5369,
+      "hasPaywall": false
+    },
+    {
+      "index": 35,
+      "title": "Tackling Hallucinations, Boosting Reasoning Abilities, and New Insights into the Transformer Architecture",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-in-november-2023",
+      "filename": "35-tackling-hallucinations-boosting-reasoning-abilities-and-new.md",
+      "imageCount": 19,
+      "wordCount": 5369,
+      "hasPaywall": false
+    },
+    {
+      "index": 36,
+      "title": "Practical Tips for Finetuning LLMs Using LoRA (Low-Rank Adaptation)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/practical-tips-for-finetuning-llms",
+      "filename": "36-practical-tips-for-finetuning-llms-using-lora-low-rank-adapt.md",
+      "imageCount": 17,
+      "wordCount": 3605,
+      "hasPaywall": false
+    },
+    {
+      "index": 36,
+      "title": "Practical Tips for Finetuning LLMs Using LoRA (Low-Rank Adaptation)",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/practical-tips-for-finetuning-llms",
+      "filename": "36-practical-tips-for-finetuning-llms-using-lora-low-rank-adapt.md",
+      "imageCount": 17,
+      "wordCount": 3605,
+      "hasPaywall": false
+    },
+    {
+      "index": 37,
+      "title": "A Potential Successor to RLHF for Efficient LLM Alignment and the Resurgence of CNNs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-october-2023",
+      "filename": "37-a-potential-successor-to-rlhf-for-efficient-llm-alignment-an.md",
+      "imageCount": 11,
+      "wordCount": 3559,
+      "hasPaywall": false
+    },
+    {
+      "index": 37,
+      "title": "A Potential Successor to RLHF for Efficient LLM Alignment and the Resurgence of CNNs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-papers-october-2023",
+      "filename": "37-a-potential-successor-to-rlhf-for-efficient-llm-alignment-an.md",
+      "imageCount": 11,
+      "wordCount": 3559,
+      "hasPaywall": false
+    },
+    {
+      "index": 38,
+      "title": "AI and Open Source in 2023",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-and-open-source-in-2023",
+      "filename": "38-ai-and-open-source-in-2023.md",
+      "imageCount": 18,
+      "wordCount": 3238,
+      "hasPaywall": false
+    },
+    {
+      "index": 38,
+      "title": "AI and Open Source in 2023",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-and-open-source-in-2023",
+      "filename": "38-ai-and-open-source-in-2023.md",
+      "imageCount": 18,
+      "wordCount": 3238,
+      "hasPaywall": false
+    },
+    {
+      "index": 39,
+      "title": "LLM Business and Busyness: Recent Company Investments and AI Adoption, New Small Openly Available LLMs, and LoRA Research",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-12-llm-businesses",
+      "filename": "39-llm-business-and-busyness-recent-company-investments-and-ai-.md",
+      "imageCount": 14,
+      "wordCount": 3326,
+      "hasPaywall": false
+    },
+    {
+      "index": 39,
+      "title": "LLM Business and Busyness: Recent Company Investments and AI Adoption, New Small Openly Available LLMs, and LoRA Research",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-12-llm-businesses",
+      "filename": "39-llm-business-and-busyness-recent-company-investments-and-ai-.md",
+      "imageCount": 14,
+      "wordCount": 3326,
+      "hasPaywall": false
+    },
+    {
+      "index": 40,
+      "title": "From Self-Alignment to LongLoRA",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-highlights-in-three-sentences-3d5",
+      "filename": "40-from-self-alignment-to-longlora.md",
+      "imageCount": 23,
+      "wordCount": 1976,
+      "hasPaywall": false
+    },
+    {
+      "index": 40,
+      "title": "From Self-Alignment to LongLoRA",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-highlights-in-three-sentences-3d5",
+      "filename": "40-from-self-alignment-to-longlora.md",
+      "imageCount": 23,
+      "wordCount": 1976,
+      "hasPaywall": false
+    },
+    {
+      "index": 41,
+      "title": "LLM Training: RLHF and Its Alternatives",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-training-rlhf-and-its-alternatives",
+      "filename": "41-llm-training-rlhf-and-its-alternatives.md",
+      "imageCount": 18,
+      "wordCount": 3362,
+      "hasPaywall": false
+    },
+    {
+      "index": 41,
+      "title": "LLM Training: RLHF and Its Alternatives",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/llm-training-rlhf-and-its-alternatives",
+      "filename": "41-llm-training-rlhf-and-its-alternatives.md",
+      "imageCount": 18,
+      "wordCount": 3362,
+      "hasPaywall": false
+    },
+    {
+      "index": 42,
+      "title": "The Missing Bits: Llama 2 Weights Have Changed",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/the-missing-bits-llama-2-weights",
+      "filename": "42-the-missing-bits-llama-2-weights-have-changed.md",
+      "imageCount": 10,
+      "wordCount": 1283,
+      "hasPaywall": false
+    },
+    {
+      "index": 42,
+      "title": "The Missing Bits: Llama 2 Weights Have Changed",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/the-missing-bits-llama-2-weights",
+      "filename": "42-the-missing-bits-llama-2-weights-have-changed.md",
+      "imageCount": 10,
+      "wordCount": 1283,
+      "hasPaywall": false
+    },
+    {
+      "index": 43,
+      "title": "New Foundation Models: CodeLlama and other highlights in Open-Source AI",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-11-new-foundation-models",
+      "filename": "43-new-foundation-models-codellama-and-other-highlights-in-open.md",
+      "imageCount": 22,
+      "wordCount": 4244,
+      "hasPaywall": false
+    },
+    {
+      "index": 43,
+      "title": "New Foundation Models: CodeLlama and other highlights in Open-Source AI",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-11-new-foundation-models",
+      "filename": "43-new-foundation-models-codellama-and-other-highlights-in-open.md",
+      "imageCount": 22,
+      "wordCount": 4244,
+      "hasPaywall": false
+    },
+    {
+      "index": 44,
+      "title": "Llama 2, Flash-Attention 2, and More",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-highlights-in-three-sentences",
+      "filename": "44-llama-2-flash-attention-2-and-more.md",
+      "imageCount": 15,
+      "wordCount": 1250,
+      "hasPaywall": false
+    },
+    {
+      "index": 44,
+      "title": "Llama 2, Flash-Attention 2, and More",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/research-highlights-in-three-sentences",
+      "filename": "44-llama-2-flash-attention-2-and-more.md",
+      "imageCount": 15,
+      "wordCount": 1250,
+      "hasPaywall": false
+    },
+    {
+      "index": 45,
+      "title": "Large Language Models and Nearest Neighbors",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/large-language-models-and-nearest",
+      "filename": "45-large-language-models-and-nearest-neighbors.md",
+      "imageCount": 11,
+      "wordCount": 3039,
+      "hasPaywall": false
+    },
+    {
+      "index": 45,
+      "title": "Large Language Models and Nearest Neighbors",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/large-language-models-and-nearest",
+      "filename": "45-large-language-models-and-nearest-neighbors.md",
+      "imageCount": 11,
+      "wordCount": 3039,
+      "hasPaywall": false
+    },
+    {
+      "index": 46,
+      "title": "Long Contexts and Scaling Transformers to 1,000,000,000 Tokens",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-highlights-in-3-sentences-738",
+      "filename": "46-long-contexts-and-scaling-transformers-to-1-000-000-000-toke.md",
+      "imageCount": 23,
+      "wordCount": 1822,
+      "hasPaywall": false
+    },
+    {
+      "index": 46,
+      "title": "Long Contexts and Scaling Transformers to 1,000,000,000 Tokens",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-highlights-in-3-sentences-738",
+      "filename": "46-long-contexts-and-scaling-transformers-to-1-000-000-000-toke.md",
+      "imageCount": 23,
+      "wordCount": 1822,
+      "hasPaywall": false
+    },
+    {
+      "index": 47,
+      "title": "State of Computer Vision 2023: From Vision Transformers to Neural Radiance Fields",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-10-state-of-computer",
+      "filename": "47-state-of-computer-vision-2023-from-vision-transformers-to-ne.md",
+      "imageCount": 18,
+      "wordCount": 3132,
+      "hasPaywall": false
+    },
+    {
+      "index": 47,
+      "title": "State of Computer Vision 2023: From Vision Transformers to Neural Radiance Fields",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-10-state-of-computer",
+      "filename": "47-state-of-computer-vision-2023-from-vision-transformers-to-ne.md",
+      "imageCount": 18,
+      "wordCount": 3132,
+      "hasPaywall": false
+    },
+    {
+      "index": 48,
+      "title": "Accelerating PyTorch Model Training",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/accelerating-pytorch-model-training",
+      "filename": "48-accelerating-pytorch-model-training.md",
+      "imageCount": 15,
+      "wordCount": 2002,
+      "hasPaywall": false
+    },
+    {
+      "index": 48,
+      "title": "Accelerating PyTorch Model Training",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/accelerating-pytorch-model-training",
+      "filename": "48-accelerating-pytorch-model-training.md",
+      "imageCount": 15,
+      "wordCount": 2002,
+      "hasPaywall": false
+    },
+    {
+      "index": 49,
+      "title": "Understanding Encoder And Decoder LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-encoder-and-decoder",
+      "filename": "49-understanding-encoder-and-decoder-llms.md",
+      "imageCount": 5,
+      "wordCount": 1566,
+      "hasPaywall": false
+    },
+    {
+      "index": 49,
+      "title": "Understanding Encoder And Decoder LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-encoder-and-decoder",
+      "filename": "49-understanding-encoder-and-decoder-llms.md",
+      "imageCount": 5,
+      "wordCount": 1566,
+      "hasPaywall": false
+    },
+    {
+      "index": 50,
+      "title": "Direct-Preference Optimization for Human Feedback and More",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-highlights-in-3-sentences-2a1",
+      "filename": "50-direct-preference-optimization-for-human-feedback-and-more.md",
+      "imageCount": 25,
+      "wordCount": 1999,
+      "hasPaywall": false
+    },
+    {
+      "index": 50,
+      "title": "Direct-Preference Optimization for Human Feedback and More",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-highlights-in-3-sentences-2a1",
+      "filename": "50-direct-preference-optimization-for-human-feedback-and-more.md",
+      "imageCount": 25,
+      "wordCount": 1999,
+      "hasPaywall": false
+    },
+    {
+      "index": 51,
+      "title": "LLM Tuning & Dataset Perspectives",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-9-llm-tuning-and-dataset",
+      "filename": "51-llm-tuning-dataset-perspectives.md",
+      "imageCount": 19,
+      "wordCount": 3462,
+      "hasPaywall": false
+    },
+    {
+      "index": 51,
+      "title": "LLM Tuning & Dataset Perspectives",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-9-llm-tuning-and-dataset",
+      "filename": "51-llm-tuning-dataset-perspectives.md",
+      "imageCount": 19,
+      "wordCount": 3462,
+      "hasPaywall": false
+    },
+    {
+      "index": 52,
+      "title": "About LayerNorm Variants in the Original Transformer Paper, and Some Other Interesting Historical Tidbits About LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/why-the-original-transformer-figure",
+      "filename": "52-about-layernorm-variants-in-the-original-transformer-paper-a.md",
+      "imageCount": 6,
+      "wordCount": 1156,
+      "hasPaywall": false
+    },
+    {
+      "index": 52,
+      "title": "About LayerNorm Variants in the Original Transformer Paper, and Some Other Interesting Historical Tidbits About LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/why-the-original-transformer-figure",
+      "filename": "52-about-layernorm-variants-in-the-original-transformer-paper-a.md",
+      "imageCount": 6,
+      "wordCount": 1156,
+      "hasPaywall": false
+    },
+    {
+      "index": 53,
+      "title": "Finetuning LLMs Efficiently with Adapters",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/finetuning-llms-with-adapters",
+      "filename": "53-finetuning-llms-efficiently-with-adapters.md",
+      "imageCount": 12,
+      "wordCount": 1830,
+      "hasPaywall": false
+    },
+    {
+      "index": 53,
+      "title": "Finetuning LLMs Efficiently with Adapters",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/finetuning-llms-with-adapters",
+      "filename": "53-finetuning-llms-efficiently-with-adapters.md",
+      "imageCount": 12,
+      "wordCount": 1830,
+      "hasPaywall": false
+    },
+    {
+      "index": 54,
+      "title": "Transformers for Long Inputs and Less Training Data",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-highlights-in-3-sentences",
+      "filename": "54-transformers-for-long-inputs-and-less-training-data.md",
+      "imageCount": 13,
+      "wordCount": 1772,
+      "hasPaywall": false
+    },
+    {
+      "index": 54,
+      "title": "Transformers for Long Inputs and Less Training Data",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ai-research-highlights-in-3-sentences",
+      "filename": "54-transformers-for-long-inputs-and-less-training-data.md",
+      "imageCount": 13,
+      "wordCount": 1772,
+      "hasPaywall": false
+    },
+    {
+      "index": 55,
+      "title": "Insights from Large-Scale LLM Training Runs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-8-the-latest-open-source",
+      "filename": "55-insights-from-large-scale-llm-training-runs.md",
+      "imageCount": 13,
+      "wordCount": 2923,
+      "hasPaywall": false
+    },
+    {
+      "index": 55,
+      "title": "Insights from Large-Scale LLM Training Runs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-8-the-latest-open-source",
+      "filename": "55-insights-from-large-scale-llm-training-runs.md",
+      "imageCount": 13,
+      "wordCount": 2923,
+      "hasPaywall": false
+    },
+    {
+      "index": 56,
+      "title": "Understanding Parameter-Efficient LLM Finetuning: Prompt Tuning And Prefix Tuning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-parameter-efficient",
+      "filename": "56-understanding-parameter-efficient-llm-finetuning-prompt-tuni.md",
+      "imageCount": 8,
+      "wordCount": 1016,
+      "hasPaywall": false
+    },
+    {
+      "index": 56,
+      "title": "Understanding Parameter-Efficient LLM Finetuning: Prompt Tuning And Prefix Tuning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-parameter-efficient",
+      "filename": "56-understanding-parameter-efficient-llm-finetuning-prompt-tuni.md",
+      "imageCount": 8,
+      "wordCount": 1016,
+      "hasPaywall": false
+    },
+    {
+      "index": 57,
+      "title": "Finetuning Large Language Models",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/finetuning-large-language-models",
+      "filename": "57-finetuning-large-language-models.md",
+      "imageCount": 9,
+      "wordCount": 2246,
+      "hasPaywall": false
+    },
+    {
+      "index": 57,
+      "title": "Finetuning Large Language Models",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/finetuning-large-language-models",
+      "filename": "57-finetuning-large-language-models.md",
+      "imageCount": 9,
+      "wordCount": 2246,
+      "hasPaywall": false
+    },
+    {
+      "index": 58,
+      "title": "Understanding Large Language Models",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-large-language-models",
+      "filename": "58-understanding-large-language-models.md",
+      "imageCount": 21,
+      "wordCount": 3501,
+      "hasPaywall": false
+    },
+    {
+      "index": 58,
+      "title": "Understanding Large Language Models",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/understanding-large-language-models",
+      "filename": "58-understanding-large-language-models.md",
+      "imageCount": 21,
+      "wordCount": 3501,
+      "hasPaywall": false
+    },
+    {
+      "index": 59,
+      "title": "Large Language Models 3.0",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-7-large-language-models",
+      "filename": "59-large-language-models-3-0.md",
+      "imageCount": 16,
+      "wordCount": 4087,
+      "hasPaywall": false
+    },
+    {
+      "index": 59,
+      "title": "Large Language Models 3.0",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-7-large-language-models",
+      "filename": "59-large-language-models-3-0.md",
+      "imageCount": 16,
+      "wordCount": 4087,
+      "hasPaywall": false
+    },
+    {
+      "index": 60,
+      "title": "TrAIn Differently: Do We Need Reinforcement Learning with Human Feedback (RLHF)?",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-6-train-differently",
+      "filename": "60-train-differently-do-we-need-reinforcement-learning-with-hum.md",
+      "imageCount": 17,
+      "wordCount": 4586,
+      "hasPaywall": false
+    },
+    {
+      "index": 60,
+      "title": "TrAIn Differently: Do We Need Reinforcement Learning with Human Feedback (RLHF)?",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-6-train-differently",
+      "filename": "60-train-differently-do-we-need-reinforcement-learning-with-hum.md",
+      "imageCount": 17,
+      "wordCount": 4586,
+      "hasPaywall": false
+    },
+    {
+      "index": 61,
+      "title": "RevAIval of Ideas: From Next-Generation Convolutional Neural Networks to LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-5-revaival-of-ideas",
+      "filename": "61-revaival-of-ideas-from-next-generation-convolutional-neural-.md",
+      "imageCount": 26,
+      "wordCount": 4682,
+      "hasPaywall": false
+    },
+    {
+      "index": 61,
+      "title": "RevAIval of Ideas: From Next-Generation Convolutional Neural Networks to LLMs",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-5-revaival-of-ideas",
+      "filename": "61-revaival-of-ideas-from-next-generation-convolutional-neural-.md",
+      "imageCount": 26,
+      "wordCount": 4682,
+      "hasPaywall": false
+    },
+    {
+      "index": 62,
+      "title": "Looking Back at 2022: A Big Year For AI",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-4-a-big-year-for-ai",
+      "filename": "62-looking-back-at-2022-a-big-year-for-ai.md",
+      "imageCount": 15,
+      "wordCount": 3059,
+      "hasPaywall": false
+    },
+    {
+      "index": 62,
+      "title": "Looking Back at 2022: A Big Year For AI",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-4-a-big-year-for-ai",
+      "filename": "62-looking-back-at-2022-a-big-year-for-ai.md",
+      "imageCount": 15,
+      "wordCount": 3059,
+      "hasPaywall": false
+    },
+    {
+      "index": 63,
+      "title": "Launching Large Language Models and Open Source Software",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-3-ainnouncements",
+      "filename": "63-launching-large-language-models-and-open-source-software.md",
+      "imageCount": 18,
+      "wordCount": 2936,
+      "hasPaywall": false
+    },
+    {
+      "index": 63,
+      "title": "Launching Large Language Models and Open Source Software",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-3-ainnouncements",
+      "filename": "63-launching-large-language-models-and-open-source-software.md",
+      "imageCount": 18,
+      "wordCount": 2936,
+      "hasPaywall": false
+    },
+    {
+      "index": 64,
+      "title": "Transformers, Fast and Slow: New Developments in Language Processing",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-2-transformers-fast-and",
+      "filename": "64-transformers-fast-and-slow-new-developments-in-language-proc.md",
+      "imageCount": 13,
+      "wordCount": 2953,
+      "hasPaywall": false
+    },
+    {
+      "index": 64,
+      "title": "Transformers, Fast and Slow: New Developments in Language Processing",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-2-transformers-fast-and",
+      "filename": "64-transformers-fast-and-slow-new-developments-in-language-proc.md",
+      "imageCount": 13,
+      "wordCount": 2953,
+      "hasPaywall": false
+    },
+    {
+      "index": 65,
+      "title": "A Diffusion of Innovations: Recent Developments in Generative Learning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-1-a-diffusion-of-innovations",
+      "filename": "65-a-diffusion-of-innovations-recent-developments-in-generative.md",
+      "imageCount": 12,
+      "wordCount": 2110,
+      "hasPaywall": false
+    },
+    {
+      "index": 65,
+      "title": "A Diffusion of Innovations: Recent Developments in Generative Learning",
+      "date": "JUL 19, 2025",
+      "url": "https://magazine.sebastianraschka.com/p/ahead-of-ai-1-a-diffusion-of-innovations",
+      "filename": "65-a-diffusion-of-innovations-recent-developments-in-generative.md",
+      "imageCount": 12,
+      "wordCount": 2110,
+      "hasPaywall": false
+    }
+  ]
+}

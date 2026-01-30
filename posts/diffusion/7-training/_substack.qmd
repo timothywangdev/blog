@@ -1,0 +1,354 @@
+---
+title: "Diffusion & Flow Matching Part 7: Training Targets and Algorithms"
+subtitle: "The complete training algorithms for flow matching and diffusion models"
+author: "Hujie Wang"
+date: "2025-12-14"
+categories: [diffusion, flow-matching, generative-models, score-matching, training]
+substack_url: "https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-148"
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **Flow matching training**: Regress against the conditional vector field *u*ₜ^target(*x*|*z*) — mathematically equivalent to the intractable marginal loss
+- **Score matching training**: Same trick works for ∇ log *p*ₜ(*x*|*z*) — this is how DDPM and Stable Diffusion are trained
+- **DDPM simplification**: Reparameterize to predict noise ε instead of score, and drop the 1/βₜ² weighting
+- **Conversion formula**: For Gaussian paths, you can convert between vector field, score, and noise prediction networks
+:::
+
+In the [previous posts](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075), we derived the target vector field *u*ₜ^target(*x*) for flow matching and extended it to SDEs via score functions. Now we face the practical question: **how do we actually train a neural network?**
+
+## Flow Matching
+
+Recall from [Part 2](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed) that flow matching generates samples via an ODE:
+
+$$
+dX_t = u_t^\theta(X_t) dt, \quad
+X_0 \sim p_{init}
+$$
+
+We want to train the neural network *u*ₜ^θ(*x*) to approximate the target vector field *u*ₜ^target(*x*) that we derived in [Part 4](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507). In other words, we want to find the parameters θ such that *u*ₜ^θ(*x*) ≈ *u*ₜ^target(*x*).
+
+An intuitive way to do this is to minimize the squared error between *u*ₜ^θ(*x*) and *u*ₜ^target(*x*). Let Unif denote the uniform distribution on [0,1]:
+
+$$
+\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t \sim \text{Unif}, x \sim p_t(x)} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
+$$
+
+But how do we sample *x* from *p*ₜ(*x*)? Recall from [Part 3](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-bed) that the marginal is defined as:
+
+$$
+p_t(x) = \int p_t(x | z) p_{data}(z) dz
+$$
+
+This integral tells us that *p*ₜ(*x*) is the marginal of the joint distribution *p*ₜ(*x*, *z*) = *p*ₜ(*x*|*z*) *p*ₜ(*z*). So sampling *x* from *p*ₜ(*x*) is equivalent to **ancestral sampling** from the joint:
+
+1. Sample *z* from *p*_data(*z*)
+2. Sample *x* from *p*ₜ(·|*z*)
+3. Discard *z*, keep *x*
+
+This means any expectation over *p*ₜ(*x*) can be rewritten as an expectation over the joint:
+
+$$
+\mathbb{E}_{x \sim p_t(x)}[f(x)] = \mathbb{E}_{z \sim p_{data}, x \sim p_t(x|z)}[f(x)]
+$$
+
+**Notation**: Since we always sample via the joint, we'll use the shorthand 𝔼ₜ,ᵧ,ₓ to denote this expectation over time *t* ~ Unif, data *z* ~ *p*_data, and noisy samples *x* ~ *p*ₜ(·|*z*).
+
+Applying this to our loss:
+
+$$
+\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right]
+$$
+
+We are not done here. While we do know the formula for *u*ₜ^target(*x*):
+
+$$
+u_t^{target}(x) = \int u_t^{target}(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
+$$
+
+but the integral itself is intractable. However, we can exploit the fact that the conditional vector field *u*ₜ^target(*x*|*z*) is tractable. Let us define the conditional flow matching loss as:
+
+$$
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x | z)\|^2 \right]
+$$
+
+Now I will prove that by explicitly regressing against the conditional vector field, we are implicitly regressing against the marginal vector field.
+
+::: {.callout-tip appearance="default"}
+## Theorem: The marginal flow matching loss equals the conditional flow matching loss up to a constant
+
+$$
+\mathcal{L}_{FM}(\theta) = \mathcal{L}_{CFM}(\theta) + \mathcal{C}
+$$
+
+where 𝒞 is independent of θ. Their gradients are the same:
+
+$$
+\nabla_{\theta} \mathcal{L}_{FM}(\theta) = \nabla_{\theta} \mathcal{L}_{CFM}(\theta)
+$$
+
+Hence, minimizing ℒ_CFM(θ) is equivalent to minimizing ℒ_FM(θ). In particular, for the minimizer θ*, it will hold that *u*ₜ^θ* = *u*ₜ^target.
+:::
+
+Proof:
+
+$$
+\begin{aligned}
+\mathcal{L}_{FM}(\theta) &= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta(x) - u_t^{target}(x)\|^2 \right] \\
+&= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 - 2  u_t^\theta(x)^T u_t^{target}(x)  + \|u_t^{target}(x)\|^2 \right] \\
+&= \mathbb{E}_{t,z,x} \left[ \|u_t^\theta (x) \|^2 \right] - 2 \mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] + \underbrace{\mathbb{E}_{t,z,x} \left[ \|u_t^{target}(x)\|^2 \right]}_{=\mathcal{C_1}} \\
+\end{aligned}
+$$
+
+The last term does not depend on θ. The key step is showing that the cross term simplifies. Note that *u*ₜ^target(*x*) doesn't depend on *z*, so we can write:
+
+$$
+\mathbb{E}_{t,z,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right] = \mathbb{E}_{t,x} \left[ u_t^\theta(x)^T u_t^{target}(x) \right]
+$$
+
+Now substitute the definition of *u*ₜ^target(*x*) and write out the integral. The intractable *p*ₜ(*x*) cancels! This is why conditional flow matching works.
+
+Plugging this result back and completing the square:
+
+$$
+\mathcal{L}_{FM}(\theta) = \mathcal{L}_{CFM}(\theta) + \underbrace{(\mathcal{C_1} - \mathcal{C_2})}_{=\mathcal{C}}
+$$
+
+Both 𝒞₁ and 𝒞₂ are independent of θ, so their difference 𝒞 is also independent of θ. ∎
+
+::: {.callout-tip appearance="default"}
+## Example: Flow Matching for Gaussian Conditional Probability Paths
+
+Consider the Gaussian conditional probability path from [Part 3](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-bed): *p*ₜ(·|*z*) = 𝒩(αₜ*z*, βₜ²*I*_d), where we sample via ε ~ 𝒩(0, *I*) so that *x* = αₜ*z* + βₜε.
+
+As we derived before, the conditional vector field is given by:
+
+$$
+u_t^{target}(x | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+$$
+
+Therefore, the conditional flow matching loss simplifies to:
+
+$$
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(\alpha_t z + \beta_t \epsilon) - (\dot{\alpha}_t z + \dot{\beta}_t \epsilon) \right\|^2 \right]
+$$
+
+**Special case**: αₜ = *t* and βₜ = 1−*t*, so α̇ₜ = 1 and β̇ₜ = −1 — commonly referred to as the **Gaussian CondOT probability path**:
+
+$$
+\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| u_t^\theta(tz + (1-t) \epsilon) - (z - \epsilon) \right\|^2 \right]
+$$
+
+Famous SOTA models like Stable Diffusion 3, Meta's Movie Gen Video use this simple yet effective procedure.
+:::
+
+Now, let us derive the training algorithm for flow matching for the **Gaussian CondOT probability path**:
+
+$$
+\begin{array}{l}
+\hline
+\textbf{Algorithm: } \text{Flow Matching Training (Gaussian CondOT path } p_t(x|z) = \mathcal{N}(tz, (1-t)^2 I_d) \text{)} \\
+\hline
+\textbf{Require: } \text{A dataset of samples } z \sim p_{\text{data}}, \text{ neural network } u_t^\theta \\
+\text{1: } \textbf{for } \text{each mini-batch of data } \textbf{do} \\
+\text{2: } \quad \text{Sample a data example } z \text{ from the dataset.} \\
+\text{3: } \quad \text{Sample a random time } t \sim \text{Unif}_{[0,1]}. \\
+\text{4: } \quad \text{Sample noise } \epsilon \sim \mathcal{N}(0, I_d). \\
+\text{5: } \quad \text{Set } x = tz + (1-t)\epsilon \hfill \text{(General: } x \sim p_t(\cdot|z) \text{)} \\
+\text{6: } \quad \text{Compute loss } \mathcal{L}(\theta) = \|u_t^\theta(x) - (z - \epsilon)\|^2 \hfill \text{(General: } \|u_t^\theta(x) - u_t^{\text{target}}(x|z)\|^2 \text{)} \\
+\text{7: } \quad \text{Update } \theta \text{ via gradient descent on } \mathcal{L}(\theta). \\
+\text{8: } \textbf{end for} \\
+\hline
+\end{array}
+$$
+
+
+## Score Matching
+
+Now let's turn to training diffusion models. Recall from [Part 5](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-f2f) that diffusion models use an SDE:
+
+$$
+\begin{aligned}
+dX_t &= [u_t^{target}(X_t) + \frac{\sigma_t^2}{2} \nabla \log p_t(X_t)] dt + \sigma_t dW_t \\
+X_0 &\sim p_{\text{init}}  \\
+\implies X_t \sim p_t
+\end{aligned}
+$$
+
+and as we showed in [Part 6](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075), the marginal score function is calculated as:
+
+$$
+\nabla \log p_t(x) = \int \nabla \log p_t(x | z) \frac{p_t(x | z) p_{data}(z)}{p_t(x)} dz
+$$
+
+To approximate ∇ log *p*ₜ, we can use a neural network called **score network** *s*ₜ^θ(*x*) to regress against the marginal score function.
+
+Similarly, we can design a score matching loss and a conditional score matching loss:
+
+$$
+\mathcal{L}_{SM}(\theta) = \mathbb{E}_{t,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x) \right\|^2 \right]
+$$
+
+$$
+\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,x} \left[ \left\| s_t^\theta(x) - \nabla \log p_t(x | z) \right\|^2 \right]
+$$
+
+Again, ∇ log *p*ₜ(*x*) is intractable, but ∇ log *p*ₜ(*x*|*z*) is tractable.
+
+::: {.callout-tip appearance="default"}
+## Theorem: The marginal score matching loss equals the conditional score matching loss up to a constant
+
+$$
+\mathcal{L}_{SM}(\theta) = \mathcal{L}_{CSM}(\theta) + \mathcal{C}
+$$
+
+where 𝒞 is independent of θ. Their gradients are the same:
+
+$$
+\nabla_{\theta} \mathcal{L}_{SM}(\theta) = \nabla_{\theta} \mathcal{L}_{CSM}(\theta)
+$$
+
+In particular, for the minimizer θ*, it will hold that *s*ₜ^θ* = ∇ log *p*ₜ.
+:::
+
+The proof is identical to the flow matching proof, as you can just replace *u*ₜ^target(*x*) with ∇ log *p*ₜ(*x*) and *u*ₜ^target(*x*|*z*) with ∇ log *p*ₜ(*x*|*z*).
+
+After training, we can choose an arbitrary diffusion coefficient σₜ and simulate the SDE to generate *X*₁ ~ *p*_data:
+
+$$
+\begin{aligned}
+X_0 &\sim p_{\text{init}} \\
+dX_t &= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma_t dW_t \\
+\end{aligned}
+$$
+
+In practice, we encounter two types of errors:
+
+1. Numerical errors from discretizing the SDE
+2. Approximation errors: *u*ₜ^θ(*X*ₜ) ≠ *u*ₜ^target(*X*ₜ)
+
+It may seem a disadvantage to learn both *u*ₜ^θ and *s*ₜ^θ for a diffusion model as opposed to a flow model. However, we can often directly learn both in a single neural network with two outputs. Further, as we will see for a special case of Gaussian probability path, *u*ₜ^θ and *s*ₜ^θ can be converted into one another.
+
+
+::: {.callout-tip appearance="default"}
+## Example: Denoising Diffusion Models — Score Matching
+
+The term "denoising diffusion models" refers to diffusion models with Gaussian probability path *p*ₜ(·|*z*) = 𝒩(αₜ*z*, βₜ²*I*_d).
+
+The conditional score is:
+
+$$
+\nabla \log p_t(x | z) = -\frac{x - \alpha_t z}{\beta_t^2}
+$$
+
+Plugging into ℒ_CSM(θ) and simplifying:
+
+$$
+\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \frac{1}{\beta_t^2} \left\|  (\beta_t s_t^\theta(\alpha_t z + \beta_t \epsilon) + \epsilon) \right\|^2 \right]
+$$
+
+**The problem**: The 1/βₜ² weighting blows up as βₜ → 0 (near *t*=1 for schedules like βₜ = 1−*t*), causing numerical instability.
+
+**The DDPM approach** (Ho et al., 2020) makes two independent modifications:
+
+**1. Reparameterize to noise prediction.** The loss is zero when *s*ₜ^θ(*x*) = −ε/βₜ, i.e., when −βₜ*s*ₜ^θ(*x*) = ε. This motivates defining a **noise prediction network**:
+
+$$\epsilon_t^\theta(x, t) := -\beta_t s_t^\theta(x, t)$$
+
+With this reparameterization, the CSM loss becomes:
+
+$$
+\mathcal{L}_{CSM}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \frac{1}{\beta_t^2} \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+$$
+
+Note: the 1/βₜ² weighting is still there! Reparameterization only changes what the network outputs (score → noise), not the weighting.
+
+**2. Drop the weighting (empirical choice).** Ho et al. found that simply removing 1/βₜ² works better in practice:
+
+$$
+\mathcal{L}_{\text{DDPM}}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+$$
+
+**Why does dropping the weighting work?** Both losses share the same global minimum (zero when εₜ^θ = ε for all *t*). What differs is the optimization landscape:
+
+- **Weighted loss**: Heavily penalizes errors at small βₜ (nearly clean images) → unstable gradients, network focuses on easy samples
+- **Simple loss**: Equal weight across all noise levels → stable training, network focuses on harder denoising tasks
+
+This is an empirical finding, not a mathematical consequence. The simple loss happens to produce better sample quality.
+
+**Note on time conditioning**: The network takes **both** the noisy image *x* **and** time *t* as input. It needs *t* to know the signal-to-noise ratio: the same ε creates different amounts of visible corruption at different times. In words: "given a noisy image and the noise level *t*, predict the (standardized) noise." This is why it's called **denoising** score matching.
+:::
+
+
+$$
+\begin{array}{l}
+\hline
+\textbf{Algorithm: } \text{Score Matching Training (Gaussian Probability Path } p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d) \text{)} \\
+\hline
+\textbf{Require: } \text{A dataset of samples } z \sim p_{\text{data}}, \text{ neural network } s_t^\theta \text{ (or } \epsilon_t^\theta \text{)} \\
+\text{1: } \textbf{for } \text{each mini-batch of data } \textbf{do} \\
+\text{2: } \quad \text{Sample a data example } z \text{ from the dataset.} \\
+\text{3: } \quad \text{Sample a random time } t \sim \text{Unif}_{[0,1]}. \\
+\text{4: } \quad \text{Sample noise } \epsilon \sim \mathcal{N}(0, I_d). \\
+\text{5: } \quad \text{Set } x = \alpha_t z + \beta_t \epsilon \\
+\text{6: } \quad \text{Compute loss:} \\
+\quad \quad \mathcal{L}_{CSM}(\theta) = \|s_t^\theta(x, t) + \frac{\epsilon}{\beta_t}\|^2 \quad \textit{// score prediction} \\
+\quad \quad \mathcal{L}_{DDPM}(\theta) = \|\epsilon_t^\theta(x, t) - \epsilon\|^2 \quad \textit{// noise prediction (recommended)} \\
+\text{7: } \quad \text{Update } \theta \text{ via gradient descent on } \mathcal{L}(\theta). \\
+\text{8: } \textbf{end for} \\
+\hline
+\end{array}
+$$
+
+There is another very useful property of the Gaussian probability path: we only need to learn one of *s*ₜ^θ or εₜ^θ and compute the other one from it directly.
+
+
+::: {.callout-tip appearance="default"}
+## Proposition: Conversion formula for Gaussian probability path
+
+$$
+\begin{aligned}
+u_t^{target}(x | z) &= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x | z) \\
+u_t^\theta(x) &= \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) \nabla \log p_t(x)
+\end{aligned}
+$$
+
+where the formula for the marginal vector field *u*ₜ^target is called **probability flow ODE** in the literature.
+:::
+
+The proof proceeds by substituting the conditional score ∇ log *p*ₜ(*x*|*z*) = −(*x* − αₜ*z*)/βₜ² into the conditional vector field formula and simplifying. See the full derivation in the appendix.
+
+If we have learned *s*ₜ^θ, we can compute *u*ₜ^θ from it using the conversion formula:
+
+$$
+u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
+$$
+
+If we have a trained score network *s*ₜ^θ, we can use arbitrary σₜ ≥ 0 to sample from the SDE:
+
+$$
+\begin{aligned}
+X_0 &\sim p_{\text{init}} \\
+dX_t &= [(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t + \frac{\sigma_t^2}{2}) s_t^\theta(X_t) + \frac{\dot{\alpha}_t}{\alpha_t} X_t] dt + \sigma_t dW_t \\
+\end{aligned}
+$$
+
+and generate samples *X*₁ ~ *p*_data. This corresponds to **stochastic sampling from a denoising diffusion model**.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+We derived the complete training algorithms for generative models with Gaussian probability paths.
+
+**Flow Matching (CFM)**: Regress *u*ₜ^θ(*x*) against α̇ₜ*z* + β̇ₜε where *x* = αₜ*z* + βₜε. For optimal transport paths (αₜ = *t*, βₜ = 1−*t*), the target simplifies to *z* − ε.
+
+**Score Matching (CSM → DDPM)**: Regress against the conditional score −ε/βₜ. DDPM reparameterizes to predict ε directly and drops the 1/βₜ² weighting for stability.
+
+**Conversion formula**: For Gaussian paths, vector field and score are interconvertible:
+$$
+u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
+$$
+
+Train one network, get both — then sample via ODE (deterministic) or SDE (stochastic) as needed.
+:::

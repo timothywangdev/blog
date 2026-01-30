@@ -1,0 +1,13 @@
+{
+  "name": "ahead-of-ai-scraper",
+  "version": "1.0.0",
+  "description": "Scraper for Ahead of AI newsletter by Sebastian Raschka",
+  "main": "scrape-ahead-of-ai.js",
+  "scripts": {
+    "scrape": "node scrape-ahead-of-ai.js",
+    "scrape:headless": "HEADLESS=true node scrape-ahead-of-ai.js"
+  },
+  "dependencies": {
+    "playwright": "^1.40.0"
+  }
+}

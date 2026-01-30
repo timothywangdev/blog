@@ -1,0 +1,222 @@
+---
+title: "Diffusion & Flow Matching Part 3: Probability Paths"
+subtitle: "Building the bridge from noise to data, one distribution at a time"
+author: "Hujie Wang"
+date: "2025-11-29"
+categories: [diffusion, flow-matching, generative-models]
+substack_url: "https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-bed"
+---
+
+::: {.callout-note appearance="simple"}
+
+## TL;DR
+
+- A **probability path** is a smooth interpolation between noise and data distributions
+- We build it from **conditional paths** (one per data point), then marginalize to get the full path
+- The **Gaussian probability path** is the most common choice
+- We derive the **conditional vector field** that generates this path — this becomes our training target
+
+:::
+
+# Probability Paths: From Noise to Data
+
+In the [previous post](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed), we learned that vector fields generate flows. Now we need to design a flow that transforms *probability distributions* — specifically, one that turns noise into data.
+
+The key idea: instead of thinking about individual particles, we'll think about how an entire *distribution* of particles evolves over time. This is what a **probability path** describes.
+
+![Conditional paths each target a specific data point z, while the marginal path describes the overall transformation from noise to data](conditional-vs-marginal.png)
+
+## Conditional Probability Path
+
+Why "conditional"? Because it's easier to think about one data point at a time. A **conditional probability path** describes how probability mass moves from noise toward a *specific* target point. We write this as *p*ₜ(*x*|*z*) — the distribution over *x* at time *t*, conditioned on target *z*.
+
+Formally, it's a family of distributions over ℝᵈ such that
+
+$$
+\begin{aligned}
+p_0(\cdot | z) = p_{init}, \quad
+p_1(\cdot | z) = \delta_z \quad \forall z \in \mathbb{R}^d
+\end{aligned}
+$$
+
+In other words, a conditional probability path interpolates between the initial distribution *p*ᵢₙᵢₜ and a single data point from the data distribution.
+
+## Marginal Probability Path
+
+Conditional paths are useful for construction, but what we really care about is the **marginal probability path** *p*ₜ(*x*) — the distribution we'd see if we sampled many different target points *z* from the data distribution and looked at where all the probability mass ends up.
+
+We obtain it by first sampling *z* from the data distribution, then sampling *x* from the conditional path at time *t*:
+
+$$
+\begin{aligned}
+&z \sim p_{data}, \quad x \sim p_t(\cdot | z) \\
+p_t(x) &= \int p_t(x, z) dz \\
+&= \int p_t(x | z) p_{data}(z) dz
+\end{aligned}
+$$
+
+We can verify that *p*ₜ(*x*) interpolates between *p*ᵢₙᵢₜ and the data distribution.
+
+**At t=0:** The conditional distribution equals the initial distribution for all *z*, so *p*ᵢₙᵢₜ(*x*) factors out of the integral:
+
+$$
+\begin{aligned}
+p_0(x) &= \int p_0(x | z) p_{data}(z) dz \\
+&= \int p_{init}(x) p_{data}(z) dz && \text{(since } p_0(\cdot|z) = p_{init} \text{)} \\
+&= p_{init}(x) \int p_{data}(z) dz && \text{(factor out } p_{init}(x) \text{)} \\
+&= p_{init}(x) && \text{(probability integrates to 1)}
+\end{aligned}
+$$
+
+**At t=1:** The conditional distribution collapses to a point mass at *z*. To evaluate this integral, we use the **sifting property** of the Dirac delta:
+
+$$
+\int f(z) \delta_z(x) \, dz = f(x)
+$$
+
+To understand this, think of δ_z(*x*) as the limit of increasingly narrow, tall functions that integrate to 1 — for example, a Gaussian centered at *z* with vanishing variance:
+
+$$
+\delta_{z,\epsilon}(x) = \frac{1}{\epsilon\sqrt{2\pi}} e^{-(x-z)^2/(2\epsilon^2)} \xrightarrow{\epsilon \to 0} \delta_z(x)
+$$
+
+As ε → 0, all the "mass" concentrates at *x* = *z*. So when we integrate *f*(*z*)δ over *z*, only the value near *z* = *x* contributes, giving *f*(*x*). Applying this:
+
+$$
+\begin{aligned}
+p_1(x) &= \int p_1(x | z) p_{data}(z) dz \\
+&= \int \delta_z(x) p_{data}(z) dz && \text{(since } p_1(\cdot|z) = \delta_z \text{)} \\
+&= p_{data}(x) && \text{(sifting property)}
+\end{aligned}
+$$
+
+## Example: Gaussian Probability Paths
+
+The abstract definition is nice, but what does a probability path actually *look like*? The most common choice is a **Gaussian probability path**, where each conditional distribution is a Gaussian whose mean drifts toward *z* and whose variance shrinks over time.
+
+![The Gaussian probability path: starting from a wide distribution at t=0, the mean shifts toward z while the variance shrinks, until at t=1 all mass concentrates at z](gaussian-path-evolution.png)
+
+The conditional Gaussian probability path is defined as:
+
+$$
+\mathbf{p}_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)
+$$
+
+where αₜ and βₜ are noise schedulers — smooth, **monotonically** differentiable functions with the following boundary conditions:
+
+$$
+\begin{aligned}
+\alpha_0 &= \beta_1 = 0 \\
+\beta_0 &= \alpha_1 = 1
+\end{aligned}
+$$
+
+which implies
+
+$$
+\begin{aligned}
+\mathbf{p}_0(\cdot | z) &= \mathcal{N}(0, I_d) \\
+\mathbf{p}_1(\cdot | z) &= \lim_{\beta \to 0} \mathcal{N}(z, \beta^2 I_d) = \delta_z
+\end{aligned}
+$$
+
+As the variance vanishes, the Gaussian concentrates all its mass at the mean *z*, converging (in distribution) to the Dirac delta δ_z.
+
+Therefore, this Gaussian probability path satisfies our earlier boundary conditions and is a valid conditional probability path.
+
+Intuitively, given a data point *z* at time t=1, we gradually add noise to it as we go backward in time until t=0.
+
+## Conditional Vector Field for Gaussian Paths
+
+We've defined a probability path — but remember from [Part 2](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed), flows are generated by *vector fields*. So what vector field generates our Gaussian probability path?
+
+This is the key question: if we can find this vector field, it becomes our **training target**. We'll train a neural network to approximate it.
+
+Let us construct the conditional vector field (where the dots denote time derivatives, e.g., α̇ₜ = ∂αₜ/∂t):
+
+$$
+u_t^{\text{target}}(x | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+$$
+
+We can show that this conditional vector field is valid in the sense that its ODE trajectories *X*ₜ satisfy:
+
+$$
+\begin{aligned}
+X_t &\sim p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d) \\
+X_0 &\sim \mathcal{N}(0, I_d)
+\end{aligned}
+$$
+
+How do we prove this? Let us first construct a conditional flow model ψₜ^target(*x*₀|*z*):
+
+$$
+\begin{aligned}
+\psi_t^{target}(x_0 | z) &= \alpha_t z + \beta_t x_0 \\
+x_0 \sim \mathcal{N}(0, I_d)
+\end{aligned}
+$$
+
+We can show that the conditional flow model satisfies the conditional probability path:
+
+$$
+\begin{aligned}
+X_t &= \psi_t^{target}(X_0 | z) \\
+&= \alpha_t z + \beta_t X_0 \\
+&\sim \mathcal{N}(\alpha_t z, \beta_t^2 I_d) && \text{(since } X_0 \sim \mathcal{N}(0, I_d) \text{)}
+\end{aligned}
+$$
+
+Here we've used the property of Gaussian distributions: if *X* ~ 𝒩(μ, σ²I), then *aX* + *b* ~ 𝒩(*a*μ + *b*, *a*²σ²I).
+
+We conclude that the conditional flow model satisfies the conditional probability path.
+
+Then we use the definition of the conditional flow model to get the conditional vector field:
+
+$$
+\begin{aligned}
+\frac{d}{dt} \psi_t^{target}(x_0 | z) &= u_t^{target}(\psi_t^{target}(x_0 | z) | z) \\
+\iff \\
+\dot{\alpha}_t z + \dot{\beta}_t x_0 = u_t^{target}(\alpha_t z + \beta_t x_0 | z)
+\end{aligned}
+$$
+
+We know that
+
+$$
+x_t = \alpha_t z + \beta_t x_0
+\iff
+x_0 = \frac{x_t - \alpha_t z}{\beta_t}
+$$
+
+Substituting *x*₀ with (*x*ₜ - αₜ*z*)/βₜ in the above equation, we get:
+
+$$
+u_t^{target}(x_t | z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x_t
+$$
+
+Why do this? Because the vector field must be written as *u*ₜ(*x*|*z*) where *x* is the current position at time *t*.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+We constructed **probability paths** that interpolate from noise to data. The key insight: build the marginal path *p*ₜ(*x*) from simpler **conditional paths** *p*ₜ(*x*|*z*), each targeting a specific data point.
+
+For Gaussian paths, we derived the conditional vector field:
+
+$$
+u_t^{target}(x|z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+$$
+
+This is our training target — but there's a catch: it depends on *z*, which we don't know at generation time. The next post resolves this with the marginalization trick.
+:::
+
+## What's Next?
+
+We now have:
+
+1. **Probability paths** that interpolate from noise to data
+2. **Conditional vector fields** that generate these paths
+
+But there's a problem: these are *conditional* on knowing the target data point *z*. At generation time, we don't know *z* — that's what we're trying to generate!
+
+In the next post, we'll see how the **marginalization trick** solves this problem, allowing us to train on conditional targets while learning a marginal vector field that works without knowing *z*.

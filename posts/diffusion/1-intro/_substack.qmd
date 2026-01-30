@@ -1,0 +1,115 @@
+---
+title: "Diffusion & Flow Matching Part 1: Introduction"
+subtitle: "How neural networks learn to transform random noise into stunning images"
+author: "Hujie Wang"
+date: "2025-11-27"
+categories: [diffusion, flow-matching, generative-models]
+substack_url: "https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part"
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **Diffusion models** gradually add noise to data, then learn to reverse the process
+- **Flow matching** learns a velocity field that directly transports noise to data
+- Both achieve state-of-the-art results; flow matching is often simpler to train
+:::
+
+## Series Overview
+
+This multi-part series explores the theory behind modern generative models. Each post builds on the previous one:
+
+- **Part 1: Introduction** (this post) — High-level overview of diffusion and flow matching
+- **[Part 2: Understanding Flows](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed)** — Vector fields, trajectories, and flows — the foundation
+- **[Part 3: Probability Paths](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-bed)** — How we define paths from noise to data
+- **[Part 4: The Flow Matching Loss](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507)** — The marginalization trick that makes training work
+- **[Part 5: Diffusion Models & SDEs](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-f2f)** — Stochastic differential equations and Brownian motion
+- **[Part 6: Score Functions](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075)** — Conditional and marginal scores, the training trick
+- **[Part 7: Training Algorithms](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-148)** — CFM, DDPM, and the conversion formulas
+- **[Part 8: Guided Generation](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-6a4)** — Classifier and classifier-free guidance
+- **[Part 9: U-Net Architecture](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-956)** — The workhorse architecture for image generation
+- **[Part 10: Diffusion Transformers](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-686)** — DiT: Transformers for diffusion
+- **[Part 11: Building an Image Generator](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-917)** — Hands-on: train a flow matching model on CIFAR-10
+- **[Part 12: Why Diffusion?](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-9d9)** — The multimodal problem — why direct regression fails
+
+## What Are We Building?
+
+Diffusion models and flow matching power today's best generative AI systems: Stable Diffusion, DALL-E, Midjourney, Flux. Different formulations, same fundamental problem:
+
+> **How do we learn to transform random noise into structured data?**
+
+::: {.callout-tip appearance="simple"}
+## Why Not Just Learn Directly?
+
+You might wonder: why all this complexity? Can't we just train a network to map labels to images directly? The short answer is **mode averaging** — direct regression produces blurry outputs when multiple valid answers exist. We'll explore this in detail in a later post.
+:::
+
+If we can do this, we can generate new images, audio, video, or any data type by starting with random noise and "flowing" toward realistic samples.
+
+![Diffusion gradually adds noise then learns to reverse it; flow matching learns a direct velocity field from noise to data](diffusion-vs-flow.png)
+
+## Diffusion Models: The Noisy Path
+
+The key idea behind diffusion models is surprisingly simple:
+
+1. **Forward process**: Take real data and gradually corrupt it with noise until it becomes pure random noise
+2. **Reverse process**: Train a neural network to undo this corruption step by step
+
+Think of it like this: if you slowly blur a photograph until it's unrecognizable static, the neural network learns to "unblur" it. At generation time, you start with pure static and apply the learned unblurring process to create a new image.
+
+The forward process is fixed (just adding noise), so the only thing we need to learn is how to reverse it. The network is trained to predict how much noise was added at each step.
+
+## Flow Matching: The Direct Path
+
+Flow matching takes a more direct approach:
+
+1. **Define a path**: Specify how to smoothly interpolate between noise and data
+2. **Learn the velocity**: Train a neural network to predict the direction of motion along this path
+
+Imagine dropping a leaf into a river. The current (vector field) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the "noise region" will flow toward the "data region."
+
+The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.
+
+## How Do They Compare?
+
+**Diffusion:**
+
+- **Corruption process:** Gradual noise addition
+- **What the network learns:** How much noise to remove
+- **Sampling method:** Iterative denoising
+- **Underlying theory:** Score matching
+- **Path type:** Stochastic (random)
+
+**Flow Matching:**
+
+- **Corruption process:** Direct interpolation
+- **What the network learns:** Which direction to move
+- **Sampling method:** Following the learned flow
+- **Underlying theory:** Optimal transport
+- **Path type:** Deterministic (fixed)
+
+## The Deep Connection
+
+Diffusion and flow matching look different, but they're deeply related. Every diffusion model has an equivalent "probability flow" ODE that looks like flow matching. The score function (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.
+
+Insights from one framework often transfer to the other. Modern systems sometimes combine ideas from both.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Two paradigms for generative modeling: **diffusion** (add noise, learn to denoise) and **flow matching** (learn a velocity field that transports noise to data). They look different but share deep mathematical structure. Every diffusion model has an equivalent ODE formulation.
+
+This series makes these connections precise. We'll build the theory step by step: what flows are ([Part 2](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed)), probability paths ([Part 3](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-bed)), training losses ([Part 4](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507)), stochasticity and SDEs ([Part 5](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-f2f)), then score functions ([Parts 6](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075)-[7](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-148)).
+:::
+
+## What's Next?
+
+In the following posts, we'll develop the mathematical machinery to understand these methods properly:
+
+- **[Part 2](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed)**: We'll define what "flows" and "vector fields" actually mean
+- **[Part 3](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-bed)**: We'll see how to construct paths from noise to data
+- **[Part 4](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507)**: We'll discover the clever trick that makes training tractable
+- **[Part 5](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-f2f)**: We'll add stochasticity to get SDEs and understand Brownian motion
+- **[Part 6](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075)**: We'll learn about score functions and the training trick
+
+By the end, you'll understand not just *what* these models do, but *why* they work.

@@ -1,0 +1,279 @@
+---
+title: "Diffusion & Flow Matching Part 5: Diffusion Models and SDEs"
+subtitle: "Adding randomness to the equation — and why it matters"
+author: "Hujie Wang"
+date: "2025-12-01"
+categories: [diffusion, flow-matching, generative-models, sde]
+substack_url: "https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-f2f"
+---
+
+::: {.callout-note appearance="simple"}
+
+## TL;DR
+
+- **Diffusion models** add stochasticity to the ODE: d*X*ₜ = *u*ₜ(*X*ₜ)d*t* + σₜd*W*ₜ
+- **Key insight**: We derive SDEs by thinking in terms of *infinitesimal updates* rather than derivatives
+- The **Brownian motion** term d*W*ₜ represents continuous random perturbations
+- Setting σₜ = 0 recovers the deterministic ODE from flow matching
+
+:::
+
+# Diffusion Models: Adding Stochasticity
+
+In Parts 2-4, we developed flow matching — a framework where a neural network learns a vector field *u*ₜ^θ(*x*) that transports noise to data via an ODE:
+
+$$
+dX_t = u_t^\theta(X_t) \, dt
+$$
+
+This is elegant, but there's another approach that dominated generative modeling before flow matching emerged: **diffusion models**. Instead of following a deterministic path, diffusion models add randomness at each step.
+
+Why would we want randomness? It turns out that stochasticity can help exploration during sampling, improve sample diversity, and connects to a rich mathematical theory. Let's see how.
+
+## The Problem with Derivatives
+
+Before we add stochasticity, let's revisit how we think about ODEs. The standard formulation uses derivatives:
+
+$$
+\frac{d}{dt} X_t = u_t(X_t)
+$$
+
+This says: "the instantaneous rate of change of *X*ₜ equals the vector field *u*ₜ evaluated at *X*ₜ."
+
+::: {.callout-warning appearance="simple"}
+## The Challenge
+Derivatives are elegant for deterministic systems, but they become problematic when we want to add randomness. A random process doesn't have a well-defined derivative in the classical sense — the path is too "jagged" due to the random perturbations.
+:::
+
+To add stochasticity properly, we need a different way to think about dynamics — one that doesn't rely on taking derivatives.
+
+## From Derivatives to Infinitesimal Updates
+
+Instead of asking "what is the derivative?", we can ask: "what happens over a small time step *h*?"
+
+Starting from the ODE, we can write:
+
+$$
+\frac{1}{h}(X_{t+h} - X_t) = u_t(X_t) + R_t(h)
+$$
+
+where *R*ₜ(*h*) is an error term that goes to zero as *h* → 0.
+
+::: {.callout-note collapse="true"}
+## Where does the error term come from?
+The error term comes from the definition of the derivative itself. The derivative is defined as a limit:
+$$
+\frac{dX_t}{dt} = \lim_{h \to 0} \frac{X_{t+h} - X_t}{h}
+$$
+
+When *h* is small but not zero, the finite difference is only an *approximation* to the true derivative:
+$$
+\frac{X_{t+h} - X_t}{h} = \frac{dX_t}{dt} + R_t(h)
+$$
+
+Since the ODE says d*X*ₜ/d*t* = *u*ₜ(*X*ₜ), we get the equation above. The key property is that *R*ₜ(*h*) → 0 as *h* → 0, which is exactly what the limit definition guarantees.
+
+**What about SDEs?** When we add stochasticity, *X*ₜ becomes a random variable, which means the error *R*ₜ(*h*) is also random. We can no longer simply say "*R*ₜ(*h*) → 0" — we need to specify *in what sense* a random quantity vanishes.
+
+The rigorous statement uses **mean square convergence**:
+$$
+\mathbb{E}[\|R_t(h)\|^2]^{1/2} \to 0 \quad \text{as } h \to 0
+$$
+
+This says the *typical size* of the error (measured by root-mean-square) goes to zero. Think of it as: "on average, the error becomes negligible."
+:::
+
+Rearranging:
+
+$$
+X_{t+h} = X_t + h \cdot u_t(X_t) + h \cdot R_t(h)
+$$
+
+::: {.callout-tip appearance="simple"}
+## Intuition
+This says: "where you end up = where you started + (small step) × (direction) + (small error)". As *h* → 0, the error term vanishes and we recover the ODE behavior.
+:::
+
+This **infinitesimal update** formulation is exactly what we need. It describes the dynamics without ever taking a derivative — we just describe how the state changes over small time intervals.
+
+## Adding Stochasticity: The SDE
+
+Now we can add randomness naturally. At each small time step, we add a random perturbation:
+
+$$
+X_{t+h} = X_t + \underbrace{h \cdot u_t(X_t)}_{\text{deterministic drift}} + \underbrace{\sigma_t (W_{t+h} - W_t)}_{\text{random perturbation}} + \underbrace{h \cdot R_t(h)}_{\text{error term}}
+$$
+
+Here:
+
+- *u*ₜ(*X*ₜ) is the **drift** — the deterministic direction (same as in flow matching)
+- σₜ is the **diffusion coefficient** — controls how much randomness we add
+- *W*ₜ is **Brownian motion** — a mathematical model of continuous random motion
+- *W*ₜ₊ₕ - *W*ₜ is the random increment over the time interval [*t*, *t*+*h*]
+
+As *h* → 0, we write this compactly as the **stochastic differential equation (SDE)**:
+
+$$
+dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+$$
+
+::: {.callout-important appearance="simple"}
+## Key Point
+Notice that we never took a derivative of the random process! The SDE notation d*X*ₜ is shorthand for the infinitesimal update, not an actual derivative. This is why SDEs can describe processes with random, non-differentiable paths.
+:::
+
+When σₜ = 0, the SDE reduces to an ODE, and we recover flow matching.
+
+::: {.callout-note appearance="simple"}
+## Definition: Diffusion Model
+
+A **diffusion model** is defined by two components:
+
+**SDE dynamics:**
+
+$$
+dX_t = u_t^\theta(X_t) \, dt + \sigma_t \, dW_t
+$$
+
+**Random initialization:**
+
+$$
+X_0 \sim p_{\text{init}}
+$$
+
+The drift *u*ₜ^θ is parameterized by a neural network, and *p*ᵢₙᵢₜ is typically a simple distribution like 𝒩(0, *I*). Compare this to flow matching, which has the same structure but with σₜ = 0 (no stochasticity).
+:::
+
+![ODE (flow matching) follows a single deterministic path; SDE (diffusion) follows stochastic paths with the same general direction](ode-vs-sde.png)
+
+::: {.callout-warning appearance="simple"}
+## No Flow Map for SDEs
+Recall that for ODEs, we had a **flow map** φₜ that deterministically mapped initial points to their positions at time *t*. SDEs don't have this! Given a starting point *X*₀, the value *X*ₜ is no longer fully determined — the stochastic evolution means different runs produce different trajectories. This is a fundamental difference that will affect how we think about probability distributions.
+:::
+
+## What is Brownian Motion?
+
+**Brownian motion** *W*ₜ (also called a Wiener process) is the mathematical model of "pure randomness" evolving continuously in time.
+
+::: {.callout-tip appearance="simple"}
+## Intuition: From Random Walk to Brownian Motion
+Start with something familiar: a **random walk**. At each step, flip a coin and move +1 or -1. After *n* steps, your position is the sum of *n* random ±1's.
+
+Now speed this up: take smaller steps more frequently. If you take *n* steps of size 1/√*n* per unit time, something magical happens as *n* → ∞ — you get Brownian motion. The √*n* scaling is important: it ensures the variance grows linearly with time (not too fast, not too slow).
+
+The result is a continuous path that:
+
+- Never stops jiggling (infinitely many tiny steps)
+- Has no preferred direction (mean 0)
+- Accumulates uncertainty over time (variance = time elapsed)
+:::
+
+Formally, Brownian motion has these properties:
+
+- **Starts at zero**: *W*₀ = 0
+- **Independent increments**: *W*ₜ₊ₕ - *W*ₜ is independent of everything up to time *t*
+- **Gaussian increments**: *W*ₜ₊ₕ - *W*ₜ ~ 𝒩(0, *h* · *I*)
+- **Continuous paths**: *W*ₜ is continuous in *t* (but nowhere differentiable!)
+
+Using these properties, we can simulate an SDE over a small time step. Starting from the SDE:
+$$
+dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+$$
+
+Over a finite step of size *h*:
+
+- d*t* becomes the step size *h*
+- d*W*ₜ becomes the increment *W*ₜ₊ₕ - *W*ₜ
+
+By the Gaussian increments property, *W*ₜ₊ₕ - *W*ₜ ~ 𝒩(0, *h* · *I*). We can sample from this distribution using the **reparameterization trick**:
+$$
+W_{t+h} - W_t = \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+$$
+
+This works because scaling a 𝒩(0, *I*) sample by √*h* gives variance *h* (since Var(√*h* · ε) = *h* · Var(ε) = *h*).
+
+Putting it together, we get the **Euler-Maruyama** discretization:
+$$
+X_{t+h} \approx X_t + u_t(X_t) \cdot h + \sigma_t \sqrt{h} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+$$
+
+This is the simplest way to simulate an SDE numerically. Notice how the noise scales with √*h*, not *h* — this is a fundamental property of Brownian motion.
+
+## The Diffusion Coefficient
+
+The diffusion coefficient σₜ controls the "temperature" of the random noise:
+
+- **Large σₜ**: More exploration, paths spread out quickly
+- **Small σₜ**: More deterministic, paths stay close to the drift
+- **σₜ = 0**: Pure ODE (flow matching)
+
+In diffusion models, σₜ is typically a **schedule** that varies with time. Common choices:
+
+**Variance Preserving (VP):**
+
+- σₜ = √βₜ
+- Used in DDPM
+
+**Variance Exploding (VE):**
+
+- σₜ = √(d[σ²(t)]/dt)
+- Used in NCSN/NCSNv2
+
+**Sub-VP:**
+
+- Interpolation between VP and VE
+- Used in Score SDE
+
+The choice of schedule affects sample quality, training stability, and generation speed.
+
+## Forward and Reverse Processes
+
+In diffusion models, we typically define:
+
+1. **Forward process**: An SDE that gradually adds noise to data until it becomes pure noise
+2. **Reverse process**: An SDE that removes noise, going from noise back to data
+
+The forward process is usually simple and fixed (e.g., just adding Gaussian noise). The challenge is learning to reverse it.
+
+::: {.callout-note appearance="simple"}
+## The Key Question
+Given the forward SDE that corrupts data into noise, what is the reverse SDE that transforms noise back into data?
+:::
+
+It turns out there's a beautiful mathematical result: the reverse SDE depends on something called the **score function** — the gradient of the log probability density. But how do we learn this score function? That's the subject of [Part 6](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075).
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+We extended flow matching to SDEs by thinking in terms of **infinitesimal updates** rather than derivatives:
+$$
+X_{t+h} = X_t + h \cdot u_t(X_t) + \sigma_t(W_{t+h} - W_t)
+$$
+
+The Brownian motion term *W*ₜ models continuous randomness — Gaussian increments with variance proportional to time elapsed. Setting σₜ = 0 recovers the deterministic ODE.
+
+**ODE (Flow Matching):**
+
+- d*X*ₜ = *u*ₜ d*t*
+- Deterministic paths
+- One trajectory per *x*₀
+
+**SDE (Diffusion):**
+
+- d*X*ₜ = *u*ₜ d*t* + σₜ d*W*ₜ
+- Stochastic paths
+- Distribution of trajectories
+
+The open question: how do we train a network to reverse the SDE? The answer involves the **score function**.
+:::
+
+## What's Next?
+
+We've seen how to add stochasticity to get an SDE, but we haven't yet addressed the core challenge: **how do we train a neural network to reverse the diffusion process?**
+
+In [Part 6](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-075), we'll discover:
+
+- The **score function** ∇ₓ log *p*ₜ(*x*) and why it's central to diffusion models
+- **Denoising score matching** — the clever trick that makes training tractable
+- The **probability flow ODE** — how every SDE has an equivalent deterministic formulation
+- How this connects diffusion models back to flow matching

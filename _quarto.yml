@@ -1,13 +1,16 @@
 project:
   type: website
+  render:
+    - "!**/_substack.qmd"
 
 website:
   title: "LayerNorm"
   description: "Exploring state-of-the-art AI models"
   site-url: https://layernorm.dev
-  favicon: favicon.png
+  favicon: images/ahead-of-robotics-logo-square.png
   google-analytics: "G-1RBJ1WWR89"
   navbar:
+    logo: images/ahead-of-robotics-logo-square.png
     right:
       - about.qmd
       - icon: github

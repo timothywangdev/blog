@@ -1,0 +1,349 @@
+---
+title: "Diffusion & Flow Matching Part 11: Building an Image Generator"
+subtitle: "A complete tutorial from theory to working code"
+author: "Hujie Wang"
+date: "2026-01-20"
+categories: [diffusion, flow-matching, generative-models, tutorial, cifar-10]
+substack_url: "https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-917"
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **We build a working image generator from scratch** using flow matching on CIFAR-10
+- **Same techniques power production systems** like Stable Diffusion, Flux, and Sora
+- **Classifier-free guidance (CFG)** lets us control what class to generate
+- **Full code included** — run it yourself on Google Colab
+:::
+
+## From Theory to Practice
+
+In the previous posts, we built up the mathematical foundations of flow matching:
+
+- **[Part 2](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed)**: Vector fields and flows
+- **[Part 4](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507)**: The marginalization trick and CFM loss
+- **[Part 7](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-148)**: Training algorithms
+- **[Part 9](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-956)**: U-Net architecture
+
+Now it's time to put it all together. We'll build a **conditional image generator** that can create CIFAR-10 images of any class — airplanes, cars, cats, dogs, and more.
+
+::: {.callout-tip appearance="simple"}
+## Try it yourself
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/timothywangdev/blog/blob/master/posts/diffusion/11-practical-flow-matching/notebook.ipynb)
+
+The complete notebook runs in ~1-2 hours on a free Colab GPU.
+:::
+
+## Setup
+
+We'll use a few key libraries:
+
+- **PyTorch** and **torchvision** for deep learning and data
+- **diffusers** from Hugging Face for the U-Net architecture (the same library behind Stable Diffusion!)
+- **torchdiffeq** for ODE integration during sampling
+
+## Loading CIFAR-10
+
+CIFAR-10 contains 60,000 32×32 color images across 10 classes. We normalize to [−1, 1] — centering around zero helps with stable training.
+
+## The U-Net Architecture
+
+We use `UNet2DModel` from the `diffusers` library. This is the **same architecture** that powers Stable Diffusion and other state-of-the-art models.
+
+::: {.callout-tip appearance="simple"}
+## Why U-Net?
+
+The U-Net's encoder-decoder structure with skip connections is perfect for image generation:
+
+- **Encoder** captures global context at low resolutions
+- **Decoder** reconstructs fine details at high resolutions
+- **Skip connections** preserve spatial information that would otherwise be lost
+:::
+
+Key features of our model:
+
+- **Time conditioning**: Sinusoidal embeddings tell the network "where we are" in the flow (*t* ∈ [0,1])
+- **Class conditioning**: Embedding layer tells the network "what to generate" (airplane, cat, etc.)
+- **Attention layers**: Self-attention at lower resolutions for global context
+
+```python
+model = UNet2DModel(
+    sample_size=32,           # Image size (32x32 for CIFAR-10)
+    in_channels=3,            # RGB images
+    out_channels=3,           # Output vector field has same shape as input
+    layers_per_block=2,       # ResNet blocks per resolution level
+    block_out_channels=(64, 128, 256, 256),  # Channels at each resolution
+    down_block_types=(
+        "DownBlock2D",        # 32 -> 16
+        "DownBlock2D",        # 16 -> 8
+        "AttnDownBlock2D",    # 8 -> 4 (with attention)
+        "DownBlock2D",        # 4 -> 2
+    ),
+    up_block_types=(
+        "UpBlock2D",          # 2 -> 4
+        "AttnUpBlock2D",      # 4 -> 8 (with attention)
+        "UpBlock2D",          # 8 -> 16
+        "UpBlock2D",          # 16 -> 32
+    ),
+    num_class_embeds=NUM_CLASSES + 1,  # +1 for null class (CFG)
+)
+```
+
+## Flow Matching: The Core Idea
+
+Recall from [Part 4](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507) that flow matching learns a vector field to transport noise to data. Here's the intuition:
+
+::: {.callout-tip appearance="simple"}
+## Analogy: GPS Navigation
+
+Think of flow matching like GPS navigation. You want to get from point A (noise) to point B (image). The network learns the **velocity** — which direction to move at each moment. Follow the velocity long enough, and you arrive at your destination.
+:::
+
+### The Gaussian CondOT Path
+
+We use the **Gaussian CondOT path** — the same formulation from [Part 7](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-148):
+
+$$x_t = \alpha_t \cdot z + \beta_t \cdot \epsilon$$
+
+where:
+
+- *z* ~ *p*_data is a real image
+- ε ~ 𝒩(0, *I*) is noise
+- αₜ = *t* and βₜ = 1 − *t* (linear schedule)
+
+This gives us the **linear interpolation**:
+
+$$x_t = t \cdot z + (1-t) \cdot \epsilon$$
+
+![The linear path interpolates from noise to data. At t=0, we have pure noise ε; at t=1, the clean image *z* emerges.](linear-path-diagram.png)
+
+::: {.callout-note appearance="simple"}
+## Boundary Conditions
+
+- At *t* = 0: αₜ = 0, βₜ = 1, so *x*ₜ = ε (pure noise)
+- At *t* = 1: αₜ = 1, βₜ = 0, so *x*ₜ = *z* (clean data)
+
+The path starts at noise and ends at data — exactly what we need for generation!
+:::
+
+::: {.callout-tip appearance="simple"}
+## Why This Path?
+
+This is the **optimal transport** path — the straight line from noise to data. Compared to Gaussian variance-preserving paths used in DDPM ([Part 5](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-f2f)):
+
+1. **Constant vector field**: *u*ₜ = *z* − ε doesn't change with time
+2. **Straighter trajectories**: Fewer ODE steps needed (10-50 vs 1000)
+3. **Same math**: The marginalization trick still applies
+:::
+
+**The conditional vector field** is remarkably simple. Taking the derivative of *x*ₜ = *t* · *z* + (1−*t*) · ε:
+
+$$u_t(x_t | z) = \frac{d x_t}{dt} = z - \epsilon$$
+
+This is **constant in time**! The direction from noise to image is simply their difference.
+
+**The CFM loss** (from [Part 4](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-507)) trains the network to predict this vector field:
+
+$$\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right]$$
+
+The implementation is straightforward — sample *t*, compute *x*ₜ, and minimize MSE between predicted and target vector field:
+
+```python
+def flow_matching_loss(model, z, class_label, label_dropout=0.1):
+    """Compute the Conditional Flow Matching loss."""
+    batch_size = z.shape[0]
+
+    # Sample random time t ~ Uniform[0, 1]
+    t = torch.rand(batch_size, device=z.device)
+
+    # Sample noise ε ~ N(0, I)
+    eps = torch.randn_like(z)
+
+    # Compute x_t = t*z + (1-t)*ε (linear interpolation)
+    t_expand = t[:, None, None, None]
+    xt = t_expand * z + (1 - t_expand) * eps
+
+    # Target vector field: u_t = z - ε (constant in time!)
+    target = z - eps
+
+    # Apply label dropout for CFG (replace some labels with null class)
+    dropout_mask = torch.rand(batch_size, device=z.device) < label_dropout
+    class_label_dropped = torch.where(dropout_mask, NUM_CLASSES, class_label)
+
+    # Predict vector field
+    predicted = model(xt, (t * 1000).long(), class_labels=class_label_dropped).sample
+
+    # MSE loss
+    return F.mse_loss(predicted, target)
+```
+
+## Classifier-Free Guidance
+
+We want to generate images of a *specific* class (e.g., "airplane"), not just any random image. **Classifier-Free Guidance (CFG)** is the standard solution, used in DALL-E, Stable Diffusion, and virtually all modern image generators.
+
+### The Key Insight
+
+Recall from [Part 8](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-6a4) that for Gaussian paths, there's a beautiful connection to Bayes' rule. The **conditional score** decomposes as:
+
+$$\nabla_x \log p_t(x | y) = \underbrace{\nabla_x \log p_t(x)}_{\text{unconditional}} + \underbrace{\nabla_x \log p_t(y | x)}_{\text{classifier gradient}}$$
+
+This tells us: to generate class *y*, take the unconditional direction and **add** the classifier gradient. CFG approximates this without training a separate classifier.
+
+### Training: Label Dropout
+
+During training, we **randomly drop class labels** with probability η (typically 10%). When dropped, we replace with a "null" class token. This teaches one model to do two things:
+
+- Real label *y*: Model learns conditional *u*ₜ^θ(*x*ₜ|*y*)
+- Null label ∅: Model learns unconditional *u*ₜ^θ(*x*ₜ|∅)
+
+### Sampling: Guided Velocity
+
+At inference, we **blend** both predictions:
+
+$$\tilde{u}_t = u_t^\theta(x_t | \emptyset) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \emptyset)\bigr)$$
+
+Rearranging: *ũ*ₜ = (1−*w*) · *u*ₜ^θ(*x*ₜ|∅) + *w* · *u*ₜ^θ(*x*ₜ|*y*)
+
+The **guidance scale** *w* controls conditioning strength:
+
+- *w* = 0: Pure unconditional (ignores class)
+- *w* = 1: Standard conditional
+- *w* = 2-4: Typical range — sharper, more on-topic
+- *w* > 8: Oversaturated, artifacts
+
+::: {.callout-warning appearance="simple"}
+## Common Pitfall
+
+High guidance (*w* > 8) amplifies the class signal so much that images become oversaturated with artifacts. Start with *w* = 2 and adjust.
+:::
+
+```python
+class CFGVectorField(nn.Module):
+    """Applies classifier-free guidance during sampling."""
+
+    def __init__(self, model, guidance_scale=2.0):
+        super().__init__()
+        self.model = model
+        self.guidance_scale = guidance_scale
+        self.class_label = None  # Set before sampling
+
+    def forward(self, t, x):
+        """Compute guided vector field for ODE solver."""
+        batch_size = x.shape[0]
+        timestep = int(t.item() * 1000)
+        timesteps = torch.full((batch_size,), timestep, device=x.device, dtype=torch.long)
+
+        # Unconditional prediction (null class)
+        null_class = torch.full((batch_size,), NUM_CLASSES, device=x.device, dtype=torch.long)
+        u_uncond = self.model(x, timesteps, class_labels=null_class).sample
+
+        # Conditional prediction
+        u_cond = self.model(x, timesteps, class_labels=self.class_label).sample
+
+        # CFG formula: u_guided = u_uncond + w * (u_cond - u_uncond)
+        return u_uncond + self.guidance_scale * (u_cond - u_uncond)
+```
+
+## Training
+
+The training loop is straightforward:
+
+1. Sample a batch of images *z* and labels *y*
+2. Compute the flow matching loss
+3. Backpropagate and update weights
+4. Repeat
+
+```python
+optimizer = torch.optim.AdamW(model.parameters(), lr=2e-4)
+
+for epoch in range(50):
+    for z, y in train_loader:
+        z, y = z.to(device), y.to(device)
+
+        optimizer.zero_grad()
+        loss = flow_matching_loss(model, z, y, label_dropout=0.1)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        optimizer.step()
+```
+
+### Hyperparameters
+
+- **Batch size**: 128 — Fits on Colab GPU, provides stable gradients
+- **Learning rate**: 2e-4 — Standard for diffusion models
+- **Label dropout**: 0.1 — 10% enables CFG without hurting conditional quality
+- **Epochs**: 50+ — More is better; 100+ for publication-quality
+
+## Sampling
+
+To generate images, we solve the ODE (recall [Part 2](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-8ed) — flows are generated by integrating vector fields):
+
+$$\frac{dx_t}{dt} = u_t^\theta(x_t | y)$$
+
+Starting from noise ε at *t*=0 and integrating to *t*=1:
+
+1. Sample initial noise ε ~ 𝒩(0, *I*)
+2. Use `torchdiffeq.odeint` to solve the ODE with the CFG-guided vector field
+3. The final state at *t*=1 is our generated image
+
+```python
+@torch.no_grad()
+def sample(model, num_samples, class_label, guidance_scale=2.0, num_steps=50):
+    """Generate samples using ODE integration."""
+    model.eval()
+
+    # Wrap model for CFG
+    vector_field = CFGVectorField(model, guidance_scale)
+    vector_field.class_label = torch.full(
+        (num_samples,), class_label, device=device, dtype=torch.long
+    )
+
+    # Start from noise at t=0
+    x = torch.randn(num_samples, 3, 32, 32, device=device)
+
+    # Integrate ODE from t=0 to t=1
+    t_span = torch.linspace(0, 1, num_steps, device=device)
+    trajectory = odeint(vector_field, x, t_span, method='euler')
+
+    return trajectory[-1].clamp(-1, 1)  # Final image at t=1
+```
+
+## Results
+
+After training, we can generate images for any CIFAR-10 class.
+
+### Effect of Guidance Scale
+
+Higher guidance scale *w* means stronger class conditioning — but too high leads to artifacts.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+We built a complete conditional image generator using flow matching:
+
+1. **U-Net architecture** from `diffusers` with time and class conditioning
+2. **Gaussian CondOT path**: *x*ₜ = *t* · *z* + (1−*t*) · ε with constant vector field *u*ₜ = *z* − ε
+3. **CFM loss**: Train to predict the vector field
+4. **Classifier-free guidance**: Blend conditional and unconditional predictions
+5. **ODE sampling**: Integrate from noise (*t*=0) to image (*t*=1)
+
+The same techniques — with larger models and datasets — power Stable Diffusion 3, Flux, DALL-E 3, and Sora. You now understand the core mechanics behind these systems!
+:::
+
+## What's Next?
+
+This concludes our diffusion & flow matching series! Here are some extensions to explore:
+
+- **Diffusion Transformers (DiT)**: Replace U-Net with a transformer ([Part 10](https://aheadofrobotics.substack.com/p/diffusion-and-flow-matching-part-686))
+- **Latent diffusion**: Work in compressed latent space for higher resolution
+- **Text conditioning**: Replace class labels with text embeddings (CLIP)
+- **Better samplers**: DPM-Solver, Euler ancestral, etc.
+
+## References
+
+1. Lipman, Y., Chen, R. T., Ben-Hamu, H., Nickel, M., & Le, M. (2022). [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747). *ICLR 2023*.
+
+2. Ho, J., & Salimans, T. (2022). [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598). *NeurIPS 2022 Workshop*.
+
+3. Tong, A., et al. (2024). [Flow Matching Guide and Code](https://arxiv.org/abs/2412.06264). *Meta AI*.

@@ -1,5 +1,6 @@
 /.quarto/
 /_site/
+**/*_files/
 
 **/*.quarto_ipynb
 
@@ -18,3 +19,6 @@ posts/diffusion/11-practical-flow-matching/*.pt
 
 # Root data folder (downloaded datasets)
 data/
+
+# Generated Substack HTML files
+posts/**/*_substack.html
