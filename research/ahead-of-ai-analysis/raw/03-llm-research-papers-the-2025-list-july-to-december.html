@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>llm-research-papers-the-2025-list-july-to-december – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#llm-research-papers-the-2025-list-july-to-december" id="toc-llm-research-papers-the-2025-list-july-to-december" class="nav-link active" data-scroll-target="#llm-research-papers-the-2025-list-july-to-december">LLM Research Papers: The 2025 List (July to December)</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="llm-research-papers-the-2025-list-july-to-december" class="level1">
+<h1>LLM Research Papers: The 2025 List (July to December)</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/llm-research-papers-2025-part2</p>
+<p><strong>Image Count:</strong> 16</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!RdO6!,w_140,h_140,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fdfad3fc4-b195-4e7e-a6a7-7701b59ed57b_1394x918.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The State Of LLMs 2025: Progress, Progress, and Predictions</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!pmzH!,w_140,h_140,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9c02ecf0-cb1d-4f62-a160-6d07636b99fd_1600x1384.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The State of Reinforcement Learning for LLM Reasoning</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!DSk0!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1860947b-2e76-448a-bc77-2a656b1989f6_1898x936.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 1: Annotated figure from Generative Adversarial Reasoner: Enhancing LLM Reasoning with Adversarial Reinforcement Learning</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!tdKw!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F80ae15e9-85ff-4119-ba59-c97f17b04687_2048x1255.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 2: Improvement via two types of inference scaling, (1) self-consistency and (2) self-refinement. Annotated figure from the DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning paper</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!RUSf!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F2f39611d-a4cc-4c47-8fa9-b991b9f9fa7e_1774x976.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 3: Annotated figure from the On the Interplay of Pre-Training, Mid-Training, and RL on Reasoning Language Models paper</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!fhid!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6fc31113-b36f-4f65-9b83-937c07692934_2024x1018.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 4: Annotated figure from The Art of Scaling Reinforcement Learning Compute for LLMs</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!teoq!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4e218eb4-99eb-435b-8bff-a75def6553f4_1408x1052.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 5: Annotated figure from XQuant: Breaking the Memory Wall for LLM Inference with KV Cache Rematerialization</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!KVjQ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F13cd440a-98c3-49f3-b7ac-6b8543ac011c_1464x1400.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 6: The NVIDIA Nemotron 3 Nano transformer-mamba hybrid architecture described in Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model for Agentic Reasoning</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!iCDu!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0147f445-47e7-4fdc-a93d-34d94967a9e3_1392x952.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 7: Annotated figure from Stronger Normalization-Free Transformers</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!s94e!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F2947af93-b886-426a-b9c7-f4cf57d04fba_1460x776.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 8: Annotated figure from Small Batch Size Training for Language Models: When Vanilla SGD Works, and Why Gradient Accumulation Is Wasteful</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vFov!,w_140,h_140,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe1732960-2119-429d-96e7-bafee7f79283_5862x3699.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Beyond Standard LLMs</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ChMo!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3c378bf9-3ecb-41f9-a61d-2be18b48def8_1424x1556.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 9: Annotated figure from Diffusion Language Models are Super Data Learners</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!yI7e!,w_140,h_140,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fc534f387-f776-41eb-9c65-f0032b91daee_1988x1430.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Understanding Multimodal LLMs</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!A7GA!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5fa1a24d-3e75-4377-8794-56b275b136db_1840x1138.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 10: Annotated figure from Thinking-while-Generating: Interleaving Textual Reasoning throughout Visual Generation</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!y-lk!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F7bd1188c-29f7-4b93-b28c-55557e402b0d_1492x928.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 11: Annotated figure from BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!RdO6!,w_1300,h_650,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fdfad3fc4-b195-4e7e-a6a7-7701b59ed57b_1394x918.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: The State Of LLMs 2025: Progress, Progress, and Predictions</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>In June, I shared a bonus article with my curated and bookmarked research paper lists to the paid subscribers who make this Substack possible.</p>
+<p>In a similar vein, as a thank-you to all the kind supporters, I have prepared a list below of the interesting research articles I bookmarked and categorized from July to December 2025.</p>
+<p>I skimmed over the abstracts of these papers but only read a very small fraction. However, I still like to keep collecting these organized lists as I often go back to them when working on a given project.</p>
+<p>By the way, I was also working on my annual LLM review article, State of LLMs 2025: Progress, Problems, and Predictions, which I published today as well. You can find it here:​</p>
+<p>The State Of LLMs 2025: Progress, Progress, and Predictions SEBASTIAN RASCHKA, PHD · DECEMBER 30, 2025 Read full story</p>
+<p>Originally, I planned to include this list in the article above. However, the article was already getting quite long, so I decided to share the list here in a separate post instead. I hope you do not mind receiving two emails today. My thinking was that splitting things up would make both articles easier to read, scan, and revisit later without getting lost in an overly long page.</p>
+<p>The categories for this research paper list are as follows (you can use the table of contents in the web view of this article to navigate to them directly):</p>
+<p>Reasoning Models</p>
+<p>1a. Training Reasoning Models</p>
+<p>1b. Inference-Time Reasoning Strategies</p>
+<p>1c. Evaluating LLMs and/or Understanding Reasoning</p>
+<p>Other Reinforcement Learning Methods for LLMs</p>
+<p>Other Inference-Time Scaling Methods</p>
+<p>Model Releases / Technical Reports</p>
+<p>Architectures</p>
+<p>Efficient Training</p>
+<p>Diffusion-Based Language Models</p>
+<p>Multimodal &amp; Vision-Language Models</p>
+<p>Data &amp; Pre-training Datasets</p>
+<ol type="1">
+<li>Reasoning Models</li>
+</ol>
+<p>As you may be able to tell from the three subsections in the “reasoning models” category in the table of contents, this year, my list is very heavy on reasoning models. This is because most of my work, and my recent book, are centered around reasoning models.</p>
+<p>​Also, as I mentioned in my State of LLMs 2025 report, reasoning methods have been one of the biggest themes and drivers of LLM progress this year (kickstarted by DeepSeek R1 in January 2025).</p>
+<p>​So, I decided to subdivide it into 3 categories: Training, inference-time scaling, and more general understanding/evaluation.</p>
+<p>1a. Training Reasoning Models</p>
+<p>This subsection focuses on training strategies designed to improve reasoning abilities in LLMs. In the first half of the year (January to June), much of the momentum centered around reinforcement learning with verifiable rewards (RLVR). For more background on RLVR, you might like my The State of Reinforcement Learning for LLM Reasoning article:</p>
+<p>The State of Reinforcement Learning for LLM Reasoning SEBASTIAN RASCHKA, PHD · APRIL 19, 2025 Read full story</p>
+<p>In the second half of the year, RL is still a major theme, but the emphasis has shifted from “RLVR works” to “how do we make it scale and generalize”. This includes papers on better exploration and credit assignment, more stable and efficient optimization, extensions to long-context and agentic settings, and even RL-style training beyond strictly verifiable domains.</p>
+<p>Figure 1: Annotated figure from Generative Adversarial Reasoner: Enhancing LLM Reasoning with Adversarial Reinforcement Learning</p>
+<p>18 Dec, Generative Adversarial Reasoner: Enhancing LLM Reasoning with Adversarial Reinforcement Learning, https://arxiv.org/abs/2512.16917</p>
+<p>18 Dec, INTELLECT-3: Technical Report, https://arxiv.org/abs/2512.16144</p>
+<p>14 Dec, QwenLong-L1.5: Post-Training Recipe for Long-Context Reasoning and Memory Management, https://arxiv.org/abs/2512.12967</p>
+<p>8 Dec, Native Parallel Reasoner: Reasoning in Parallelism via Self-Distilled Reinforcement Learning, https://arxiv.org/abs/2512.07461</p>
+<p>4 Dec, Efficient Reinforcement Learning with Semantic and Token Entropy for LLM Reasoning, https://arxiv.org/abs/2512.04359</p>
+<p>3 Dec, PretrainZero: Reinforcement Active Pretraining, https://arxiv.org/abs/2512.03442</p>
+<p>17 Nov, P1: Mastering Physics Olympiads with Reinforcement Learning, https://arxiv.org/abs/2511.13612</p>
+<p>11 Nov, SofT-GRPO: Surpassing Discrete-Token LLM Reinforcement Learning via Gumbel-Reparameterized Soft-Thinking Policy Optimization, https://arxiv.org/abs/2511.06411</p>
+<p>9 Nov, Tiny Model, Big Logic: Diversity-Driven Optimization Elicits Large-Model Reasoning Ability in VibeThinker-1.5B, https://arxiv.org/abs/2511.06221</p>
+<p>28 Oct, Incentivizing Agentic Reasoning in LLM Judges via Tool-Integrated Reinforcement Learning, https://arxiv.org/abs/2510.23038</p>
+<p>2 Oct, ExGRPO: Learning to Reason from Experience, https://arxiv.org/abs/2510.02245</p>
+<p>29 Sep, ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory, https://arxiv.org/abs/2509.25140</p>
+<p>29 Sep, DeepSearch: Overcome the Bottleneck of Reinforcement Learning with Verifiable Rewards via Monte Carlo Tree Search, https://arxiv.org/abs/2509.25454</p>
+<p>24 Sep, Language Models that Think, Chat Better, https://arxiv.org/abs/2509.20357</p>
+<p>14 Sep, Trading-R1: Financial Trading with LLM Reasoning via Reinforcement Learning, https://arxiv.org/abs/2509.11420</p>
+<p>9 Sep, K2-Think: A Parameter-Efficient Reasoning System, https://arxiv.org/abs/2509.07604</p>
+<p>3 Sep, Emergent Hierarchical Reasoning in LLMs through Reinforcement Learning, https://arxiv.org/abs/2509.03646</p>
+<p>28 Aug, rStar2-Agent: Agentic Reasoning Technical Report, https://arxiv.org/abs/2508.20722</p>
+<p>27 Aug, Memory-R1: Enhancing Large Language Model Agents to Manage and Utilize Memories via Reinforcement Learning, https://arxiv.org/abs/2508.19828</p>
+<p>14 Aug, SSRL: Self-Search Reinforcement Learning, https://arxiv.org/abs/2508.10874</p>
+<p>7 Aug, Learning to Reason for Factuality, https://arxiv.org/abs/2508.05618</p>
+<p>1 Aug, ReaGAN: Node-as-Agent-Reasoning Graph Agentic Network, https://arxiv.org/abs/2508.00429</p>
+<p>21 Jul, LAPO: Internalizing Reasoning Efficiency via Length-Adaptive Policy Optimization, https://arxiv.org/abs/2507.15758</p>
+<p>19 Jul, MiroMind-M1: An Open-Source Advancement in Mathematical Reasoning via Context-Aware Multi-Stage Policy Optimization, https://arxiv.org/abs/2507.14683</p>
+<p>16 Jul, Scaling Up RL: Unlocking Diverse Reasoning in LLMs via Prolonged Training, https://arxiv.org/abs/2507.12507</p>
+<p>1b. Inference-Time Reasoning Strategies</p>
+<p>This part of the list covers methods that improve reasoning dynamically at test time, without requiring retraining. Often, these papers are focused on trading computational performance for modeling performance.</p>
+<p>Figure 2: Improvement via two types of inference scaling, (1) self-consistency and (2) self-refinement. Annotated figure from the DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning paper</p>
+<p>15 Dec, Let’s (not) just put things in Context: Test-Time Training for Long-Context LLMs, https://arxiv.org/abs/2512.13898</p>
+<p>1 Dec, The Art of Scaling Test-Time Compute for Large Language Models, https://arxiv.org/abs/2512.02008</p>
+<p>27 Nov, DeepSeekMath-V2: Towards Self-Verifiable Mathematical Reasoning, https://arxiv.org/abs/2511.22570</p>
+<p>11 Nov, Think-at-Hard: Selective Latent Iterations to Improve Reasoning Language Models, https://arxiv.org/abs/2511.08577</p>
+<p>16 Oct, Reasoning with Sampling: Your Base Model is Smarter Than You Think, https://arxiv.org/abs/2510.14901</p>
+<p>7 Oct, MixReasoning: Switching Modes to Think, https://arxiv.org/abs/2510.06052</p>
+<p>6 Oct, Less is More: Recursive Reasoning with Tiny Networks, https://arxiv.org/abs/2510.04871</p>
+<p>30 Aug, ParaThinker: Native Parallel Thinking as a New Paradigm to Scale LLM Test-time Compute, https://arxiv.org/abs/2509.04475</p>
+<p>25 Aug, MIRAGE: Scaling Test-Time Inference with Parallel Graph-Retrieval-Augmented Reasoning Chains, https://arxiv.org/abs/2508.18260</p>
+<p>22 Aug, Beyond Memorization: Extending Reasoning Depth with Recurrence, Memory and Test-Time Compute Scaling, https://arxiv.org/abs/2508.16745</p>
+<p>21 Aug, Deep Think with Confidence, https://arxiv.org/abs/2508.15260</p>
+<p>22 Jul, Beyond Context Limits: Subconscious Threads for Long-Horizon Reasoning, https://arxiv.org/abs/2507.16784</p>
+<p>11 Jul, KV Cache Steering for Inducing Reasoning in Small Language Models, https://arxiv.org/abs/2507.08799</p>
+<p>2 Jul, Test-Time Scaling with Reflective Generative Model, https://arxiv.org/abs/2507.01951</p>
+<p>1c. Evaluating LLMs and/or Understanding Reasoning</p>
+<p>In this section, I collected papers that try to analyze (or evaluate) reasoning models in various ways, which is useful to refine and improve the current generation of LLM-based reasoning models.</p>
+<p>Figure 3: Annotated figure from the On the Interplay of Pre-Training, Mid-Training, and RL on Reasoning Language Models paper</p>
+<p>19 Dec, When Reasoning Meets Its Laws, https://arxiv.org/abs/2512.17901</p>
+<p>16 Dec, Universal Reasoning Model, https://arxiv.org/abs/2512.14693</p>
+<p>11 Dec, The FACTS Leaderboard: A Comprehensive Benchmark for Large Language Model Factuality, https://arxiv.org/abs/2512.10791</p>
+<p>8 Dec, On the Interplay of Pre-Training, Mid-Training, and RL on Reasoning Language Models, https://arxiv.org/abs/2512.07783</p>
+<p>26 Nov, How to Correctly Report LLM-as-a-Judge Evaluations, https://arxiv.org/abs/2511.21140</p>
+<p>24 Nov, Does Reinforcement Learning Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?, https://arxiv.org/abs/2504.13837</p>
+<p>24 Nov, What does it mean to understand language?, https://arxiv.org/abs/2511.19757</p>
+<p>17 Nov, On the Fundamental Limits of LLMs at Scale, https://arxiv.org/abs/2511.12869</p>
+<p>11 Nov, The Path Not Taken: RLVR Provably Learns Off the Principals, https://arxiv.org/abs/2511.08567</p>
+<p>3 Nov, Towards Robust Mathematical Reasoning, https://arxiv.org/abs/2511.01846</p>
+<p>28 Oct, Beyond a Million Tokens: Benchmarking and Enhancing Long-Term Memory in LLMs, https://arxiv.org/abs/2510.27246</p>
+<p>15 Oct, LLMs Can Get “Brain Rot”!, https://arxiv.org/abs/2510.13928</p>
+<p>13 Oct, Demystifying Reinforcement Learning in Agentic Reasoning, https://arxiv.org/abs/2510.11701</p>
+<p>29 Sep, Thinking Sparks!: Emergent Attention Heads in Reasoning Models During Post Training, https://arxiv.org/abs/2509.25758</p>
+<p>26 Sep, When Does Reasoning Matter? A Controlled Study of Reasoning’s Contribution to Model Performance, https://arxiv.org/abs/2509.22193</p>
+<p>25 Sep, TrustJudge: Inconsistencies of LLM-as-a-Judge and How to Alleviate Them, https://arxiv.org/abs/2509.21117</p>
+<p>12 Sep, Is In-Context Learning Learning?, https://arxiv.org/abs/2509.10414</p>
+<p>11 Sep, The Illusion of Diminishing Returns: Measuring Long Horizon Execution in LLMs, https://arxiv.org/abs/2509.09677</p>
+<p>11 Sep, All for One: LLMs Solve Mental Math at the Last Token With Information Transferred From Other Tokens, https://arxiv.org/abs/2509.09650</p>
+<p>7 Sep, Reverse-Engineered Reasoning for Open-Ended Generation, https://arxiv.org/abs/2509.06160</p>
+<p>5 Sep, Talk Isn’t Always Cheap: Understanding Failure Modes in Multi-Agent Debate, https://arxiv.org/abs/2509.05396</p>
+<p>4 Sep, Why Language Models Hallucinate, https://arxiv.org/abs/2509.04664</p>
+<p>28 Aug, On the Theoretical Limitations of Embedding-Based Retrieval, https://arxiv.org/abs/2508.21038</p>
+<p>25 Aug, UQ: Assessing Language Models on Unsolved Questions, https://arxiv.org/abs/2508.17580</p>
+<p>18 Aug, Has GPT-5 Achieved Spatial Intelligence? An Empirical Study, https://arxiv.org/abs/2508.13142</p>
+<p>15 Aug, When Punctuation Matters: A Large-Scale Comparison of Prompt Robustness Methods for LLMs, https://arxiv.org/abs/2508.11383</p>
+<p>14 Aug, Why Cannot Large Language Models Ever Make True Correct Reasoning?, https://arxiv.org/abs/2508.10265</p>
+<p>11 Aug, Part I: Tricks or Traps? A Deep Dive into RL for LLM Reasoning, https://arxiv.org/abs/2508.08221</p>
+<p>2 Aug, Is Chain-of-Thought Reasoning of LLMs a Mirage? A Data Distribution Lens, https://arxiv.org/abs/2508.01191</p>
+<p>21 Jul, Learning without training: The implicit dynamics of in-context learning, https://arxiv.org/abs/2507.16003</p>
+<p>19 Jul, Inverse Scaling in Test-Time Compute, https://arxiv.org/abs/2507.14417</p>
+<p>15 Jul, Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety, https://arxiv.org/abs/2507.11473</p>
+<p>14 Jul, Reasoning or Memorization? Unreliable Results of Reinforcement Learning Due to Data Contamination, https://arxiv.org/abs/2507.10532</p>
+<p>11 Jul, One Token to Fool LLM-as-a-Judge, https://arxiv.org/abs/2507.08794</p>
+<p>9 Jul, Rethinking Verification for LLM Code Generation: From Generation to Testing, https://arxiv.org/abs/2507.00885</p>
+<p>8 Jul, A Survey on Latent Reasoning, https://arxiv.org/abs/2507.06203</p>
+<p>1 Jul, Does Math Reasoning Improve General LLM Capabilities? Understanding Transferability of LLM Reasoning, https://arxiv.org/abs/2507.00432</p>
+<p>1 Jul, Scaling Laws Are Unreliable for Downstream Tasks: A Reality Check, https://arxiv.org/abs/2507.00885</p>
+<ol start="2" type="1">
+<li>Other Reinforcement Learning Methods for LLMs</li>
+</ol>
+<p>Beyond reasoning-focused reinforcement learning (RL), there is a broader collection of work on reinforcement learning. This includes RL for LLM alignment, optimization, and deployment at scale.</p>
+<p>So, in this section, I list papers that explore preference modeling and reward design, and alternatives and extensions to classical RLHF, as well as large-scale infrastructure and optimization techniques for training LLMs with reinforcement learning.</p>
+<p>All in all, these papers provide context for how reinforcement learning is evolving in the LLM landscape beyond directly improving reasoning ability.</p>
+<p>Figure 4: Annotated figure from The Art of Scaling Reinforcement Learning Compute for LLMs</p>
+<p>23 Dec, Emergent temporal abstractions in autoregressive models enable hierarchical reinforcement learning, https://arxiv.org/abs/2512.20605</p>
+<p>24 Nov, DR Tulu: Reinforcement Learning with Evolving Rubrics for Deep Research, https://arxiv.org/abs/2511.19399</p>
+<p>20 Nov, Evolution Strategies at the Hyperscale, https://arxiv.org/abs/2511.16652</p>
+<p>18 Nov, Seer: Online Context Learning for Fast Synchronous LLM Reinforcement Learning, https://arxiv.org/abs/2511.14617</p>
+<p>10 Nov, GroupRank: A Groupwise Reranking Paradigm Driven by Reinforcement Learning, https://arxiv.org/abs/2511.11653</p>
+<p>15 Oct, The Art of Scaling Reinforcement Learning Compute for LLMs, https://arxiv.org/abs/2510.13786</p>
+<p>9 Oct, Don’t Waste Mistakes: Leveraging Negative RL-Groups via Confidence Reweighting, https://arxiv.org/abs/2510.08696</p>
+<p>8 Oct, Hybrid Reinforcement: When Reward Is Sparse, It’s Better to Be Dense, https://arxiv.org/abs/2510.07242</p>
+<p>7 Oct, Webscale-RL: Automated Data Pipeline for Scaling RL Data to Pretraining Levels, https://arxiv.org/abs/2510.06499</p>
+<p>6 Oct, Learning on the Job: Test-Time Curricula for Targeted Reinforcement Learning, https://arxiv.org/abs/2510.04786</p>
+<p>25 Sep, Tree Search for LLM Agent Reinforcement Learning, https://arxiv.org/abs/2509.21240</p>
+<p>23 Sep, Reinforcement Learning on Pre-Training Data, https://arxiv.org/abs/2509.19249</p>
+<p>28 Aug, Pref-GRPO: Pairwise Preference Reward-based GRPO for Stable Text-to-Image Reinforcement Learning, https://arxiv.org/abs/2508.20751</p>
+<p>7 Aug, On the Generalization of SFT: A Reinforcement Learning Perspective with Reward Rectification, https://arxiv.org/abs/2508.05629</p>
+<p>30 Jul, Efficient Differentially Private Fine-Tuning of LLMs via Reinforcement Learning, https://arxiv.org/abs/2507.22565</p>
+<p>26 Jul, Agentic Reinforced Policy Optimization, https://arxiv.org/abs/2507.19849</p>
+<p>25 Jul, Group Sequence Policy Optimization, https://arxiv.org/abs/2507.18071</p>
+<p>8 Jul, The Delta Learning Hypothesis: Preference Tuning on Weak Data can Yield Strong Gains, https://arxiv.org/abs/2507.06187</p>
+<p>7 Jul, Pre-Trained Policy Discriminators are General Reward Models, https://arxiv.org/abs/2507.05197</p>
+<ol start="3" type="1">
+<li>Other Inference-Time Scaling Methods</li>
+</ol>
+<p>Similar to how reinforcement learning is not limited to improving reasoning, inference-time scaling is also not just about improved reasoning. Instead, it is also a general approach for improving LLM efficiency and deployment-time performance.</p>
+<p>This section covers more general inference-time techniques (not specific to reasoning), such as adaptive routing and agent orchestration, memory and KV-cache management, and decoding strategies that improve quality or efficiency without additional training.</p>
+<p>Figure 5: Annotated figure from XQuant: Breaking the Memory Wall for LLM Inference with KV Cache Rematerialization</p>
+<p>30 Oct, Context Engineering 2.0: The Context of Context Engineering, https://arxiv.org/abs/2510.26493</p>
+<p>2 Oct, The Unreasonable Effectiveness of Scaling Agents for Computer Use, https://arxiv.org/abs/2510.02250</p>
+<p>30 Aug, Universal Deep Research: Bring Your Own Model and Strategy, https://arxiv.org/abs/2509.00244</p>
+<p>28 Aug, Adaptive LLM Routing under Budget Constraints, https://arxiv.org/abs/2508.21141</p>
+<p>14 Aug, XQuant: Breaking the Memory Wall for LLM Inference with KV Cache Rematerialization, https://arxiv.org/abs/2508.10395</p>
+<p>18 Aug, Beyond GPT-5: Making LLMs Cheaper and Better via Performance-Efficiency Optimized Routing, https://arxiv.org/abs/2508.12631</p>
+<p>12 Aug, A Survey on Parallel Text Generation: From Parallel Decoding to Diffusion Language Models, https://arxiv.org/abs/2508.08712</p>
+<p>6 Jul, LayerCake: Token-Aware Contrastive Decoding within Large Language Model Layers, https://arxiv.org/abs/2507.04404</p>
+<ol start="4" type="1">
+<li>Model Releases / Technical Reports</li>
+</ol>
+<p>This section collects papers on new LLM releases and architectural directions.</p>
+<p>The included papers span pure transformer models (Olmo 3), and sparse and hybrid architectures (for example, the sparse attention mechanism in DeepSeek V3.2 and Nemotron 3 Nano’s Mamba-Transformer designs).</p>
+<p>Figure 6: The NVIDIA Nemotron 3 Nano transformer-mamba hybrid architecture described in Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model for Agentic Reasoning</p>
+<p>23 Dec, Nemotron 3 Nano: Open, Efficient Mixture-of-Experts Hybrid Mamba-Transformer Model for Agentic Reasoning, https://arxiv.org/abs/2512.20848</p>
+<p>15 Dec, Olmo 3, https://arxiv.org/abs/2512.13961</p>
+<p>2 Dec, DeepSeek-V3.2: Pushing the Frontier of Open Large Language Models, https://arxiv.org/abs/2512.02556</p>
+<p>30 Oct, Kimi Linear: An Expressive, Efficient Attention Architecture, https://arxiv.org/abs/2510.26692</p>
+<p>30 Sep, CWM: An Open-Weights LLM for Research on Code Generation with World Models, https://arxiv.org/abs/2510.02387</p>
+<p>17 Sep, Apertus: Democratizing Open and Compliant LLMs for Global Language Environments, https://arxiv.org/abs/2509.14233</p>
+<p>25 Aug, Hermes 4 Technical Report, https://arxiv.org/abs/2508.18255</p>
+<p>8 Aug, GLM-4.5: Agentic, Reasoning, and Coding (ARC) Foundation Models, https://arxiv.org/abs/2508.06471</p>
+<p>2 Aug, Motif 2.6B Technical Report, https://arxiv.org/abs/2508.09148</p>
+<p>28 Jul, Kimi K2: Open Agentic Intelligence, https://arxiv.org/abs/2507.20534</p>
+<p>17 Jul, Apple Intelligence Foundation Language Models: Tech Report 2025, https://arxiv.org/abs/2507.13575</p>
+<ol start="5" type="1">
+<li>Architectures</li>
+</ol>
+<p>In this section, I collected architectural and training-time papers aimed at improving efficiency and other aspects that are not necessarily tied to a big open-weight model release.</p>
+<p>This includes papers that explore alternatives to standard dense attention, including sliding-window and hybrid attention schemes for long contexts, and normalization-free and energy-based training approaches.</p>
+<p>Figure 7: Annotated figure from Stronger Normalization-Free Transformers</p>
+<p>31 Dec, mHC: Manifold-Constrained Hyper-Connections, https://arxiv.org/pdf/2512.24880</p>
+<p>11 Dec, Sliding Window Attention Adaptation, https://arxiv.org/abs/2512.10411</p>
+<p>11 Dec, Stronger Normalization-Free Transformers, https://arxiv.org/abs/2512.10938</p>
+<p>20 Nov, Nemotron Elastic: Towards Efficient Many-in-One Reasoning LLMs, https://arxiv.org/abs/2511.16664</p>
+<p>12 Nov, DoPE: Denoising Rotary Position Embedding, https://arxiv.org/abs/2511.09146</p>
+<p>22 Oct, Every Attention Matters: An Efficient Hybrid Architecture for Long-Context Reasoning, https://arxiv.org/abs/2510.19338</p>
+<p>14 Oct, Dr.LLM: Dynamic Layer Routing in LLMs, https://arxiv.org/abs/2510.12773</p>
+<p>14 Jul, Mixture-of-Recursions: Learning Dynamic Recursive Depths for Adaptive Token-Level Computation, https://arxiv.org/abs/2507.10524</p>
+<p>10 Jul, Dynamic Chunking for End-to-End Hierarchical Sequence Modeling, https://arxiv.org/abs/2507.07955</p>
+<p>2 Jul, Energy-Based Transformers are Scalable Learners and Thinkers, https://arxiv.org/abs/2507.02092</p>
+<ol start="6" type="1">
+<li>Efficient Training</li>
+</ol>
+<p>This section covers (efficient) training techniques that did not fit neatly into the previous categories: low-rank adaptation, quantization, and large-scale training infrastructure.</p>
+<p>Figure 8: Annotated figure from Small Batch Size Training for Language Models: When Vanilla SGD Works, and Why Gradient Accumulation Is Wasteful</p>
+<p>9 Oct, Optimal Scaling Needs Optimal Norm, https://arxiv.org/abs/2510.03871</p>
+<p>29 Sep, Pretraining Large Language Models with NVFP4, https://arxiv.org/abs/2509.25149</p>
+<p>18 Sep, Pre-training under infinite compute, https://arxiv.org/abs/2509.14786</p>
+<p>5 Sep, Scaling Performance of Large Language Model Pretraining, https://arxiv.org/abs/2509.05258</p>
+<p>9 Jul, Small Batch Size Training for Language Models: When Vanilla SGD Works, and Why Gradient Accumulation Is Wasteful, https://arxiv.org/abs/2507.07101</p>
+<p>8 Jul, SingLoRA: Low Rank Adaptation Using a Single Matrix, https://arxiv.org/abs/2507.05566</p>
+<ol start="7" type="1">
+<li>Diffusion-Based Language Models</li>
+</ol>
+<p>Of course, many researchers are looking for the next thing after transformer-based LLMs. Last year, state space models were considered a hot candidate (which had a comeback in Nemotron 3 Nano’s Mamba-2 layers). This year, the focus was a bit more on language diffusion models. I recently discussed diffusion models for text data in my Beyond Standard LLMs article:</p>
+<p>Beyond Standard LLMs SEBASTIAN RASCHKA, PHD · NOVEMBER 4, 2025 Read full story Figure 9: Annotated figure from Diffusion Language Models are Super Data Learners</p>
+<p>17 Dec, DEER: Draft with Diffusion, Verify with Autoregressive Models, https://arxiv.org/abs/2512.15176</p>
+<p>15 Dec, ReFusion: A Diffusion Large Language Model with Parallel Autoregressive Decoding, https://arxiv.org/abs/2512.13586</p>
+<p>12 Nov, TiDAR: Think in Diffusion, Talk in Autoregression, https://arxiv.org/abs/2511.08923</p>
+<p>5 Nov, Diffusion Language Models are Super Data Learners, https://arxiv.org/abs/2511.03276</p>
+<p>6 Oct, ParallelBench: Understanding the Trade-offs of Parallel Decoding in Diffusion LLMs, https://arxiv.org/abs/2510.04767</p>
+<p>29 Sep, Learning to Parallel: Accelerating Diffusion Large Language Models via Adaptive Parallel Decoding, https://arxiv.org/abs/2509.25188</p>
+<p>8 Sep, Revolutionizing Reinforcement Learning Framework for Diffusion Large Language Models, https://arxiv.org/abs/2509.06949</p>
+<p>27 Aug, Diffusion Language Models Know the Answer Before Decoding, https://arxiv.org/abs/2508.19982</p>
+<p>4 Aug, Seed Diffusion: A Large-Scale Diffusion Language Model with High-Speed Inference, https://arxiv.org/abs/2508.02193</p>
+<p>1 Aug, Beyond Fixed: Training-Free Variable-Length Denoising for Diffusion Large Language Models, https://arxiv.org/abs/2508.00819</p>
+<p>21 Jul, Deep Researcher with Test-Time Diffusion, https://arxiv.org/abs/2507.16075</p>
+<ol start="8" type="1">
+<li>Multimodal &amp; Vision-Language Models</li>
+</ol>
+<p>Multimodal LLMs are a natural extension of text-based LLMs. Besides supporting data formats other than text, one big hope in the research community is that it also unlocks more data that can be used during pre-training to make LLMs “smarter” and more knowledgeable in general. (I think this has not really panned out yet; yes, including images in pre-training is useful if you want your LLM to understand image inputs, but as far as I know, it has not really had a big impact on, say, the text-based problem-solving capabilities of LLMs.)</p>
+<p>Anyways, this section brings together research at the intersection of text, image, and video. Also, if you are interested in multimodal LLMs, you may also find my introductory article helpful:</p>
+<p>Understanding Multimodal LLMs SEBASTIAN RASCHKA, PHD · NOVEMBER 3, 2024 Read full story Figure 10: Annotated figure from Thinking-while-Generating: Interleaving Textual Reasoning throughout Visual Generation</p>
+<p>26 Nov, Qwen3-VL Technical Report, https://arxiv.org/abs/2511.21631</p>
+<p>20 Nov, SAM 3: Segment Anything with Concepts, https://arxiv.org/abs/2511.16719</p>
+<p>20 Nov, Thinking-while-Generating: Interleaving Textual Reasoning throughout Visual Generation, https://arxiv.org/abs/2511.16671</p>
+<p>17 Nov, Large Language Models Meet Extreme Multi-label Classification: Scaling and Multi-modal Framework, https://arxiv.org/abs/2511.13189</p>
+<p>14 Aug, We-Math 2.0: A Versatile MathBook System for Incentivizing Visual Mathematical Reasoning, https://arxiv.org/abs/2508.10433</p>
+<p>14 Aug 2025, NextStep-1: Toward Autoregressive Image Generation with Continuous Tokens at Scale, https://arxiv.org/abs/2508.10711</p>
+<p>11 Aug, Reinforcement Learning in Vision: A Survey, https://arxiv.org/abs/2508.08189</p>
+<p>4 Aug, Qwen-Image Technical Report, https://arxiv.org/abs/2508.02324</p>
+<p>21 Jul, GUI-G2: Gaussian Reward Modeling for GUI Grounding, https://arxiv.org/abs/2507.15846</p>
+<p>10 Jul, Scaling RL to Long Videos, https://arxiv.org/abs/2507.07966</p>
+<p>1 Jul, GLM-4.1V-Thinking: Towards Versatile Multimodal Reasoning with Scalable Reinforcement Learning, https://arxiv.org/abs/2507.01006</p>
+<ol start="9" type="1">
+<li>Data &amp; Pre-training Datasets</li>
+</ol>
+<p>Good models need good data. This final section collects papers focused on dataset creation, data quality, pre-training practices, and synthetic data generation.</p>
+<p>As the saying goes, data work may not be the flashiest part of AI, but it’s some of the most essential.</p>
+<p>Figure 11: Annotated figure from BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining</p>
+<p>26 Sep, In Their Own Words: Reasoning Traces Tailored for Small Models Make Them Better Reasoners, https://arxiv.org/abs/2509.22230</p>
+<p>14 Aug, BeyondWeb: Lessons from Scaling Synthetic Data for Trillion-scale Pretraining, https://arxiv.org/abs/2508.10975</p>
+<p>8 Aug, Deep Ignorance: Filtering Pretraining Data Builds Tamper-Resistant Safeguards into Open-Weight LLMs, https://arxiv.org/abs/2508.06601</p>
+<p>12 Jul, Scaling Laws for Optimal Data Mixtures, https://arxiv.org/abs/2507.09404</p>
+<p>I hope you found this list useful for your personal reference. And I hope you perhaps found a handful of interesting reads to check out in more detail.</p>
+<p>However, please don’t treat this list as a todo list to work through. It’s more meant as a reference to skim and hopefully helps you find some of the interesting works published this year that may be relevant to projects you are currently working on!</p>
+<p>By the way, I was also working on my annual LLM review article, State of LLMs 2025: Progress, Problems, and Predictions, which I published today as well. You can find it here:</p>
+<p>The State Of LLMs 2025: Progress, Progress, and Predictions SEBASTIAN RASCHKA, PHD · DECEMBER 30, 2025</p>
+<p>As 2025 comes to a close, I want to look back at some of the year’s most important developments in large language models, reflect on the limitations and open problems that remain, and share a few thoughts on what might come next.</p>
+<p>Read full story</p>
+<p>Thanks so much for subscribing to my Ahead of AI blog and for supporting my work this year. I really appreciate it. Your support makes this work feasible in a very real sense and allows me to keep spending the time needed to write, experiment, and think deeply about these topics!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

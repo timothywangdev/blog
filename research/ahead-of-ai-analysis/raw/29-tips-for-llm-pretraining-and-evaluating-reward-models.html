@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>tips-for-llm-pretraining-and-evaluating-reward-models – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#tips-for-llm-pretraining-and-evaluating-reward-models" id="toc-tips-for-llm-pretraining-and-evaluating-reward-models" class="nav-link active" data-scroll-target="#tips-for-llm-pretraining-and-evaluating-reward-models">Tips for LLM Pretraining and Evaluating Reward Models</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="tips-for-llm-pretraining-and-evaluating-reward-models" class="level1">
+<h1>Tips for LLM Pretraining and Evaluating Reward Models</h1>
+<p><strong>Subtitle:</strong> Discussing AI Research Papers in March 2024</p>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/tips-for-llm-pretraining-and-evaluating-rms</p>
+<p><strong>Likes:</strong> LIKE (3)</p>
+<p><strong>Image Count:</strong> 15</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!stc4!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6fabd9ec-29f1-4c1c-85fb-8781e7c6ce0b_1600x436.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Illustration of three pretraining methods</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!BllO!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F72b02acf-d4de-44b8-a341-8556fe2185dc_1600x1374.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Continued pretraining is 2× cheaper than retraining from scratch (as it only uses half of the data given a pretrained model is already available) but can reach the same good performance. Source: Annotated figure from https://arxiv.org/abs/2403.08763.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!pGID!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fc4a3dcda-660a-45c2-a0c6-0055977e2208_794x550.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The common learning rate schedule used for pretraining and finetuning LLMs. Source: Build a Large Language Model From Scratch, https://github.com/rasbt/LLMs-from-scratch/blob/main/appendix-D/01_main-chapter-code/appendix-D.ipynb)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ZGsW!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb6614f5f-64c8-4637-9808-f3537c3a6be6_1600x564.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A schedule for continued pretraining. Figure based on Build a Large Language Model From Scratch, https://github.com/rasbt/LLMs-from-scratch/blob/main/appendix-D/01_main-chapter-code/appendix-D.ipynb</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!uGFC!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F973f844b-8c1a-476b-8a6d-082d561edf0e_1600x1000.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Experiments with re-warming and re-decaying and infinite learning rate schedules for 3 pretraining stages. Source: Annotated figure from https://arxiv.org/abs/2403.08763.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!4vy7!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F848aabb1-379a-4c48-aeac-12d1c56dae5c_2226x1250.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Pretraining LLMs with Thunder, image source: https://github.com/Lightning-AI/lightning-thunder</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!up5D!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5de12ea7-b40c-42ae-8c20-3ee55210b548_1028x1600.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Summary of the 3-step RLHF process for finetuning and aligning LLMs with human preferences. Based on annotated figures from the InstructGPT paper, https://arxiv.org/abs/2203.02155.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!c8x8!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F573582be-7daa-4f0b-814a-906a624cf2b7_1424x1462.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A summary of binary classification.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Ka5t!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0605ace1-cc21-400a-941f-154a1faa103c_1600x1427.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An overview of the Bradley-Terry model for relative comparisons.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!EURC!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F487af2f0-e51d-4140-92a7-23476c5ea016_1600x1015.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Comparing reward models and DPO</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!5teZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff118e152-f99b-480b-9491-52be7afbdf48_1014x568.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated table from the original DPO paper, https://arxiv.org/abs/2305.18290</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!4C3A!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5ebd6f26-c7f9-4d55-bca2-a853110689dd_1600x1215.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: RewardBench models the reward model and DPO model evaluation as a prediction task and counts how often a method chooses the “chosen” (preferred) response. (Annotated figure from the RewardBench paper, https://arxiv.org/abs/2403.13787)</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cj13!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F421bceba-086a-4c4c-9936-e09ff5d3ca6d_1888x1298.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: The top 20 models according to RewardBench. (Annotated table from the RewardBench paper, https://arxiv.org/abs/2403.13787).</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!A_Fq!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9f0c0798-6a27-440a-9a68-f1e3429b806b_1570x490.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: DPO models by model type and size. (Annotated table from the RewardBench paper, https://arxiv.org/abs/2403.13787).</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CxIZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F27b6d27d-1052-4a4f-a419-a69cdd36704a_1118x454.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>It’s another month in AI research, and it’s hard to pick favorites.</p>
+<p>Besides new research, there have also been many other significant announcements. Among them, xAI has open-sourced its Grok-1 model, which, at 314 billion parameters, is the largest open-source model yet. Additionally, reports suggest that Claude-3 is approaching or even exceeding the performance of GPT-4. Then there’s also Open-Sora 1.0 (a fully open-source project for video generation), Eagle 7B (a new RWKV-based model), Mosaic’s 132 billion parameter DBRX (a mixture-of-experts model), and AI21’s Jamba (a Mamba-based SSM-transformer model).</p>
+<p>However, since detailed information about these models is quite scarce, I’ll focus on discussions of research papers. This month, I am going over a paper that discusses strategies for the continued pretraining of LLMs, followed by a discussion of reward modeling used in reinforcement learning with human feedback (a popular LLM alignment method), along with a new benchmark.&nbsp;</p>
+<p>Continued pretraining for LLMs is an important topic because it allows us to update existing LLMs, for instance, ensuring that these models remain up-to-date with the latest information and trends. Also, it allows us to adapt them to new target domains without having them to retrain from scratch.</p>
+<p>Reward modeling is important because it allows us to align LLMs more closely with human preferences and, to some extent, helps with safety. But beyond human preference optimization, it also provides a mechanism for learning and adapting LLMs to complex tasks by providing instruction-output examples where explicit programming of correct behavior is challenging or impractical.</p>
+<p>Happy reading!</p>
+<ol type="1">
+<li>Simple and Scalable Strategies to Continually Pre-train Large Language Models</li>
+</ol>
+<p>We often discuss finetuning LLMs to follow instructions. However, updating LLMs with new knowledge or domain-specific data is also very relevant in practice. The recent paper Simple and Scalable Strategies to Continually Pre-train Large Language Models provides valuable insights on how to continue pretraining an LLM with new data.</p>
+<p>Specifically, the researchers compare models trained in three different ways:</p>
+<p>Regular pretraining: Initializing a model with random weights and pretraining it on dataset D1.</p>
+<p>Continued pretraining: Taking the pretrained model from the scenario above and further pretraining it on dataset D2.</p>
+<p>Retraining on the combined dataset: Initializing a model with random weights, as in the first scenario, but training it on the combination (union) of datasets D1 and D2.</p>
+<p>Illustration of three pretraining methods</p>
+<p>Method 3, retraining on a combined dataset, is a commonly adopted practice in the field, for example, as I wrote about last year when discussing the BloombergGPT paper. This is because retraining it usually helps with finding a good learning rate schedule —often employing a linear warmup followed by a half-cycle cosine decay— and helps with catastrophic forgetting.</p>
+<p>Catastrophic forgetting refers to the phenomenon where a neural network, especially in sequential learning tasks, forgets previously learned information upon learning new information. This is particularly problematic in models trained across diverse datasets or tasks over time.</p>
+<p>So, by retraining the model on a combined dataset that includes both old and new information, the model can maintain its performance on previously learned tasks while adapting to new data.</p>
+<p>1.1 Takeaways and Results</p>
+<p>This 24-page paper reports a large number of experiments and comes with countless figures, which is very thorough for today’s standards. To narrow it down into a digestible format, the following figures below summarize the main results, showing that it’s possible to reach the same good performance with continued pretraining that one would achieve with retraining on the combined dataset from scratch.</p>
+<p>Continued pretraining is 2× cheaper than retraining from scratch (as it only uses half of the data given a pretrained model is already available) but can reach the same good performance. Source: Annotated figure from https://arxiv.org/abs/2403.08763.</p>
+<p>What were the “tricks” to apply continued pretraining successfully?</p>
+<p>Re-warming and re-decaying the learning rate (see next section).</p>
+<p>Adding a small portion (e.g., 5%) of the original pretraining data (D1) to the new dataset (D2) to prevent catastrophic forgetting. Note that smaller fractions like 0.5% and 1% were also effective.</p>
+<p>1.2 Learning Rate Schedules</p>
+<p>When pretraining or finetuning LLMs, it’s common to use a learning rate schedule that starts with a linear warmup followed by a half-cycle cosine decay, as shown below.</p>
+<p>The common learning rate schedule used for pretraining and finetuning LLMs. Source: Build a Large Language Model From Scratch, https://github.com/rasbt/LLMs-from-scratch/blob/main/appendix-D/01_main-chapter-code/appendix-D.ipynb)</p>
+<p>As shown in the figure above, during the linear warmup, the learning rate begins at a low value and incrementally increases to a predefined value in the initial stages of training. This method helps with stabilizing the model’s weight parameters before proceeding to the main training phase. Subsequently, after the warmup period, the learning rate adopts a cosine decay schedule to both train and gradually reduce the model’s learning rate.</p>
+<p>Considering the pretraining concludes with a very low learning rate, how do we adjust the learning rate for continued pretraining? Typically, we reintroduce the learning rate to a warmup phase and follow it with a decay phase, which is known as re-warming and re-decaying. In simpler terms, we employ the exact same learning rate schedule that was used during the initial pretraining stage</p>
+<p>A schedule for continued pretraining. Figure based on Build a Large Language Model From Scratch, https://github.com/rasbt/LLMs-from-scratch/blob/main/appendix-D/01_main-chapter-code/appendix-D.ipynb</p>
+<p>The authors have found that re-warming and re-decaying is indeed effective. Furthermore, they conducted a comparison with the so-called “infinite learning rate” schedule, which refers to a schedule outlined in the 2021 Scaling Vision Transformers paper. This schedule starts with a mild cosine (or, optionally, inverse-sqrt) decay, transitions to a constant learning rate, and concludes with a sharp decay for annealing.</p>
+<p>Experiments with re-warming and re-decaying and infinite learning rate schedules for 3 pretraining stages. Source: Annotated figure from https://arxiv.org/abs/2403.08763.</p>
+<p>Infinite learning rate schedules can be convenient since one can stop the pretraining at any time during the constant learning rate phase via a short annealing phase (versus completing the cosine half-cycle). However, as the results in the figure above show, using “infinite learning rates” for pretraining and continued pretraining is not necessary. The common re-warming and re-decaying results in the same final loss as the infinite learning rate schedule.</p>
+<p>1.3 Conclusion and Caveats</p>
+<p>As far as I know, the re-warming and re-decaying, as well as adding original pretraining data to the new data, is more or less common knowledge. However, I really appreciate that the researchers took the time to formally test this method in this very detailed 24-page report.</p>
+<p>Moreover, I find it interesting that “infinite learning rate” schedules are not necessary and essentially result in the same final loss that we’d obtain via the common linear warm-up followed by half-cycle cosine decay.&nbsp;</p>
+<p>While I appreciate the thorough suite of experiments conducted in this paper, one potential caveat is that most experiments were conducted on relatively small 405M parameter models with a relatively classic LLM architecture (GPT-NeoX). However, the authors showed that the results also hold true for a 10B parameter model, which gives reason to believe that these results also hold true for larger (e.g., 70B parameter) models and possibly also architecture variations.</p>
+<p>The researchers focused on pretraining datasets of similar size. In addition, the appendix also showed that these results are consistent when only 50% or 30% of the dataset for continued pretraining is used. An interesting future study would be to see whether these trends and recommendations hold when the dataset for pretraining is much smaller than the initial pretraining dataset (which is a common scenario in practice).</p>
+<p>Another interesting future study would be to test how continued pretraining affects the instruction-following capabilities of instruction-finetuning LLMs. In particular, I am curious if it’s necessary to add another round of instruction-finetuning after updating the knowledge of an LLM with continued pretraining.</p>
+<p>As a side note, if you are interested in efficiently pretraining large language models (LLMs), we recently open-sourced a compiler for PyTorch called Thunder.</p>
+<p>When my colleagues applied it to the LitGPT open-source LLM library, which I helped develop, they achieved a 40% improvement in runtime performance while pretraining a Llama 2 7B model.</p>
+<p>Pretraining LLMs with Thunder, image source: https://github.com/Lightning-AI/lightning-thunder</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<ol start="2" type="1">
+<li>Evaluating Reward Modeling for Language Modeling</li>
+</ol>
+<p>RewardBench: Evaluating Reward Modeling for Language Modeling introduces a benchmark for reward models used in reinforcement learning with human feedback (RLHF) – the popular instruction-tuning and alignment procedure for LLMs.</p>
+<p>Before we discuss the main takeaways from this paper, let’s take a quick detour and briefly discuss RLHF and reward modeling in the next section.</p>
+<p>2.1 Introduction to reward modeling and RLHF</p>
+<p>RLHF aims to improve LLMs, such that their generated outputs align more closely with human preferences. Usually, this refers to the helpfulness and harmlessness of the models’ responses. I’ve also written about the RLHF process in more detail in a previous article: https://magazine.sebastianraschka.com/p/llm-training-rlhf-and-its-alternatives.</p>
+<p>Note that this paper focuses on benchmarking the reward models, not the resulting instruction-finetuned LLMs obtained via LLMs. The RLHF process, which is used to create instruction-following LLMs like ChatGPT and Llama 2-chat, is summarized in the figure below.</p>
+<p>Summary of the 3-step RLHF process for finetuning and aligning LLMs with human preferences. Based on annotated figures from the InstructGPT paper, https://arxiv.org/abs/2203.02155.</p>
+<p>As illustrated in the figure above, the reward model creation is an intermediate step in the RLHF process. Also, the reward model is an LLM itself.&nbsp;</p>
+<p>The difference between the reward model and the original base LLM is that we adapt the reward model’s output layer such that it returns a score that can be used as a reward label. To accomplish this, we have two options: (1) either replace the existing output layer with a new linear layer that produces a single logit value or (2) repurpose one of the existing output logits and finetune it using the reward labels.</p>
+<p>The process and loss function for training a reward model is analogous to training a neural network for classification. In regular binary classification, we predict whether an input example belongs to class 1 or class 0. We model this using a logistic function that calculates the class-membership probability that the input example belongs to class 1.&nbsp;</p>
+<p>The main takeaways from a binary classification task via a logistic function are summarized in the figure below</p>
+<p>A summary of binary classification.</p>
+<p>If you are new to logistic functions for training classifiers, you can find more information here:</p>
+<p>My Losses Learned Optimizing Negative Log-Likelihood and Cross-Entropy in PyTorch article</p>
+<p>My free lectures, Unit 4: Training Multilayer Neural Networks (in particular, the 5 + 3 + 5 = 13 videos in Units 4.1, 4.2, and 4.3; alternatively, these videos are also available on YouTube here)</p>
+<p>Regarding reward modeling, we could use the logistic loss for binary classification, where the outcomes are labeled as 0 or 1, to train a reward model.&nbsp;</p>
+<p>However, for reward models, it’s more common to use the analogous Bradley-Terry model, which is designed for pairwise comparison tasks, where the goal is not to classify items into categories independently but rather to determine the preference or ranking between pairs of items.&nbsp;</p>
+<p>The Bradley-Terry model is particularly useful in scenarios where the outcomes of interest are relative comparisons, like “Which of these two items is preferred?” rather than absolute categorizations, like “Is this item a 0 or a 1?”</p>
+<p>An overview of the Bradley-Terry model for relative comparisons. 2.2. RLHF vs Direct Preference Optimization (DPO)</p>
+<p>In most models, such as Llama 2 and OpenAI’s InstructGPT (likely the same methodology behind ChatGPT model), the reward model is trained as a classifier to predict the human preference probability between two answers, as explained in the section above.&nbsp;</p>
+<p>However, training a reward model presents an extra step, and in practice, it is easier if we directly optimize the reward without creating an explicit reward model. This approach, also known as Direct Preference Optimization (DPO), has gained widespread popularity recently.&nbsp;</p>
+<p>In DPO, the idea is to optimize the policy π, where policy is just jargon for the model being trained, so that it maximizes the expected rewards while staying close to the reference policy πref to some extent. This can help in maintaining some desired properties of πref (like stability or safety) in the new policy π.</p>
+<p>Comparing reward models and DPO</p>
+<p>The β in the equations above typically acts as a temperature parameter that controls the sensitivity of the probability distribution to the differences in the scores from the policies. A higher beta makes the distribution more sensitive to differences, resulting in a steeper function where preferences between options are more pronounced. A lower beta makes the model less sensitive to score differences, leading to a flatter function that represents weaker preferences. Essentially, beta helps to calibrate how strongly the preferences are expressed in the probability model.</p>
+<p>Due to its relative simplicity, i.e., the lack of need to train a separate reward model, LLMs finetuned via DPO are extremely popular. But the big elephant in the room is, how well does it perform? According to the original DPO paper, DPO performs very well as shown in the table below. However, this has to be taken with a grain of salt since RLHF with dedicated reward models (i.e., RLHF-PPO) are harder to train due to larger dataset and compute requirements, and the comparison may not reflect how the best DPO models compare to the best RLHF-PPO models.</p>
+<p>Annotated table from the original DPO paper, https://arxiv.org/abs/2305.18290</p>
+<p>Also, many DPO models can be found at the top of most LLM leaderboards. However, because DPO is much simpler to use than RLHF with a dedicated reward model, there are many more DPO models out there. So, it is hard to say whether DPO is actually better in a head-to-head comparison as there are no equivalent models of these models (that is, models with exactly the same architecture trained on exactly the same dataset but using DPO instead of RLHF with a dedicated reward model).</p>
+<p>2.3 RewardBench</p>
+<p>After this brief detour explaining RLHF and reward modeling, this section will dive right into RewardBench: Evaluating Reward Modeling for Language Modeling paper, which proposes a benchmark to evaluate reward models and the reward scores of DPO models.&nbsp;</p>
+<p>The proposed benchmark suite evaluates the score of both the chosen (preferred) response and the rejected response, as illustrated in the figure below.</p>
+<p>RewardBench models the reward model and DPO model evaluation as a prediction task and counts how often a method chooses the “chosen” (preferred) response. (Annotated figure from the RewardBench paper, https://arxiv.org/abs/2403.13787)</p>
+<p>The next figure lists the top 20 models according to RewardBench. The table shown in this figure essentially confirms what I mentioned earlier. That is, many DPO models can be found at the top of most LLM leaderboards, which is likely because DPO is much simpler to use than RLHF with a dedicated reward model, so there are just many more DPO models out there.&nbsp; themselves.</p>
+<p>The top 20 models according to RewardBench. (Annotated table from the RewardBench paper, https://arxiv.org/abs/2403.13787).</p>
+<p>Note that the difference between existing leaderboards and RewardBench lies in the metrics they evaluate. While other leaderboards assess the Q&amp;A and conversational performance of the resulting LLMs trained via reward models, RewardBench focuses on the reward scores used to train these LLMs.</p>
+<p>Another interesting takeaway from the paper is that the measured reward accuracy correlates with the model size, as one might expect, as shown in the table below. (Unfortunately, this comparison is only available for DPO models.</p>
+<p>DPO models by model type and size. (Annotated table from the RewardBench paper, https://arxiv.org/abs/2403.13787). 2.4 Conclusion, Caveats, and Suggestions for Future Research</p>
+<p>While the paper doesn’t introduce any new LLM finetuning methodology, it was a good excuse to discuss reward modeling and DPO. Also, it’s nice to finally see a benchmark for reward models out there. Kudos to the researchers for creating and sharing it.</p>
+<p>As a little caveat, it would have been interesting to see if the ranking on RewardBench correlates strongly with the resulting LLM chat models on public leaderboards that result from using these reward models. However, since both public leaderboard data and RewardBench data are publicly available, this hopefully inspires someone to work on a future paper analyzing these.</p>
+<p>The other small caveat, which the authors acknowledge in the paper, is that RewardBench really flatters DPO models. This is because there are many more DPO models than reward models out there.</p>
+<p>In the future, in a different paper, it will be interesting to see future studies that perform controlled experiments with fixed compute resources and datasets on RLHF reward models and DPO models to see which ones come out on top.</p>
+<p>Ahead of AI is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>Sebastian’s Books</p>
+<p>Other Interesting Research Papers In March 2024</p>
+<p>Below is a selection of other interesting papers I stumbled upon this month. Given the length of this list, I highlighted those 10 I found particularly interesting with an asterisk (*). However, please note that this list and its annotations are purely based on my interests and relevance to my own projects.</p>
+<p>Model Stock: All We Need Is Just a Few Fine-Tuned Models by Jang, Yun, and Han (28 Mar), https://arxiv.org/abs/2403.19522</p>
+<p>The paper presents an efficient finetuning technique called Model Stock that uses just two models for layer-wise weight averaging.</p>
+<p>MagicLens: Self-Supervised Image Retrieval with Open-Ended Instructions by Zhang, Luan, Hu, et al.&nbsp;(28 Mar), https://arxiv.org/abs/2403.19651</p>
+<p>MagicLens is a self-supervised image retrieval model framework that leverages text instructions to facilitate the search for images based on a broad spectrum of relations beyond visual similarity.</p>
+<p>Mechanistic Design and Scaling of Hybrid Architectures by Poli, Thomas, Nguyen, et al.&nbsp;(26 Mar), https://arxiv.org/abs/2403.17844</p>
+<p>This paper introduces a mechanistic architecture design pipeline that simplifies deep learning development by using synthetic tasks for efficient architecture evaluation, revealing that hybrid and sparse architectures outperform traditional models in scalability and efficiency.</p>
+<ul>
+<li>LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning by Pan, Liu, Diao, et al.&nbsp;(26 Mar), https://arxiv.org/abs/2403.17919</li>
+</ul>
+<p>This research introduces a simple technique of randomly freezing middle layers during training based on importance sampling, which is efficient and can outperform both LoRA and and full LLM finetuning by a noticeable margin in terms of model performance.</p>
+<p>Mini-Gemini: Mining the Potential of Multi-modality Vision Language Models by Li, Zhang, Wang et al.&nbsp;(27 Mar), https://arxiv.org/abs/2403.18814</p>
+<p>Mini-Gemini is a framework aimed at improving multi-modal vision language models (VLMs) through high-resolution visual tokens, a high-quality dataset, and VLM-guided generation.</p>
+<p>Long-form Factuality in Large Language Models by Wei, Yang, Song, et al.&nbsp;(27 Mar), https://arxiv.org/abs/2403.18802</p>
+<p>LongFact is a comprehensive prompt set for benchmarking the long-form factuality of LLMs across 38 topics.</p>
+<p>ViTAR: Vision Transformer with Any Resolution by Fan, You, Han, et al.&nbsp;(27 Mar), https://arxiv.org/abs/2403.18361</p>
+<p>This paper addresses the challenge of Vision Transformers limited scalability across various image resolutions, introducing dynamic resolution adjustment and fuzzy positional encoding.</p>
+<p>BioMedLM: A 2.7B Parameter Language Model Trained On Biomedical Text by Bolton, Venigalla, Yasunaga, et al.&nbsp;(27 Mar), https://arxiv.org/abs/2403.18421</p>
+<p>BioMedLM is a compact GPT-style LLM trained on biomedical papers from PubMed, serving as another nice case study for creating “small,” specialized, yet capable LLMs.</p>
+<p>The Unreasonable Ineffectiveness of the Deeper Layers by Gromov, Tirumala, Shapourian, et al.&nbsp;(26 Mar), https://arxiv.org/abs/2403.17887</p>
+<p>The study demonstrates that selectively pruning up to half the layers of pretrained LLMs, followed by strategic finetuning with quantization and QLoRA, minimally impacts performance on question-answering tasks.</p>
+<p>LLM Agent Operating System by Mei, Li, Xu, et al.&nbsp;(25 Mar), https://arxiv.org/abs/2403.16971</p>
+<p>This paper introduces AIOS, an operating system designed to integrate LLMs with intelligent agents</p>
+<p>LLM2LLM: Boosting LLMs with Novel Iterative Data Enhancement by Lee, Wattanawong, Kim, et al.&nbsp;(22 Mar), https://arxiv.org/abs/2403.15042</p>
+<p>LLM2LLM is a data augmentation strategy that improves the performance of large language models in low-data scenarios by using a teacher model to generate synthetic data from errors made by a student model during initial training</p>
+<p>Can Large Language Models Explore In-Context? by Krishnamurthy, Harris, Foster, et al.&nbsp;(22 Mar), https://arxiv.org/abs/2403.15371</p>
+<p>This study finds that contemporary Large Language Models, including GPT-3.5, GPT-4, and Llama2, do not reliably engage in exploratory behavior in multi-armed bandit environments without significant interventions</p>
+<p>SiMBA: Simplified Mamba-Based Architecture for Vision and Multivariate Time Series by Patro and Agneeswaran (22 Mar), https://arxiv.org/abs/2403.15360</p>
+<p>SiMBA introduces a novel architecture combining Einstein FFT for channel modeling and the Mamba block for sequence modeling to address stability issues in large-scale networks in both image and time-series domains.</p>
+<p>RakutenAI-7B: Extending Large Language Models for Japanese by Levine, Huang, Wang, et al.&nbsp;(21 Mar), https://arxiv.org/abs/2403.15484</p>
+<p>RakutenAI-7B is a Japanese-oriented suite of large language models under the Apache 2.0 license, including specialized instruction and chat models, achieving top performance on the Japanese LM Harness benchmarks.</p>
+<p>LlamaFactory: Unified Efficient Fine-Tuning of 100+ Language Models by Zheng, Zhang, Zhang, et al.&nbsp;(20 Mar), https://arxiv.org/abs/2403.13372</p>
+<p>LlamaFactory introduces a versatile framework with a user-friendly web UI, LlamaBoard, enabling efficient, code-free finetuning of over 100 large language models.</p>
+<ul>
+<li>RewardBench: Evaluating Reward Models for Language Modeling by Lambert, Pyatkin, Morrison, et al.&nbsp;(20 Mar), https://arxiv.org/abs/2403.13787</li>
+</ul>
+<p>The paper introduces RewardBench, a benchmark dataset and toolkit designed for the comprehensive evaluation of reward models used in Reinforcement Learning from Human Feedback (RLHF) to align pretrained language models with human preferences.</p>
+<ul>
+<li>PERL: Parameter Efficient Reinforcement Learning from Human Feedback by Sidahmed, Phatale, Hutcheson, et al.&nbsp;(19 Mar), https://arxiv.org/abs/2403.10704</li>
+</ul>
+<p>This work introduces Parameter Efficient Reinforcement Learning (PERL) using Low-Rank Adaptation (LoRA) for training models with Reinforcement Learning from Human Feedback (RLHF), a method that aligns pretrained base LLMs with human preferences efficiently.</p>
+<p>Decoding Compressed Trust: Scrutinizing the Trustworthiness of Efficient LLMs Under Compression by Hong, Duan, Zhang, et al.&nbsp;(18 Mar), https://arxiv.org/abs/2403.15447</p>
+<p>This study analyzes the complex relationship between LLM compression techniques and trustworthiness, finding that quantization is better than pruning for maintaining efficiency and trustworthiness.</p>
+<p>TnT-LLM: Text Mining at Scale with Large Language Models by Wan, Safavi, Jauhar, et al.&nbsp;(18 Mar), https://arxiv.org/abs/2403.12173</p>
+<p>The paper introduces TnT-LLM, a framework leveraging LLMs for automating label taxonomy generation and assignment with minimal human input.&nbsp;</p>
+<ul>
+<li>RAFT: Adapting Language Model to Domain Specific RAG by Zhang, Patil, Jain, et al.&nbsp;(15 Mar), https://arxiv.org/abs/2403.10131</li>
+</ul>
+<p>This paper introduces Retrieval Augmented FineTuning (RAFT) for enhancing LLMs for open-book, in-domain question answering by training them to identify and disregard non-helpful “distractor” documents while accurately citing relevant information from the right sources.&nbsp;</p>
+<ul>
+<li>MM1: Methods, Analysis &amp; Insights from Multimodal LLM Pre-training by McKinzie, Gan, Fauconnier, et al.&nbsp;(14 Mar), https://arxiv.org/abs/2403.09611</li>
+</ul>
+<p>This work advances multimodal LLMs by analyzing architecture and data strategies and proposes the 30B MM1 model series, which excels in pretraining and finetuning across benchmarks.</p>
+<p>GiT: Towards Generalist Vision Transformer through Universal Language Interface by Wang, Tang, Jiang, et al.&nbsp;(14 Mar), https://arxiv.org/abs/2403.09394</p>
+<p>GiT is a framework leveraging a basic Vision Transformer (ViT) for a wide range of vision tasks that is focused on simplifying the architecture by using a universal language interface for tasks like captioning, detection, and segmentation.</p>
+<p>LocalMamba: Visual State Space Model with Windowed Selective Scan by Huang, Pei, You, et al.&nbsp;https://arxiv.org/abs/2403.09338</p>
+<p>This work improves Vision Mamba tasks by optimizing scan directions, employing a local scanning method to better capture 2D dependencies and a dynamic layer-specific scan optimization, which leads to substantial performance gains on benchmarks like ImageNet.</p>
+<p>BurstAttention: An Efficient Distributed Attention Framework for Extremely Long Sequences by Ao, Zhao, Han, et al.&nbsp;(14 Mar), https://arxiv.org/abs/2403.09347</p>
+<p>“BurstAttention” optimizes distributed attention in Transformer-based models for long sequences, cutting communication overhead by 40% and doubling processing speed on GPUs.</p>
+<p>Language Models Scale Reliably With Over-Training and on Downstream Tasks by Gadre, Smyrnis, Shankar, et al.&nbsp;(13 Mar) https://arxiv.org/abs/2403.08540</p>
+<p>This paper explores the gaps in scaling laws for LLMs by focusing on overtraining and the relationship between model perplexity and downstream task performance.</p>
+<ul>
+<li>Simple and Scalable Strategies to Continually Pre-train Large Language Models, by Ibrahim, Thérien, Gupta, et al.&nbsp;(13 Mar), https://arxiv.org/abs/2403.08763</li>
+</ul>
+<p>This work demonstrates that LLMs can be efficiently updated with new data through a combination of simple learning rate rewarming and adding a small fraction of previous training data to counteract catastrophic forgetting.</p>
+<p>Chronos: Learning the Language of Time Series by Ansari, Stella, Turkmen, et al.&nbsp;(12 Mar), https://arxiv.org/abs/2403.07815</p>
+<p>Chronos applies transformer-based models to time series forecasting, achieving good performance on both known and unseen datasets by training on a mix of real and synthetic data.</p>
+<ul>
+<li>Stealing Part of a Production Language Model by Carlini, Paleka, Dvijotham, et al.&nbsp;(11 Mar), https://arxiv.org/abs/2403.06634</li>
+</ul>
+<p>Researchers present a new model-stealing attack capable of precisely extracting information from black-box language models like OpenAI’s ChatGPT and Google’s PaLM-2 (revealing for the first time the hidden dimensions of these models).</p>
+<p>Algorithmic Progress in Language Models by Ho, Besiroglu, and Erdil (9 Mar), https://arxiv.org/abs/2403.05812</p>
+<p>The study finds that since 2012, the computational efficiency for pretraining language models (including large language models) has doubled approximately every 8 months, a pace much faster than the hardware advancements predicted by Moore’s Law.</p>
+<p>LLM4Decompile: Decompiling Binary Code with Large Language Models by Tan, Luo, Li, and Zhang (8 Mar), https://arxiv.org/abs/2403.05286</p>
+<p>This summary describes the release of open-source LLMs for decompilation, pretrained on a substantial dataset comprising both C source code and corresponding assembly code.&nbsp;</p>
+<p>Is Cosine-Similarity of Embeddings Really About Similarity? by Steck, Ekanadham, and Kallus (8 Mar), https://arxiv.org/abs/2403.05440</p>
+<p>The paper examines the effectiveness and limitations of using cosine similarity for determining semantic similarities between high-dimensional objects through low-dimensional embeddings.</p>
+<p>Gemini 1.5: Unlocking Multimodal Understanding Across Millions of Tokens of Context by Reid, Savinov, Teplyashin, et al.&nbsp;(8 Mar), https://arxiv.org/abs/2403.05530</p>
+<p>This technical report introduces Gemini 1.5 Pro, a multimodal model from Google Gemini family excelling in long-context tasks across various modalities.</p>
+<ul>
+<li>Common 7B Language Models Already Possess Strong Math Capabilities by Li, Wang, Hu, et al.&nbsp;(7 Mar), https://arxiv.org/abs/2403.04706</li>
+</ul>
+<p>This study reveals the LLaMA-2 7B model’s surprising mathematical skills even though it only underwent standard pretraining, and its consistency improves with scaled-up supervised instruction-finetuning data.</p>
+<p>How Far Are We from Intelligent Visual Deductive Reasoning? by Zhang, Bai, Zhang, et al.&nbsp;(7 Mar), https://arxiv.org/abs/2403.04732</p>
+<p>This study explores the capabilities of state-of-the-art Vision-Language Models (VLMs) like GPT-4V in the nuanced field of vision-based deductive reasoning, uncovering significant blindspots in visual deductive reasoning, and finding that techniques effective for text-based reasoning in LLMs don’t directly apply to visual reasoning challenges.</p>
+<p>Stop Regressing: Training Value Functions via Classification for Scalable Deep RL by Farebrother, Orbay, Vuong (6 Mar), et al.&nbsp;https://arxiv.org/abs/2403.03950</p>
+<p>This paper explores the potential of enhancing deep reinforcement learning (RL) scalability by training value functions, crucial for RL, using categorical cross-entropy classification instead of traditional regression</p>
+<ul>
+<li>GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection by Zhao, Zhang, Chen, et al.&nbsp;(6 Mar), https://arxiv.org/abs/2403.03507</li>
+</ul>
+<p>Gradient Low-Rank Projection (GaLore) is a new training strategy that significantly reduces memory usage by up to 65.5% for optimizer states during the training of LLMs, without sacrificing performance.</p>
+<p>MedMamba: Vision Mamba for Medical Image Classification by Yue and Li (2024), https://arxiv.org/abs/2403.03849</p>
+<p>MedMamba tackles medical image classification by blending CNNs with state space models (Conv-SSM) for efficient long-range dependency modeling and local feature extraction.</p>
+<p>3D Diffusion Policy by Ze, Zhang, Zhang, et al.&nbsp;(6 Mar), https://arxiv.org/abs/2403.03954&nbsp;</p>
+<p>3D Diffusion Policy is a new visual imitation learning approach integrating 3D visual representations with diffusion policies to improve efficiency and generalization in robot training with fewer demonstrations and enhanced safety.</p>
+<p>Are Language Models Puzzle Prodigies? Algorithmic Puzzles Unveil Serious Challenges in Multimodal Reasoning by Ghosal, Han, Ken, and Poria (6 Mar) , https://arxiv.org/abs/2403.03864</p>
+<p>This paper introduces a new multimodal puzzle-solving challenge revealing that models like GPT4-V and Gemini struggle significantly with the complex puzzles.</p>
+<p>SaulLM-7B: A pioneering Large Language Model for Law by Colombo, Pires, Boudiaf, et al.&nbsp;(6 Mar), https://arxiv.org/abs/2403.03883</p>
+<p>SaulLM-7B is a 7 billion-parameter language model specialized for the legal domain, built on the Mistral 7B architecture and trained on a massive corpus of English legal texts.&nbsp;</p>
+<p>Learning to Decode Collaboratively with Multiple Language Models by Shen, Lang, Wang, et al.&nbsp;(6 Mar), https://arxiv.org/abs/2403.03870</p>
+<p>This approach enables multiple large language models to collaboratively generate text at the token level, automatically learning when to contribute or defer to others, enhancing performance across various tasks by leveraging the combined expertise of generalist and specialist models.</p>
+<p>Backtracing: Retrieving the Cause of the Query by Wang, Wirawarn, Khattab, et al.&nbsp;(6 Mar), https://arxiv.org/abs/2403.03956</p>
+<p>The study introduces “backtracing” as a task to help content creators like lecturers identify the text segments that led to user queries, aiming to enhance content delivery in education, news, and conversation domains.</p>
+<ul>
+<li>ShortGPT: Layers in Large Language Models are More Redundant Than You Expect by Men, Xu, Zhang, et al.&nbsp;(6 Mar), https://arxiv.org/abs/2403.03853</li>
+</ul>
+<p>This study introduces the Block Influence (BI) metric to assess each layer’s importance in LLMs and proposes ShortGPT, a pruning approach that removes redundant layers based on BI scores.</p>
+<p>Design2Code: How Far Are We From Automating Front-End Engineering? by Si, Zhang, Yang, et al.&nbsp;(5 Mar), https://arxiv.org/abs/2403.03163</p>
+<p>This research introduces Design2Code, a benchmark for how well multimodal LLMs convert visual designs into code, using a curated set of 484 real-world webpages for evaluation, where GPT-4V emerged as the top-performing model.</p>
+<p>Scaling Rectified Flow Transformers for High-Resolution Image Synthesis by Esser, Kulal, Blattmann, et al.&nbsp;(5 Mar), https://arxiv.org/abs/2403.03206</p>
+<p>This work enhances rectified flow models for high-resolution text-to-image synthesis by improving noise sampling and introducing a novel transformer-based architecture that enhances text comprehension and image quality, showing better performance through extensive evaluation and human preference ratings.</p>
+<p>Enhancing Vision-Language Pre-training with Rich Supervisions by Gao, Shi, Zhu et al.&nbsp;(5 Mar), https://arxiv.org/abs/2403.03346</p>
+<p>Strongly Supervised pretraining with ScreenShots (S4) introduces a new pretraining approach for vision-LLMs using web screenshots along with leveraging the inherent tree-structured hierarchy of HTML elements.</p>
+<p>Evolution Transformer: In-Context Evolutionary Optimization by Lange, Tian, and Tang (5 Mar), https://arxiv.org/abs/2403.02985</p>
+<p>The proposed evolution transformer leverages a causal transformer architecture for meta-optimization.</p>
+<ul>
+<li>The WMDP Benchmark: Measuring and Reducing Malicious Use With Unlearning by Li, Pan, Gopal et al.&nbsp;(5 Mar), https://arxiv.org/abs/2403.03218</li>
+</ul>
+<p>The WMDP benchmark is a curated dataset of over 4,000 questions designed to gauge and mitigate LLMs’ knowledge in areas with misuse potential, such as biosecurity and cybersecurity.&nbsp;</p>
+<p>Vision-RWKV: Efficient and Scalable Visual Perception with RWKV-Like Architectures by Duan, Wang, Chen, et al.&nbsp;(4 Mar), https://arxiv.org/abs/2403.02308</p>
+<p>VRWKV adapts the RWKV model from NLP to computer vision, outperforming vision transformer (ViTs) like DeiT in classification speed and memory usage, and excelling in dense prediction tasks.</p>
+<p>Training-Free Pretrained Model Merging, by Xu, Yuan, Wang, et al.&nbsp;(4 Mar), https://arxiv.org/abs/2403.01753</p>
+<p>The proposed model merging framework addresses the challenge of balancing unit similarity inconsistencies between weight and activation spaces during model merging by linearly combining similarity matrices of both, resulting in better multi-task model performance.</p>
+<p>The Hidden Attention of Mamba Models by Ali, Zimerman, and Wolf (3 Mar), https://arxiv.org/abs/2403.01590</p>
+<p>This paper shows that selective state space models such as Mamba can be viewed as attention-driven models.</p>
+<p>Improving LLM Code Generation with Grammar Augmentation by Ugare, Suresh, Kang (3 Mar), https://arxiv.org/abs/2403.01632</p>
+<p>SynCode is a framework that improves code generation with LLMs by using the grammar of programming languages (essentially an offline-constructed efficient lookup table) for syntax validation and to constrain the LLM’s vocabulary to only syntactically valid tokens.</p>
+<p>Learning and Leveraging World Models in Visual Representation Learning by Garrido, Assran, Ballas et al.&nbsp;(1 Mar), https://arxiv.org/abs/2403.00504</p>
+<p>The study extends the popular Joint-Embedding Predictive Architecture (JEPA) by introducing Image World Models (IWMs) to go beyond masked image modeling.</p>
+<p>This magazine is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of one of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</p>
+<p>Your support means a great deal! Thank you!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

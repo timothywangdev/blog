@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>building-a-gpt-style-llm-classifier-from-scratch – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#building-a-gpt-style-llm-classifier-from-scratch" id="toc-building-a-gpt-style-llm-classifier-from-scratch" class="nav-link active" data-scroll-target="#building-a-gpt-style-llm-classifier-from-scratch">Building A GPT-Style LLM Classifier From Scratch</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="building-a-gpt-style-llm-classifier-from-scratch" class="level1">
+<h1>Building A GPT-Style LLM Classifier From Scratch</h1>
+<p><strong>Subtitle:</strong> Finetuning a GPT Model for Spam Classification</p>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/building-a-gpt-style-llm-classifier</p>
+<p><strong>Likes:</strong> LIKE (2)</p>
+<p><strong>Image Count:</strong> 21</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!mmsV!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fc52e5b0c-836c-4ae4-9b09-02e364004195_1600x858.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Turning a GPT model into a text classifier</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!b-8-!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd3384270-ff15-41ba-b698-5490ab809d20_1568x624.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 1: Illustration of two different instruction finetuning scenarios. At the top, the model is tasked with determining whether a given text is spam. At the bottom, the model is given an instruction on how to translate an English sentence into German.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!0RXf!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F80e640cf-da89-4479-ae8f-b39e6255e2de_994x532.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 2: Illustration of a text classification scenario using an LLM. A model finetuned for spam classification does not require additional instructions alongside the input. However, in contrast to an instruction-finetuned model, it can only respond with “spam” and “not spam.”</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!iP-c!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F24eb454d-7abe-4a83-a480-04faeb4be9d5_1170x928.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 3: In this excerpt, we skip over steps 1-5 and directly jump to step 6 (starting in the next section).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!naEY!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F529bb1e6-a565-403b-8886-c295803fee29_1600x1266.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 4: This figure illustrates adapting a GPT model for spam classification by altering its architecture. Initially, the model’s linear output layer mapped 768 hidden units to a vocabulary of 50,257 tokens. For spam detection, this layer is replaced with a new output layer that maps the same 768 hidden units to just two classes, representing “spam” and “not spam.”</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CkDZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Feb61939e-e9ae-416f-8b75-9ed808be0782_1456x1392.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 5: The GPT model we developed in earlier chapters, which we loaded previously, includes 12 repeated transformer blocks. Alongside the output layer, we set the final LayerNorm and the last transformer block as trainable, while the remaining 11 transformer blocks and the embedding layers are kept non-trainable.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!wrgR!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Faf4ec4eb-00cd-40fc-87d2-0975a4019140_1298x1286.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 6: An illustration of the GPT model with a 4-token example input and output. The output tensor consists of 2 columns due to the modified output layer. We are only focusing on the last row corresponding to the last token when finetuning the model for spam classification.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!2s3e!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fafd19c7a-726c-4e28-b62b-674aec7457cd_558x688.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 7: Illustration of the causal attention mechanism as discussed in Chapter 3, where the attention scores between input tokens are displayed in a matrix format. The empty cells indicate masked positions due to the causal attention mask, preventing tokens from attending to future tokens. The values in the cells represent attention scores, with the last token, “time,” being the only one that computes attention scores for all preceding tokens.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cXDr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F077a4b21-3e5d-4c51-b077-1c09249a86db_1298x750.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 8: Both the training accuracy (solid line) and the validation accuracy (dashed line) increase substantially in the early epochs and then plateau, achieving almost perfect accuracy scores of 1.0, corresponding to 100%. The close proximity of the two lines throughout the epochs suggests that the model does not overfit the training data much.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!fLjI!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fffbb40dc-7066-4a44-be65-d6d3e11ab32d_1344x308.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 1: Training all layers versus only the last transformer block (including the last layer) versus only the last layer.</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!KiWb!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff6cc0633-b7af-4c21-a181-878739f1feef_1432x862.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from the original BERT paper, https://arxiv.org/abs/1810.04805</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!tMQv!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F23fe5312-e44b-4693-9673-bdc659e7bab7_1350x316.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 2: Finetuning the last versus first token in a GPT model.</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!LEyo!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0d8578e1-0ef5-46a9-889e-7043ea920319_1356x308.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 3. GPT-2 versus BERT for SPAM classification.</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!PaAc!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa0e38e83-a173-482c-8ba2-835fa2a8bb64_1362x316.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 4: GPT-2 versus BERT for movie review classification. (The code is available here on GitHub.)</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!0Ezn!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F7536a59a-5326-4a8b-ab12-cebe49acde31_1438x936.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Attention weight matrix with and without a causal mask.</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!1-xB!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa7358fb7-904d-4025-988e-dd9b044a4386_1352x306.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 5: GPT-2 classifier finetuned with and without causal attention mask.</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cGRG!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F39f9a045-966c-4eb9-8223-8ebe6dcd116b_1484x408.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 6: Different GPT-2 model sizes for classification finetuning.</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!YBCe!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F177f3f65-cd06-43f1-94ca-b876233ee7b8_1354x310.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 7: Full finetuning (all layers) versus parameter-efficient finetuning with LoRA.</li>
+</ul>
+<ol start="19" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!RZTW!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3ca92708-0a0a-4b13-a909-ec67a4aae1ff_1548x1232.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: An illustration of how the input texts in a given batch are padded to an equal length.</li>
+</ul>
+<ol start="20" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cF-g!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F89e2a9fd-d524-4b56-8329-c1f4f21e12d7_1350x308.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Table 8: Training a model with padding (regular) and no padding of inputs to similar lengths.</li>
+</ul>
+<ol start="21" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Xyu5!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F77eae84a-c63b-4d61-a25b-91cefd87aba6_2689x3469.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Build a Large Language Model From Scratch book</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>In this article, I want to show you how to transform pretrained large language models (LLMs) into strong text classifiers.&nbsp;</p>
+<p>But why focus on classification? First, finetuning a pretrained model for classification offers a gentle yet effective introduction to model finetuning. Second, many real-world and business challenges revolve around text classification: spam detection, sentiment analysis, customer feedback categorization, topic labeling, and more.</p>
+<p>Turning a GPT model into a text classifier</p>
+<p>What You’ll Learn in This Article</p>
+<p>To celebrate the book’s release, I’m sharing an excerpt from one of the chapters that walks you through how to finetune a pretrained LLM as a spam classifier.&nbsp;</p>
+<p>Important Note</p>
+<p>The chapter on classification finetuning is 35 pages long—too long for a single article. So, in this post, I’ll focus on a ~10-page subset that introduces the context and core concepts behind classification finetuning.</p>
+<p>Additionally, I’ll share insights from some extra experiments that aren’t included in the book and address common questions readers might have. (Please note that the excerpt below is based on my personal draft before Manning’s professional text editing and final figure design.)</p>
+<p>The full code for this excerpt can be found here on GitHub.</p>
+<p>In addition, I’ll also answer 7 questions you might have regarding training LLM classifiers:</p>
+<ol type="1">
+<li><p>Do we need to train all layers?</p></li>
+<li><p>Why finetuning the last token, not the first token?</p></li>
+<li><p>How does BERT compare to GPT performance-wise?</p></li>
+<li><p>Should we disable the causal mask?</p></li>
+<li><p>What impact does increasing the model size have?</p></li>
+<li><p>What improvements can we expect from LoRA?</p></li>
+<li><p>Padding or no padding?</p></li>
+</ol>
+<p>Happy reading!</p>
+<p>Different categories of finetuning</p>
+<p>The most common ways to finetune language models are instruction finetuning and classification finetuning. Instruction finetuning involves training a language model on a set of tasks using specific instructions to improve its ability to understand and execute tasks described in natural language prompts, as illustrated in Figure 1 below.</p>
+<p>Figure 1: Illustration of two different instruction finetuning scenarios. At the top, the model is tasked with determining whether a given text is spam. At the bottom, the model is given an instruction on how to translate an English sentence into German.</p>
+<p>The next chapter will discuss instruction finetuning, as illustrated in Figure 1 above. Meanwhile, this chapter is centered on classification finetuning, a concept you might already be acquainted with if you have a background in machine learning.</p>
+<p>In classification finetuning, the model is trained to recognize a specific set of class labels, such as “spam” and “not spam.” Examples of classification tasks extend beyond large language models and email filtering; they include identifying different species of plants from images, categorizing news articles into topics like sports, politics, or technology, and distinguishing between benign and malignant tumors in medical imaging.</p>
+<p>The key point is that a classification-finetuned model is restricted to predicting classes it has encountered during its training—for instance, it can determine whether something is “spam” or “not spam,” as illustrated in Figure 2 below, but it can’t say anything else about the input text.&nbsp;</p>
+<p>Figure 2: Illustration of a text classification scenario using an LLM. A model finetuned for spam classification does not require additional instructions alongside the input. However, in contrast to an instruction-finetuned model, it can only respond with “spam” and “not spam.”</p>
+<p>In contrast to the classification-finetuned model depicted in Figure 2, an instruction-finetuned model typically has the capability to undertake a broader range of tasks. We can view a classification-finetuned model as highly specialized, and generally, it is easier to develop a specialized model than a generalist model that works well across various tasks.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>Choosing the right approach</p>
+<p>Instruction finetuning improves a model’s ability to understand and generate responses based on specific user instructions. Instruction finetuning is best suited for models that need to handle a variety of tasks based on complex user instructions, improving flexibility and interaction quality. Classification finetuning, on the other hand, is ideal for projects requiring precise categorization of data into predefined classes, such as sentiment analysis or spam detection.&nbsp;</p>
+<p>While instruction finetuning is more versatile, it demands larger datasets and greater computational resources to develop models proficient in various tasks. In contrast, classification finetuning requires less data and compute power, but its use is confined to the specific classes on which the model has been trained.</p>
+<p>Initializing a model with pretrained weights</p>
+<p>Since this is an excerpt, we’ll skip over the data preparation parts and the model’s initialization, which were implemented and pretrained in previous chapters. From my experience, maintaining focus while reading lengthy digital articles can be challenging compared to physical books. So, I’ll try to keep this excerpt/article tightly focused on one of the key takeaways from this chapter.</p>
+<p>To provide some context on which part of the chapter this excerpt is focused on, this excerpt centers on the modification required to transform a general pretrained LLM into a specialized LLM for classification tasks, as shown in Figure 3 below.</p>
+<p>Figure 3: In this excerpt, we skip over steps 1-5 and directly jump to step 6 (starting in the next section).</p>
+<p>But before we jump to the modification of the LLM mentioned in Figure 3 above, let’s have a brief look at the pretrained LLM we are working with.</p>
+<p>So, for simplicity, as assume that we set up the code to load the model as follows:</p>
+<p>model = GPTModel(BASE_CONFIG) load_weights_into_gpt(model, params) model.eval()</p>
+<p>After loading the model weights into the GPTModel, we use the text generation utility function from the previous chapters to ensure that the model generates coherent text:</p>
+<p>from chapter04 import generate_text_simple from chapter05 import text_to_token_ids, token_ids_to_text</p>
+<p>text_1 = “Every effort moves you”</p>
+<p>token_ids = generate_text_simple( &nbsp;&nbsp;&nbsp;&nbsp;model=model, &nbsp;&nbsp;&nbsp;&nbsp;idx=text_to_token_ids(text_1, tokenizer), &nbsp;&nbsp;&nbsp;&nbsp;max_new_tokens=15, &nbsp;&nbsp;&nbsp;&nbsp;context_size=BASE_CONFIG[“context_length”] )</p>
+<p>print(token_ids_to_text(token_ids, tokenizer))</p>
+<p>As we can see based on the following output, the model generates coherent text, which is an indicator that the model weights have been loaded correctly:</p>
+<p>Every effort moves you forward. The first step is to understand the importance of your work</p>
+<p>Now, before we start finetuning the model as a spam classifier, let’s see if the model can perhaps already classify spam messages by by prompting it with instructions:</p>
+<p>text_2 = ( &nbsp;&nbsp;&nbsp;&nbsp;“Is the following text ‘spam’? Answer with ‘yes’ or ‘no’:” &nbsp;&nbsp;&nbsp;&nbsp;” ‘You are a winner you have been specially” &nbsp;&nbsp;&nbsp;&nbsp;” selected to receive $1000 cash or a $2000 award.’” )</p>
+<p>token_ids = generate_text_simple( &nbsp;&nbsp;&nbsp;&nbsp;model=model, &nbsp;&nbsp;&nbsp;&nbsp;idx=text_to_token_ids(text_2, tokenizer), &nbsp;&nbsp;&nbsp;&nbsp;max_new_tokens=23, &nbsp;&nbsp;&nbsp;&nbsp;context_size=BASE_CONFIG[“context_length”] )</p>
+<p>print(token_ids_to_text(token_ids, tokenizer))</p>
+<p>The model output is as follows:</p>
+<p>Is the following text ‘spam’? Answer with ‘yes’ or ‘no’: ‘You are a winner you have been specially selected to receive $1000 cash or a $2000 award.’ The following text ‘spam’? Answer with ‘yes’ or ‘no’: ’You are a winner</p>
+<p>Based on the output, it’s apparent that the model struggles with following instructions.</p>
+<p>This is anticipated, as it has undergone only pretraining and lacks instruction finetuning, which we will explore in the upcoming chapter.</p>
+<p>The next section prepares the model for classification finetuning.</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<p>Adding a classification head</p>
+<p>In this section, we modify the pretrained large language model to prepare it for classification finetuning. To do this, we replace the original output layer, which maps the hidden representation to a vocabulary of 50,257 unique tokens, with a smaller output layer that maps to two classes: 0 (“not spam”) and 1 (“spam”), as shown in Figure 4 below.</p>
+<p>Figure 4: This figure illustrates adapting a GPT model for spam classification by altering its architecture. Initially, the model’s linear output layer mapped 768 hidden units to a vocabulary of 50,257 tokens. For spam detection, this layer is replaced with a new output layer that maps the same 768 hidden units to just two classes, representing “spam” and “not spam.”</p>
+<p>As shown in Figure 4 above, we use the same model as in previous chapters except for replacing the output layer.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>Output layer nodes We could technically use a single output node since we are dealing with a binary classification task. However, this would require modifying the loss function, as discussed in an article in the Reference section in Appendix B. Therefore, we choose a more general approach where the number of output nodes matches the number of classes. For example, for a 3-class problem, such as classifying news articles as “Technology”, “Sports”, or “Politics”, we would use three output nodes, and so forth.</p>
+<p>Before we attempt the modification illustrated in Figure 4, let’s print the model architecture via print(model), which outputs the following:</p>
+<p>GPTModel( &nbsp;&nbsp;(tok_emb): Embedding(50257, 768) &nbsp;&nbsp;(pos_emb): Embedding(1024, 768) &nbsp;&nbsp;(drop_emb): Dropout(p=0.0, inplace=False) &nbsp;&nbsp;(trf_blocks): Sequential( … &nbsp;&nbsp;&nbsp;&nbsp;(11): TransformerBlock( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(att): MultiHeadAttention( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(W_query): Linear(in_features=768, out_features=768, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(W_key): Linear(in_features=768, out_features=768, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(W_value): Linear(in_features=768, out_features=768, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(out_proj): Linear(in_features=768, out_features=768, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(dropout): Dropout(p=0.0, inplace=False) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(ff): FeedForward( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(layers): Sequential( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0): Linear(in_features=768, out_features=3072, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(1): GELU() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(2): Linear(in_features=3072, out_features=768, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(norm1): LayerNorm() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(norm2): LayerNorm() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(drop_resid): Dropout(p=0.0, inplace=False) &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;) &nbsp;&nbsp;(final_norm): LayerNorm() &nbsp;&nbsp;(out_head): Linear(in_features=768, out_features=50257, bias=False) )</p>
+<p>Above, we can see the architecture we implemented in Chapter 4 neatly laid out. As discussed in Chapter 4, the GPTModel consists of embedding layers followed by 12 identical transformer blocks (only the last block is shown for brevity), followed by a final LayerNorm and the output layer, out_head.&nbsp;</p>
+<p>Next, we replace the out_head with a new output layer, as illustrated in Figure 4, that we will finetune.</p>
+<p>Finetuning selected layers versus all layers Since we start with a pretrained model, it’s not necessary to finetune all model layers. This is because, in neural network-based language models, the lower layers generally capture basic language structures and semantics that are applicable across a wide range of tasks and datasets. So, finetuning only the last layers (layers near the output), which are more specific to nuanced linguistic patterns and task-specific features, can often be sufficient to adapt the model to new tasks. A nice side effect is that it is computationally more efficient to finetune only a small number of layers. Interested readers can find more information, including experiments, on which layers to finetune in the References section for this chapter in Appendix B.</p>
+<p>To get the model ready for classification finetuning, we first freeze the model, meaning that we make all layers non-trainable:</p>
+<p>for param in model.parameters(): &nbsp;&nbsp;&nbsp;&nbsp;param.requires_grad = False</p>
+<p>Then, as shown in Figure 4 earlier, we replace the output layer (model.out_head), which originally maps the layer inputs to 50,257 dimensions (the size of the vocabulary):</p>
+<p>torch.manual_seed(123)</p>
+<p>num_classes = 2</p>
+<p>model.out_head = torch.nn.Linear( &nbsp; &nbsp; in_features=BASE_CONFIG[“emb_dim”], &nbsp; &nbsp;out_features=num_classes )</p>
+<p>Note that in the preceding code, we use BASE_CONFIG[“emb_dim”], which is equal to 768 in the “gpt2-small (124M)” model, to keep the code below more general. This means we can also use the same code to work with the larger GPT-2 model variants.</p>
+<p>This new model.out_head output layer has its requires_grad attribute set to True by default, which means that it’s the only layer in the model that will be updated during training.</p>
+<p>Technically, training the output layer we just added is sufficient. However, as I found in experiments, finetuning additional layers can noticeably improve the predictive performance of the finetuned model. (For more details, refer to the References in Appendix C.)</p>
+<p>Additionally, we configure the last transformer block and the final LayerNorm module, which connects this block to the output layer, to be trainable, as depicted in Figure 5 below.</p>
+<p>Figure 5: The GPT model we developed in earlier chapters, which we loaded previously, includes 12 repeated transformer blocks. Alongside the output layer, we set the final LayerNorm and the last transformer block as trainable, while the remaining 11 transformer blocks and the embedding layers are kept non-trainable.</p>
+<p>To make the final LayerNorm and last transformer block trainable, as illustrated in Figure 5 above, we set their respective requires_grad to True:</p>
+<p>for param in model.trf_blocks[-1].parameters(): &nbsp;&nbsp;&nbsp;&nbsp;param.requires_grad = True</p>
+<p>for param in model.final_norm.parameters(): &nbsp;&nbsp;&nbsp;&nbsp;param.requires_grad = True</p>
+<p>Even though we added a new output layer and marked certain layers as trainable or non-trainable, we can still use this model in a similar way to previous chapters. For instance, we can feed it an example text identical to how we have done it in earlier chapters. For example, consider the following example text:</p>
+<p>inputs = tokenizer.encode(“Do you have time”) inputs = torch.tensor(inputs).unsqueeze(0)</p>
+<p>print(“Inputs:”, inputs) print(“Inputs dimensions:”, inputs.shape)</p>
+<p>As the print output shows, the preceding code encodes the inputs into a tensor consisting of 4 input tokens:</p>
+<p>Inputs: tensor([[5211,&nbsp; 345,&nbsp; 423,&nbsp; 640]]) Inputs dimensions: torch.Size([1, 4])</p>
+<p>Then, we can pass the encoded token IDs to the model as usual:</p>
+<p>with torch.no_grad(): &nbsp;&nbsp;&nbsp;&nbsp;outputs = model(inputs)</p>
+<p>print(“Outputs:”, outputs) print(“Outputs dimensions:”, outputs.shape)</p>
+<p>The output tensor looks like as follows:</p>
+<p>Outputs: &nbsp;tensor([[[-1.5854,&nbsp; 0.9904], &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[-3.7235,&nbsp; 7.4548], &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[-2.2661,&nbsp; 6.6049], &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[-3.5983,&nbsp; 3.9902]]]) Outputs dimensions: torch.Size([1, 4, 2])</p>
+<p>In Chapters 4 and 5, a similar input would have produced an output tensor of shape [1, 4, 50257], where 50,257 represents the vocabulary size. As in previous chapters, the number of output rows corresponds to the number of input tokens (in this case, 4). However, each output’s embedding dimension (the number of columns) is now reduced to 2 instead of 50,257 since we replaced the output layer of the model.</p>
+<p>Remember that we are interested in finetuning this model so that it returns a class label that indicates whether a model input is spam or not spam. To achieve this, we don’t need to finetune all 4 output rows but can focus on a single output token. In particular, we will focus on the last row corresponding to the last output token, as illustrated in Figure 6 below.</p>
+<p>Figure 6: An illustration of the GPT model with a 4-token example input and output. The output tensor consists of 2 columns due to the modified output layer. We are only focusing on the last row corresponding to the last token when finetuning the model for spam classification.</p>
+<p>To extract the last output token, illustrated in Figure 6 above, from the output tensor, we use the following code:</p>
+<p>print(“Last output token:”, outputs[:, -1, :])</p>
+<p>This prints the following:</p>
+<p>Last output token: tensor([[-3.5983,&nbsp; 3.9902]])</p>
+<p>Before we proceed to the next section, let’s recap our discussion. We will focus on converting the values into a class label prediction. But first, let’s understand why we are particularly interested in the last output token, and not the 1st, 2nd, or 3rd output token.</p>
+<p>In Chapter 3, we explored the attention mechanism, which establishes a relationship between each input token and every other input token. Subsequently, we introduced the concept of a causal attention mask, commonly used in GPT-like models. This mask restricts a token’s focus to only its current position and those before it, ensuring that each token can only be influenced by itself and preceding tokens, as illustrated in Figure 7 below.</p>
+<p>Figure 7: Illustration of the causal attention mechanism as discussed in Chapter 3, where the attention scores between input tokens are displayed in a matrix format. The empty cells indicate masked positions due to the causal attention mask, preventing tokens from attending to future tokens. The values in the cells represent attention scores, with the last token, “time,” being the only one that computes attention scores for all preceding tokens.</p>
+<p>Given the causal attention mask setup shown in Figure 7 above, the last token in a sequence accumulates the most information since it is the only token with access to data from all the previous tokens. Therefore, in our spam classification task, we focus on this last token during the finetuning process.</p>
+<p>Having modified the model, the next section will detail the process of transforming the last token into class label predictions and calculate the model’s initial prediction accuracy. Following this, we will finetune the model for the spam classification task in the subsequent section.</p>
+<p>Evaluating the model performance</p>
+<p>Since this excerpt was already long, I won’t go into the details on the model evaluation. However, I wanted to share at least the plot showing the classification accuracy on the training and validation sets during training to show you that the model indeed learns really well.</p>
+<p>Figure 8: Both the training accuracy (solid line) and the validation accuracy (dashed line) increase substantially in the early epochs and then plateau, achieving almost perfect accuracy scores of 1.0, corresponding to 100%. The close proximity of the two lines throughout the epochs suggests that the model does not overfit the training data much.</p>
+<p>As we can see in Figure 8 above, the model achieves a validation accuracy of approximately 97%. The test accuracy (not shown) is approximately 96%. Furthermore, we can see that the model slightly overfits, as indicated by the slightly higher training set accuracy. Overall, though, this model performed really well: a 96% test set accuracy means that it correctly identifies 96 out of 100 messages as spam or not spam. (We didn’t discuss the dataset in this excerpt, but it was a balanced dataset with 50% spam and 50% non-spam messages, which means that a random or badly trained classifier would achieve approximately 50% classification accuracy.)</p>
+<p>Insights from additional experiments</p>
+<p>You may have many questions about certain design choices at this point, so I wanted to share a few results from some additional experiments I ran, which may address one or more questions or concerns you might have. The code to reproduce these experiments is available here on GitHub.</p>
+<p>Disclaimer: the experiments were mostly only run on 1 dataset, and should be repeated on other datasets in the future to test whether these findings generalize.</p>
+<ol type="1">
+<li>Do we need to train all layers?</li>
+</ol>
+<p>In the chapter excerpt above, we only trained the output layer and the last transformer block for efficiency reasons. As explained earlier, for classification finetuning, it is not necessary to update all layers in an LLM. (The fewer weights we update, the faster the training will be because we don’t need to compute the gradients for these weights during backpropagation.)</p>
+<p>However, you may wonder how much predictive performance we are leaving on the table by not updating all layers. So, in the table below, I ran a comparison between finetuning all layers, only the last transformer block (plus the last layer), and the last layer only.</p>
+<p>Table 1: Training all layers versus only the last transformer block (including the last layer) versus only the last layer.</p>
+<p>As shown in Table 1 above, training all layers results in a slightly better performance: 96.67% versus 95.00%. (This increased the runtime by about 2.5fold, though.)</p>
+<p>The complete set of experiments can be found here on GitHub.</p>
+<ol start="2" type="1">
+<li>Why finetuning the last token, not the first token?</li>
+</ol>
+<p>If you are familiar with encoder-style language models like BERT (BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding” by Devlin et al.&nbsp;2018), you may know that these have a designated classification token as their first token, as shown in the figure below.</p>
+<p>Annotated figure from the original BERT paper, https://arxiv.org/abs/1810.04805</p>
+<p>In contrast to BERT, GPT is a decoder-style model with a causal attention mask (shown in Figure 7 earlier). This means the first token has no context information of any other token in the input. Only the last token has information about all other tokens.&nbsp;</p>
+<p>Hence, if we want to use models like GPT for classification finetuning, we should focus on the last token to capture contextual information of all other input tokens.</p>
+<p>Below is additional experimental evidence, where we can see that using the first token to finetune a GPT model for classification results in a much worse performance.</p>
+<p>Table 2: Finetuning the last versus first token in a GPT model.</p>
+<p>Overall, I find it still surprising, though, that the first token contains so much information to determine whether a message is spam or not with 75% accuracy. (Not that this is a balanced dataset, and a random classifier yields 50% accuracy).</p>
+<ol start="3" type="1">
+<li>How does BERT compare to GPT performance-wise?</li>
+</ol>
+<p>Speaking of BERT, you may wonder how it compares to a GPT-style model on classification tasks.&nbsp;</p>
+<p>In short, the small GPT-2 model from the previous section and BERT performed similarly well on the spam classification dataset, as shown in the table below.</p>
+<p>Table 3. GPT-2 versus BERT for SPAM classification.</p>
+<p>Note that the BERT model performs slightly better (1% higher test accuracy), but it is also almost 3x larger. Furthermore, the dataset may be too small and simple, so I also tried the IMDB Movie Review dataset for sentiment classification (that is, predicting whether a reviewer liked the movie or not).</p>
+<p>Table 4: GPT-2 versus BERT for movie review classification. (The code is available here on GitHub.)</p>
+<p>As we can see, the two models, GPT-2 and BERT, also have relatively similar predictive performances on this larger dataset (consisting of 25k training and 25k test set records).</p>
+<p>Generally, BERT and other encoder-style models were considered superior to decoder-style models for classification tasks. However, as the experiments above showed, there’s not a large difference between the encoder-style BERT and the decoder-style GPT model.</p>
+<p>Furthermore, if you are interested in more benchmark comparison and tips for improving decoder-style models for classification further, you might like these two recent papers:</p>
+<p>Label Supervised LLaMA Finetuning (2023) by Li et al.</p>
+<p>LLM2Vec: Large Language Models Are Secretly Powerful Text Encoders (2024) by BehnamGhader et al.</p>
+<p>For instance, as the papers above discuss, one can improve the classification performance of decoder-style models further by removing the causal mask during classification finetuning.</p>
+<ol start="4" type="1">
+<li>Should we disable the causal mask?</li>
+</ol>
+<p>Since we train GPT-like models on a next-word prediction task, a core feature of the GPT architecture is the causal attention mask (different from BERT models or the original transformer architecture).&nbsp;</p>
+<p>However, we could actually remove the causal mask during classification finetuning, which would allow us to finetune the first rather than the last token since future tokens will no longer be masked, and the first token can see all other tokens.</p>
+<p>Attention weight matrix with and without a causal mask.</p>
+<p>Disabling a causal attention mask in a GPT-like LLM fortunately requires changing only 2 lines of code:</p>
+<p>​​class MultiheadAttention(nn.Module): &nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, d_in, d_out, context_length, dropout, num_heads): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# …</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b, num_tokens, d_in = x.shape &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;keys = self.W_key(x)&nbsp; # Shape: (b, num_tokens, d_out) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;queries = self.W_query(x) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;values = self.W_value(x)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# …</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attn_scores = queries @ keys.transpose(2, 3)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Comment out the causal attention mask part &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# mask_bool = self.mask.bool()[:num_tokens, :num_tokens] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# attn_scores.masked_fill_(mask_bool, -torch.inf)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;attn_weights = torch.softmax( attn_scores / keys.shape[-1]**0.5, dim=-1 ) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context_vec = (attn_weights @ values).transpose(1, 2) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context_vec = context_vec.contiguous().view( b, num_tokens, self.d_out ) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context_vec = self.out_proj(context_vec) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return context_vec</p>
+<p>Table 5 below shows how this modification affects the performance of the spam classification task.</p>
+<p>Table 5: GPT-2 classifier finetuned with and without causal attention mask.</p>
+<p>As we can see based on the results in Table 5, we can get a small improvement when we disable the causal mask during finetuning.</p>
+<ol start="5" type="1">
+<li>What impact does increasing the model size have?</li>
+</ol>
+<p>So far, we’ve only looked at the performance of the smallest GPT-2 model, the 124 million-parameter version. How does it compare to the larger variants, which have 355 million, 774 million, and 1.5 billion parameters. The results are summarized in Table 6.</p>
+<p>Table 6: Different GPT-2 model sizes for classification finetuning.</p>
+<p>As we can see, the the prediction accuracy improves significantly with larger models (however, GPT-2 medium is an outlier here. I have noticed poor performance of this model on other datasets, too, and I suspect that the model has potentially not been pretrained very well.)</p>
+<p>However, while the GPT-2 XL model shows a noticeably better classification accuracy than the smallest model, it also took 7x longer to finetune.</p>
+<ol start="6" type="1">
+<li>What improvements can we expect from LoRA?</li>
+</ol>
+<p>In the very first question, “1) Do we need to train all layers?” we found that we could (almost) match the classification performance when finetuning only the last transformer block instead of finetuning the whole model. The advantage of only finetuning the last block is that the training is faster since not all weight parameters are being updated.</p>
+<p>A follow-up question is how this compares to Low-Rank Adaptation (LoRA), a parameter-efficient finetuning technique. (LoRA is covered in Appendix E.)</p>
+<p>Table 7: Full finetuning (all layers) versus parameter-efficient finetuning with LoRA.</p>
+<p>As we can see in Table 7 above, both full finetuning (all layers) and LoRA result in the same test set performance on this dataset.&nbsp;</p>
+<p>On the small model, LoRA is slightly slower since the additional overhead from adding LoRA layers may outweigh the benefits, but when training the larger 1.5 billion parameters model, LoRA trains 1.53x faster.</p>
+<ol start="7" type="1">
+<li>Padding or no padding?</li>
+</ol>
+<p>If we want to process data in batches during training or inference (this involves processing more than one input sequence at a time), we need to insert padding tokens to ensure that the training examples are of equal length.</p>
+<p>An illustration of how the input texts in a given batch are padded to an equal length.</p>
+<p>In regular text generation tasks, padding doesn’t affect the model response since padding tokens are usually added to the right side, and due to the causal mask discussed earlier, these padding tokens don’t influence the other tokens.</p>
+<p>However, remember that we finetuned the last token, as discussed earlier. Since the padding tokens are to the left of this last token, the padding tokens may affect the result.&nbsp;</p>
+<p>If we use a batch size of 1, we actually don’t need to pad the inputs. This is, of course, more inefficient from a computational standpoint (since we only process one input example at a time). Still, a batch size of 1 can be used as a workaround to test whether or not using padding can improve the results. (An alternative solution is to add a custom mask to ignore padding tokens in the attention score computation, but since this would require changing the GPT implementation, that’s a topic for another time.)</p>
+<p>Table 8: Training a model with padding (regular) and no padding of inputs to similar lengths.</p>
+<p>As we can see, avoiding padding tokens can indeed give the model a noticeable boost! (Note that I used gradient accumulation to simulate a batch size of 8 to match the batch size of the default experiment and make it a fair comparison.)</p>
+<p>I hope you found these additional experiments interesting. I have a few more as bonus material here on GitHub.</p>
+<p>Build A Large Language Model From Scratch</p>
+<p>This article presents a 10-page snippet from Chapter 6 of my new book, “Build a Large Language Model from Scratch.”&nbsp;</p>
+<p>What you’ve read is just a small part of the entire 365-page journey of building a GPT-like LLM from scratch to understand how LLMs really work.&nbsp;</p>
+<p>If this excerpt resonated with you, you might find the rest of the book equally insightful and helpful.</p>
+<p>Build a Large Language Model From Scratch book</p>
+<p>Manning link</p>
+<p>Amazon link (preorder)</p>
+<p>Your support means a great deal and is tremendously helpful in continuing this journey. Thank you!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

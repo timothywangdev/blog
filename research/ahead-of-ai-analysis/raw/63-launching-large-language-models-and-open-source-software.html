@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>launching-large-language-models-and-open-source-software – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#launching-large-language-models-and-open-source-software" id="toc-launching-large-language-models-and-open-source-software" class="nav-link active" data-scroll-target="#launching-large-language-models-and-open-source-software">Launching Large Language Models and Open Source Software</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="launching-large-language-models-and-open-source-software" class="level1">
+<h1>Launching Large Language Models and Open Source Software</h1>
+<p><strong>Subtitle:</strong> And the rise and fall of Galactica</p>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/ahead-of-ai-3-ainnouncements</p>
+<p><strong>Likes:</strong> LIKE</p>
+<p><strong>Image Count:</strong> 18</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!YzfY!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F3fd1760f-95b8-4e4d-8716-22b4cd16f32a_2042x1440.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Galactica Demo Page, https://galactica.org/</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!aVXg!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F5c7ec235-3980-48cd-b192-536839e570db_1766x428.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: GAL = Galactica. Source: Galactica Research Paper, https://arxiv.org/abs/2211.09085v1</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!954_!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Ffbb08fdf-e4af-4f7a-9932-5d1eaa8b9b42_789x1018.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An Wikipedia-style article generated by Galactica.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!_9HC!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F531a12f1-af07-45de-b526-914689c97cbf_1368x700.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Screenshot from the paper “Large language models are not zero-shot communicators”, https://arxiv.org/abs/2210.14986</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!W9By!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F23992818-0b66-4aae-aef8-bc36edaeec2a_2570x2078.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Example query and output of ChatGPT</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cVXl!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fb8fa1ed6-b8c2-41ac-8f93-09d8ca3b4016_1736x994.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!i8iK!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F92293ad1-7518-4f09-870f-605a11c323d4_1710x958.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Screenshots from the PyTorch Conference keynote.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!5bO1!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F7f3f2bd7-cecb-4de7-980d-a4743ffe0f41_1414x600.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A screenshot of the lovely tensors library, https://github.com/xl0/lovely-tensors/</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!BZJr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fa14d889c-6c85-4d14-b7d8-f0e34dbd59a8_1880x520.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Source: https://arxiv.org/abs/2207.03208</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!7d38!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F14a86dc8-23f3-4336-b3f8-22f4c4413483_1358x486.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Datasets used for the experiments. Source: https://arxiv.org/abs/2207.03208.</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ZvSS!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F8b70fbdc-c206-4db6-af0d-c5843fa47f7a_1402x596.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Simplified illustration of contrastive learning</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ggbc!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F457a112e-a122-4398-ad43-7c327c223d74_1446x416.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: A simplified depiction of the two self-prediction processes. Left: the model predicts the original training example from the perturbed example. Right: the model predicts that perturbation mask given the perturbed example.</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!GokN!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F5976f5e3-da55-4fdf-97fb-dcdbe01be2f4_1410x932.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Source: https://arxiv.org/abs/2207.03208</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!QVx9!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fdb603bd8-60ea-4aa2-961f-e7851a2bf301_1604x544.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Illustration of the modified, target-aware “sup” and “rec + target” pretraining objectives.</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!D0Hh!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F21f8311d-767e-4932-bbf3-d863c208adfa_1732x1228.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated version of Table 2 from https://arxiv.org/abs/2207.03208.</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!qzLh!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F1c5ef9ad-6bcb-4005-b302-b1b4fe1898c5_1384x922.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated version of Table 4 from https://arxiv.org/abs/2207.03208.</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!yMTS!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F87b085d9-f144-47da-bfd2-37a046bc8cd3_1254x918.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Screenshot of an arbitrary note to myself.</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CxIZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F27b6d27d-1052-4a4f-a419-a69cdd36704a_1118x454.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>Let me open the third Ahead of AI issue with two announcements:</p>
+<p>Thanks for all the positive feedback on the newsletter so far. I reached out to some of you, asking for aspects I could improve. The one main point was that it’s excellent but slightly too long. I agree with that point and will try to keep it shorter (if possible)! It’s hard to make cuts. So, moving forward, we will be alternating between the “Machine Questions” and “Research Deep Dive” sections each month.</p>
+<p>If you were a previous Revue subscriber, you probably noticed that this newsletter moved to Substack since Revue is unfortunately about to shut down. The silver lining is that the layout looks much better on Substack (in my opinion). There is also a comment section now if you have any feedback or questions!</p>
+<p>Articles &amp; Trends Launching Large Language Models</p>
+<p>The Galactica release by Papers With Code and Facebook’s parent company Meta – Galactica: A Large Language Model for Science made big waves last month.</p>
+<p>Galactica Demo Page, https://galactica.org/</p>
+<p>What is Galactica?</p>
+<p>Galactica is a transformer-based large language (LLM) model designed to write scientific research papers and Wikipedia articles. What makes it different from previous LLMs that can generate text is that it was trained on 48 million scientific articles and textbooks instead of a general corpus of various texts scraped from the internet.</p>
+<p>Interestingly, even though it was trained on a body of scientific works, it outperforms larger models like GPT-3 and BLOOM on general language modeling benchmarks such as BIG-Bench.</p>
+<p>GAL = Galactica. Source: Galactica Research Paper, https://arxiv.org/abs/2211.09085v1</p>
+<p>Why was Galactica taken down?</p>
+<p>Meta &amp; Papers With Code took down their Galactica Demo after only three days amid intense backlash and heated discussion on social media.</p>
+<p>The main concern was that Galactica could make it easier to generate fake science and amplify scientific misconduct. One of the examples highlighting the issues was an article on the benefits of eating crushed glass, called out by Tristan Greene.</p>
+<p>An Wikipedia-style article generated by Galactica.</p>
+<p>To be fair, an article such as the above can also be written and spread by a human. However, one of the arguments is that Galactica can lower the barrier-to-entry and amplify the scale of this issue.</p>
+<p>The arguments in favor and against Galactica are probably best summarized in Yann LeCun’s (pro) and Michael Black’s (con) Twitter threads.</p>
+<p>What do I think about Galactica?</p>
+<p>On the one hand, I favor sharing large language models in the interest of science (both figuratively and literally). On the other hand, as a former moderator of the ArXiv machine learning category, I also share the concerns. Even though ArXiv doesn’t conduct peer reviews, moderators already sacrifice their free time dealing with problematic articles uploaded to ArXiv every day. (Issues range from plagiarism to fake science.)</p>
+<p>The viewpoints may be too extreme on both sides. I am not against progress and believe there is room for compromise. For instance, progress is good, but the message and marketing behind large language models could be improved. For example, why not create an article template generator that researchers can use instead of developing systems that promise to write the entire article, including providing the facts?</p>
+<p>Limitations of Large Language Models</p>
+<p>Large language models are great for creating realistic text that looks like a human wrote. However, these models still need to be improved regarding text comprehension tasks. That’s because it’s hard to design training objectives that optimize for comprehension directly.</p>
+<p>For example, in the case of Galactica, the problem with why it can be misused to generate fake facts is that the training objective does not explicitly optimize for it generating accurate facts.</p>
+<p>LLMs as conversational agents fail to capture a crucial aspect of communication</p>
+<p>In the recent article, Large language models are not zero-shot communicators, Ruis et al.&nbsp;discuss the issues with LLMs as conversational agents. Consider the following example given in the paper:</p>
+<p>User: “Have you seen my phone?” InstructGPT: “Yes, I have seen your phone.”</p>
+<p>The InstructGPT LLM may give an grammatically correct answer, yet it is not a very helpful one (as opposed to “Yes, it’s on the kitchen table”). Moreover when, they probe LLMs to make inferences from text via a binary yes or no, the LLMs perform close to random.</p>
+<p>Screenshot from the paper “Large language models are not zero-shot communicators”, https://arxiv.org/abs/2210.14986</p>
+<p>What about GPT-4?</p>
+<p>Speaking of the limitations of LLMs above, it will be exciting to see what GPT-4, the successor of the popular GPT-3 model, will bring to the table. According to rumors, GPT-4 is said to be released sometime between December 2022 and February 2023.</p>
+<p>Note that OpenAI recently released the GPT-3-based Text-Davinci-003 model, which is an LLM that can produce higher-quality writing than the original GPT-3, along with long-form content. (Is this a GPT-4 teaser?)</p>
+<p>ChatGPT</p>
+<p>Following the Text-Davinci-003 release, OpenAI also launched ChatGPT a few days ago. You can try a demo here. ChatGPT is a chatbot that can interact with users in a realistic, conversational way. Its generated responses appear so good that some people claim that it is a worthy competitor to leading search engines. And to some extend, it’s addressing the issues raised via the InstructGPT LLM above. The model was just released, and it will take a bit more time to understand it’s capabilities and limitations.</p>
+<p>Example query and output of ChatGPT</p>
+<p>Yes, ChatGPT also made (even bigger) waves, crossing 1M users in less than a week!</p>
+<p>More Generative Models</p>
+<p>Generating better images with Stable Diffusion 2.0</p>
+<p>Stability AI just released an update to their Stable Diffusion model (discussed in the very first issue 2 months ago).</p>
+<p>Stable Diffusion 2.0</p>
+<p>uses a new text encoder, OpenCLIP, instead of the previous CLIP ViT-L/14 text encoder;</p>
+<p>generates higher-resolution images;</p>
+<p>was pretrained on a subset of an aesthetics dataset after applying an NSFW filter;</p>
+<p>has a safeguard that prevents people from copying a specific artist’s style.</p>
+<p>You can find details in the GitHub repository here.</p>
+<p>Andrej Karpathy reported that the results look a bit worse than the results from previous models. This is maybe owed to the more aggressive “data sanitation.” Personally, running both Stable Diffusion 1.5 and 2.0 on an arbitrary query, I share this view. It seems that Stable Diffusion 2.0 has a higher image quality (resolution-wise) but lower content quality (regarding matching the prompt) as shown below.</p>
+<p>For fairness, several people reported that Stable Diffusion performs better when using negative prompts.</p>
+<p>Open Source Highlights</p>
+<p>PyTorch 2.0</p>
+<p>PyTorch 2.0 was announced last week at the PyTorch Conference 2022.</p>
+<p>So, what’s new? First, I am relieved that the core API won’t change. Second, the focus is on making PyTorch (even) more efficient. At the same time, the PyTorch team is moving code from C++ into Python, making it more developer-friendly.</p>
+<p>The good news is that PyTorch will become substantially faster. The even better news is that there will be no breaking changes! Yay!</p>
+<p>The changes are mainly under the hood, and there will be a new (optional) torch.compile function for graph compilation to make your model more efficient. Later, it will be possible to wrap the entire training loop in torch.compile.</p>
+<p>Based on experiments across 163 open-source models from TIMM, Huggingface, and TorchBench, torch.compile is already compatible with 93% of the models without any additional code changes. Of course, users can continue using PyTorch in eager mode. However, note that the eager mode can become a bottleneck for certain models. This is specifically true when using a high-bandwidth GPU. So, in this case you can achieve additional speed-ups by via compilation. Want to give it a try? It requires only one line of code: compiled_model= torch.compile(model).</p>
+<p>torch.compile is already available via the PyTorch nightly releases and will be part of the upcoming PyTorch 1.14 release. The stable release of PyTorch 2.0 is planned for March 2023.</p>
+<p>You can find a more detailed write-up by the PyTorch team here.</p>
+<p>Screenshots from the PyTorch Conference keynote.</p>
+<p>Lovely tensors – tensors, ready for human consumption</p>
+<p>Neural networks are getting bigger and more complicated with each passing year. Don’t we all appreciate a little help with debugging our code? I recently stumbled upon lovely tensors for PyTorch, which makes big tensors a bit more accessible to us humans.</p>
+<p>A screenshot of the lovely tensors library, https://github.com/xl0/lovely-tensors/</p>
+<p>Research Deep Dive</p>
+<p>One of the reasons large-language models are so successful is self-attention. The other is self-supervised learning. Besides natural language processing, self-supervised learning has become a cornerstone in computer vision as well. But what about self-supervised leanring and tabular datasets?</p>
+<p>Revisiting Pretraining Objectives for Tabular Deep Learning</p>
+<p>Self-supervised learning also benefits deep tabular methods as Rubachev et al.&nbsp;2022 describe in “Revisiting Pretraining Objectives for Tabular Deep Learning”.</p>
+<p>Source: https://arxiv.org/abs/2207.03208</p>
+<p>Self-supervised Learning and Pretraining</p>
+<p>In contrast to most tree-based methods (like the default implementations of gradient boosting machines), deep neural networks can be trained iteratively and support self-supervised learning for pretraining.</p>
+<p>Self-supervised learning describes a training objective where we obtain the target label from the dataset itself. A typical example from the natural language processing domain is masking words, where the model’s task is to predict the masked words. In computer vision, we do something similar by masking pixels – the model has to predict the missing pixels.</p>
+<p>Self-supervised learning is typically used to pretrain a model before finetuning it to the target task. The rationale is that we may have large unlabeled datasets that we can leverage via self-supervised learning. Compared to the unlabeled dataset for pretraining, the labeled target dataset is relatively small – often too small for training a deep neural network from scratch.</p>
+<p>Pretraining without additional data</p>
+<p>Researchers can easily collect unlabeled images and text from the internet, and pretraining is already standard for computer vision and natural language processing. However, it is less common for tabular methods. That could be because additional data (even if unlabeled) is often unavailable for tabular datasets.</p>
+<p>The authors use the target dataset for pretraining instead of additional unlabeled data in this research project. (This mimics a scenario where unlabeled tabular data is unavailable.) During pretraining, the authors regard the target dataset as unlabeled but also explore options that leverage the target labels – we will discuss this in more detail later.</p>
+<p>Overall, the study includes 11 different datasets ranging from 6k to 723k training examples and 6 to 136 features. The datasets cover both classification and regression and numerical and categorical features.</p>
+<p>Datasets used for the experiments. Source: https://arxiv.org/abs/2207.03208.</p>
+<p>Self-prediction and contrastive learning</p>
+<p>Self-supervised learning comes in two broad categories: self-prediction and contrastive learning.</p>
+<p>In contrastive learning, we perturb training examples (e.g., via data augmentation), and the models’ task is to learn a similarity function. There should be a high similarity between the original example x and the perturbed (“corrupted” example x’. At the same time, the similarity between x and an arbitrary (different) training example should be low.</p>
+<p>Simplified illustration of contrastive learning</p>
+<p>In self-prediction, we obtain the label from the dataset itself, for example, the masked-word prediction task mentioned above.</p>
+<p>A simplified depiction of the two self-prediction processes. Left: the model predicts the original training example from the perturbed example. Right: the model predicts that perturbation mask given the perturbed example. Source: https://arxiv.org/abs/2207.03208</p>
+<p>In computer vision, self-prediction is usually superior to contrastive learning, which we can also observe here based on counting the best (bold) results in Table 2 above. The self-prediction pretraining tasks (“rec” and “mask”) outperform the contrastive pretraining task (“constrastive”).</p>
+<p>Note that MLP refers to a regular (“vanilla”) multilayer perceptron. MLP-PLR and MLP-T-LR refer to multilayer perceptrons that operate on numerical feature embeddings instead of the raw features.</p>
+<p>Including target information during pretraining</p>
+<p>Since the authors use the original training set during pretraining, it begs the question of whether the predictive performance improves further when the target information is used during pretraining.</p>
+<p>To answer this question, the authors conducted several experiments. I will only describe a subset of the setups they used for brevity.</p>
+<p>“sup”: Use the perturbed dataset for pretraining in a supervised fashion. Then finetune on the unperturbed dataset.</p>
+<p>“rec + target”: A modified version of the previous reconstruction-based self-prediction task. First, the target label is one-hot encoded. Second, the encoded target is concatenated with the embedding produced by the model backbone. Third, the model head has to predict the original (unperturbed) training example from the concatenated vector.</p>
+<p>Illustration of the modified, target-aware “sup” and “rec + target” pretraining objectives.</p>
+<p>There is no combination that performs best across all datasets based on the results in Table 3 below. However, while there is no clear winner, embedding-based MLPs (i.e., MLP-PLR ad MLP-T-LR) perform generally better than vanilla MLPs. And target-aware pretraining is beneficial compared to target-agnostic pretraining.</p>
+<p>Annotated version of Table 2 from https://arxiv.org/abs/2207.03208.</p>
+<p>Note that “mask + target” is analogous to “rec + target.” Here, instead of adding the target information to the reconstruction task, it’s added to the mask-based self-prediction task.</p>
+<p>Comparison with Gradient Boosting</p>
+<p>The previous results revealed that pretraining benefits MLPs. And including target information can further improve these results. The next question is how these deep learning-based methods compare to traditional machine learning methods, namely, gradient boosting.</p>
+<p>Annotated version of Table 4 from https://arxiv.org/abs/2207.03208.</p>
+<p>In most cases, numerical embedding-based MLPs with target-aware mask-based (self-prediction) pretraining perform best. There are only two datasets where gradient boosting (XGBoost and CatBoost) outperforms the pretrained MLPs.</p>
+<p>Take-aways</p>
+<p>Deep neural networks generally benefit from pretraining. Based on the results presented in this paper, this is also true when working with a tabular dataset.</p>
+<p>The vanilla MLP benefits the most from pretraining (Table 2). However, we are usually interested in the best predictive performance. In that case, we should consider MLPs that operate on numerical embeddings instead of the raw features: MLP-PLR and MLP-T-LR. And target-aware mask-based self-prediction (“mask + target”) seems to perform best across most datasets.</p>
+<p>If you want to play with the code, the authors shared their experiments here on GitHub.</p>
+<p>Notable Quote</p>
+<p>“Science funding is not so plentiful that society, and scientists, can waste it pursuing dead ends based on fake papers.”</p>
+<p>– Michael Black</p>
+<p>Study &amp; Productivity Tips</p>
+<p>Free your mind with this one simple trick</p>
+<p>One of my favorite productivity tips is to write things down. Writing things down, what do I mean by that? Often, when I am working on something, taking a walk, studying, or just reading a fiction book, I get an exciting idea or think of something I should do. If I don’t write it down immediately, it will get stuck in my head and distract me from the activity at hand.</p>
+<p>Out of sight, out of mind</p>
+<p>Writing things down will stop your head from swirling around, but this only works if you capture the thought or idea in a place you check regularly. Otherwise, you may end up replacing thoughts like “RVSP to Jake’s wedding” with “check pocket notebook in my winter jacket” (which contains a note about RSVPing to Jake’s wedding).</p>
+<p>Write down your ideas and thoughts in a place you regularly check, at least once daily. That’s because the random idea can also be time-sensitive, like “ping your co-author to give feedback on the new abstract before the submission deadline tonight” or “swing by the grocery store before 7 pm to get some coffee beans.” When I am studying, I also write down key things I want to use or look up later so that it keeps my flow during reading.</p>
+<p>Tools matter and don’t matter</p>
+<p>You want to capture ideas in a place that you check back regularly for further processing. At the same time, the idea-capturing tools and devices don’t really matter as long as it’s something you regularly check. For example, if you have a daily schedule or list, you can reserve some space in the lower right-hand corner of that list.</p>
+<p>If you are a person who regularly checks your emails, consider an app that sends an email to yourself. The Note To Self app works quite well for that – this is an app for iOS and macOS, but there surely are Android and Windows alternatives out there. What’s nice about that is that you can also take it on your walk and jot things down without looking awkward. (Of course, you can also use the built-in Note app. I tried that. Unfortunately, that’s one app I usually forget to check when I am back on my computer, though.)</p>
+<p>Screenshot of an arbitrary note to myself.</p>
+<p>A digital voice recorder can also be a great companion on long walks. It also works excellent when driving or taking walks (especially if you like to take mindful walks with your phone on “Do not disturb”).</p>
+<p>Long story short, you need to find what works best for you, and it also doesn’t have to be the same device.</p>
+<p>I like to write things on my daily schedule page (more on that another time) when I am at my desk. However, I usually use the Note to Self app on my phone when I am out and about. And if I go on walks or drive, I prefer a voice recorder.</p>
+<p>This magazine is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of one of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</p>
+<p>Your support means a great deal! Thank you!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

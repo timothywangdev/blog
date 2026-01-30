@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>model-merging-mixtures-of-experts-and-towards-smaller-llms – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#model-merging-mixtures-of-experts-and-towards-smaller-llms" id="toc-model-merging-mixtures-of-experts-and-towards-smaller-llms" class="nav-link active" data-scroll-target="#model-merging-mixtures-of-experts-and-towards-smaller-llms">Model Merging, Mixtures of Experts, and Towards Smaller LLMs</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="model-merging-mixtures-of-experts-and-towards-smaller-llms" class="level1">
+<h1>Model Merging, Mixtures of Experts, and Towards Smaller LLMs</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/research-papers-in-january-2024</p>
+<p><strong>Likes:</strong> LIKE (2)</p>
+<p><strong>Image Count:</strong> 21</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!oOW-!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F58e69180-28b5-4b00-97fd-a34647dda81f_1600x1002.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Comparison between weight averaging and model merging (left) and traditional ensemble methods like majority voting (right).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!HjgC!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F8a094847-9c05-498b-8b3d-79b0e4bc90e2_1110x578.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Stochastic Weight Averaging (SWA) averages a model’s weights towards the end of the training cycle.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!zW5L!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4f45b95f-b87b-4b53-9f05-e8c88bddbd69_1302x804.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The modified LaWA method from the Early Weight Averaging meets High Learning Rates for LLM Pre-training paper (https://arxiv.org/abs/2306.03241).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!S5OJ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fdbf39b9c-5b75-4ce8-b51d-fa01fd8d2516_1600x574.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Model merging via Model Ratatouille compared to other finetuning strategies. (OOD = out of distribution / generalization); annotated figure from https://arxiv.org/abs/2212.10445</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!KfV5!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F356a5f2c-8565-4541-a4d6-8cd1434b6521_1600x1066.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The Model Ratatouille method for model merging; annotated figure from https://arxiv.org/abs/2212.10445</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!wemN!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3b31d194-4318-4973-a41f-844c04342785_1514x998.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Weight averaging makes reward modeling more robust to reward hacking (annotated figure from WARM paper: https://arxiv.org/abs/2401.12187)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!WQ2e!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0bd0230b-a3b8-4da5-8bf5-174e05898747_1322x808.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An outline of how WARM is used in the RLHF process. The only new aspect here is that the method uses a reward model from weight averaging instead of training a single reward modeling (annotated figure from WARM paper: https://arxiv.org/abs/2401.12187).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!0SSK!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F768a9fce-ce3c-4fe9-8a27-61e88c89c7ea_1596x532.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A comparison between the different model merging and averaging methods. Thanks to Alexandre Rame for providing this adjusted version from the Model ratatouille paper.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Uymn!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1105e534-5270-4115-991e-78d33e18c82c_960x1090.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: WARM outperforms the single best reward model at step 3000 (annotated figure from WARM paper: https://arxiv.org/abs/2401.12187).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!5d3m!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0ab8df98-82d4-4879-936e-e81807fe1bf0_1600x590.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated illustration of proxy-tuning via https://arxiv.org/abs/2401.08565</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Fz-y!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9edf0c8e-76aa-4f0a-b9ef-31e22b7044fc_1234x484.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Modified and annotated figure from the proxy-tuning paper, https://arxiv.org/abs/2401.08565</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!sx-t!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa778e6d8-240b-4985-920d-3230dcacc68f_1376x456.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from Mixtral of Experts paper (https://arxiv.org/abs/2401.04088) showing that Mixtral 8x7B matches or even outperforms the larger Llama 2 70B model on many benchmarks</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!61-N!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F88942a8f-a181-41fa-924d-4b9387205456_1440x1132.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated transformer architecture from Attention Is All You Need, https://arxiv.org/abs/1706.03762</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!YQP9!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fcbde4c17-b068-4f81-8dfb-4e875bff7950_1376x638.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from Mixtral of Experts paper explaining the MoE module, https://arxiv.org/abs/2401.04088</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Z97N!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fff6a28b3-0156-4f63-b4c1-d83ac5d7dca0_1430x802.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from Mixtral of Experts paper, https://arxiv.org/abs/2401.04088</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!DDhc!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F23e8e36c-0187-4511-b692-58e93b6b07e3_1600x1005.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from Mixtral of Experts paper, https://arxiv.org/abs/2401.04088</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!9S6i!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1c088a15-d0ec-4885-b99f-f85af2b13825_968x446.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Source: TinyLlama: An Open-Source Small Language Model, https://arxiv.org/abs/2401.02385</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!dNEr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F34fd158e-0927-4bca-b302-160e8228e5fe_1146x468.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Source: Training Compute-Optimal Large Language Models, https://arxiv.org/abs/2203.15556</li>
+</ul>
+<ol start="19" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!W-_P!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1e5cc4a9-96a0-4ebb-af6f-72f3c9abd1ff_980x588.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from the TinyLlama paper (https://arxiv.org/abs/2401.02385); the paper includes similar plots for 6 other benchmarks</li>
+</ul>
+<ol start="20" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!9aeo!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F402c1ae3-b020-4dbb-a1d9-fee49cb4ff4b_1466x710.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CxIZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F27b6d27d-1052-4a4f-a419-a69cdd36704a_1118x454.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>2023 was the year when the potential and complexity of Large Language Models (LLMs) were growing rapidly. Looking at the open source and research advancements in 2024, it seems we are going to a welcome phase of making models better (and smaller) without increasing their size.</p>
+<p>In this month’s article, I am highlighting four recent papers consistent with this theme:</p>
+<ol type="1">
+<li><p>Weight averaging and model merging allow us to combine multiple LLMs into a single, better one without the typical drawbacks of traditional ensembles, such as increased resource requirements.</p></li>
+<li><p>Proxy-tuning to boost the performance of an existing large LLM, using two small LLMs, without changing the large model’s weights.</p></li>
+<li><p>Creating mixture-of-experts models by combining multiple smaller modules results in LLMs that compete with and often surpass their larger counterparts in efficiency and effectiveness.</p></li>
+<li><p>Pretraining a small 1.1B parameter LLM reduces development and operational costs and opens new avenues for educational and research applications.</p></li>
+<li><p>WARM: On the Benefits of Weight Averaged Reward Models</p></li>
+</ol>
+<p>In this WARM: On the Benefits of Weight Averaged Reward Models (Jan 22), researchers propose a weight averaging approach for LLM reward models. (“Reward models” refer to those used in reinforcement learning with human feedback, RLHF, for alignment.)</p>
+<p>What is weight averaging? Since weight averaging and model merging for LLMs seem to be the most interesting themes in 2024, I want to briefly introduce this topic before diving further into the WARM paper.</p>
+<p>Understanding Model Merging and Weight Averaging</p>
+<p>Model merging and weight averaging, while not new, are currently the most prominent methods, dominating Open LLM leaderboards. Let’s briefly discuss these two concepts. (I may write a more detailed article some time in the future.)</p>
+<p>Both weight averaging and model merging involve combining multiple models or checkpoints into a single entity. What are the advantages? Similar to the concept of creating model ensembles, this approach of combining multiple models into one can enhance training convergence, improve overall performance, and increase robustness. It’s worth highlighting that unlike traditional ensemble methods, model merging and weight averaging result in a singular model rather than maintaining multiple separate models, as illustrated in the figure below.</p>
+<p>Comparison between weight averaging and model merging (left) and traditional ensemble methods like majority voting (right).</p>
+<p>Traditionally, weight averaging involves averaging a single model’s weights (parameters) at different points in its training process. Typically, it’s done towards the end of the training when the model has nearly converged. A common form of this technique is Stochastic Weight Averaging (SWA), where we decay an initially large learning rate, and weights are averaged over several iterations during periods of decayed (but still relatively high) learning rates.</p>
+<p>Stochastic Weight Averaging (SWA) averages a model’s weights towards the end of the training cycle.</p>
+<p>Since a model’s training trajectory can be uneven, the strategy is to average the models towards the end of the training when the learning rate is low (if a scheduler is used), as illustrated in the figure above, where the training is nearing convergence.</p>
+<p>Alternatively, the Exponentially Moving Average (EMA) method, computes a smoothed version of the weights by exponentially decreasing the weights of older states.</p>
+<p>In 2022, Latest Weight Averaging (LaWA) demonstrated that averaging the weights of the latest k checkpoints, each taken at the end of an epoch, can expedite training progress in terms of loss and accuracy by several epochs. This was shown to be effective for ResNet vision models and RoBERTa language models.</p>
+<p>Then, in 2023, Early Weight Averaging Meets High Learning Rates for LLM Pre-training explored a modified version of LaWA with higher learning rates and an earlier start in averaging checkpoints during training. The researchers found that this approach significantly outperformed standard SWA and EMA techniques.</p>
+<p>The modified LaWA method from the Early Weight Averaging meets High Learning Rates for LLM Pre-training paper (https://arxiv.org/abs/2306.03241).</p>
+<p>While weight averaging combines multiple checkpoints of the same model into a single model, model merging involves combining multiple different trained models into a single model. Each of these models may have been trained independently, possibly on different datasets or tasks.&nbsp;</p>
+<p>Model merging goes back a long way, but the perhaps most recent and influential paper relevant to LLMs is Model Ratatouille: Recycling Diverse Models for Out-of-Distribution Generalization (thanks to Alexandre Ramé for drawing my attention to this).</p>
+<p>The idea behind Model Ratatouille is to reuse multiple fine-tuned iterations of the identical base model across various diverse auxiliary tasks, as illustrated in the figure below.</p>
+<p>Model merging via Model Ratatouille compared to other finetuning strategies. (OOD = out of distribution / generalization); annotated figure from https://arxiv.org/abs/2212.10445</p>
+<p>To provide a bit more detail, the Model Ratatouille method can be summarized as shown in the figure below.</p>
+<p>The Model Ratatouille method for model merging; annotated figure from https://arxiv.org/abs/2212.10445</p>
+<p>Note that this overall merging idea can also be applied to LoRA adapters, as shown in LoraHub: Efficient Cross-Task Generalization via Dynamic LoRA Composition.</p>
+<p>I am planning to write more about model merging in the future. In the meantime, I can warmly recommend the reading list by Omar Sanseviero and Nathan Lambert‘s article on model merging.</p>
+<p>Weight Averaged Reward Models</p>
+<p>Having discussed the concepts of weight averaging and model merging, let’s briefly go back to the newly released paper WARM: On the Benefits of Weight Averaged Reward Models, published on January 22nd last week.</p>
+<p>This research primarily aims to enhance the RLHF alignment step for LLMs (RLHF is the method behind ChatGPT and Llama 2 Chat; for additional details on this process, please refer to my article LLM Training: RLHF and Its Alternatives). Specifically, the researchers attempt to mitigate reward hacking in LLMs by averaging the weights of finetuned reward models.</p>
+<p>Reward hacking occurs when an LLM learns to manipulate or exploit its reward system’s flaws to attain high scores or rewards, without genuinely fulfilling the intended task or achieving the essential objectives.</p>
+<p>Weight averaging makes reward modeling more robust to reward hacking (annotated figure from WARM paper: https://arxiv.org/abs/2401.12187)</p>
+<p>To address reward hacking, the researchers suggest combining LLM reward models through weight averaging. The merged reward model resulting from this process attained a 79.4% win rate over a single reward model.</p>
+<p>How does WARM function? The method is fairly straightforward: similar to stochastic weight averaging, WARM averages the weights of multiple models (in this case, reward models), as depicted in the figure below.</p>
+<p>An outline of how WARM is used in the RLHF process. The only new aspect here is that the method uses a reward model from weight averaging instead of training a single reward modeling (annotated figure from WARM paper: https://arxiv.org/abs/2401.12187).</p>
+<p>Previously, we discussed several weight averaging methods. How exactly does WARM average the weights to obtain the reward model? Here, they use a simple linear average as in stochastic weight averaging. The difference, however, is that the models are not sampled from the same trajectory but are independently created from the pretrained model, as in Model ratatouille. Alternatively WARM also has a so-called Baklava procedure to sample along a finetuning trajectory. The differences are compared in the figure below.</p>
+<p>A comparison between the different model merging and averaging methods. Thanks to Alexandre Rame for providing this adjusted version from the Model ratatouille paper.</p>
+<p>Following the WARM procedure above and averaging 10 reward models, the researchers found that an RL policy WARM has a 79.4% win rate against a policy with a single reward model, as shown in the figure below.</p>
+<p>WARM outperforms the single best reward model at step 3000 (annotated figure from WARM paper: https://arxiv.org/abs/2401.12187).</p>
+<p>Conclusion</p>
+<p>Model merging is not a new technique, but it seems that in the context of LLMs, it’s particularly promising since LLMs are very expensive and resource-intensive. Hence, methods that take advantage of multiple existing LLMs created during training (without extra work) are particularly attractive. Also, in contrast to traditional ensembles that require running multiple models at the same time, weight-averaged models are relatively lightweight and don’t cost more than a single model during inference time.</p>
+<p>Looking ahead, I think that the future of model merging in LLMs holds exciting prospects. In particular, I also expect more creative ways of merging models on the horizon.</p>
+<ol start="2" type="1">
+<li>Tuning Language Models by Proxy</li>
+</ol>
+<p>The paper Tuning Language Models by Proxy introduces a promising technique for improving&nbsp; Large Language Models (LLMs) called proxy-tuning. This method (sort of) finetunes LLMs without altering their weights.&nbsp;</p>
+<p>Proxy-tuning works through a straightforward process at the decoding stage by adjusting the logits of the target LLM. Specifically, it involves calculating the difference in logits between a smaller base model and a finetuned model. This difference is then added to the logits of the target model. (Logits are the raw output values generated by the model’s final layer. Before being transformed into probabilities through a function like softmax, these logits represent the unnormalized scores for each possible output token in the LLMs vocabulary.)</p>
+<p>Annotated illustration of proxy-tuning via https://arxiv.org/abs/2401.08565</p>
+<p>To illustrate this concept more clearly, consider the objective of improving a large target model, M1 (for example, Llama 2 70B). The process involves two smaller models:</p>
+<p>A small base model (M2) like Llama 2 7B</p>
+<p>A finetuned version of the base model (M3)&nbsp; Llama 2 7B Chat</p>
+<p>The enhancement is achieved by applying the difference in predictions (logits) of these smaller models to the target model M1. The output logits of the improved target model, M1<em>, is computed as M1</em>(x) = M1(x) + [M3(x) - M2(x)]. After obtaining these output logits, they are converted into probabilities using the softmax function. These probabilities are then used to sample the final output, i.e., the generated text, using nucleus sampling or top-k decoding.</p>
+<p>How well does proxy-tuning work in practice?</p>
+<p>The experimental results are impressively positive. The researchers applied their methods in three distinct scenarios:</p>
+<p>Instruction-Tuning: Improve the 70B size Llama 2 Base mode to match the performance of the Llama 2 70B Chat model.</p>
+<p>Domain Adaptation: Upgrading the 70B size Llama 2 Base model in coding tasks, aiming to reach the performance level of CodeLlama 70B.</p>
+<p>Task-Specific Finetuning: Improving the 70B size Llama 2 Base model for specialized tasks such as TriviaQA or math problems.</p>
+<p>In each scenario, significant improvements were observed compared to the original base models. The table below focuses on the comparison between the Llama 70B Base and Chat models for conciseness. However, the paper provides additional benchmarks for CodeLlama.</p>
+<p>Modified and annotated figure from the proxy-tuning paper, https://arxiv.org/abs/2401.08565</p>
+<p>As one can see, based on the benchmarks shown in the figure above, the proxy-tuned 70B Llama 2 model performs much better than the 70B base model, and it’s almost as good as the directly tuned Llama 70B Chat model.</p>
+<p>Practical Considerations</p>
+<p>The use-case or motivation for using this method could be increasing R&amp;D efficiency: developing new training or model enhancements and testing them on smaller models to reduce costs. Then, these methods can be scaled up to enhance larger base models without having to train large models.</p>
+<p>However, implementing this approach in a real-world setting still involves using three different models:&nbsp;</p>
+<p>A large general-purpose base model;</p>
+<p>A smaller general-purpose model;</p>
+<p>Several small specialized models tailored to specific use cases or client needs.</p>
+<p>So, why choose this approach over LoRA (Low-Rank Adaptation), which doesn’t require the smaller general-purpose model (2) and can substitute multiple small specialized models (3) with a set of small LoRA matrices?</p>
+<p>There are two potential advantages to the proxy-tuning approach:</p>
+<ol type="a">
+<li><p>It might outperform LoRA in certain contexts, although there’s no direct comparison available yet.</p></li>
+<li><p>It’s useful when the large base model (1) is a “black box”, and its internal weights are inaccessible.</p></li>
+</ol>
+<p>However, there’s a catch: the smaller models must share the same vocabulary as the larger target model. (In theory, if someone knows the vocabulary of GPT-4 and can access its logit outputs, they could create specialized GPT-4 models using this method.)</p>
+<ol start="3" type="1">
+<li>Mixtral of Experts</li>
+</ol>
+<p>The Mixtral 8x7B paper is finally here! Mixtral 8x7B is a sparse mixture of experts (sparse MoE) model that currently ranks as one of the best performing and most interesting openly available large language models (LLMs). The model repository is released under an Apache 2 license and, according to the paper, is free to use for both academic and commercial purposes.</p>
+<p>What is an MoE? An MoE, or Mixture of Experts, is a type of ensemble model that combines several smaller “expert” subnetworks. Each subnetwork is responsible for handling different types of tasks or, more concretely, tokens. By using multiple smaller subnetworks instead of one large network, MoEs aim to allocate computational resources more efficiently. This enables them to scale more effectively and potentially achieve better performance across a wider range of tasks.&nbsp; (Also see the brief Mixture of Experts 101 section in my previous article.)</p>
+<p>In the Mixtral of Experts paper, which I’ll discuss below, the authors discuss how they built Mixtral 8x7B. This model compares very favorably to the much larger Llama 2 70B model.</p>
+<p>Annotated figure from Mixtral of Experts paper (https://arxiv.org/abs/2401.04088) showing that Mixtral 8x7B matches or even outperforms the larger Llama 2 70B model on many benchmarks</p>
+<p>Mixtral Architecture</p>
+<p>The key idea in Mixtral 8x7B is to replace each feed-forward module in a transformer architecture with 8 expert layers, as illustrated in the figure below.</p>
+<p>Annotated transformer architecture from Attention Is All You Need, https://arxiv.org/abs/1706.03762</p>
+<p>A feed-forward module is essentially a multilayer perceptron. In PyTorch-like pseudocode, it essentially looks like this:</p>
+<p>class FeedForward(torch.nn.Module):</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, embed_dim, coef): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.layers = nn.Sequential( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.nn.Linear(embed_dim, coef<em>embed_dim), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.nn.ReLU(), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.nn.Linear(coef</em>n_embed, embed_dim), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.nn.Dropout(dropout) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return self.layers(x)</p>
+<p>In addition, there is a routing module (also known as a gating network) that redirects each of the token embeddings to the 8 expert feed-forward modules. The outputs from these 8 expert feed-forward layers are then summed, as illustrated in the figure below.</p>
+<p>Annotated figure from Mixtral of Experts paper explaining the MoE module, https://arxiv.org/abs/2401.04088</p>
+<p>Mathematically, the figure above can be written as follows for the 8 experts {E1, E2, …, E8}:</p>
+<p>∑ 𝑖 = 1 𝑛 = 8 𝐺 ( 𝑥 ) 𝑖 ⋅ 𝐸 𝑖 ( 𝑥 )</p>
+<p>Here, G represents the router (or gating network), and Ei are the outputs of the expert modules. Based on the equation above, the MoE layer computes a weighted sum of the expert outputs Ei, where the weights are provided by the gating network G(x)i for the inputs x.</p>
+<p>At first glance, it might seem like Mixtral is simply adding additional parameters to an LLM via these expert (feed-forward) modules to represent a sort of weighted ensemble approach. However, there’s an additional tweak: Mixtral is a sparse MoE, which means that only a subset of the experts are used for each input:</p>
+<p>𝐺 ( 𝑥 ) := Softmax ( TopK ( 𝑥 ⋅ 𝑊 𝑔 ) )</p>
+<p>In the specific case of Mixtral 8x7B, the authors specify TopK=2, meaning that only 2 experts are used at a time. So, based on the equation above, an output from G(x) might look as follows: [0, 0, 0.63, 0, 0, 0.37, 0, 0]. This indicates that the third expert contributes 63% to the output, and the sixth expert contributes 37%, respectively.</p>
+<p>Model Size</p>
+<p>Where does Mixtral 8x7B get its name, and what is the actual size of this sparse MoE model? The “8x” refers to the use of 8 expert subnetworks. The “7B” indicates that it combines Mistral 7B modules. However, it’s important to note that the size of Mixtral is not 8x7B = 56B. The 7 billion parameters represent the size of an entire Mistral 7B model, but in Mixtral 8x7B, only the feed-forward layers are replaced by expert layers.</p>
+<p>In total, Mixtral 8x7B comprises 47B parameters. If we consider the following equations, where FF stands for the forward layers and NonFF refers to the non-feed forward layers (for instance, attention weights):</p>
+<p>NonFF + 8*FF = 47B (MoE Mixtral model)</p>
+<p>NonFF + FF = 7B (regular Mistral model)</p>
+<p>Solving these equations, we find that the 7B mistral model has 40/7 = 5.71B parameters in the feed forward layers and 7B-5.71B = 1.29B parameters in the attention layers. Intriguingly, most of the parameters in an LLM are contained in a feed-forward module, not in the attention mechanism. And this is especially true for the Mixtral 8x7B model, which has 8*5.71B = 45.68B of its parameters in the expert (feed forward) layers.</p>
+<p>With 47B parameters in total, Mixtral 8x7B is significantly smaller than, for example, the Llama 2 70B model. Moreover, since only 2 experts are active at each time step, the model utilizes only 13B parameters for each input token, making it much more efficient than a regular non-MoE 47B parameter model.</p>
+<p>Annotated figure from Mixtral of Experts paper, https://arxiv.org/abs/2401.04088</p>
+<p>Expert Specialization</p>
+<p>The interesting question is whether the experts exhibit any task- or token-specific patterns. Unfortunately, the authors were unable to observe such specialization by topic (where “topics” refer to datasets like GitHub, Arxiv, Mathematics, Wikipedia, etc.).</p>
+<p>However, the authors make an interesting observation: consecutive tokens in text datasets are often assigned to the same experts. Additionally, indentation tokens in Python code are frequently assigned to the same expert, as shown in the figure below.</p>
+<p>Annotated figure from Mixtral of Experts paper, https://arxiv.org/abs/2401.04088</p>
+<p>(The authors didn’t specify which of the two experts per token is colored, but I assume they always colored the expert with the higher weight.)</p>
+<p>Conclusion</p>
+<p>Mixtral 8x7B has several advantages: it’s openly available, matches or outperforms larger models such as Llama 2 70B, and employs sparse MoE modules in a relatively fresh (although not entirely new) way of building LLMs.</p>
+<p>Its strong performance, coupled with parameter efficiency and the ability to handle context windows of up to 32k, will likely make it an attractive model for the foreseeable future (or, at least the upcoming months). I believe that MoE models will also be one of the main focus areas for most open-source projects in 2024, making Mixtral of Experts worth keeping on your radar.</p>
+<p>If there’s one small nitpick, it’s that the authors did not share any information about the training datasets. (This may be understandable to avoid copyright debates.)&nbsp;</p>
+<p>Furthermore, even though such a study would be very expensive, it would be intriguing to see how a Mixtral 8x70B would compare to a Llama 2 70B model trained on the same dataset. Furthermore, I’d be interested in seeing a comparison of Mixtral 8x70B with the following two hypothetical models some time in the future to more directly compare the performance of MoE and non-MoE approaches:</p>
+<p>Mistral 56B (a larger non-MoE model)</p>
+<p>Mistral 47B (a non-MoE model with the same number of parameters as Mixtral 8x70B)</p>
+<p>(Fun fact: The Brave browser now uses Mixtral 8x7B as default LLM for their Leo assistant feature.)</p>
+<ol start="4" type="1">
+<li>TinyLlama: An Open-Source Small Language Model</li>
+</ol>
+<p>After Microsoft’s phi-2 made headlines in December, TinyLlama is the latest addition to the “small” LLM category. TinyLlama is not only small, with 1.1 billion parameters, but also fully open source. Here, “open source” means that the training code and model checkpoints are available via an unrestricted open source library. You can find the GitHub repository here: https://github.com/jzhang38/TinyLlama.</p>
+<p>What makes small LLMs (also referred to as SLMs, short for Small Language Models) so attractive? Small LLMs are:</p>
+<p>Accessible and affordable, meaning they can be run (in inference mode) on limited resource regimes (such as laptops and/or small GPUs).</p>
+<p>Cheaper to develop and pretrain — these models only require a relatively small number of GPUs.</p>
+<p>Easier to customize for target tasks — small models can typically be finetuned on just a single GPU.</p>
+<p>More energy-efficient — this is an important consideration given concerns about the environmental impact of training and running large-scale AI models. Or, think of battery life when deploying LLMs on portable devices such as smartphones.</p>
+<p>Valuable for educational purposes — they are more manageable and thus easier to understand and tweak.</p>
+<p>TinyLlama Performance</p>
+<p>Besides being small and open-source, TinyLlama also performs relatively well on both common-sense reasoning and problem-solving benchmarks, compared to other open-source models of similar size.</p>
+<p>Source: TinyLlama: An Open-Source Small Language Model, https://arxiv.org/abs/2401.02385</p>
+<p>Of course, TinyLlama can’t rival much larger models in those benchmarks, but since all the code is open source, it presents interesting opportunities for further studies and finetuning.</p>
+<p>TinyLlama Learnings</p>
+<p>For instance, an intriguing educational takeaway from the authors’ training runs is that training the model for 3 epochs (instead of 1 epoch) on 1 trillion tokens is actually beneficial (although maybe not optimal according to the Chinchilla scaling laws via Hoffmann et al., 2022).</p>
+<p>Source: Training Compute-Optimal Large Language Models, https://arxiv.org/abs/2203.15556</p>
+<p>For instance, as shown in the plot below, the model still keeps improving even though the data is repeated by training over multiple epochs.</p>
+<p>Annotated figure from the TinyLlama paper (https://arxiv.org/abs/2401.02385); the paper includes similar plots for 6 other benchmarks</p>
+<p>Studying the behavior on “too large” datasets or running the training for more than one epoch would not be trivial with larger models. In any case, I am excited to see what future finetuning experiments on TinyLlama will yield. (Although, early experiments showed that it’s currently lacking behind the small but 3x larger phi-2 model.)</p>
+<p>Other Interesting Research Papers In January</p>
+<p>Below is a selection of other interesting papers I stumbled upon this month. Given the length of the list, I have highlighted those I found particularly interesting with an asterisk (*).</p>
+<p>*KVQuant: Towards 10 Million Context Length LLM Inference with KV Cache Quantization by Hooper, Kim, Mohammadzadeh, Mahoney, et al.&nbsp;(31 Jan), https://arxiv.org/abs/2401.18079</p>
+<p>Researcher propose a method for quantizing key-value cache activations that achieves minimal perplexity degradation and enables the serving of models like Llama-7B with a context length of up to 1 million on a single A100 (80GB) GPU.</p>
+<p>*Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling by Maini, Seto, Bai, Grangier, et al.&nbsp;(29 Jan), https://arxiv.org/abs/2401.16380</p>
+<p>The authors propose using paraphrased web documents for training large language models more efficiently, resulting in faster pretraining, better performance on various tasks, and insights into how training data composition affects out-of-distribution performance.</p>
+<p>MoE-LLaVA: Mixture of Experts for Large Vision-Language Models by Lin, Tang, Ye, Cui, et al.&nbsp;(29 Jan), https://arxiv.org/abs/2401.15947</p>
+<p>This paper proposes a mixture-of-experts paradigm to scale large vision-language models that achieves comparable performance to larger models with fewer parameters.</p>
+<p>EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty by Li, Wei, C. Zhang, and H. Zhang (26 Jan), https://arxiv.org/abs/2401.15077</p>
+<p>EAGLE accelerates auto-regressive decoding in LLMs by processing at a secondary feature level and incorporating future tokens.</p>
+<p>Multimodal Pathway: Improve Transformers with Irrelevant Data from Other Modalities by Zhang, Ding, Gong, Ge, and Yue (25 Jan), https://arxiv.org/abs/2401.14405</p>
+<p>The paper introduces Multimodal Pathway, a technique to boost vision transformers for a specific modality (like images) by using unpaired data from different modalities (like audio) resulting in significant performance improvements in various image recognition tasks.</p>
+<p>Pix2gestalt: Amodal Segmentation by Synthesizing Wholes by Ozguroglu, Liu, Surís, Chen, et al.&nbsp;(25 Jan), https://arxiv.org/abs/2401.14398</p>
+<p>Pix2gestalt is a framework for zero-shot amodal image segmentation that utilizes diffusion models and a synthetically curated dataset to estimate the shape and appearance of partially occluded objects.</p>
+<p>Rethinking Patch Dependence for Masked Autoencoders by Fu, Lian, Wang, Shi, at al.&nbsp;(25 Jan), https://arxiv.org/abs/2401.14391</p>
+<p>Cross-Attention Masked Autoencoders is a novel pretraining framework that uses only cross-attention between masked and visible tokens for masked patch reconstruction, which improves both efficiency and quality over traditional masked autoencoders.</p>
+<p>SpacTor-T5: Pre-training T5 Models with Span Corruption and Replaced Token Detection by Ye, Jiang, Rostamizadeh, Chakrabarti, et al.&nbsp;(24 Jan), https://arxiv.org/abs/2401.13160&nbsp;</p>
+<p>This paper introduces SPACTOR, a training method for LLMs that combines span corruption1 and token replacement detection2 in a two-stage curriculum, achieving the same performance as standard methods with 50% fewer pre-training iterations and 40% less computational cost.</p>
+<p>1 Instead of masking individual tokens like in BERT, T5 randomly replaces contiguous spans of tokens in the input text with a single mask token.&nbsp;</p>
+<p>2 In replacement detection, some tokens (words or subwords) in the input text are replaced with other tokens, and the model’s task is to identify which tokens have been replaced.</p>
+<p>MambaByte: Token-free Selective State Space Model by Wang, Gangavarapu, Yan, and Rush (24 Jan), https://arxiv.org/abs/2401.13660</p>
+<p>MambaByte is a token-free language Mamba selective state space model that operates on raw bytes to avoid subword tokenization bias.</p>
+<p>Spotting LLMs With Binoculars: Zero-Shot Detection of Machine-Generated Text by Hans, Schwarzschild, Cherepanova, Kazemi, et al.&nbsp;(22 Jan), https://arxiv.org/abs/2401.12070</p>
+<p>Binoculars is a new, (more) accurate method for detecting text generated by LLMs without training data, using simple calculations contrasting two pre-trained LLMs.</p>
+<p>*WARM: On the Benefits of Weight Averaged Reward Models by Ramé, Vieillard, Hussenot, Dadashi, et al.&nbsp;(22 Jan), https://arxiv.org/abs/2401.12187</p>
+<p>This study addresses reward collapse in LLMs aligned with human preferences through reinforcement learning by averaging finetuned reward model weights.</p>
+<p>SpatialVLM: Endowing Vision-Language Models with Spatial Reasoning Capabilities by Chen, Xu, Kirmani, Ichter, et al.&nbsp;(22 Jan), https://arxiv.org/abs/2401.12168</p>
+<p>This research improves Vision Language Models (VLMs) in 3D spatial reasoning by developing an internet-scale spatial reasoning dataset and training a VLM on it.</p>
+<p>*Knowledge Fusion of Large Language Models by Wan, Huang, Cai, Quan, et al.&nbsp;(19 Jan), https://arxiv.org/abs/2401.10491</p>
+<p>The researchers propose a knowledge fusion method that combined multiple diverse LLMs into a unified model, which outperforms individual models, traditional ensembles, and other model merging methods.</p>
+<p>VMamba: Visual State Space Model by Liu, Tian, Zhao, Yu, et al.&nbsp;(18 Jan), https://arxiv.org/abs/2401.10166</p>
+<p>This research combines the global receptive fields and dynamic weights of Vision Transformers with the linear complexity of CNNs into a new architecture called VMamba, which performs particularly well at higher image resolutions.</p>
+<ul>
+<li>Self-Rewarding Language Models by Yuan, Pang, Cho, Sukhbaatar, et al.&nbsp;(18 Jan), https://arxiv.org/abs/2401.10020</li>
+</ul>
+<p>Employing the LLM-as-a-Judge method for self-rewarding during training, researchers were able to improve LLM capabilities in following instructions and modeling rewards, which indicates the possibility for ongoing self-enhancement beyond the usual training based on human preferences.</p>
+<p>DiffusionGPT: LLM-Driven Text-to-Image Generation System by Qin, Wu, Chen, Ren, et al.&nbsp;(18 Jan), https://arxiv.org/abs/2401.10061</p>
+<p>DiffusionGPT is a text-to-image generation framework that uses LLMs to parse diverse prompts and select the most suitable generative model from a Tree-of-Thought structure that also integrates human feedback.</p>
+<p>ReFT: Reasoning with Reinforced Fine-Tuning by Luong, Zhang, Jie, Sun, et al.&nbsp;(17 Jan), https://arxiv.org/abs/2401.08967</p>
+<p>The paper presents Reinforced FineTuning (ReFT), a technique that improves the reasoning abilities of Large Language Models in tasks like math problem-solving by combining supervised finetuning with reinforcement learning, achieving improved results over standard finetuning without extra training data.</p>
+<p>RAG vs Fine-tuning: Pipelines, Tradeoffs, and a Case Study on Agriculture by Balaguer, Benara, de Freitas Cunha, Estevão Filho, et al.&nbsp;(16 Jan), https://arxiv.org/abs/2401.08406</p>
+<p>While there’s usually a “Retrieval-Augmented Generation (RAG) vs.&nbsp;Finetuning” debate, this paper demonstrates that combining RAG and finetuning results in cumulative accuracy improvements (in the context of an agricultural application).</p>
+<p>Code Generation with AlphaCodium: From Prompt Engineering to Flow Engineering by Ridnik, Kredo, and Friedman (Jan 16), https://arxiv.org/abs/2401.08500</p>
+<p>AlphaCodium is an iterative, test-based approach for code generation in LLMs outperforming previous methods with a smaller computational budget.</p>
+<ul>
+<li>Scalable Pre-training of Large Autoregressive Image Models by El-Nouby, Klein, Zhai, Bautista, et al.&nbsp;(16 Jan), https://arxiv.org/abs/2401.08541</li>
+</ul>
+<p>The paper pretrains vision models autoregressively (without supervision), inspired by LLM pretraining, demonstrating that their performance scales with model size and data quantity, and achieves notable results on ImageNet-1k without saturation.</p>
+<ul>
+<li>Tuning Language Models by Proxy by Liu, Han, Wang et al.&nbsp;(16 Jan), https://arxiv.org/abs/2401.08565</li>
+</ul>
+<p>Proxy-tuning is a resource-efficient method that adapts large language models by using a smaller tuned model to modify their predictions, achieving near-equivalent performance to direct tuning, even on proprietary models.</p>
+<p>An Experimental Design Framework for Label-Efficient Supervised Finetuning of Large Language Models by Bhatt, Chen, Das et al.&nbsp;(12 Jan), https://arxiv.org/abs/2401.06692</p>
+<p>Using experimental design techniques in supervised finetuning of LLMs, which select the most informative samples for labeling to maximize efficiency, researchers cut the annotation costs by 50% compared to random sampling.</p>
+<p>A Closer Look at AUROC and AUPRC under Class Imbalance by McDermott, Hansen, Zhang, et al.&nbsp;(11 Jan), https://arxiv.org/abs/2401.06091</p>
+<p>This paper challenges the widely-held belief in machine learning that the area under the precision-recall curve (AUPRC) is superior to the area under the receiver operating characteristic (AUROC) for class-imbalanced binary classification.</p>
+<ul>
+<li>The Unreasonable Effectiveness of Easy Training Data for Hard Tasks by Hase, Bansal, Clark, and Wiegreffe, https://arxiv.org/abs/2401.06751</li>
+</ul>
+<p>The authors find that models often generalize well from easy to hard data, and suggest it’s more efficient to train on easier data, as demonstrated through experiments with models up to 70 billion parameters on diverse question-answering datasets.</p>
+<p>Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training by Hubinger, Denison, Mu, et al.&nbsp;(10 Jan), https://arxiv.org/abs/2401.05566</p>
+<p>This study investigates the possibility of LLMs learning deceptive behaviors, such as writing secure code for prompts indicating the year 2023 but inserting exploitable code for the year 2024, and discovers that standard safety training techniques are ineffective at removing these persistent, deceptive strategies.</p>
+<p>Transformers are Multi-State RNNs by Oren, Hassid, Adi, and Schwartz (11 Jan), https://arxiv.org/abs/2401.06104</p>
+<p>This study shows that decoder-only transformers, originally seen as distinct from recurrent neural networks (RNNs), can be understood as infinite multi-state RNNs with unlimited hidden state size.</p>
+<p>RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation by Nikdan, Tabesh, and Alistarh (9 Jan), https://arxiv.org/abs/2401.04679</p>
+<p>This research introduces Robust Adaptation (RoSA), a new parameter-efficient finetuning method for LLMs, which outperforms existing methods like LoRA by training low-rank and highly-sparse components on fixed pretrained weights.</p>
+<p>A Minimaximalist Approach to Reinforcement Learning from Human Feedback by Swamy, Dann, Kidambi et al.&nbsp;(8 Jan), https://arxiv.org/abs/2401.04056</p>
+<p>The paper introduces Self-Play Preference Optimization (SPO), a simple yet effective reinforcement learning algorithm as an alternative to reinforcement with human feedback (RLHF) but without needing a reward model.&nbsp;</p>
+<p>MoE-Mamba: Efficient Selective State Space Models with Mixture of Experts by Pioro, Ciebiera, Krol et al.&nbsp;(8 Jan), https://arxiv.org/abs/2401.04081</p>
+<p>The paper proposes combining state space models like Mamba with mixture of experts (MoE), resulting in the MoE-Mamba model that outperforms both the standard Mamba structured state space model and a Transformer-MoE baseline in efficiency and effectiveness.</p>
+<ul>
+<li>Mixtral of Experts by Jiang, Sablayrolles, Roux, et al.&nbsp;(8 Jan), https://arxiv.org/abs/2401.04088</li>
+</ul>
+<p>Mixtral 8x7B is a sparse Mixture of Experts model that modifies Mistral 7B with 8 experts per layer, resulting in a 47B parameter model matching or outperforming larger models like Llama 2 70B in several benchmarks.</p>
+<p>Soaring from 4K to 400K: Extending LLM’s Context with Activation Beacon by Zhang, Liu, Xiao, Shao, et al.&nbsp;(7 Jan 2024), https://arxiv.org/abs/2401.03462</p>
+<p>Researchers suggest to extend the context window of LLMs via a so-called activation beacon, a compressed state of the activations that is added to the input context.</p>
+<ul>
+<li>Denoising Vision Transformers by Yang, Luo, Li et al.&nbsp;(5 Jan), https://arxiv.org/abs/2401.02957</li>
+</ul>
+<p>The authors found that common grid-like artifacts in vision transformers (ViTs) are due to positional embeddings at the input stage, and they propose a denoising vision transformer that can extract cleaned features of existing ViTs.</p>
+<p>DeepSeek LLM: Scaling Open-Source Language Models with Longtermism by Bi, Chen, Chen et al.&nbsp;(5 Jan), https://arxiv.org/abs/2401.02954</p>
+<p>DeepSeek LLM, using 7B and 67B configurations and trained on a 2 trillion token dataset, refines the Chinchilla scaling laws and outperforms models like LLaMA-2 70B and GPT-3.5.</p>
+<p>Blending Is All You Need: Cheaper, Better Alternative to Trillion-Parameters LLM by Lu, Liusie, Raina et al.&nbsp;(4 Jan) https://arxiv.org/abs/2401.02994</p>
+<p>This paper introduces “Blending”, a method that stochastically selects responses from multiple smaller chat AI models, showing that a combination of moderate-sized models (6B/13B parameters) can achieve or even exceed the performance of larger models like ChatGPT (175B+ parameters)</p>
+<p>LLM Augmented LLMs: Expanding Capabilities through Composition by Bansal, Samanta, Dalmia et al.&nbsp;(4 Jan), https://arxiv.org/abs/2401.02412</p>
+<p>CALM (Composition to Augment Language Models) combines foundational and specialized LLMs using cross-attention to improve on new tasks (like translation and code generation for low-resource languages) with minimal additional parameters and data.</p>
+<p>LLaMA Pro: Progressive LLaMA with Block Expansion by Wu, Gan, Ge et al.&nbsp;(4 Jan), https://arxiv.org/abs/2401.02415</p>
+<p>The paper presents a post-pretraining method for LLMs (turning Llama 7B to Llama Pro-8.3B) that expands Transformer blocks to improve in areas such as programming and mathematics without forgetting previous knowledge.</p>
+<p>A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity by Lee, Bai, Pres et al.&nbsp;(3 Jan), https://arxiv.org/abs/2401.01967</p>
+<p>This study explores how the direct preference optimization (DPO) algorithm aligns pre-trained models like GPT2-medium to user preferences by reducing toxicity, revealing that it bypasses rather than removes pre-training capabilities, and also shows a method to revert the model to its original toxic behavior.</p>
+<p>LLaMA Beyond English: An Empirical Study on Language Capability Transfer by Zhao, Zhang, Gao et al.&nbsp;(2 Jan), https://arxiv.org/abs/2401.01055</p>
+<p>This paper investigates how to transfer the capabilities of LLMs like Llama to non-English languages – a comparable performance to state-of-the-art models can be achieved with less than 1% of the pretraining data.</p>
+<ul>
+<li>Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models by Chen, Deng, Yuan et al.&nbsp;(2 Jan), https://arxiv.org/abs/2401.01335</li>
+</ul>
+<p>This paper introduces Self-Play fIne-tuNing (SPIN), a method that enhances LLMs without additional human-annotated data by using a self-play mechanism where the LLM generates and refines its training data.</p>
+<p>LLM Maybe LongLM: Self-Extend LLM Context Window Without Tuning by Jin, Han, Yang, et al.&nbsp;(2 Jan), https://arxiv.org/abs/2401.01325</p>
+<p>In this paper, the authors propose a simple (4 lines of code) technique to extend the context-handling capabilities of LLMs without any finetuning.</p>
+<p>A Comprehensive Study of Knowledge Editing for Large Language Models (2 Jan), by Zhang, Yao, Tian et al.&nbsp;https://arxiv.org/abs/2401.01286</p>
+<p>This paper discusses how to keep an LLM relevant and up-to-date by reviewing various knowledge editing techniques (resorting to external knowledge, merging knowledge into the model, and editing intrinsic knowledge) along with a new KnowEdit benchmark.</p>
+<p>Astraios: Parameter-Efficient Instruction Tuning Code Large Language Models (1 Jan), by Terry Zhuo, Zebaze, Suppattarachai et al., https://arxiv.org/abs/2401.00788</p>
+<p>This paper evaluates different full- and parameter-efficient finetuning techniques and finds that full-finetuning usually leads to the best performance, and LoRA usually offers the most favorable trade-off between cost and performance.</p>
+<p>Building a Large Language Model from Scratch</p>
+<p>Creating an LLM from scratch is an excellent way to gain a deep understanding of its inner workings. In my book project, “Building a Large Language Model from Scratch,” I code and detail the entire process, from developing an LLM architecture to implementing pretraining, fine-tuning, and alignment steps.</p>
+<p>For more information, please visit the GitHub repository at https://github.com/rasbt/LLMs-from-scratch.</p>
+<p>This magazine is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of one of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</p>
+<p>Your support means a great deal! Thank you!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

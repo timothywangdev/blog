@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>large-language-models-and-nearest-neighbors – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#large-language-models-and-nearest-neighbors" id="toc-large-language-models-and-nearest-neighbors" class="nav-link active" data-scroll-target="#large-language-models-and-nearest-neighbors">Large Language Models and Nearest Neighbors</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  <li><a href="#here-sorted_pred_lab-has-the" id="toc-here-sorted_pred_lab-has-the" class="nav-link" data-scroll-target="#here-sorted_pred_lab-has-the">here, sorted_pred_lab[][] has the</a></li>
+  <li><a href="#labels-and-counts-corresponding" id="toc-labels-and-counts-corresponding" class="nav-link" data-scroll-target="#labels-and-counts-corresponding">labels and counts corresponding</a></li>
+  <li><a href="#to-the-top-k-samples" id="toc-to-the-top-k-samples" class="nav-link" data-scroll-target="#to-the-top-k-samples">to the top-k samples,</a></li>
+  <li><a href="#labelcountlabelcount" id="toc-labelcountlabelcount" class="nav-link" data-scroll-target="#labelcountlabelcount">[[label,count],[label,count],…]</a></li>
+  <li><a href="#grouped-by-label-and-sorted-by-count." id="toc-grouped-by-label-and-sorted-by-count." class="nav-link" data-scroll-target="#grouped-by-label-and-sorted-by-count.">grouped-by label and sorted by count.</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="large-language-models-and-nearest-neighbors" class="level1">
+<h1>Large Language Models and Nearest Neighbors</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/large-language-models-and-nearest</p>
+<p><strong>Likes:</strong> LIKE (2)</p>
+<p><strong>Image Count:</strong> 11</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ydY4!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb38b5247-7a89-4ae2-9c48-3fc3d28a7ed1_1192x1044.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A k-nearest neighbor classifier with k=5.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vKXt!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F966d56d7-4537-4495-a525-daa5cfe77358_1272x960.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the kNN+gzip method</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!TYlR!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F8c57b00c-f303-415e-b93b-634e553c4c81_1930x870.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the performance on various text classification datasets</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!21t0!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F7c22f708-ca74-48fb-92bd-e9f3cfe3b85c_1680x628.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the performance on OOD datasets</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!q-LZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0e51c345-99f7-4a2d-84e5-7103f1a680e9_1678x840.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A conceptual explanation of the gzip method</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!VGi8!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F653d421d-48ee-4f7c-bc83-f671866860c4_1272x960.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the kNN+gzip method</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cf1B!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fddcf799c-e694-4623-95bf-183ed2f4185c_1706x949.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A baseline implementation from my Deep Learning Fundamentals course using DistilBERT</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!m9DD!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0e7f480b-006f-41f0-a590-8609f3c7dd5a_1736x658.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated figure from https://aclanthology.org/2023.findings-acl.426/ highlighting the R8 dataset</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Ap2X!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0243e7f1-abdb-47b1-9aec-03ee1f67e513_880x1160.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The potential data overlap issue in the benchmarks</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!HSec!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F49771274-e01d-4862-b824-1ab18c9ba75f_1708x1964.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CxIZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F27b6d27d-1052-4a4f-a419-a69cdd36704a_1118x454.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>Instead of jumping on the latest trend of the week, I wanted to dive into a recent, fascinating application of nearest-neighbor methods in the context of large language models (LLMs) that made big waves in July.</p>
+<p>You may know that I like simple yet elegant and baselines, but I also found this method quite refreshing given that most of the current research is about scaling already massive LLMs. While they may not scale to all kinds of problems where LLMs currently excel, seemingly simple methods such as nearest neighbor algorithms have a certain beauty to them. It also shows that there are still many opportunities to innovate and make significant contributions based on foundational or “classic” techniques.</p>
+<p>Nearest Neighbors in a Nutshell</p>
+<p>Nearest neighbor methods are one of the fundamental methods in data mining, pattern recognition, and machine learning. They are used in classification and regression tasks, as well as in recommendation systems, anomaly detection, and other applications.</p>
+<p>The most basic form of a nearest neighbor method is the k-nearest neighbors (kNN) algorithm. When classifying a new point, the kNN algorithm looks at the k points in the training data nearest to the new point – k is a hyperparameter chosen by the user. The new point is then classified based on a majority vote of these neighbors. If the majority of these neighbors belong to a specific class, then the new point is assigned to that class, as illustrated ion the figure below.</p>
+<p>A k-nearest neighbor classifier with k=5.</p>
+<p>Notably, no training is involved since for each new data point to classify, we just need to identify the k-nearest neighbors in the training set. (The downside is that each prediction requires iterating over the training set, which is expensive for larger training sets.)</p>
+<p>This is essentially all you need to know about kNN to understand the paper below. However, if you are interested in further details, I included information and further resources, including methods for improving efficiency, at the bottom of this article.</p>
+<p>“Low-Resource” Text Classification: A Parameter-Free Classification Method with Compressors</p>
+<p>I talked a bit about the “Low-Resource” Text Classification: A Parameter-Free Classification Method with Compressors paper on my social channels when it made big waves at ACL 2023 a few weeks ago – I was attending the SciPy 2023 conference during this time, and it was also the topic at several dinner conversations there as well.</p>
+<p>However, I didn’t include it in the previous AI Research Highlights In 3 Sentences Or Less issue since it was technically based on the Less is More: Parameter-Free Text Classification with Gzip paper posted on arXiv in December 2022, which may have been part of a previous conference submission.</p>
+<p>Anyways, let’s dive in and see what this “Low-Resource” Text Classification: A Parameter-Free Classification Method with Compressors paper is all about.</p>
+<p>Text classification with gzip</p>
+<p>In short, the “Low-Resource” Text Classification paper aims to classify texts using gzip (the compression format and tool) and kNN. The method is summarized via the following Python code in the annotated figure below.</p>
+<p>Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the kNN+gzip method</p>
+<p>Here, ncd stands for Normalized Compression Distance, a similarity measure between two strings based on the length of their compressed forms. It is calculated by compressing the individual strings and their concatenation, comparing compression lengths to produce a score ranging from 0 (identical strings) to 1 (no similarity). (A step-by-step explanation will follow in the next section.)</p>
+<p>Surprisingly, this method is very competitive, and the classification performance is almost as good as BERT (an encoder-style LLM; discussed in Understanding Encoder And Decoder LLMs) on several datasets, as shown in the table below.</p>
+<p>Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the performance on various text classification datasets</p>
+<p>Regarding out-of-distribution (OOD) classification and few-shot settings, the proposed gzip method outperforms BERT and all other methods, as shown below. (OOD here means that the BERT finetuning and classification are done on datasets in languages not seen by BERT during pretraining.)</p>
+<p>Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the performance on OOD datasets</p>
+<p>Note that these numbers are slightly inflated due to a coding bug, but we will get to this later. First, let’s go over how this method fundamentally works.</p>
+<p>How Does This Gzip Method Work?</p>
+<p>On a high level, the proposed gzip method leverages the fact that compression algorithms remove redundant information.</p>
+<p>For instance, when compressed, text 1 is close to the size of two concatenated texts, text 1 and text 2, if these texts are similar. Or, consider this more extreme case: the compressed size of a text concatenated with itself is similar to the size of the original compressed text (plus a small constant value for the back reference).</p>
+<p>Sounds complicated? Let’s walk through it step by step using actual Python code. Suppose we have the following two texts:</p>
+<p>txt_1 = “hello world”</p>
+<p>txt_2 = “some text some text some text”</p>
+<p>Let’s compress it using gzip and return the lengths of the compressed strings:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>import gzip len(gzip.compress(txt_1.encode())) 31 len(gzip.compress(txt_2.encode())) 33</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>We can see that the second compressed text has approximately the same size as the first compressed text, even though the second compressed text is significantly longer. Here, the compression algorithm may take advantage of the fact that some of the text in txt_2 is repeated.</p>
+<p>Let’s now concatenate text 1 and text 2 and see what happens when the concatenated text is compressed:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>len(gzip.compress(” “.join([txt_1, txt_2]).encode())) 43</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>We can see that the concatenated text is now noticeably longer than any of the two individual texts, which is expected since the two texts are quite different.</p>
+<p>In contrast, if we concatenate each text with itself, the compressed version is almost identical in length to the non-concatenated compressed text:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>len(gzip.compress(” “.join([txt_1, txt_1]).encode())) 34</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>len(gzip.compress(” “.join([txt_2, txt_2]).encode())) 33</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Note that concatenating a text with itself is an extreme case. The general idea is that the length of a compressed text is more similar to a text concatenated to a similar text versus a different text when compressed, as summarized in the figure below.</p>
+<p>A conceptual explanation of the gzip method Reimplementing the Gzip Method</p>
+<p>The authors shared a GitHub repository implementing the experiments from the paper. However, in this section, we will reimplement the method based on how it was described in the paper and apply it to sentiment classification in the IMDB Movie Review dataset, which was not part of the original study.</p>
+<p>Code Repository</p>
+<p>I made all the code for these experiments below available at https://github.com/rasbt/nn_plus_gzip.</p>
+<p>The IMDB movie review dataset, in the way I partitioned it below, consists of 35,000 training examples, and 10,000 examples for testing:</p>
+<p>import pandas as pd</p>
+<p>from local_dataset_utilities import download_dataset, load_dataset_into_to_dataframe, partition_dataset</p>
+<p>df_train = pd.read_csv(“train.csv”) df_val = pd.read_csv(“val.csv”) df_test = pd.read_csv(“test.csv”)</p>
+<p>(The local_datasets_utilities can be found here.)</p>
+<p>The baseline accuracy (always predicting the majority class) for the binary classification task (predicting whether a movie review is positive or negative) is 50.06% since the dataset is balanced:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>bcnt = np.bincount(df_test[“label”].values) print(bcnt) array([5006, 4994])</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>print(“Baseline accuracy:”, np.max(bcnt)/ bcnt.sum()) Baseline accuracy: 0.5006</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Now, based on the Python code from the paper shown again below,</p>
+<p>Annotated figure from https://aclanthology.org/2023.findings-acl.426/ showing the kNN+gzip method</p>
+<p>we can implement the gzip method as follows:</p>
+<p>import gzip import numpy as np from tqdm import tqdm</p>
+<p>k = 2 predicted_classes = []</p>
+<p>for row_test in tqdm(df_test.iterrows(), total=df_test.shape[0]): test_text = row_test[1][“text”] test_label = row_test[1][“label”] c_test_text = len(gzip.compress(test_text.encode())) distance_from_test_instance = []</p>
+<pre><code>for row_train in df_train.iterrows():
+    train_text = row_train[1]["text"]
+    train_label = row_train[1]["label"]
+    c_train_text = len(gzip.compress(train_text.encode()))
+    
+    train_plus_test = " ".join([test_text, train_text])
+    c_train_plus_test = len(gzip.compress(train_plus_test.encode()))
+    
+    ncd = ( (c_train_plus_test - min(c_train_text, c_test_text))
+            / max(c_test_text, c_train_text) )
+    distance_from_test_instance.append(ncd)
+    
+sorted_idx = np.argsort(np.array(distance_from_test_instance))
+
+top_k_class = list(df_train.iloc[sorted_idx[:k]]["label"].values)
+predicted_class = max(set(top_k_class), key=top_k_class.count)
+predicted_classes.append(predicted_class)</code></pre>
+<p>print(“Accuracy:”, np.mean(np.array(predicted_classes) == df_test[“label”].values))</p>
+<p>This code runs for about a day and reaches and accuracy of 70.05% (1_1_nn_plus_gzip_original.ipynb). Note that we set k=2 and did not preprocess the data, which are both settings the authors used in the original paper for all experiments as well.</p>
+<p>Fixing the Tie-Breaking</p>
+<p>In practice, there’s a slight problem when using k=2, for instance, how do we break ties if the labels of the two nearest neighbors are [0, 1] or [1, 0]?</p>
+<p>Using the code provided in the paper, the method always selects the lowest class label index in case of a tie. Or in other words, the method is biased toward the class label 0:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>top_k_class = [0, 1] max(set(top_k_class), key=top_k_class.count)) 0 ​ top_k_class = [1, 0] max(set(top_k_class), key=top_k_class.count) 0 ​ top_k_class = [1, 0, 2] max(set(top_k_class), key=top_k_class.count) 0</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>A better way to break ties is always to select the closer neighbor. We can achieve this using a Counter object, as shown below. Here, assume the labels are sorted in ascending order based on the nearest-neighbor distances toward the data point we want to classify.</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>from collections import Counter top_k_class = [0, 1] Counter(top_k_class).most_common()[0][0] 0 ​ top_k_class = [1, 0] Counter(top_k_class).most_common()[0][0] 1 ​ top_k_class = [1, 2, 0] Counter(top_k_class).most_common()[0][0] 1</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>Using this improved tie-breaking method, we can now update the code as follows:</p>
+<p>from tqdm import tqdm from collections import Counter ​ k = 2 ​ predicted_classes = [] ​ for row_test in tqdm(df_test.iterrows(), total=df_test.shape[0]): &nbsp; &nbsp;test_text = row_test[1][“text”] &nbsp; &nbsp;test_label = row_test[1][“label”] &nbsp; &nbsp;c_test_text = len(gzip.compress(test_text.encode())) &nbsp; &nbsp;distance_from_test_instance = [] &nbsp; &nbsp; &nbsp; &nbsp;for row_train in df_train.iterrows(): &nbsp; &nbsp; &nbsp; &nbsp;train_text = row_train[1][“text”] &nbsp; &nbsp; &nbsp; &nbsp;train_label = row_train[1][“label”] &nbsp; &nbsp; &nbsp; &nbsp;c_train_text = len(gzip.compress(train_text.encode())) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;train_plus_test = ” “.join([test_text, train_text]) &nbsp; &nbsp; &nbsp; &nbsp;c_train_plus_test = len(gzip.compress(train_plus_test.encode())) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ncd = ( (c_train_plus_test - min(c_train_text, c_test_text)) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;/ max(c_test_text, c_train_text) ) &nbsp; &nbsp; &nbsp; &nbsp;distance_from_test_instance.append(ncd) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;sorted_idx = np.argsort(np.array(distance_from_test_instance)) &nbsp; &nbsp;top_k_class = np.array(df_train[”label”])[sorted_idx[:k]] &nbsp; &nbsp;predicted_class = Counter(top_k_class).most_common()[0][0] &nbsp; &nbsp; &nbsp; &nbsp;predicted_classes.append(predicted_class) &nbsp; &nbsp; &nbsp; &nbsp; print(”Accuracy:“, np.mean(np.array(predicted_classes) == df_test[“label”].values))</p>
+<p>This improves the accuracy from 70.05% (1_1_nn_plus_gzip_original.ipynb) to 71.91% (1_2_nn_plus_gzip_fix-tie-breaking.ipynb).</p>
+<p>Note: I also added a more efficient implementation (1_2_caching-multiprocessing.py) caching the compressed training instances and parallelizing the search across different GPU cores. On a MacBook Air, this reduces the runtime from 12h to 2h on the IMDb Movie review dataset.</p>
+<p>Comparison with Other Methods</p>
+<p>I chose the IMDB Movie Review dataset for my experiments because I am relatively familiar with it based on other projects I worked on in the past. For example, here are some numbers from my Machine Learning with PyTorch and Scikit-Learn book:</p>
+<p>Bag-of-words + logistic regression: 89.9% (Chapter 8)</p>
+<p>Recurrent neural network: 85.6% (Chapter 15)</p>
+<p>DistilBert: 93.27% (Chapter 16)</p>
+<p>Using the code implementation from my Deep Learning Fundamentals Course, someone even achieved</p>
+<p>96.12% accuracy with RoBERTa-large (see discussion here)</p>
+<p>A baseline implementation from my Deep Learning Fundamentals course using DistilBERT</p>
+<p>Count Vectors and Cosine Similarity</p>
+<p>Another interesting baseline would be to select similar word-count vectors from a bag-of-words model using kNN. (I covered it in my course here if you want to learn about bag-of-words.) The rationale is that two similar texts should have similar count vectors. So, instead of comparing the length of a compressed text to the length of a compressed concatenation of two texts, we could use word count vectors.</p>
+<p>If we have a word count vector of text 1 and a count vector of text 2, with similar texts, the two added count vectors should be similar. For example, suppose we have the following count vectors of two identical texts:</p>
+<p>text_1 = [0, 3, 1] text_2 = [0, 3, 1]</p>
+<p>Then, the added count vectors are [0, 3, 1] + [0, 3, 1] = [0, 6, 2] = 2 * [0, 3, 1]. So, if we normalize the count vectors before and after adding the counts should be exactly the same:</p>
+<p>import numpy as np ​ &gt;&gt;&gt; text_1 = np.array([0., 3., 1.]) &gt;&gt;&gt; text_2 = np.array([0., 3., 1.]) ​ &gt;&gt;&gt; text_1 /= np.sum(text_1) &gt;&gt;&gt; print(text_1) [0. &nbsp; 0.75 0.25] ​ &gt;&gt;&gt; text_2 /= np.sum(text_2) &gt;&gt;&gt; print(text_2) [0. &nbsp; 0.75 0.25] ​ &gt;&gt;&gt; added = text_1 + text_2 &gt;&gt;&gt; print(added / np.sum(added)) [0. &nbsp; 0.75 0.25]</p>
+<p>Then, we could compute the distance between two vectors using a Euclidean distance metric:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>dist = np.sqrt(np.sum((test_vec - added)**2))</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>However, instead of doing that, we could also just directly compute the cosine similarity between two vectors, which is essentially the same thing:</p>
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<blockquote class="blockquote">
+<p>from numpy.linalg import norm cosine = 1 - (np.dot(test_vec, train_vec) … /(norm(test_vec)*norm(train_vec)))</p>
+</blockquote>
+</blockquote>
+</blockquote>
+<p>(Note that the 1- is required to convert the cosine similarity into a cosine distance.)</p>
+<p>The complete code then becomes the following:</p>
+<p>from collections import Counter from tqdm import tqdm from numpy.linalg import norm ​ ​ k = 2 ​ predicted_classes = [] ​ for i in tqdm(range(df_test.shape[0]), total=df_test.shape[0]): ​ &nbsp; &nbsp;test_vec = X_test[i].toarray().reshape(-1) &nbsp; &nbsp;test_label = df_test.iloc[i][“label”] &nbsp; &nbsp;distance_from_test_instance = [] &nbsp; &nbsp; &nbsp; &nbsp;for j in range(df_train.shape[0]): &nbsp; &nbsp; &nbsp; &nbsp;train_vec = X_train[j].toarray().reshape(-1) &nbsp; &nbsp; &nbsp; &nbsp;train_label = df_train.iloc[j][“label”] &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;cosine = 1 - np.dot(test_vec, train_vec)/(norm(test_vec)*norm(train_vec)) &nbsp; &nbsp; &nbsp; &nbsp;distance_from_test_instance.append(cosine) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;sorted_idx = np.argsort(np.array(distance_from_test_instance)) &nbsp; &nbsp;top_k_class = np.array(df_train[“label”])[sorted_idx[:k]] &nbsp; &nbsp;predicted_class = Counter(top_k_class).most_common()[0][0] &nbsp; &nbsp; &nbsp; &nbsp;predicted_classes.append(predicted_class) &nbsp; &nbsp; &nbsp; &nbsp; print(“Accuracy:”, np.mean(np.array(predicted_classes) == df_test[“label”].values))</p>
+<p>The resulting accuracy is 68.01% (4_r8-dataset.ipynb) which is not as good as the gzip method but close (within 4%)!</p>
+<p>A Quick Look at the R8 Dataset</p>
+<p>Above, we evaluated the gzip method on the IMDB movie review dataset, which was not part of the original paper. So, to see how my reimplementation with the improved tie-breaking strategy fares compared to one of the datasets used in the paper, let’s look at the R8 dataset (I chose this because it’s relatively small and only takes a few minutes to run).</p>
+<p>Annotated figure from https://aclanthology.org/2023.findings-acl.426/ highlighting the R8 dataset</p>
+<p>Using the lowest-index tie breaking strategy described in one of the figures in the paper, the accuracy is 88.90% (4_r8-dataset.ipynb), which is lower than reported in the original paper. (Please see the following section for a potential explanation.) In comparison, the performance with the improved tie-breaking strategy I described earlier results in 91.27% — still lower than the one reported in the paper. The next session offers an explanation for this discrepancy.</p>
+<p>Issues With the Original Code</p>
+<p>As Ken Schutte discussed on his website, using k=2 is a bit of an odd choice in the context of resolving ties like [0, 1] or [1, 0]. There are several ways to resolve ties, including</p>
+<p>always using the lower class index (like it is done in scikit-learn and in the Python code shown in a figure in the original paper);</p>
+<p>choosing the closer one of the two neighbors (my preferred choice, which I implemented in the Fixing the Tie-Breaking section above);</p>
+<p>determining the winning label randomly.</p>
+<p>As Ken Schutte discussed, the paper’s GitHub repository uses a fourth strategy, which may be related to a coding bug. For instance, it resolves ties by always choosing the correct test label:</p>
+</section>
+</section>
+<section id="here-sorted_pred_lab-has-the" class="level1">
+<h1>here, sorted_pred_lab[][] has the</h1>
+</section>
+<section id="labels-and-counts-corresponding" class="level1">
+<h1>labels and counts corresponding</h1>
+</section>
+<section id="to-the-top-k-samples" class="level1">
+<h1>to the top-k samples,</h1>
+</section>
+<section id="labelcountlabelcount" class="level1">
+<h1>[[label,count],[label,count],…]</h1>
+</section>
+<section id="grouped-by-label-and-sorted-by-count." class="level1">
+<h1>grouped-by label and sorted by count.</h1>
+<p>​ most_label = sorted_pred_lab[0][0] most_count = sorted_pred_lab[0][1] ​ if_right = 0 for pair in sorted_pred_lab: &nbsp; &nbsp;# we loop until we drop below ‘most_count’, ie &nbsp; &nbsp;# this for-loop iterates over those classes &nbsp; &nbsp;# tied for highest count &nbsp; &nbsp;if pair[1] &lt; most_count: &nbsp; &nbsp; &nbsp; &nbsp;break ​ &nbsp; &nbsp;# this says if ANY of those &nbsp; &nbsp;# in the tied-set are equal to &nbsp; &nbsp;# the test label, &nbsp; &nbsp;# it is marked correct (if_right=1) &nbsp; &nbsp;if pair[0] == label[i]: &nbsp; &nbsp; &nbsp; &nbsp;if_right = 1 &nbsp; &nbsp; &nbsp; &nbsp;most_label = pair[0] ​ # accumulate results: &nbsp; &nbsp; &nbsp; &nbsp; pred.append(most_label) correct.append(if_right)</p>
+<p>According the the analysis by Ken Schutte, after fixing the tie-breaking, “the gzip method went from best-perfoming to worst-performing.”</p>
+<p>In addition, there also seems to be a dataset overlap, as Yann Dubois shared here:</p>
+<p>The potential data overlap issue in the benchmarks</p>
+<p>However, as far as I understand, this overlap more or less affects all methods evaluated in this paper. If you are interested in additional details on the training/test overlap issue, I recommend Ken Schutte’s follow-up post here.</p>
+<p>Final Thoughts</p>
+<p>The gzip method proposed in the “Low-Resource” Text Classification: A Parameter-Free Classification Method with Compressors paper is a very elegant, intriguing research contribution. I thoroughly enjoyed exploring it.</p>
+<p>Unfortunately, the actual predictive performance of the method may be worse than reported, but it’s an interesting approach nonetheless.</p>
+<p>Should we use it in practice? On the one hand, this method has a lot going for it since it’s a simple baseline and doesn’t require GPUs, which is a big plus, given the current GPU shortage. On the other hand, the results are, of course, not as good as advertised, and kNN also doesn’t necessarily scale well to larger datasets – for reference, my naive implementation on IMDb took one day to complete, running on a single CPU.</p>
+<p>The positive takeaway here is that we have a new, simple baseline method. And the associated paper highlights why sharing source code and community discussion are so important in disseminating the work (as opposed to just classic peer review).</p>
+<p>Follow-Up Resources</p>
+<p>Below are a few other articles on this topic that I enjoyed reading:</p>
+<p>“Gzip beats BERT?” Part 2: Dataset Issues, Improved Speed, and Results by Ken Schutte</p>
+<p>LZ77 Is All You Need? Why Gzip + KNN Works for Text Classification by Abhinav Upadhyay and Alejandro Piad Morffis</p>
+<p>Nearest Neighbor Methods in Detail</p>
+<p>Nearest neighbor algorithms are among the “simplest” supervised machine learning algorithms and have been well-studied in pattern recognition over the last century. While nearest-neighbor algorithms are not as popular as they once were, they are still widely used in practice. I highly recommend that you consider the k-Nearest Neighbor algorithm in classification projects as a predictive performance benchmark, especially when developing more sophisticated models.</p>
+<p>Suppose you want to learn more about nearest-neighbor methods, including k-nearest neighbors. In that case, I have a 20-page lecture note document I’ve written for a machine learning class I taught a few years ago.</p>
+<p>But even if you are already familiar with the basics, you might like Section 2.7 on Improving Computational Performance, which includes subsections that could come in handy in practical machine learning and machine learning interviews:</p>
+<p>Using a Priority Queue</p>
+<p>Data Structures: Bucketing, KD-Tree, Ball-Tree</p>
+<p>Dimensionality Reduction</p>
+<p>Faster Distance Metrics &amp; Heuristics</p>
+<p>Pruning</p>
+<p>and Parallelizing kNN</p>
+<p>You can find the lecture notes here at https://sebastianraschka.com/pdf/lecture-notes/stat451fs20/02-knn__notes.pdf.</p>
+<p>This magazine is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of one of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</p>
+<p>Your support means a great deal! Thank you!</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

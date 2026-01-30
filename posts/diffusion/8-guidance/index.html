@@ -33,7 +33,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../../">
-<link href="../../../favicon.png" rel="icon" type="image/png">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
 <script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
@@ -288,6 +288,10 @@ window.Quarto = {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
     <a class="navbar-brand" href="../../../index.html">
     <span class="navbar-title">LayerNorm</span>
     </a>
@@ -406,6 +410,16 @@ window.Quarto = {
 </div>
 <p>So far, the generative models we have discussed are all <strong>unconditional</strong> models, i.e., they generate samples from the target probability distribution <span class="math inline">\(p_{data}\)</span> without any additional information. In this post, we will discuss how to make these models <strong>conditional</strong> on some additional information like a text prompt <span class="math inline">\(y\)</span>.</p>
 <p>To avoid notation and terminology clash with the use of the word “<strong>conditional</strong>” to refer to conditioning on <span class="math inline">\(z \sim p_{data}\)</span>, we will use the term “<strong>guided</strong>” to refer specifically to conditioning on <span class="math inline">\(y\)</span>.</p>
+<div id="fig-cfg-concept" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cfg-concept-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="cfg-concept.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cfg-concept-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: <strong>Classifier-Free Guidance (CFG) concept.</strong> Left: The data distribution can be “sliced” by labels — <span class="math inline">\(p(z|y=\text{dog})\)</span> contains only dog images, etc. Right: CFG amplifies the conditioning direction by extrapolating beyond the conditional vector field <span class="math inline">\(u(x|y)\)</span>.
+</figcaption>
+</figure>
+</div>
 <div id="guided-generation" class="callout callout-style-simple callout-note">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
@@ -616,6 +630,16 @@ u_t^\theta(x | \emptyset) \approx u_t^{target}(x) \quad \text{(unconditional)}
 <li>With probability <span class="math inline">\(\eta\)</span> (typically 10-20%), replace <span class="math inline">\(y\)</span> with <span class="math inline">\(\emptyset\)</span></li>
 <li>Minimize the CFM loss: <span class="math inline">\(\|u_t^\theta(x | y) - u_t^{target}(x | z)\|^2\)</span></li>
 </ol>
+<div id="fig-cfg-training" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cfg-training-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="cfg-training.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cfg-training-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: <strong>CFG training workflow.</strong> The key idea is label dropout: with probability η, drop the label and pass ∅ instead. The target vector field <span class="math inline">\(u_{target}(x|z)\)</span> remains the same regardless — what changes is the model input.
+</figcaption>
+</figure>
+</div>
 <p><strong>Why does this work?</strong> The target <span class="math inline">\(u_t^{target}(x | z)\)</span> is always the same — it doesn’t depend on <span class="math inline">\(y\)</span>. What changes is the <strong>model input</strong>:</p>
 <ul>
 <li>When we keep <span class="math inline">\(y\)</span>: the model learns <span class="math inline">\(u_t^\theta(x | y) \approx\)</span> conditional vector field</li>
@@ -656,6 +680,16 @@ u_t^\theta(x | \emptyset) \approx u_t^{target}(x) \quad \text{(unconditional)}
 <li><span class="math inline">\(w &gt; 1\)</span>: Amplified conditioning (sharper, more “on-prompt” samples)</li>
 <li><span class="math inline">\(w \gg 1\)</span>: Over-saturation (artifacts, reduced diversity)</li>
 </ul>
+<div id="fig-guidance-scale" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-guidance-scale-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="cfg-guidance-scale.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-guidance-scale-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: <strong>Effect of guidance scale <em>w</em>.</strong> As <em>w</em> increases, the guided vector field ũ extrapolates further beyond the conditional direction, strengthening adherence to the prompt — but too much leads to artifacts.
+</figcaption>
+</figure>
+</div>
 <div class="callout callout-style-simple callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">

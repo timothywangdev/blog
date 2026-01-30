@@ -2,6 +2,9 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/robotics/7-neural-manifolds/index.html",
+      "/posts/robotics/6-eigenvalue-dynamics/index.html",
+      "/posts/robotics/5-neuro-inspired-architectures/index.html",
       "/posts/robotics/1.5-action-chunking/index.html",
       "/posts/robotics/3-vla-models/index.html",
       "/posts/robotics/0-intro/index.html",

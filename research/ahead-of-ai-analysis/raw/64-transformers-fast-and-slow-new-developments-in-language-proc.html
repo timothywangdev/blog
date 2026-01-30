@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>transformers-fast-and-slow-new-developments-in-language-proc – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#transformers-fast-and-slow-new-developments-in-language-processing" id="toc-transformers-fast-and-slow-new-developments-in-language-processing" class="nav-link active" data-scroll-target="#transformers-fast-and-slow-new-developments-in-language-processing">Transformers, Fast and Slow: New Developments in Language Processing</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  <li><a href="#select-the-strategy-with-good-defaults" id="toc-select-the-strategy-with-good-defaults" class="nav-link" data-scroll-target="#select-the-strategy-with-good-defaults">Select the strategy with good defaults</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="transformers-fast-and-slow-new-developments-in-language-processing" class="level1">
+<h1>Transformers, Fast and Slow: New Developments in Language Processing</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/ahead-of-ai-2-transformers-fast-and</p>
+<p><strong>Likes:</strong> LIKE</p>
+<p><strong>Image Count:</strong> 13</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Md0H!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fab88b936-639e-41ce-8911-426bcf83fb45_1372x1276.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Example of a language model responding to prompt.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!oD1z!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F8ce86841-bf2f-42db-b97f-787845b43fea_1496x906.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A taxonomy of prompting methods. Image source: https://docs.google.com/presentation/d/1YfSkqvFVtRkFBpQ4SKuBlqkhJrzWEERluivYjleB6a4/edit#slide=id.p)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!sLHX!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fa662868f-1444-49ab-92db-7889804774ef_2610x1852.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Screenshot of the Metagenomic atlas. Source: https://esmatlas.com/explore.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!hnT8!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F2f04a0fe-ca4e-406a-bbc4-ed7e473269cd_3922x2200.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Efficient self-attention mechanisms. Source: https://www.stateof.ai.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vvAg!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fdb416e37-b86b-4d63-afcc-e02e605165ee_1972x918.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An annotated figure describing the finetuning stage based on https://arxiv.org/abs/2210.06280</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!oExj!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fbb8cb999-ef26-477a-8670-52a2b9b9cf79_2334x1106.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An annotated figure describing the sampling stage based on https://arxiv.org/abs/2210.06280</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!HbIi!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Fb0d892d0-e4c3-4819-a4ff-9b7574335991_2210x1062.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated table of the machine learning efficiency experiments based on https://arxiv.org/abs/2210.06280</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!sE_n!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F0cc608db-aa87-45b4-bd4d-a27eb8791985_1796x632.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated table of the discriminator measure experiments based on https://arxiv.org/abs/2210.06280</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!JH7A!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F116d54d5-3ffa-4b7c-9769-af89d2226dd3_3490x2010.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!zj7Z!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff1e4bf9a-b253-4492-9854-2bd93ab6d5d0_888x642.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Stateful vs stateless training</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!9OVN!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F005b0d3f-c472-4348-be61-a9861e29b6a8_908x524.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!OnEY!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2Ffb0cfab3-eacd-4f0f-9048-cdfba42a3dbb_1890x1440.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CxIZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F27b6d27d-1052-4a4f-a419-a69cdd36704a_1118x454.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>Articles &amp; Trends</p>
+<p>This time, we will focus on large language models based on the transformer architecture, which is the other pillar of modern deep learning and AI – next to diffusion models.</p>
+<p>As some of you may remember, the natural language processing (NLP) field was long dominated by recurrent neural networks (RNNs). However, this was before self-attention-based neural networks, such as the original transformer architecture by Vaswani et al.&nbsp;2017 (Attention Is All You Need), revolutionized the field.</p>
+<p>Example of a language model responding to prompt.</p>
+<p>(Trivia: RNNs used attention mechanisms long before self-attention came along. As I detailed in my book, RNNs used attention between the encoder and the decoder encodings. In transformers, it’s called self-attention because it’s attention for all the elements of the same set.)</p>
+<p>Anyways, all that is history and the chronology of attention may be a good topic for another day. So let’s move on and focus on What’s new?</p>
+<p>Interacting with modern machine learning models</p>
+<p>Prompt Engineering</p>
+<p>One thing that generative transformer-based language models and image diffusion models (discussed in the last issue) have in common is that they require a certain degree of prompt engineering. Prompt engineering means tweaking the input sequences (or prompts) to produce the desired output.</p>
+<p>Sounds complicated? I can assure you that prompt engineering is something you have been using since the dawn of the internet. It’s nothing different from changing your Google Search queries until you get the desired search results.</p>
+<p>Curious to learn more about prompt engineering? Check out Rick Neubig’s excellent taxonomy of prompting methods:</p>
+<p>A taxonomy of prompting methods. Image source: https://docs.google.com/presentation/d/1YfSkqvFVtRkFBpQ4SKuBlqkhJrzWEERluivYjleB6a4/edit#slide=id.p)</p>
+<p>Toxicity</p>
+<p>Another thing transformers and diffusion models have in common is that they can have harmful effects, for example, by being misused to produce harmful content. In a recent paper (Prompt Compression and Contrastive Conditioning for Controllability and Toxicity Reduction in Language Models), researchers investigated the effects of compressing prompts. They found that compressing prompts that retain the abstract information in a prompt can reduce toxicity in the generated text.</p>
+<p>What are transformers useful for?</p>
+<p>Transformers became extremely popular thanks to their impressive capabilities to generate new text. This even went so far that a Google employee mistakenly thought that transformers have become self-conscious. However, what are the “really” useful applications of transformers in the real world besides generating texts?</p>
+<p>Language Translation</p>
+<p>Besides generating realistic text to complete prompts like “What’s the future of Twitter?” language translation is where transformers really shine.</p>
+<p>One of the most recent models includes Meta’s No Language Left Behind, a transformer model capable of translating between 200 languages.</p>
+<p>Protein Folding</p>
+<p>You may have heard of DeepMind’s AlphaFold2 model that won the CASP 14 protein folding competition two years ago. Yes, in contrast to the original AlphaFold v1 model, AlphaFold2, is based on the architecture of language transformers.</p>
+<p>Recently, Meta announced the ESM Metagenomic Atlas consisting of 620 million metagenomic protein structures generated by the ESMFold protein folding model. While ESMFold is said to be 60x faster than AlphaFold 2.</p>
+<p>Screenshot of the Metagenomic atlas. Source: https://esmatlas.com/explore.</p>
+<p>This is great work and a big milestone. In particular, the scale and speed are very impressive. However, I would like to see the CASP15 competition results to get an idea of the model’s accuracy on new structures.</p>
+<p>Also, it’s worth noting that both AlphaFold2 and ESMFold produce accurate structures from protein sequence data. However, they do not solve the actual “protein folding” part or process. Think of these as models that can predict a specific dish (for example, spaghetti bolognese) given a list of ingredients. However, these transformer-based models do not learn the recipe or process of preparing the dish – they go directly from the ingredient list to the finished meal. Depending on the context, you may consider this as a strength or a weakness.</p>
+<p>Question answering</p>
+<p>Another area where transformers could have real-world use cases is question-answering. For example, Amazon recently released the multilingual Mintaka dataset consisting of 20,000 question-answer pairs. Mintaka can serve as training data for the next generation of Q&amp;A systems. I hope they will be more useful and capable than the current technologies because who likes interacting with current-gen chatbots?</p>
+<p>Approaching AGI?</p>
+<p>In my opinion, AGI is nowhere near or around the corner. At the same time, recent language models have awe-inspiring capabilities in generating or translating text and predicting protein structures, as we saw above. Nonetheless, some people might be interested to hear that researchers are working on mechanisms that help transformers to self-improve via a pre-training method called Algorithm Distillation based on reinforcement learning: Large Language Models Can Self-Improve.</p>
+<p>Self-attention efficiency and carbon footprints</p>
+<p>Researchers consider the original self-attention mechanism (aka scaled-dot product attention) as very inefficient as the memory requirements scale quadratically with the input sequence length. Over the years, researchers developed a lot of alternatives that are more efficient and scale linearly. However, these sparse attention mechanisms remain very unpopular, as we discussed a few months ago.</p>
+<p>The unpopularity of self-attention was also included in the recently released State of AI 2022, which observed a similar trend:</p>
+<p>Efficient self-attention mechanisms. Source: https://www.stateof.ai.</p>
+<p>This brings up another question. What is the environmental cost of large language models exactly? In the recent Estimating the Carbon Footprint of BLOOM, a 176B Parameter Language Model paper, researchers found that training BLOOM required 1,082,990 GPU hours (on cutting edge Nvidia A100s) and emitted approximately 50.5 tonnes of CO2 in total! For comparison, a Boeing 747 releases about 33 tonnes of CO2 on a 330-mile flight.</p>
+<p>Resources to learn more</p>
+<p>Interested in learning more about language transformers? Below is a curated list of useful resources:</p>
+<p>A 17-part lecture series I recorded 2 years ago</p>
+<p>Code examples from my book illustrating the self-attention mechanism step by step</p>
+<p>Lucas Beyer’s transformer seminar</p>
+<p>Andrej Karpathy’s minimal PyTorch re-implementation of OpenAI’s GPT (Generative Pretrained Transformer)</p>
+<p>Research Deep Dive</p>
+<p>In this section, I will summarize a selected research paper. To stay on topic with the transformer theme of this newsletter, my pick is a large language model, of course! So here it is, Language Models Are Realistic Tabular Data Generators.</p>
+<p>The GReaT (Generation of Realistic Tabular data) method uses an auto-regressive generative LLM based on self-attention to generate synthetic tabular datasets. In particular, the authors use pre-trained transformer-decoder networks (GPT-2 and the smaller Distil-GPT-2, as smaller version that was “distilled” similar to DistilBERT.).</p>
+<p>Based pretrained decoder-based transformers, the GReaT procedure consists of two steps, (1) finetuning and (2) sampling.</p>
+<p>In stage 1, finetuning, GReaT performs the following steps: (1) transform feature vectors into text; (2) permute feature order to encode order independence; (3) use text for transformer finetuning.</p>
+<p>An annotated figure describing the finetuning stage based on https://arxiv.org/abs/2210.06280</p>
+<p>And stage 2 (sampling) works as follows: pass (incomplete) inputs to finetuned transformer; (2) obtain completed feature vectors from transformer in text format; (3) transfer feature texts to tabular format.</p>
+<p>An annotated figure describing the sampling stage based on https://arxiv.org/abs/2210.06280</p>
+<p>In “machine learning efficiency” experiments, the authors found that classifiers trained on the artificial data perform better (and more similar to the original) when trained on GReat synthetic data compared to synthetic data from other methods.</p>
+<p>Annotated table of the machine learning efficiency experiments based on https://arxiv.org/abs/2210.06280</p>
+<p>Assessing how similar the synthetic data is to the original data, the “distance to closest records” diagrams show that GReaT does not copy the training data. Moreover, the authors did a “discriminator measure” study. They combined the original with the synthetic data and assigned a class label to indicate whether the data was original (0) or synthetic (1). Classifiers trained on these datasets had an average accuracy of 70%; they could tell artificial data to some extent. However, GReat faired much better than other synthetic data approaches (the accuracy ranged between 75% to 88%).</p>
+<p>Annotated table of the discriminator measure experiments based on https://arxiv.org/abs/2210.06280 Open Source Highlights</p>
+<p>Scikit-learn 1.2.0: Pipelines Can Finally Return Pandas DataFrames</p>
+<p>The new version of my all-time favorite machine learning library will bring lots of interesting new features. However, the absolute highlight is the new .set_output() method that we can configure to return DataFrame objects:</p>
+<p>For example</p>
+<p>scalar = StandardScaler().set_output(transform=“pandas”) scalar.fit(X_df) ​ # X_trans_df is a pandas DataFrame X_trans_df = scalar.transform(X_df)</p>
+<p>or</p>
+<p>log_reg = make_pipeline( &nbsp; &nbsp;SimpleImputer(), StandardScaler(), LogisticRegression()) log_reg.set_output(transform=“pandas”)</p>
+<p>This will help us eliminate many workarounds in the future where we need to pass around column names.</p>
+<p>You can learn more about the other new features in the What’s New in v 1.2 docs.</p>
+<p>While it is not officially out yet, you can already check out the sklearn 1.2dev0 version by installing the nightly build:</p>
+<p>pip install –pre –extra-index https://pypi.anaconda.org/scipy-wheels-nightly/simple scikit-learn</p>
+<p>Embetter: Embeddings for Scikit-Learn</p>
+<p>I recently stumbled upon embetter, a little scikit-learn compatible library centered around embeddings for computer vision and text. Using embetter, you can build a classifier pipeline that trains a logistic regression model on sentence embeddings of a transformer in 4 lines of code:</p>
+<p>text_emb_pipeline = make_pipeline( &nbsp;ColumnGrabber(“text”), &nbsp;SentenceEncoder(‘all-MiniLM-L6-v2’) &nbsp;LogisticRegression() )</p>
+<p>It probably won’t break any predictive performance records, but it’s a nice, quick performance baseline when working with text and image datasets.</p>
+<p>Lightning 1.8: Colossal AI for Large Transformers</p>
+<p>A new Lightning release (formerly PyTorch Lightning) is out! Befitting this language model-themed newsletter issue, it features a new Trainer strategy, Colossal-AI.</p>
+</section>
+</section>
+<section id="select-the-strategy-with-good-defaults" class="level1">
+<h1>Select the strategy with good defaults</h1>
+<p>trainer = Trainer(strategy=“colossalai”)</p>
+<p>As its name implies, Colossal-AI allows us to train very large transformer models by implementing different parallelism algorithms:</p>
+<p>Data parallelism</p>
+<p>Pipeline parallelism</p>
+<p>1D, 2D, 2.5D, 3D tensor parallelism</p>
+<p>Sequence parallelism</p>
+<p>Zero redundancy optimization</p>
+<p>(What are those and how do they work? This is an excellent topic for the Machine learning Questions &amp; Answers section!)</p>
+<p>You can read more about the other features in the new Lightning 1.8 release in the Changelog here.</p>
+<p>Better Transformers in PyTorch 1.13</p>
+<p>Ahead of the PyTorch Conference next month, there is a new release of PyTorch as well! Among the highlights is the now-stable version of BetterTransformer, which was previously included as a beta version in 1.12. BetterTransformer is geared towards transformer inference in production. You can learn more about it in this tutorial here.</p>
+<p>Muse: Diffusion models in production</p>
+<p>Our team at Lightning AI launched the Muse app, which showcases how you can put a large model like Stable Diffusion into production. Of course, the code is fully open source.</p>
+<p>The app comes with a step-by-step article (Diffusion Models in Production) on lessons learned and things to consider if you want to make your model scale to thousands of users, from autoscaling to dynamic batching.</p>
+<p>Machine Learning Questions &amp; Answers</p>
+<p>Are you interested in learning something new, trying to practice your knowledge, or prepare for an interview? This section features questions that may (or may not) help!</p>
+<p>What are the different mechanisms for parallelizing the training of large machine learning models using multiple GPUs? (Hint: there are at least 5!) And what are the advantages and disadvantages of these multi-GPU training paradigms?</p>
+<p>Answers to last week’s questions</p>
+<p>Question 1: What is the distributional hypothesis in NLP? Where is it used, and how far does it hold true?</p>
+<p>According to the distributional hypothesis, words occurring in the same contexts tend to have similar meanings (original source: Distributional Structure by Zellig S. Harris, 1954). In other words, the more similar the meanings of two words are, the more often they appear in similar contexts. So, for example, the words cat and dog often occur in similar contexts and are more related (both are mammals and pets) than a cat and a sandwich. Looking at large datasets, this may hold more or less, but it is easy to construct individual counter-examples.</p>
+<p>The distributional hypothesis is the main idea behind Word2vec, and many natural language transformer models rely on this idea (for example, the masked language model in BERT and the next-word pretraining task used in GPT).</p>
+<p>Question 2: What is the difference between stateless and stateful training? And when to use which?</p>
+<p>Both stateless (re)training and stateful training refer to different ways of training a production model. Stateless training is like a sliding window that retrains the model on different parts of the data from a given data stream. In stateful training, we train the model on an initial batch of data and then update it periodically (as opposed to retraining it) when new data arrives.</p>
+<p>Stateful vs stateless training</p>
+<p>One paradigm is not universally better than the other. However, an advantage of stateful training is that it doesn’t require permanent data storage. On the other hand, storing data, if possible, is still a good idea because the model might suffer from “bad” updates, and (temporarily) switching to stateless retraining might make sense.</p>
+<p>Question 3: What is the difference between recursion and dynamic programming?</p>
+<p>Both recursion and dynamic programming are algorithmic programming techniques.</p>
+<p>In recursion, we divide a problem into smaller subproblems in an iterative fashion, often called “divide-and-conquer.”</p>
+<p>Dynamic programming avoids computing solutions to the same subproblems by storing solutions to subproblems in a data structure that allows fast (constant time) look-ups, for example, dictionaries. Storing the subproblems is also often called “memoization” (not to be confused with “memorization”).</p>
+<p>In practice, we often apply dynamic programming to recursive algorithms.</p>
+<p>Notable Quote</p>
+<p>AI/ML as a field moves so so fast. Finding myself saying “back in the day when I was in grad school” when discussing some methods…like a 60-year-old lady. I graduated only two years ago lol.</p>
+<p>– Adji Bousso Dieng</p>
+<p>Upcoming Events</p>
+<p>NeurIPS 2022 (the leading machine learning &amp; AI conference) is coming up soon: Nov 28th through Dec 1st, 2022.</p>
+<p>If you are attending, stop by and say hello! I’ll co-host a workshop social on “Industry, Academia, and the In-Betweens” (the transition from academia to industry). There will be lots of interesting topics to discuss!</p>
+<p>You can find more details on the event website here.</p>
+<p>PyTorch Conference 2022 is happening on Dec 2nd, 2022 as a satellite event to NeurIPS in New Orleans. If you are planning on attending, I will be there, too – come say hello!</p>
+<p>Study &amp; Productivity Tips</p>
+<p>When it comes to productivity workflows, there are a lot of things I’d love to share. However, the one topic many people ask me about is how I keep up with machine learning &amp; AI at large and how I find interesting papers.</p>
+<p>From 2018-2021, I served as a moderator for the machine learning category on arXiv. Several times a week, I read the titles of the 100-300 machine learning manuscripts uploaded daily. I can tell you the problem is not finding interesting papers but how to avoid getting distracted – how to prioritize and manage your time.</p>
+<p>The internet is amazing. There is so much cool stuff out there. But the bitter truth is we can’t consume it all. This is particularly true for the machine learning field, which is moving too fast and has way too many interesting subcategories: Activation functions, autoML, calibration, causal inference, CNN architectures …</p>
+<p>How I avoid the fear of missing out is to make lists. I have a list of each major category that I find interesting. And there are a lot of categories that are interesting!</p>
+<p>In each list, I collect interesting books, research articles, blog posts, videos, Reddit discussions, and sometimes even Twitter threads. Do I read it all? No, keeping up with that would be a full-time job. And I only capture some of the interesting stuff. Typically, I only focus on resources that can help me learn something new (as opposed to building a broad knowledge base and recreating a personal Wikipedia).</p>
+<p>Then, I pick out a handful of resources I want to read throughout the week (having a weekly review routine is a topic for another time). Doing this, I realize that 95% of the stuff I captured is not that important (versus some higher priority stuff related to your current project). So, ignoring resources doesn’t mean you were lazy or missing out, but that we are defining your priorities and doing the most important stuff. (And hey, keeping these lists is often helpful, sometimes they are very convenient for a writing or research project!)</p>
+<p>What are some resources that I use and check?</p>
+<p>I have Google Scholar keyword alerts (e.g., for the deep tabular methods I got recently interested in and several others)</p>
+<p>Papers with code</p>
+<p>I get most of my ML news from following the right people on Twitter</p>
+<p>There are also some newsletters that I really like (e.g., Import AI, The Batch)</p>
+<p>I sometimes (but rarely) check the ML subreddit</p>
+<p>(PS: In the screenshot above, you may have noticed that I use OneNote for these lists. Why OneNote? Like in many contexts, the tool doesn’t matter; it’s more about the habit and the workflow. I just adopted OneNote for this purpose since it’s frictionless for copy &amp; paste (Markdown always requires an extra step for saving and inserting screenshots). Plus, it syncs across devices – a nice thing when you are at your favorite tea shop or coffee house and want to look something up in a heated discussion. Of course, there are a lot of other tools out there that work equally well or have different trade-offs. But again, the tool doesn’t really matter. Just choose what works for you.)</p>
+<p>This magazine is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of one of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>Machine Learning with PyTorch and Scikit-Learn, Machine Learning Q and AI, and Build a Large Language Model (from Scratch)</p>
+<p>Your support means a great deal! Thank you!</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

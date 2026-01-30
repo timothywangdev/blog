@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>llm-research-papers-the-2024-list – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#llm-research-papers-the-2024-list" id="toc-llm-research-papers-the-2024-list" class="nav-link active" data-scroll-target="#llm-research-papers-the-2024-list">LLM Research Papers: The 2024 List</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="llm-research-papers-the-2024-list" class="level1">
+<h1>LLM Research Papers: The 2024 List</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/llm-research-papers-the-2024-list</p>
+<p><strong>Likes:</strong> LIKE (9)</p>
+<p><strong>Image Count:</strong> 2</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!WXSG!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9390f1a2-1dd5-4471-9ed7-80359f95639a_1616x2066.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Bonus materials in the GitHub repository (stars highlight my personal favorites)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!woQp!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fea1152a0-18d9-4a8a-9398-c6b1ca67726a_1600x900.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Build a Large Language Model (From Scratch) now available on Amazon</li>
+</ul></li>
+</ol>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>It’s been a very eventful and exciting year in AI research. This is especially true if you are interested in LLMs.</p>
+<p>I had big plans for this December edition and was planning to publish a new article with a discussion of all my research highlights from 2024. I still plan to do so, but due to an accident and serious injury, I am currently unable to work at a computer and finish the draft. But I hope to recover in the upcoming weeks and be back on my feet soon.</p>
+<p>In the meantime, I want to share my running bookmark list of many fascinating (mostly LLM-related) papers I stumbled upon in 2024. It’s just a list, but maybe it will come in handy for those who are interested in finding some gems to read for the holidays.</p>
+<p>And if you are interested in more code-heavy reading and tinkering, My Build A Large Language Model (From Scratch) book is out on Amazon as of last month.</p>
+<p>In addition, I added a lot of bonus materials to the GitHub repository.</p>
+<p>Bonus materials in the GitHub repository (stars highlight my personal favorites)</p>
+<p>Thanks for your understanding and support, and I hope to make a full recovery soon and be back with the Research Highlights 2024 article in a few weeks!</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<p>January 2024</p>
+<p>1 Jan, Astraios: Parameter-Efficient Instruction Tuning Code Large Language Models, https://arxiv.org/abs/2401.00788</p>
+<p>2 Jan, A Comprehensive Study of Knowledge Editing for Large Language Models, https://arxiv.org/abs/2401.01286</p>
+<p>2 Jan, LLM Maybe LongLM: Self-Extend LLM Context Window Without Tuning, https://arxiv.org/abs/2401.01325</p>
+<p>2 Jan, Self-Play Fine-Tuning Converts Weak Language Models to Strong Language Models, https://arxiv.org/abs/2401.01335</p>
+<p>2 Jan, LLaMA Beyond English: An Empirical Study on Language Capability Transfer, https://arxiv.org/abs/2401.01055</p>
+<p>3 Jan, A Mechanistic Understanding of Alignment Algorithms: A Case Study on DPO and Toxicity, https://arxiv.org/abs/2401.01967</p>
+<p>4 Jan, LLaMA Pro: Progressive LLaMA with Block Expansion, https://arxiv.org/abs/2401.02415</p>
+<p>4 Jan, LLM Augmented LLMs: Expanding Capabilities through Composition, https://arxiv.org/abs/2401.02412</p>
+<p>4 Jan, Blending Is All You Need: Cheaper, Better Alternative to Trillion-Parameters LLM, https://arxiv.org/abs/2401.02994</p>
+<p>5 Jan, DeepSeek LLM: Scaling Open-Source Language Models with Longtermism, https://arxiv.org/abs/2401.02954</p>
+<p>5 Jan, Denoising Vision Transformers, https://arxiv.org/abs/2401.02957</p>
+<p>7 Jan, Soaring from 4K to 400K: Extending LLM’s Context with Activation Beacon, https://arxiv.org/abs/2401.03462</p>
+<p>8 Jan, Mixtral of Experts, https://arxiv.org/abs/2401.04088</p>
+<p>8 Jan, MoE-Mamba: Efficient Selective State Space Models with Mixture of Experts, https://arxiv.org/abs/2401.04081</p>
+<p>8 Jan, A Minimaximalist Approach to Reinforcement Learning from Human Feedback, https://arxiv.org/abs/2401.04056</p>
+<p>9 Jan, RoSA: Accurate Parameter-Efficient Fine-Tuning via Robust Adaptation, https://arxiv.org/abs/2401.04679</p>
+<p>10 Jan, Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training, https://arxiv.org/abs/2401.05566</p>
+<p>11 Jan, Transformers are Multi-State RNNs, https://arxiv.org/abs/2401.06104</p>
+<p>11 Jan, A Closer Look at AUROC and AUPRC under Class Imbalance, https://arxiv.org/abs/2401.06091</p>
+<p>12 Jan, An Experimental Design Framework for Label-Efficient Supervised Finetuning of Large Language Models, https://arxiv.org/abs/2401.06692</p>
+<p>16 Jan, Tuning Language Models by Proxy, https://arxiv.org/abs/2401.08565</p>
+<p>16 Jan, Scalable Pre-training of Large Autoregressive Image Models, https://arxiv.org/abs/2401.08541</p>
+<p>16 Jan, Code Generation with AlphaCodium: From Prompt Engineering to Flow Engineering, https://arxiv.org/abs/2401.08500</p>
+<p>16 Jan, RAG vs Fine-tuning: Pipelines, Tradeoffs, and a Case Study on Agriculture, https://arxiv.org/abs/2401.08406</p>
+<p>17 Jan, ReFT: Reasoning with Reinforced Fine-Tuning, https://arxiv.org/abs/2401.08967</p>
+<p>18 Jan, DiffusionGPT: LLM-Driven Text-to-Image Generation System, https://arxiv.org/abs/2401.10061</p>
+<p>18 Jan, Self-Rewarding Language Models, https://arxiv.org/abs/2401.10020</p>
+<p>18 Jan, VMamba: Visual State Space Model, https://arxiv.org/abs/2401.10166</p>
+<p>19 Jan, Knowledge Fusion of Large Language Models, https://arxiv.org/abs/2401.10491</p>
+<p>22 Jan, SpatialVLM: Endowing Vision-Language Models with Spatial Reasoning Capabilities, https://arxiv.org/abs/2401.12168</p>
+<p>22 Jan, WARM: On the Benefits of Weight Averaged Reward Models, https://arxiv.org/abs/2401.12187</p>
+<p>22 Jan, Spotting LLMs With Binoculars: Zero-Shot Detection of Machine-Generated Text, https://arxiv.org/abs/2401.12070</p>
+<p>24 Jan, MambaByte: Token-free Selective State Space Model, https://arxiv.org/abs/2401.13660</p>
+<p>24 Jan, SpacTor-T5: Pre-training T5 Models with Span Corruption and Replaced Token Detection, https://arxiv.org/abs/2401.13160</p>
+<p>25 Jan, Rethinking Patch Dependence for Masked Autoencoders, https://arxiv.org/abs/2401.14391</p>
+<p>25 Jan, Pix2gestalt: Amodal Segmentation by Synthesizing Wholes, https://arxiv.org/abs/2401.14398</p>
+<p>25 Jan, Multimodal Pathway: Improve Transformers with Irrelevant Data from Other Modalities, https://arxiv.org/abs/2401.14405</p>
+<p>26 Jan, EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty, https://arxiv.org/abs/2401.15077</p>
+<p>29 Jan, MoE-LLaVA: Mixture of Experts for Large Vision-Language Models, https://arxiv.org/abs/2401.15947</p>
+<p>29 Jan, Rephrasing the Web: A Recipe for Compute and Data-Efficient Language Modeling, https://arxiv.org/abs/2401.16380</p>
+<p>31 Jan, KVQuant: Towards 10 Million Context Length LLM Inference with KV Cache Quantization, https://arxiv.org/abs/2401.18079</p>
+<p>February 2024</p>
+<p>1 Feb, Efficient Exploration for LLMs, https://arxiv.org/abs/2402.00396</p>
+<p>1 Feb, OLMo: Accelerating the Science of Language Models, https://arxiv.org/abs/2402.00838</p>
+<p>1 Feb, Tiny Titans: Can Smaller Large Language Models Punch Above Their Weight in the Real World for Meeting Summarization?, https://arxiv.org/abs/2402.00841</p>
+<p>1 Feb, Repeat After Me: Transformers are Better than State Space Models at Copying, https://arxiv.org/abs/2402.01032</p>
+<p>2 Feb, LiPO: Listwise Preference Optimization through Learning-to-Rank, https://arxiv.org/abs/2402.01878</p>
+<p>2 Feb, FindingEmo: An Image Dataset for Emotion Recognition in the Wild, https://arxiv.org/abs/2402.01355</p>
+<p>3 Feb, More Agents Is All You Need, https://arxiv.org/abs/2402.05120</p>
+<p>5 Feb, DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models, https://arxiv.org/abs/2402.03300</p>
+<p>6 Feb, MobileVLM V2: Faster and Stronger Baseline for Vision Language Model, https://arxiv.org/abs/2402.03766</p>
+<p>6 Feb, A Phase Transition Between Positional and Semantic Learning in a Solvable Model of Dot-Product Attention, https://arxiv.org/abs/2402.03902</p>
+<p>6 Feb, Scaling Laws for Downstream Task Performance of Large Language Models, https://arxiv.org/abs/2402.04177</p>
+<p>6 Feb, MOMENT: A Family of Open Time-series Foundation Models, https://arxiv.org/abs/2402.03885</p>
+<p>6 Feb, Vision Superalignment: Weak-to-Strong Generalization for Vision Foundation Models, https://arxiv.org/abs/2402.03749</p>
+<p>6 Feb, Self-Discover: Large Language Models Self-Compose Reasoning Structures, https://arxiv.org/abs/2402.03620</p>
+<p>7 Feb, Grandmaster-Level Chess Without Search, https://arxiv.org/abs/2402.04494</p>
+<p>7 Feb, Direct Language Model Alignment from Online AI Feedback, https://arxiv.org/abs/2402.04792</p>
+<p>8 Feb, Buffer Overflow in Mixture of Experts, https://arxiv.org/abs/2402.05526</p>
+<p>9 Feb, The Boundary of Neural Network Trainability is Fractal, https://arxiv.org/abs/2402.06184</p>
+<p>11 Feb, ODIN: Disentangled Reward Mitigates Hacking in RLHF, https://arxiv.org/abs/2402.07319</p>
+<p>12 Feb, Policy Improvement using Language Feedback Models, https://arxiv.org/abs/2402.07876</p>
+<p>12 Feb, Scaling Laws for Fine-Grained Mixture of Experts, https://arxiv.org/abs/2402.07871</p>
+<p>12 Feb, Aya Model: An Instruction Finetuned Open-Access Multilingual Language Model, https://arxiv.org/abs/2402.07610</p>
+<p>12 Feb, Step-On-Feet Tuning: Scaling Self-Alignment of LLMs via Bootstrapping, https://arxiv.org/abs/2402.07610</p>
+<p>12 Feb, Suppressing Pink Elephants with Direct Principle Feedback, https://arxiv.org/abs/2402.07896</p>
+<p>13 Feb, World Model on Million-Length Video And Language With RingAttention, https://arxiv.org/abs/2402.08268</p>
+<p>13 Feb, Mixtures of Experts Unlock Parameter Scaling for Deep RL, https://arxiv.org/abs/2402.08609</p>
+<p>14 Feb, DoRA: Weight-Decomposed Low-Rank Adaptation, https://arxiv.org/abs/2402.09353</p>
+<p>14 Feb, Transformers Can Achieve Length Generalization But Not Robustly, https://arxiv.org/abs/2402.09371</p>
+<p>15 Feb, BASE TTS: Lessons From Building a Billion-Parameter Text-to-Speech Model on 100K Hours of Data, https://arxiv.org/abs/2402.08093</p>
+<p>15 Feb, Recovering the Pre-Fine-Tuning Weights of Generative Models, https://arxiv.org/abs/2402.10208</p>
+<p>15 Feb, Generative Representational Instruction Tuning, https://arxiv.org/abs/2402.09906</p>
+<p>16 Feb, FinTral: A Family of GPT-4 Level Multimodal Financial Large Language Models, https://arxiv.org/abs/2402.10986</p>
+<p>17 Feb, OneBit: Towards Extremely Low-bit Large Language Models, https://arxiv.org/abs/2402.11295</p>
+<p>18 Feb, LongAgent: Scaling Language Models to 128k Context through Multi-Agent Collaboration, https://arxiv.org/abs/2402.11550</p>
+<p>19 Feb, Reformatted Alignment, https://arxiv.org/abs/2402.12219</p>
+<p>19 Feb, AnyGPT: Unified Multimodal LLM with Discrete Sequence Modeling, https://arxiv.org/abs/2402.12226</p>
+<p>19 Feb, Towards Cross-Tokenizer Distillation: the Universal Logit Distillation Loss for LLMs, https://arxiv.org/abs/2402.12030</p>
+<p>19 Feb, LoRA+: Efficient Low Rank Adaptation of Large Models, https://arxiv.org/abs/2402.12354</p>
+<p>20 Feb, Neural Network Diffusion, https://arxiv.org/abs/2402.13144</p>
+<p>21 Feb, YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information, https://arxiv.org/abs/2402.13616</p>
+<p>21 Feb, LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens, https://arxiv.org/abs/2402.13753</p>
+<p>21 Feb, Large Language Models for Data Annotation: A Survey, https://arxiv.org/abs/2402.13446</p>
+<p>22 Feb, TinyLLaVA: A Framework of Small-scale Large Multimodal Models, https://arxiv.org/abs/2402.14289</p>
+<p>22 Feb, Back to Basics: Revisiting REINFORCE Style Optimization for Learning from Human Feedback in LLMs, https://arxiv.org/abs/2402.14740</p>
+<p>23 Feb, Genie: Generative Interactive Environments, https://arxiv.org/abs/2402.15391</p>
+<p>26 Feb, CARTE: Pretraining and Transfer for Tabular Learning, https://arxiv.org/abs/2402.16785</p>
+<p>27 Feb, The Era of 1-bit LLMs: All Large Language Models are in 1.58 Bits, https://arxiv.org/abs/2402.17764</p>
+<p>27 Feb, Sora Generates Videos with Stunning Geometrical Consistency, https://arxiv.org/abs/2402.17403</p>
+<p>27 Feb, When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method, https://arxiv.org/abs/2402.17193</p>
+<p>29 Feb, Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models, https://arxiv.org/abs/2402.19427</p>
+<p>March 2024</p>
+<p>1 Mar, Learning and Leveraging World Models in Visual Representation Learning, https://arxiv.org/abs/2403.00504</p>
+<p>3 Mar, Improving LLM Code Generation with Grammar Augmentation, https://arxiv.org/abs/2403.01632</p>
+<p>3 Mar, The Hidden Attention of Mamba Models, https://arxiv.org/abs/2403.01590</p>
+<p>4 Mar, Training-Free Pretrained Model Merging, https://arxiv.org/abs/2403.01753</p>
+<p>4 Mar, Vision-RWKV: Efficient and Scalable Visual Perception with RWKV-Like Architectures, https://arxiv.org/abs/2403.02308</p>
+<p>5 Mar, The WMDP Benchmark: Measuring and Reducing Malicious Use With Unlearning, https://arxiv.org/abs/2403.03218</p>
+<p>5 Mar, Evolution Transformer: In-Context Evolutionary Optimization, https://arxiv.org/abs/2403.02985</p>
+<p>5 Mar, Enhancing Vision-Language Pre-training with Rich Supervisions, https://arxiv.org/abs/2403.03346</p>
+<p>5 Mar, Scaling Rectified Flow Transformers for High-Resolution Image Synthesis, https://arxiv.org/abs/2403.03206</p>
+<p>5 Mar, Design2Code: How Far Are We From Automating Front-End Engineering?, https://arxiv.org/abs/2403.03163</p>
+<p>6 Mar, ShortGPT: Layers in Large Language Models are More Redundant Than You Expect, https://arxiv.org/abs/2403.03853</p>
+<p>6 Mar, Backtracing: Retrieving the Cause of the Query, https://arxiv.org/abs/2403.03956</p>
+<p>6 Mar, Learning to Decode Collaboratively with Multiple Language Models, https://arxiv.org/abs/2403.03870</p>
+<p>6 Mar, SaulLM-7B: A pioneering Large Language Model for Law, https://arxiv.org/abs/2403.03883</p>
+<p>6 Mar, Are Language Models Puzzle Prodigies? Algorithmic Puzzles Unveil Serious Challenges in Multimodal Reasoning, https://arxiv.org/abs/2403.03864</p>
+<p>6 Mar, 3D Diffusion Policy, https://arxiv.org/abs/2403.03954</p>
+<p>6 Mar, MedMamba: Vision Mamba for Medical Image Classification, https://arxiv.org/abs/2403.03849</p>
+<p>6 Mar, GaLore: Memory-Efficient LLM Training by Gradient Low-Rank Projection, https://arxiv.org/abs/2403.03507</p>
+<p>6 Mar, Stop Regressing: Training Value Functions via Classification for Scalable Deep RL, https://arxiv.org/abs/2403.03950</p>
+<p>7 Mar, How Far Are We from Intelligent Visual Deductive Reasoning?, https://arxiv.org/abs/2403.04732</p>
+<p>7 Mar, Common 7B Language Models Already Possess Strong Math Capabilities, https://arxiv.org/abs/2403.04706</p>
+<p>8 Mar, Gemini 1.5: Unlocking Multimodal Understanding Across Millions of Tokens of Context, https://arxiv.org/abs/2403.05530</p>
+<p>8 Mar, Is Cosine-Similarity of Embeddings Really About Similarity?, https://arxiv.org/abs/2403.05440</p>
+<p>8 Mar, LLM4Decompile: Decompiling Binary Code with Large Language Models, https://arxiv.org/abs/2403.05286</p>
+<p>9 Mar, Algorithmic Progress in Language Models, https://arxiv.org/abs/2403.05812</p>
+<p>11 Mar, Stealing Part of a Production Language Model, https://arxiv.org/abs/2403.06634</p>
+<p>12 Mar, Chronos: Learning the Language of Time Series, https://arxiv.org/abs/2403.07815</p>
+<p>13 Mar, Simple and Scalable Strategies to Continually Pre-train Large Language Models, https://arxiv.org/abs/2403.08763</p>
+<p>13 Mar, Language Models Scale Reliably With Over-Training and on Downstream Tasks, https://arxiv.org/abs/2403.08540</p>
+<p>14 Mar, BurstAttention: An Efficient Distributed Attention Framework for Extremely Long Sequences, https://arxiv.org/abs/2403.09347</p>
+<p>14 Mar, LocalMamba: Visual State Space Model with Windowed Selective Scan, https://arxiv.org/abs/2403.09338</p>
+<p>14 Mar, GiT: Towards Generalist Vision Transformer through Universal Language Interface, https://arxiv.org/abs/2403.09394</p>
+<p>14 Mar, MM1: Methods, Analysis &amp; Insights from Multimodal LLM Pre-training, https://arxiv.org/abs/2403.09611</p>
+<p>15 Mar, RAFT: Adapting Language Model to Domain Specific RAG, https://arxiv.org/abs/2403.10131</p>
+<p>18 Mar, TnT-LLM: Text Mining at Scale with Large Language Models, https://arxiv.org/abs/2403.12173</p>
+<p>18 Mar, Decoding Compressed Trust: Scrutinizing the Trustworthiness of Efficient LLMs Under Compression, https://arxiv.org/abs/2403.15447</p>
+<p>19 Mar, PERL: Parameter Efficient Reinforcement Learning from Human Feedback, https://arxiv.org/abs/2403.10704</p>
+<p>20 Mar, RewardBench: Evaluating Reward Models for Language Modeling, https://arxiv.org/abs/2403.13787</p>
+<p>20 Mar, LlamaFactory: Unified Efficient Fine-Tuning of 100+ Language Models, https://arxiv.org/abs/2403.13372</p>
+<p>21 Mar, RakutenAI-7B: Extending Large Language Models for Japanese, https://arxiv.org/abs/2403.15484</p>
+<p>22 Mar, SiMBA: Simplified Mamba-Based Architecture for Vision and Multivariate Time Series, https://arxiv.org/abs/2403.15360</p>
+<p>22 Mar, Can Large Language Models Explore In-Context?, https://arxiv.org/abs/2403.15371</p>
+<p>22 Mar, LLM2LLM: Boosting LLMs with Novel Iterative Data Enhancement, https://arxiv.org/abs/2403.15042</p>
+<p>25 Mar, LLM Agent Operating System, https://arxiv.org/abs/2403.16971</p>
+<p>26 Mar, The Unreasonable Ineffectiveness of the Deeper Layers, https://arxiv.org/abs/2403.17887</p>
+<p>27 Mar, BioMedLM: A 2.7B Parameter Language Model Trained On Biomedical Text, https://arxiv.org/abs/2403.18421</p>
+<p>27 Mar, ViTAR: Vision Transformer with Any Resolution, https://arxiv.org/abs/2403.18361</p>
+<p>27 Mar, Long-form Factuality in Large Language Models, https://arxiv.org/abs/2403.18802</p>
+<p>27 Mar, Mini-Gemini: Mining the Potential of Multi-modality Vision Language Models, https://arxiv.org/abs/2403.18814</p>
+<p>26 Mar, LISA: Layerwise Importance Sampling for Memory-Efficient Large Language Model Fine-Tuning, https://arxiv.org/abs/2403.17919</p>
+<p>26 Mar, Mechanistic Design and Scaling of Hybrid Architectures, https://arxiv.org/abs/2403.17844</p>
+<p>28 Mar, MagicLens: Self-Supervised Image Retrieval with Open-Ended Instructions, https://arxiv.org/abs/2403.19651</p>
+<p>28 Mar, Model Stock: All We Need Is Just a Few Fine-Tuned Models, https://arxiv.org/abs/2403.19522</p>
+<p>April 2024</p>
+<p>1 Apr, Do Language Models Plan Ahead for Future Tokens?, https://arxiv.org/abs/2404.00859</p>
+<p>1 Apr, Bigger is not Always Better: Scaling Properties of Latent Diffusion Models, https://arxiv.org/abs/2404.01367</p>
+<p>1 Apr, The Fine Line: Navigating Large Language Model Pretraining with Down-streaming Capability Analysis, https://arxiv.org/abs/2404.01204</p>
+<p>1 Apr, Diffusion-RWKV: Scaling RWKV-Like Architectures for Diffusion Models, https://arxiv.org/abs/2404.04478</p>
+<p>2 Apr, Mixture-of-Depths: Dynamically Allocating Compute in Transformer-Based Language Models, https://arxiv.org/abs/2404.02258</p>
+<p>2 Apr, Long-context LLMs Struggle with Long In-context Learning, https://arxiv.org/abs/2404.02060</p>
+<p>2 Apr, Emergent Abilities in Reduced-Scale Generative Language Models, https://arxiv.org/abs/2404.02204</p>
+<p>2 Apr, Jailbreaking Leading Safety-Aligned LLMs with Simple Adaptive Attacks, https://arxiv.org/abs/2404.02151</p>
+<p>3 Apr, On the Scalability of Diffusion-based Text-to-Image Generation, https://arxiv.org/abs/2404.02883</p>
+<p>3 Apr, BAdam: A Memory Efficient Full Parameter Training Method for Large Language Models, https://arxiv.org/abs/2404.02827</p>
+<p>3 Apr, Cross-Attention Makes Inference Cumbersome in Text-to-Image Diffusion Models, https://arxiv.org/abs/2404.02747</p>
+<p>4 Apr, Direct Nash Optimization: Teaching Language Models to Self-Improve with General Preferences, https://arxiv.org/abs/2404.02151</p>
+<p>4 Apr, Training LLMs over Neurally Compressed Text, https://arxiv.org/abs/2404.03626</p>
+<p>4 Apr, CantTalkAboutThis: Aligning Language Models to Stay on Topic in Dialogues, https://arxiv.org/abs/2404.03820</p>
+<p>5 Apr, ReFT: Representation Finetuning for Language Models, https://arxiv.org/abs/2404.03592</p>
+<p>5 Apr, Verifiable by Design: Aligning Language Models to Quote from Pre-Training Data, https://arxiv.org/abs/2404.03862</p>
+<p>5 Apr, Sigma: Siamese Mamba Network for Multi-Modal Semantic Segmentation, https://arxiv.org/abs/2404.04256</p>
+<p>8 Apr, AutoCodeRover: Autonomous Program Improvement, https://arxiv.org/abs/2404.05427</p>
+<p>8 Apr, Eagle and Finch: RWKV with Matrix-Valued States and Dynamic Recurrence, https://arxiv.org/abs/2404.05892</p>
+<p>8 Apr, CodecLM: Aligning Language Models with Tailored Synthetic Data, https://arxiv.org/abs/2404.05875</p>
+<p>9 Apr, MiniCPM: Unveiling the Potential of Small Language Models with Scalable Training Strategies, https://arxiv.org/abs/2404.06395</p>
+<p>9 Apr, Elephants Never Forget: Memorization and Learning of Tabular Data in Large Language Models, https://arxiv.org/abs/2404.06209</p>
+<p>9 Apr, LLM2Vec: Large Language Models Are Secretly Powerful Text Encoders, https://arxiv.org/abs/2404.05961</p>
+<p>10 Apr, Adapting LLaMA Decoder to Vision Transformer, https://arxiv.org/abs/2404.06773</p>
+<p>10 Apr, Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention, https://arxiv.org/abs/2404.07143</p>
+<p>11 Apr, LLoCO: Learning Long Contexts Offline, https://arxiv.org/abs/2404.07979</p>
+<p>11 Apr, JetMoE: Reaching Llama2 Performance with 0.1M Dollars, https://arxiv.org/abs/2404.07413</p>
+<p>11 Apr, Best Practices and Lessons Learned on Synthetic Data for Language Models, https://arxiv.org/abs/2404.07503</p>
+<p>11 Apr, Rho-1: Not All Tokens Are What You Need, https://arxiv.org/abs/2404.07965</p>
+<p>12 Apr, Pre-training Small Base LMs with Fewer Tokens, https://arxiv.org/abs/2404.08634</p>
+<p>12 Apr, Dataset Reset Policy Optimization for RLHF, https://arxiv.org/abs/2404.08495</p>
+<p>13 Apr, LLM In-Context Recall is Prompt Dependent, https://arxiv.org/abs/2404.08865</p>
+<p>15 Apr, State Space Model for New-Generation Network Alternative to Transformers: A Survey, https://arxiv.org/abs/2404.09516</p>
+<p>15 Apr, Chinchilla Scaling: A Replication Attempt, https://arxiv.org/abs/2404.10102</p>
+<p>15 Apr, Learn Your Reference Model for Real Good Alignment, https://arxiv.org/abs/2404.09656</p>
+<p>16 Apr, Is DPO Superior to PPO for LLM Alignment? A Comprehensive Study, https://arxiv.org/abs/2404.10719</p>
+<p>16 Apr, Scaling (Down) CLIP: A Comprehensive Analysis of Data, Architecture, and Training Strategies, https://arxiv.org/abs/2404.08197</p>
+<p>16 Apr, How Faithful Are RAG Models? Quantifying the Tug-of-War Between RAG and LLMs’ Internal Prior, https://arxiv.org/abs/2404.10198</p>
+<p>17 Apr, A Survey on Retrieval-Augmented Text Generation for Large Language Models, https://arxiv.org/abs/2404.10981</p>
+<p>18 Apr, When LLMs are Unfit Use FastFit: Fast and Effective Text Classification with Many Classes, https://arxiv.org/abs/2404.12365</p>
+<p>18 Apr, Toward Self-Improvement of LLMs via Imagination, Searching, and Criticizing, https://arxiv.org/abs/2404.12253</p>
+<p>18 Apr, OpenBezoar: Small, Cost-Effective and Open Models Trained on Mixes of Instruction Data, https://arxiv.org/abs/2404.12195</p>
+<p>19 Apr, The Instruction Hierarchy: Training LLMs to Prioritize Privileged Instructions, https://arxiv.org/abs/2404.13208</p>
+<p>22 Apr, How Good Are Low-bit Quantized LLaMA3 Models? An Empirical Study, https://arxiv.org/abs/2404.14047</p>
+<p>22 Apr, Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone, https://arxiv.org/abs/2404.14219</p>
+<p>22 Apr, OpenELM: An Efficient Language Model Family with Open-source Training and Inference Framework, https://arxiv.org/abs/2404.14619</p>
+<p>22 Apr, A Survey on Self-Evolution of Large Language Models, https://arxiv.org/abs/2404.14662</p>
+<p>23 Apr, Multi-Head Mixture-of-Experts, https://arxiv.org/abs/2404.15045</p>
+<p>23 Apr, NExT: Teaching Large Language Models to Reason about Code Execution, https://arxiv.org/abs/2404.14662</p>
+<p>23 Apr, Graph Machine Learning in the Era of Large Language Models (LLMs), https://arxiv.org/abs/2404.14928</p>
+<p>24 Apr, Retrieval Head Mechanistically Explains Long-Context Factuality, https://arxiv.org/abs/2404.15574</p>
+<p>25 Apr, Layer Skip: Enabling Early Exit Inference and Self-Speculative Decoding, https://arxiv.org/abs/2404.16710</p>
+<p>25 Apr, Make Your LLM Fully Utilize the Context, https://arxiv.org/abs/2404.16811</p>
+<p>28 Apr, LoRA Land: 310 Fine-tuned LLMs that Rival GPT-4, A Technical Report, https://arxiv.org/abs/2405.00732</p>
+<p>30 Apr, Better &amp; Faster Large Language Models via Multi-token Prediction, https://arxiv.org/abs/2404.19737</p>
+<p>30 Apr, RAG and RAU: A Survey on Retrieval-Augmented Language Model in Natural Language Processing, https://arxiv.org/abs/2404.19543</p>
+<p>30 Apr, A Primer on the Inner Workings of Transformer-based Language Models, https://arxiv.org/abs/2405.00208</p>
+<p>30 Apr, When to Retrieve: Teaching LLMs to Utilize Information Retrieval Effectively, https://arxiv.org/abs/2404.19705</p>
+<p>30 Apr, KAN: Kolmogorov–Arnold Networks, https://arxiv.org/abs/2404.19756</p>
+<p>May 2024</p>
+<p>1 May, Is Bigger Edit Batch Size Always Better? An Empirical Study on Model Editing with Llama-3, https://arxiv.org/abs/2405.00664</p>
+<p>1 May, Self-Play Preference Optimization for Language Model Alignment, https://arxiv.org/abs/2405.00675</p>
+<p>1 May, A Careful Examination of Large Language Model Performance on Grade School Arithmetic, https://arxiv.org/abs/2405.00332</p>
+<p>2 May, Prometheus 2: An Open Source Language Model Specialized in Evaluating Other Language Models, https://arxiv.org/abs/2405.01535</p>
+<p>3 May, What Matters When Building Vision-Language Models?, https://arxiv.org/abs/2405.02246</p>
+<p>5 May, Is Flash Attention Stable?, https://arxiv.org/abs/2405.02803</p>
+<p>7 May, vAttention: Dynamic Memory Management for Serving LLMs without PagedAttention, https://arxiv.org/abs/2405.04437</p>
+<p>7 May, xLSTM: Extended Long Short-Term Memory, https://arxiv.org/abs/2405.04517</p>
+<p>8 May, You Only Cache Once: Decoder-Decoder Architectures for Language Models, https://arxiv.org/abs/2405.05254</p>
+<p>8 May, DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model, https://arxiv.org/abs/2405.04434</p>
+<p>8 May, Fishing for Magikarp: Automatically Detecting Under-trained Tokens in Large Language Models, https://arxiv.org/abs/2405.05417</p>
+<p>9 May, Does Fine-Tuning LLMs on New Knowledge Encourage Hallucinations?, https://arxiv.org/abs/2405.05904</p>
+<p>10 May, Value Augmented Sampling for Language Model Alignment and Personalization, https://arxiv.org/abs/2405.06639</p>
+<p>12 May, PHUDGE: Phi-3 as Scalable Judge, https://arxiv.org/abs/2405.08029</p>
+<p>13 May, RLHF Workflow: From Reward Modeling to Online RLHF, https://arxiv.org/abs/2405.07863</p>
+<p>15 May, LoRA Learns Less and Forgets Less, https://arxiv.org/abs/2405.09673</p>
+<p>15 May, Xmodel-VLM: A Simple Baseline for Multimodal Vision Language Model, https://arxiv.org/abs/2405.09215</p>
+<p>16 May, Chameleon: Mixed-Modal Early-Fusion Foundation Models, https://arxiv.org/abs/2405.09818</p>
+<p>17 May, Towards Modular LLMs by Building and Reusing a Library of LoRAs, https://arxiv.org/abs/2405.11157</p>
+<p>19 May, SLAB: Efficient Transformers with Simplified Linear Attention and Progressive Re-parameterized Batch Normalization, https://arxiv.org/abs/2405.11582</p>
+<p>20 May, MoRA: High-Rank Updating for Parameter-Efficient Fine-Tuning, https://arxiv.org/abs/2405.12130</p>
+<p>22 May, Attention as an RNN, https://arxiv.org/abs/2405.13956</p>
+<p>22 May, Dense Connector for MLLMs, https://arxiv.org/abs/2405.13800</p>
+<p>23 May, AlignGPT: Multi-modal Large Language Models with Adaptive Alignment Capability, https://arxiv.org/abs/2405.14129</p>
+<p>23 May, SimPO: Simple Preference Optimization with a Reference-Free Reward, https://arxiv.org/abs/2405.14734</p>
+<p>23 May, Instruction Tuning With Loss Over Instructions, https://arxiv.org/abs/2405.14394</p>
+<p>24 May, The Road Less Scheduled, https://arxiv.org/abs/2405.15682</p>
+<p>26 May, Stacking Your Transformers: A Closer Look at Model Growth for Efficient LLM Pre-Training, https://arxiv.org/abs/2405.15319</p>
+<p>26 May, gzip Predicts Data-dependent Scaling Laws, https://arxiv.org/abs/2405.16684</p>
+<p>27 May, Trans-LoRA: Towards Data-free Transferable Parameter Efficient Finetuning, https://arxiv.org/abs/2405.17258</p>
+<p>28 May, VeLoRA: Memory Efficient Training using Rank-1 Sub-Token Projections, https://arxiv.org/abs/2405.17991</p>
+<p>28 May, LLaMA-NAS: Efficient Neural Architecture Search for Large Language Models, https://arxiv.org/abs/2405.18377</p>
+<p>29 May, Contextual Position Encoding: Learning to Count What’s Important, https://arxiv.org/abs/2405.18719</p>
+<p>June 2024</p>
+<p>2 Jun, Show, Don’t Tell: Aligning Language Models with Demonstrated Feedback, https://arxiv.org/abs/2406.00888</p>
+<p>3 Jun, Skywork-MoE: A Deep Dive into Training Techniques for Mixture-of-Experts Language Models, https://arxiv.org/abs/2406.06563</p>
+<p>3 Jun, OLoRA: Orthonormal Low-Rank Adaptation of Large Language Models, https://arxiv.org/abs/2406.01775</p>
+<p>3 Jun, The Geometry of Categorical and Hierarchical Concepts in Large Language Models, https://arxiv.org/abs/2406.01506</p>
+<p>3 Jun, Towards Scalable Automated Alignment of LLMs: A Survey, https://arxiv.org/abs/2406.01252</p>
+<p>4 Jun, Scalable MatMul-free Language Modeling, https://arxiv.org/abs/2406.02528</p>
+<p>4 Jun, Block Transformer: Global-to-Local Language Modeling for Fast Inference, https://arxiv.org/abs/2406.02657</p>
+<p>6 Jun, Buffer of Thoughts: Thought-Augmented Reasoning with Large Language Models, https://arxiv.org/abs/2406.04271</p>
+<p>6 Jun, The Prompt Report: A Systematic Survey of Prompting Techniques, https://arxiv.org/abs/2406.06608</p>
+<p>6 Jun, Transformers Need Glasses! Information Over-Squashing in Language Tasks, https://arxiv.org/abs/2406.04267</p>
+<p>6 Jun, Are We Done with MMLU?, https://arxiv.org/abs/2406.04127</p>
+<p>6 Jun, Step-aware Preference Optimization: Aligning Preference with Denoising Performance at Each Step, https://arxiv.org/abs/2406.04314</p>
+<p>7 Jun, Boosting Large-scale Parallel Training Efficiency with C4: A Communication-Driven Approach, https://arxiv.org/abs/2406.04594</p>
+<p>7 Jun, CRAG – Comprehensive RAG Benchmark, https://arxiv.org/abs/2406.04744</p>
+<p>7 Jun, WildBench: Benchmarking LLMs with Challenging Tasks from Real Users in the Wild, https://arxiv.org/abs/2406.04770</p>
+<p>7 Jun, Mixture-of-Agents Enhances Large Language Model Capabilities, https://arxiv.org/abs/2406.04692</p>
+<p>7 Jun, BERTs are Generative In-Context Learners, https://arxiv.org/abs/2406.04823</p>
+<p>7 Jun, 3D-GRAND: A Million-Scale Dataset for 3D-LLMs with Better Grounding and Less Hallucination, https://arxiv.org/abs/2406.05132</p>
+<p>8 Jun, Creativity Has Left the Chat: The Price of Debiasing Language Models, https://arxiv.org/abs/2406.05587</p>
+<p>10 Jun, Autoregressive Model Beats Diffusion: Llama for Scalable Image Generation, https://arxiv.org/abs/2406.06525</p>
+<p>10 Jun, Margin-aware Preference Optimization for Aligning Diffusion Models Without Reference, https://arxiv.org/abs/2406.06424</p>
+<p>10 Jun, Husky: A Unified, Open-Source Language Agent for Multi-Step Reasoning, https://arxiv.org/abs/2406.06469</p>
+<p>10 Jun, Turbo Sparse: Achieving LLM SOTA Performance with Minimal Activated Parameters, https://arxiv.org/abs/2406.05955</p>
+<p>10 Jun, Self-Tuning: Instructing LLMs to Effectively Acquire New Knowledge through Self-Teaching, https://arxiv.org/abs/2406.06326</p>
+<p>11 Jun, An Image is Worth 32 Tokens for Reconstruction and Generation, https://arxiv.org/abs/2406.07550</p>
+<p>11 Jun, TextGrad: Automatic “Differentiation” via Text, https://arxiv.org/abs/2406.07496</p>
+<p>11 Jun, Simple and Effective Masked Diffusion Language Models, https://arxiv.org/abs/2406.07524</p>
+<p>11 Jun, Never Miss A Beat: An Efficient Recipe for Context Window Extension of Large Language Models with Consistent “Middle” Enhancement, https://arxiv.org/abs/2406.07138</p>
+<p>11 Jun, Samba: Simple Hybrid State Space Models for Efficient Unlimited Context Language Modeling, https://arxiv.org/abs/2406.07522</p>
+<p>12 Jun, Magpie: Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing, https://arxiv.org/abs/2406.08464</p>
+<p>12 Jun, What If We Recaption Billions of Web Images with LLaMA-3?, https://arxiv.org/abs/2406.08478</p>
+<p>12 Jun, Large Language Model Unlearning via Embedding-Corrupted Prompts, https://arxiv.org/abs/2406.07933</p>
+<p>12 Jun, Large Language Models Must Be Taught to Know What They Don’t Know, https://arxiv.org/abs/2406.08391</p>
+<p>12 Jun, An Empirical Study of Mamba-based Language Models, https://arxiv.org/abs/2406.07887</p>
+<p>12 Jun, Discovering Preference Optimization Algorithms with and for Large Language Models, https://arxiv.org/abs/2406.08414</p>
+<p>13 Jun, Transformers Meet Neural Algorithmic Reasoners, https://arxiv.org/abs/2406.09308</p>
+<p>13 Jun, MLKV: Multi-Layer Key-Value Heads for Memory Efficient Transformer Decoding, https://arxiv.org/abs/2406.09297</p>
+<p>13 Jun, An Image is Worth More Than 16x16 Patches: Exploring Transformers on Individual Pixels, https://arxiv.org/abs/2406.09415</p>
+<p>13 Jun, FouRA: Fourier Low Rank Adaptation, https://arxiv.org/abs/2406.08798</p>
+<p>14 Jun, Bootstrapping Language Models with DPO Implicit Rewards, https://arxiv.org/abs/2406.09760</p>
+<p>14 Jun, Be like a Goldfish, Don’t Memorize! Mitigating Memorization in Generative LLMs, https://arxiv.org/abs/2406.10209</p>
+<p>14 Jun, Regularizing Hidden States Enables Learning Generalizable Reward Model for LLMs, https://arxiv.org/abs/2406.10216</p>
+<p>16 Jun, THEANINE: Revisiting Memory Management in Long-term Conversations with Timeline-augmented Response Generation, https://arxiv.org/abs/2406.10996</p>
+<p>17 Jun, Task Me Anything, https://arxiv.org/abs/2406.11775</p>
+<p>17 Jun, How Do Large Language Models Acquire Factual Knowledge During Pretraining?, https://arxiv.org/abs/2406.11813</p>
+<p>17 Jun, mDPO: Conditional Preference Optimization for Multimodal Large Language Models, https://arxiv.org/abs/2406.11839</p>
+<p>17 Jun, Nemotron-4 340B Technical Report, https://arxiv.org/abs/2406.11704</p>
+<p>17 Jun, DataComp-LM: In Search of the Next Generation of Training Sets for Language Models, https://arxiv.org/abs/2406.11794</p>
+<p>17 Jun, Tokenization Falling Short: The Curse of Tokenization, https://arxiv.org/abs/2406.11687</p>
+<p>17 Jun, DeepSeek-Coder-V2: Breaking the Barrier of Closed-Source Models in Code Intelligence, https://arxiv.org/abs/2406.11931</p>
+<p>17 Jun, Unveiling Encoder-Free Vision-Language Models, https://arxiv.org/abs/2406.11832</p>
+<p>17 Jun, Iterative Length-Regularized Direct Preference Optimization: A Case Study on Improving 7B Language Models to GPT-4 Level, https://arxiv.org/abs/2406.11817</p>
+<p>17 Jun, HARE: HumAn pRiors, a key to small language model Efficiency, https://arxiv.org/abs/2406.11410</p>
+<p>17 Jun, Measuring memorization in RLHF for code completion, https://arxiv.org/abs/2406.11715</p>
+<p>17 Jun, Self-MoE: Towards Compositional Large Language Models with Self-Specialized Experts, https://arxiv.org/abs/2406.12034</p>
+<p>18 Jun, From RAGs to Rich Parameters: Probing How Language Models Utilize External Knowledge Over Parametric Information for Factual Queries, https://arxiv.org/abs/2406.12824</p>
+<p>18 Jun, Judging the Judges: Evaluating Alignment and Vulnerabilities in LLMs-as-Judges, https://arxiv.org/abs/2406.12624</p>
+<p>19 Jun, Can Long-Context Language Models Subsume Retrieval, RAG, SQL, and More?, https://arxiv.org/abs/2406.13121</p>
+<p>20 Jun, Instruction Pre-Training: Language Models are Supervised Multitask Learners, https://arxiv.org/abs/2406.14491</p>
+<p>20 Jun, Can LLMs Learn by Teaching? A Preliminary Study, https://arxiv.org/abs/2406.14629</p>
+<p>21 Jun, A Tale of Trust and Accuracy: Base vs.&nbsp;Instruct LLMs in RAG Systems, https://arxiv.org/abs/2406.14972</p>
+<p>21 Jun, LongRAG: Enhancing Retrieval-Augmented Generation with Long-context LLMs, https://arxiv.org/abs/2406.15319</p>
+<p>21 Jun, MoA: Mixture of Sparse Attention for Automatic Large Language Model Compression, https://arxiv.org/abs/2406.14909</p>
+<p>21 Jun, Efficient Continual Pre-training by Mitigating the Stability Gap, https://arxiv.org/abs/2406.14833</p>
+<p>24 Jun, Sparser is Faster and Less is More: Efficient Sparse Attention for Long-Range Transformers, https://arxiv.org/abs/2406.16747</p>
+<p>24 Jun, WARP: On the Benefits of Weight Averaged Rewarded Policies, https://arxiv.org/abs/2406.16768</p>
+<p>24 Jun, Adam-mini: Use Fewer Learning Rates To Gain More, https://arxiv.org/abs/2406.16793</p>
+<p>25 Jun, The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale, https://arxiv.org/abs/2406.17557</p>
+<p>25 Jun, LongIns: A Challenging Long-context Instruction-based Exam for LLMs, https://arxiv.org/abs/2406.17588</p>
+<p>25 Jun, Following Length Constraints in Instructions, https://arxiv.org/abs/2406.17744</p>
+<p>26 Jun, A Closer Look into Mixture-of-Experts in Large Language Models, https://arxiv.org/abs/2406.18219</p>
+<p>26 Jun, RouteLLM: Learning to Route LLMs with Preference Data, https://arxiv.org/abs/2406.18665</p>
+<p>26 Jun, Step-DPO: Step-wise Preference Optimization for Long-chain Reasoning of LLMs, https://arxiv.org/abs/2406.18629</p>
+<p>27 Jun, Dataset Size Recovery from LoRA Weights, https://arxiv.org/abs/2406.19395</p>
+<p>27 Jun, From Artificial Needles to Real Haystacks: Improving Retrieval Capabilities in LLMs by Finetuning on Synthetic Data, https://arxiv.org/abs/2406.19292</p>
+<p>27 Jun, Changing Answer Order Can Decrease MMLU Accuracy, https://arxiv.org/abs/2406.19470</p>
+<p>28 Jun, Direct Preference Knowledge Distillation for Large Language Models, https://arxiv.org/abs/2406.19774</p>
+<p>28 Jun, LLM Critics Help Catch LLM Bugs, https://arxiv.org/abs/2407.00215</p>
+<p>28 Jun, Scaling Synthetic Data Creation with 1,000,000,000 Personas, https://arxiv.org/abs/2406.20094</p>
+<p>Jul 2024</p>
+<p>1 Jul, LLM See, LLM Do: Guiding Data Generation to Target Non-Differentiable Objectives, https://arxiv.org/abs/2407.01490</p>
+<p>1 Jul, Searching for Best Practices in Retrieval-Augmented Generation, https://arxiv.org/abs/2407.01219</p>
+<p>1 Jul, Let the Expert Stick to His Last: Expert-Specialized Fine-Tuning for Sparse Architectural Large Language Models, https://arxiv.org/abs/2407.01906</p>
+<p>1 Jul, Diffusion Forcing: Next-token Prediction Meets Full-Sequence Diffusion, https://arxiv.org/abs/2407.01392</p>
+<p>1 Jul, Eliminating Position Bias of Language Models: A Mechanistic Approach, https://arxiv.org/abs/2407.01100</p>
+<p>2 Jul, JMInference 1.0: Accelerating Pre-filling for Long-Context LLMs via Dynamic Sparse Attention, https://arxiv.org/abs/2407.02490</p>
+<p>2 Jul, TokenPacker: Efficient Visual Projector for Multimodal LLM, https://arxiv.org/abs/2407.02392</p>
+<p>2 Jul, Reasoning in Large Language Models: A Geometric Perspective, https://arxiv.org/abs/2407.02678</p>
+<p>2 Jul, RankRAG: Unifying Context Ranking with Retrieval-Augmented Generation in LLMs, https://arxiv.org/abs/2407.02485</p>
+<p>3 Jul, AgentInstruct: Toward Generative Teaching with Agentic Flows, https://arxiv.org/abs/2407.03502</p>
+<p>3 Jul, HEMM: Holistic Evaluation of Multimodal Foundation Models, https://arxiv.org/abs/2407.03418</p>
+<p>4 Jul, Mixture of A Million Experts, https://arxiv.org/abs/2407.04153</p>
+<p>5 Jul, Learning to (Learn at Test Time): RNNs with Expressive Hidden States, https://arxiv.org/abs/2407.04620</p>
+<p>9 Jul, Vision Language Models Are Blind, https://arxiv.org/abs/2407.06581</p>
+<p>9 Jul, Self-Recognition in Language Models, https://arxiv.org/abs/2407.06946</p>
+<p>10 Jul, Inference Performance Optimization for Large Language Models on CPUs, https://arxiv.org/abs/2407.07304</p>
+<p>11 Jul, Gradient Boosting Reinforcement Learning, https://arxiv.org/abs/2407.08250</p>
+<p>11 Jul, FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision, https://arxiv.org/abs/2407.08608</p>
+<p>12 Jul, SpreadsheetLLM: Encoding Spreadsheets for Large Language Models, https://arxiv.org/abs/2407.09025</p>
+<p>12 Jul, New Desiderata for Direct Preference Optimization, https://arxiv.org/abs/2407.09072</p>
+<p>12 Jul, Context Embeddings for Efficient Answer Generation in RAG, https://arxiv.org/abs/2407.09252</p>
+<p>15 Jul, Qwen2 Technical Report, https://arxiv.org/abs/2407.10671</p>
+<p>15 Jul, The Good, The Bad, and The Greedy: Evaluation of LLMs Should Not Ignore Non-Determinism, https://arxiv.org/abs/2407.10457</p>
+<p>15 Jul, From GaLore to WeLore: How Low-Rank Weights Non-uniformly Emerge from Low-Rank Gradients, https://arxiv.org/abs/2407.11239</p>
+<p>16 Jul, GoldFinch: High Performance RWKV/Transformer Hybrid with Linear Pre-Fill and Extreme KV-Cache Compression, https://arxiv.org/abs/2407.12077</p>
+<p>16 Jul, Scaling Diffusion Transformers to 16 Billion Parameters, https://arxiv.org/abs/2407.11633</p>
+<p>16 Jul, NeedleBench: Can LLMs Do Retrieval and Reasoning in 1 Million Context Window?, https://arxiv.org/abs/2407.11963</p>
+<p>17 Jul, Patch-Level Training for Large Language Models, https://arxiv.org/abs/2407.12665</p>
+<p>17 Jul, LMMs-Eval: Reality Check on the Evaluation of Large Multimodal Models, https://arxiv.org/abs/2407.12772</p>
+<p>17 Jul, A Survey of Prompt Engineering Methods in Large Language Models for Different NLP Tasks, https://arxiv.org/abs/2407.12994</p>
+<p>17 Jul, Spectra: A Comprehensive Study of Ternary, Quantized, and FP16 Language Models, https://arxiv.org/abs/2407.12327</p>
+<p>18 Jul, Attention Overflow: Language Model Input Blur during Long-Context Missing Items Recommendation, https://arxiv.org/abs/2407.13481</p>
+<p>18 Jul, Weak-to-Strong Reasoning, https://arxiv.org/abs/2407.13647</p>
+<p>18 Jul, Understanding Reference Policies in Direct Preference Optimization, https://arxiv.org/abs/2407.13709</p>
+<p>18 Jul, Scaling Laws with Vocabulary: Larger Models Deserve Larger Vocabularies, https://arxiv.org/abs/2407.13623</p>
+<p>19 Jul, BOND: Aligning LLMs with Best-of-N Distillation, https://arxiv.org/abs/2407.14622</p>
+<p>19 Jul, Compact Language Models via Pruning and Knowledge Distillation, https://arxiv.org/abs/2407.14679</p>
+<p>19 Jul, LazyLLM: Dynamic Token Pruning for Efficient Long Context LLM Inference, https://arxiv.org/abs/2407.14057</p>
+<p>22 Jul, Mini-Sequence Transformer: Optimizing Intermediate Memory for Long Sequences Training, https://arxiv.org/abs/2407.15892</p>
+<p>22 Jul, DDK: Distilling Domain Knowledge for Efficient Large Language Models, https://arxiv.org/abs/2407.16154</p>
+<p>23 Jul, Generation Constraint Scaling Can Mitigate Hallucination, https://arxiv.org/abs/2407.16908</p>
+<p>23 Jul, Retrieval Augmented Generation or Long-Context LLMs? A Comprehensive Study and Hybrid Approach, https://arxiv.org/abs/2407.16833</p>
+<p>23 Jul, Course-Correction: Safety Alignment Using Synthetic Preferences, https://arxiv.org/abs/2407.16637</p>
+<p>26 Jul, Data Mixture Inference: What do BPE Tokenizers Reveal about their Training Data?, https://arxiv.org/abs/2407.16607</p>
+<p>28 Jul, Meta-Rewarding Language Models: Self-Improving Alignment with LLM-as-a-Meta-Judge, https://arxiv.org/abs/2407.19594</p>
+<p>29 Jul, Improving Retrieval Augmented Language Model with Self-Reasoning, https://arxiv.org/abs/2407.19813</p>
+<p>29 Jul, Apple Intelligence Foundation Language Models, https://arxiv.org/abs/2407.21075</p>
+<p>30 Jul, ThinK: Thinner Key Cache by Query-Driven Pruning, https://arxiv.org/abs/2407.21018</p>
+<p>31 Jul, The Llama 3 Herd of Models, https://arxiv.org/abs/2407.21783</p>
+<p>31 Jul, Gemma 2: Improving Open Language Models at a Practical Size, https://arxiv.org/abs/2408.00118</p>
+<p>August 2024</p>
+<p>1 Aug, SAM 2: Segment Anything in Images and Videos, https://arxiv.org/abs/2408.00714</p>
+<p>2 Aug, POA: Pre-training Once for Models of All Sizes, https://arxiv.org/abs/2408.01031</p>
+<p>2 Aug, RAGEval: Scenario Specific RAG Evaluation Dataset Generation Framework, https://arxiv.org/abs/2408.01262</p>
+<p>2 Aug, A Survey of Mamba, https://arxiv.org/abs/2408.01129</p>
+<p>3 Aug, MiniCPM-V: A GPT-4V Level MLLM on Your Phone, https://arxiv.org/abs/2408.01800</p>
+<p>5 Aug, RAG Foundry: A Framework for Enhancing LLMs for Retrieval Augmented Generation, https://arxiv.org/abs/2408.02545</p>
+<p>5 Aug, Self-Taught Evaluators, https://arxiv.org/abs/2408.02666</p>
+<p>5 Aug, BioMamba: A Pre-trained Biomedical Language Representation Model Leveraging Mamba, https://arxiv.org/abs/2408.02600</p>
+<p>5 Aug, Self-Taught Evaluators, https://arxiv.org/abs/2408.02666</p>
+<p>7 Aug, EXAONE 3.0 7.8B Instruction Tuned Language Model, https://arxiv.org/abs/2408.03541</p>
+<p>7 Aug, 1.5-Pints Technical Report: Pretraining in Days, Not Months – Your Language Model Thrives on Quality Data, https://arxiv.org/abs/2408.03506</p>
+<p>8 Aug, Conversational Prompt Engineering, https://arxiv.org/abs/2408.04560</p>
+<p>8 Aug, Trans-Tokenization and Cross-lingual Vocabulary Transfers: Language Adaptation of LLMs for Low-Resource NLP, https://arxiv.org/abs/2408.04303</p>
+<p>12 Aug, The AI Scientist: Towards Fully Automated Open-Ended Scientific Discovery, https://arxiv.org/abs/2408.06292</p>
+<p>15 Aug, Hermes 3 Technical Report, https://arxiv.org/abs/2408.12570</p>
+<p>19 Aug, Customizing Language Models with Instance-wise LoRA for Sequential Recommendation, https://arxiv.org/abs/2408.10159</p>
+<p>20 Aug, Enhancing Robustness in Large Language Models: Prompting for Mitigating the Impact of Irrelevant Information, https://arxiv.org/abs/2408.10615</p>
+<p>20 Aug, To Code, or Not To Code? Exploring Impact of Code in Pre-training, https://arxiv.org/abs/2408.10914</p>
+<p>21 Aug , LLM Pruning and Distillation in Practice: The Minitron Approach, https://arxiv.org/abs/2408.11796</p>
+<p>22 Aug, Jamba-1.5: Hybrid Transformer-Mamba Models at Scale, https://arxiv.org/abs/2408.12570</p>
+<p>22 Aug, Controllable Text Generation for Large Language Models: A Survey, https://arxiv.org/abs/2408.12599</p>
+<p>23 Aug, Multi-Layer Transformers Gradient Can be Approximated in Almost Linear Time, https://arxiv.org/abs/2408.13233</p>
+<p>26 Aug, A Practitioner’s Guide to Continual Multimodal Pretraining, https://arxiv.org/abs/2408.14471</p>
+<p>26 Aug, Building and better understanding vision-language models: insights and future directions, https://arxiv.org/abs/2408.12637</p>
+<p>26 Aug, CURLoRA: Stable LLM Continual Fine-Tuning and Catastrophic Forgetting Mitigation, https://arxiv.org/abs/2408.14572</p>
+<p>27 Aug, The Mamba in the Llama: Distilling and Accelerating Hybrid Models, https://arxiv.org/abs/2408.15237</p>
+<p>28 Aug, ReMamba: Equip Mamba with Effective Long-Sequence Modeling, https://arxiv.org/abs/2408.15496</p>
+<p>29 Aug, Smaller, Weaker, Yet Better: Training LLM Reasoners via Compute-Optimal Sampling, https://arxiv.org/abs/2408.16737</p>
+<p>31 Aug, LongRecipe: Recipe for Efficient Long Context Generalization in Large Languge Models, https://arxiv.org/abs/2409.00509</p>
+<p>September 2024</p>
+<p>3 Sep, OLMoE: Open Mixture-of-Experts Language Models, https://arxiv.org/abs/2409.02060</p>
+<p>3 Sep 2024, In Defense of RAG in the Era of Long-Context Language Models, https://arxiv.org/abs/2409.01666</p>
+<p>5 Sep, Attention Heads of Large Language Models: A Survey, https://arxiv.org/abs/2409.03752</p>
+<p>5 Sep, LongCite: Enabling LLMs to Generate Fine-grained Citations in Long-context QA, https://arxiv.org/abs/2409.02897</p>
+<p>5 Sep, How Do Your Code LLMs Perform? Empowering Code Instruction Tuning with High-Quality Data, https://arxiv.org/abs/2409.03810</p>
+<p>6 Sep, Theory, Analysis, and Best Practices for Sigmoid Self-Attention, https://arxiv.org/abs/2409.04431</p>
+<p>10 Sep, LLaMA-Omni: Seamless Speech Interaction with Large Language Models, https://arxiv.org/abs/2409.06666</p>
+<p>10 Sep, What is the Role of Small Models in the LLM Era: A Survey, https://arxiv.org/abs/2409.06857</p>
+<p>11 Sep, Policy Filtration in RLHF to Fine-Tune LLM for Code Generation, https://arxiv.org/abs/2409.06957</p>
+<p>16 Sep, RetrievalAttention: Accelerating Long-Context LLM Inference via Vector Retrieval, https://arxiv.org/abs/2409.10516</p>
+<p>18 Sep, Qwen2.5-Math Technical Report: Toward Mathematical Expert Model via Self-Improvement, https://arxiv.org/abs/2409.12122</p>
+<p>18 Sep, Qwen2.5-Coder Technical Report, https://arxiv.org/abs/2409.12186</p>
+<p>21 Sep, Instruction Following without Instruction Tuning, https://arxiv.org/abs/2409.14254</p>
+<p>30 Sep, Is Preference Alignment Always the Best Option to Enhance LLM-Based Translation? An Empirical Analysis, https://arxiv.org/abs/2409.20059</p>
+<p>30 Sep, The Perfect Blend: Redefining RLHF with Mixture of Judges, https://arxiv.org/abs/2409.20370 (New paper by Meta on how they did RLHF for Llama 3)</p>
+<p>October 2024</p>
+<p>1 Oct, Addition is All You Need for Energy-efficient Language Models, https://arxiv.org/abs/2410.00907</p>
+<p>2 Oct Quantifying Generalization Complexity for Large Language Models, https://arxiv.org/abs/2410.01769</p>
+<p>2 Oct, When a language model is optimized for reasoning, does it still show embers of autoregression? An analysis of OpenAI o1, https://arxiv.org/abs/2410.01792</p>
+<p>2 Oct, Were RNNs All We Needed?, https://arxiv.org/abs/2410.01201</p>
+<p>3 Oct, Selective Attention Improves Transformer, https://arxiv.org/abs/2410.02703</p>
+<p>3 Oct, LLMs Know More Than They Show: On the Intrinsic Representation of LLM Hallucinations, https://arxiv.org/abs/2410.02707</p>
+<p>3 Oct, LLaVA-Critic: Learning to Evaluate Multimodal Models, https://arxiv.org/abs/2410.02712</p>
+<p>7 Oct, Differential Transformer, https://arxiv.org/abs/2410.05258</p>
+<p>7 Oct, GSM-Symbolic: Understanding the Limitations of Mathematical Reasoning in Large Language Models, https://arxiv.org/abs/2410.05229</p>
+<p>8 Oct, ARIA: An Open Multimodal Native Mixture-of-Experts Model, https://arxiv.org/abs/2410.05993</p>
+<p>8 Oct, O1 Replication Journey: A Strategic Progress Report – Part 1, https://arxiv.org/abs/2410.18982</p>
+<p>8 Oct, Long-Context LLMs Meet RAG: Overcoming Challenges for Long Inputs in RAG, https://arxiv.org/abs/2410.05983</p>
+<p>9 Oct, From Generalist to Specialist: Adapting Vision Language Models via Task-Specific Visual Instruction Tuning, https://arxiv.org/abs/2410.06456</p>
+<p>10 Oct, KV Prediction for Improved Time to First Token, https://arxiv.org/abs/2410.08391</p>
+<p>11 Oct, Baichuan-Omni Technical Report, https://arxiv.org/abs/2410.08565</p>
+<p>13 Oct, MMIE: Massive Multimodal Interleaved Comprehension Benchmark for Large Vision-Language Models, https://arxiv.org/abs/2410.10139</p>
+<p>13 Oct, LOKI: A Comprehensive Synthetic Data Detection Benchmark using Large Multimodal Models, https://arxiv.org/abs/2410.09732</p>
+<p>15 Oct, AFlow: Automating Agentic Workflow Generation, https://arxiv.org/abs/2410.10762</p>
+<p>15 Oct, Toward General Instruction-Following Alignment for Retrieval-Augmented Generation, https://arxiv.org/abs/2410.09584</p>
+<p>21 Oct, Pre-training Distillation for Large Language Models: A Design Space Exploration, https://arxiv.org/abs/2410.16215</p>
+<p>23 Oct, MIA-DPO: Multi-Image Augmented Direct Preference Optimization For Large Vision-Language Models, https://arxiv.org/abs/2410.17637</p>
+<p>23 Oct, Scalable Ranked Preference Optimization for Text-to-Image Generation, https://arxiv.org/abs/2410.18013</p>
+<p>23 Oct, Scaling Diffusion Language Models via Adaptation from Autoregressive Models, https://arxiv.org/abs/2410.17891</p>
+<p>24 Oct, Hybrid Preferences: Learning to Route Instances for Human vs.&nbsp;AI Feedback, https://arxiv.org/abs/2410.19133</p>
+<p>25 Oct, Counting Ability of Large Language Models and Impact of Tokenization, https://arxiv.org/abs/2410.19730</p>
+<p>25 Oct, A Survey of Small Language Models, https://arxiv.org/abs/2410.20011</p>
+<p>26 Oct, Accelerating Direct Preference Optimization with Prefix Sharing, https://arxiv.org/abs/2410.20305</p>
+<p>27 Oct, Mind Your Step (by Step): Chain-of-Thought can Reduce Performance on Tasks where Thinking Makes Humans Worse, https://arxiv.org/abs/2410.21333</p>
+<p>28 Oct, LongReward: Improving Long-context Large Language Models with AI Feedback, https://arxiv.org/abs/2410.21252</p>
+<p>28 Oct, ShadowKV: KV Cache in Shadows for High-Throughput Long-Context LLM Inference, https://arxiv.org/abs/2410.21465</p>
+<p>29 Oct, Beyond Text: Optimizing RAG with Multimodal Inputs for Industrial Applications, https://arxiv.org/abs/2410.21943</p>
+<p>30 Oct, CORAL: Benchmarking Multi-turn Conversational Retrieval-Augmentation Generation, https://arxiv.org/abs/2410.23090</p>
+<p>31 Oct, What Happened in LLMs Layers when Trained for Fast vs.&nbsp;Slow Thinking: A Gradient Perspective, https://arxiv.org/abs/2410.23743</p>
+<p>31 Oct, GPT or BERT: why not both?, https://arxiv.org/abs/2410.24159</p>
+<p>31 Oct, Language Models can Self-Lengthen to Generate Long Texts, https://arxiv.org/abs/2410.23933</p>
+<p>November 2024</p>
+<p>1 Nov, Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations, https://arxiv.org/abs/2411.00640</p>
+<p>1 Nov 2024, Adapting While Learning: Grounding LLMs for Scientific Problems with Intelligent Tool Usage Adaptation, https://arxiv.org/abs/2411.00412</p>
+<p>1 Nov 2024, Multi-expert Prompting Improves Reliability, Safety, and Usefulness of Large Language Models, https://arxiv.org/abs/2411.00492</p>
+<p>3 Nov, Sample-Efficient Alignment for LLMs, https://arxiv.org/abs/2411.01493</p>
+<p>4 Nov 2024, A Comprehensive Survey of Small Language Models in the Era of Large Language Models: Techniques, Enhancements, Applications, Collaboration with LLMs, and Trustworthiness, https://arxiv.org/abs/2411.03350</p>
+<p>4 Nov, “Give Me BF16 or Give Me Death”? Accuracy-Performance Trade-Offs in LLM Quantization, https://arxiv.org/abs/2411.02355</p>
+<p>4 Nov, Parameter-Efficient Fine-Tuning of Large Language Models for Unit Test Generation: An Empirical Study, https://arxiv.org/abs/2411.02462</p>
+<p>5 Nov, HtmlRAG: HTML is Better Than Plain Text for Modeling Retrieved Knowledge in RAG Systems, https://arxiv.org/abs/2411.02959</p>
+<p>6 Nov, Both Text and Images Leaked! A Systematic Analysis of Multimodal LLM Data Contamination, https://arxiv.org/abs/2411.03823</p>
+<p>6 Nov, Language Models are Hidden Reasoners: Unlocking Latent Reasoning Capabilities via Self-Rewarding, https://arxiv.org/abs/2411.04282</p>
+<p>6 Nov, Number Cookbook: Number Understanding of Language Models and How to Improve It, https://arxiv.org/abs/2411.03766</p>
+<p>7 Nov, Mixture-of-Transformers: A Sparse and Scalable Architecture for Multi-Modal Foundation Models, https://arxiv.org/abs/2411.04996</p>
+<p>7 Nov, BitNet a4.8: 4-bit Activations for 1-bit LLMs, https://arxiv.org/abs/2411.04965</p>
+<p>7 Nov, Scaling Laws for Precision, https://arxiv.org/abs/2411.04330</p>
+<p>8 Nov, Energy Efficient Protein Language Models: Leveraging Small Language Models with LoRA for Controllable Protein Generation, https://arxiv.org/abs/2411.05966</p>
+<p>8 Nov, Balancing Pipeline Parallelism with Vocabulary Parallelism, https://arxiv.org/abs/2411.05288</p>
+<p>11 Nov, Toward Optimal Search and Retrieval for RAG, https://arxiv.org/abs/2411.07396</p>
+<p>12 Nov, Large Language Models Can Self-Improve in Long-context Reasoning, https://arxiv.org/abs/2411.08147</p>
+<p>12 Nov, Stronger Models are NOT Stronger Teachers for Instruction Tuning, https://arxiv.org/abs/2411.07133</p>
+<p>12 Nov, Direct Preference Optimization Using Sparse Feature-Level Constraints, https://arxiv.org/abs/2411.07618</p>
+<p>13 Nov, Cut Your Losses in Large-Vocabulary Language Models, https://arxiv.org/abs/2411.09009</p>
+<p>15 Nov, Does Prompt Formatting Have Any Impact on LLM Performance?, https://arxiv.org/abs/2411.10541</p>
+<p>17 Nov, SymDPO: Boosting In-Context Learning of Large Multimodal Models with Symbol Demonstration Direct Preference Optimization, https://arxiv.org/abs/2411.11909</p>
+<p>17 Nov, SageAttention2 Technical Report: Accurate 4 Bit Attention for Plug-and-play Inference Acceleration, https://arxiv.org/abs/2411.10958</p>
+<p>18 Nov, Bi-Mamba: Towards Accurate 1-Bit State Space Models, https://arxiv.org/abs/2411.11843</p>
+<p>19 Nov, RedPajama: an Open Dataset for Training Large Language Models, https://arxiv.org/abs/2411.12372</p>
+<p>20 Nov, Hymba: A Hybrid-head Architecture for Small Language Models, https://arxiv.org/abs/2411.13676</p>
+<p>20 Nov, Loss-to-Loss Prediction: Scaling Laws for All Datasets, https://arxiv.org/abs/2411.12925</p>
+<p>21 Nov, When Precision Meets Position: BFloat16 Breaks Down RoPE in Long-Context Training, https://arxiv.org/abs/2411.13476</p>
+<p>21 Nov, Multimodal Autoregressive Pre-training of Large Vision Encoders, https://arxiv.org/abs/2411.14402</p>
+<p>21 Nov, Natural Language Reinforcement Learning, https://arxiv.org/abs/2411.14251</p>
+<p>22 Nov, Large Multi-modal Models Can Interpret Features in Large Multi-modal Models, https://arxiv.org/abs/2411.14982</p>
+<p>22 Nov, TÜLU 3: Pushing Frontiers in Open Language Model Post-Training, https://arxiv.org/abs/2411.15124</p>
+<p>23 Nov, MME-Survey: A Comprehensive Survey on Evaluation of Multimodal LLMs, https://arxiv.org/abs/2411.15296</p>
+<p>24 Nov, LLMs Do Not Think Step-by-step In Implicit Reasoning, https://arxiv.org/abs/2411.15862</p>
+<p>25 Nov, O1 Replication Journey – Part 2: Surpassing O1-preview through Simple Distillation, Big Progress or Bitter Lesson?, https://arxiv.org/abs/2411.16489</p>
+<p>26 Nov, Star Attention: Efficient LLM Inference over Long Sequences, https://arxiv.org/abs/2411.17116</p>
+<p>27 Nov, Low-Bit Quantization Favors Undertrained LLMs: Scaling Laws for Quantized LLMs with 100T Training Tokens, https://arxiv.org/abs/2411.17691</p>
+<p>27 Nov, Rethinking Token Reduction in MLLMs: Towards a Unified Paradigm for Training-Free Acceleration, https://arxiv.org/abs/2411.17686</p>
+<p>29 Nov, Reverse Thinking Makes LLMs Stronger Reasoners, https://arxiv.org/abs/2411.19865</p>
+<p>29 Nov, Critical Tokens Matter: Token-Level Contrastive Estimation Enhances LLM’s Reasoning Capability, https://arxiv.org/abs/2411.19943</p>
+<p>December 2024</p>
+<p>2 Dec, Switti: Designing Scale-Wise Transformers for Text-to-Image Synthesis, https://arxiv.org/abs/2412.01819</p>
+<p>2 Dec, X-Prompt: Towards Universal In-Context Image Generation in Auto-Regressive Vision Language Foundation Models, https://arxiv.org/abs/2412.01824</p>
+<p>2 Dec, Free Process Rewards without Process Labels, https://arxiv.org/abs/2412.01981</p>
+<p>3 Dec, Scaling Image Tokenizers with Grouped Spherical Quantization, https://arxiv.org/abs/2412.02632</p>
+<p>3 Dec, RARE: Retrieval-Augmented Reasoning Enhancement for Large Language Models, https://arxiv.org/abs/2412.02830</p>
+<p>4 Dec, Perception Tokens Enhance Visual Reasoning in Multimodal Language Models, https://arxiv.org/abs/2412.03548</p>
+<p>4 Dec, Evaluating Language Models as Synthetic Data Generators, https://arxiv.org/abs/2412.03679</p>
+<p>4 Dec, Best-of-N Jailbreaking, https://arxiv.org/abs/2412.03556</p>
+<p>4 Dec, PaliGemma 2: A Family of Versatile VLMs for Transfer, https://arxiv.org/abs/2412.03555</p>
+<p>5 Dec, VisionZip: Longer is Better but Not Necessary in Vision Language Models, https://arxiv.org/abs/2412.04467</p>
+<p>5 Dec, Evaluating and Aligning CodeLLMs on Human Preference, https://arxiv.org/abs/2412.05210</p>
+<p>6 Dec, MAmmoTH-VL: Eliciting Multimodal Reasoning with Instruction Tuning at Scale, https://arxiv.org/abs/2412.05237</p>
+<p>6 Dec, Expanding Performance Boundaries of Open-Source Multimodal Models with Model, Data, and Test-Time Scaling, https://arxiv.org/abs/2412.05271</p>
+<p>7 Dec, LLMs-as-Judges: A Comprehensive Survey on LLM-based Evaluation Methods, https://arxiv.org/abs/2412.05579</p>
+<p>8 Dec, Does RLHF Scale? Exploring the Impacts From Data, Model, and Method, https://arxiv.org/abs/2412.06000</p>
+<p>9 Dec, Unraveling the Complexity of Memory in RL Agents: An Approach for Classification and Evaluation, https://arxiv.org/abs/2412.06531</p>
+<p>9 Dec, Training Large Language Models to Reason in a Continuous Latent Space, https://arxiv.org/abs/2412.06769</p>
+<p>9 Dec, AutoReason: Automatic Few-Shot Reasoning Decomposition, https://arxiv.org/abs/2412.06975</p>
+<p>11 Dec, Large Concept Models: Language Modeling in a Sentence Representation Space, https://arxiv.org/abs/2412.08821</p>
+<p>12 Dec, Phi-4 Technical Report, https://arxiv.org/abs/2412.08905</p>
+<p>13 Dec, Byte Latent Transformer: Patches Scale Better Than Tokens, https://arxiv.org/abs/2412.09871</p>
+<p>13 Dec, SCBench: A KV Cache-Centric Analysis of Long-Context Methods, https://arxiv.org/abs/2412.10319</p>
+<p>13 Dec, Cultural Evolution of Cooperation among LLM Agents, https://arxiv.org/abs/2412.10270</p>
+<p>13 Dec, DeepSeek-VL2: Mixture-of-Experts Vision-Language Models for Advanced Multimodal Understanding, https://arxiv.org/abs/2412.10302</p>
+<p>16 Dec, No More Adam: Learning Rate Scaling at Initialization is All You Need, https://arxiv.org/abs/2412.11768</p>
+<p>16 Dec, Precise Length Control in Large Language Models, https://arxiv.org/abs/2412.11937</p>
+<p>16 Dec, The Open Source Advantage in Large Language Models (LLMs), https://arxiv.org/abs/2412.12004</p>
+<p>16 Dec, A Survey of Mathematical Reasoning in the Era of Multimodal Large Language Model: Benchmark, Method &amp; Challenges, https://arxiv.org/abs/2412.11936</p>
+<p>17 Dec, Are Your LLMs Capable of Stable Reasoning?, https://arxiv.org/abs/2412.13147</p>
+<p>18 Dec, LLM Post-Training Recipes, Improving Reasoning in LLMs, https://arxiv.org/abs/2412.14135</p>
+<p>18 Dec, Hansel: Output Length Controlling Framework for Large Language Models, https://arxiv.org/abs/2412.14033</p>
+<p>18 Dec, Mind Your Theory: Theory of Mind Goes Deeper Than Reasoning, https://arxiv.org/abs/2412.13631</p>
+<p>18 Dec, Alignment Faking in Large Language Models, https://arxiv.org/abs/2412.14093</p>
+<p>18 Dec, SCOPE: Optimizing Key-Value Cache Compression in Long-Context Generation, https://arxiv.org/abs/2412.13649</p>
+<p>19 Dec, LongBench v2: Towards Deeper Understanding and Reasoning on Realistic Long-Context Multitasks, https://arxiv.org/abs/2412.15204</p>
+<p>20 Dec, Offline Reinforcement Learning for LLM Multi-Step Reasoning, https://arxiv.org/abs/2412.16145</p>
+<p>24 Dec, Mulberry: Empowering MLLM with O1-like Reasoning and Reflection via Collective Monte Carlo Tree Search, https://arxiv.org/abs/2412.18319</p>
+<p>31 Dec, Titans: Learning to Memorize at Test Time, https://arxiv.org/abs/2501.00663</p>
+<p>This magazine is a personal passion project. For those who wish to support me, please consider purchasing a copy of my Build a Large Language Model (From Scratch) book. (I am confident that you’ll get lots out of this book as it explains how LLMs work in a level of detail that is not found anywhere else.)</p>
+<p>Build a Large Language Model (From Scratch) now available on Amazon</p>
+<p>If you read the book and have a few minutes to spare, I’d really appreciate a brief review. It helps us authors a lot!</p>
+<p>Alternatively, I also recently enabled the paid subscription option on Substack to support this magazine directly.</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>improving-lora-implementing-weight-decomposed-low-rank-adapt – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#improving-lora-implementing-weight-decomposed-low-rank-adaptation-dora-from-scratch" id="toc-improving-lora-implementing-weight-decomposed-low-rank-adaptation-dora-from-scratch" class="nav-link active" data-scroll-target="#improving-lora-implementing-weight-decomposed-low-rank-adaptation-dora-from-scratch">Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="improving-lora-implementing-weight-decomposed-low-rank-adaptation-dora-from-scratch" class="level1">
+<h1>Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/lora-and-dora-from-scratch</p>
+<p><strong>Likes:</strong> LIKE (3)</p>
+<p><strong>Image Count:</strong> 13</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!6HOU!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3648f6eb-ddbf-4201-9cad-454789f35509_1370x874.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: DoRA is a promising alternative to standard LoRA (annotated figure from the DoRA paper: https://arxiv.org/abs/2402.09353)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Fk3V!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fee7f7d37-3c0a-4f4a-9244-f73287af6211_1456x612.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!wMom!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa11d59f4-a948-42de-a791-114d719f08f1_566x680.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Illustration of the LoRA matrices A and B with rank r.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!FOLT!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ffd61c168-2fd6-4b2f-b1ef-50e4da5a63e3_652x676.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: LoRA applied to an existing linear layer</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!866i!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F24331b05-95b4-4ea0-aa96-d035a929a932_632x926.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A simple 3-layer multilayer perceptron</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!pv7G!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6a5bf344-2c27-4197-839f-6c28af722e0f_766x614.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Illustration of the direction and magnitude of a single vector. For example, if have a 2D vector [1, 2], we can decompose it into a magnitude 2.24 and a directional vector [0.447, 0.894]. Then 2.24 * [0.447, 0.894] = [1, 2].</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!aVuN!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd07991e9-b89a-44f9-bba3-03bb7cb41288_1370x800.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Illustration of the weight matrix decomposition in DoRA</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!LV-y!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa273632c-9434-43d1-9156-fb6d58a1a26e_1600x1137.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated illustration from the DoRA paper (https://arxiv.org/abs/2402.09353)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!DDex!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F27c269b8-e0cc-4be0-a5d3-bd2a79ac7f29_1600x368.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Comparison between LoRA and DoRA from the DoRA paper (https://arxiv.org/abs/2402.09353)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ejBJ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F24fbe197-dbbe-4bd5-b25f-59970b19ad44_1444x910.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: DoRA is more robust to the rank hyperparameter than LoRA (annotated figure from the DoRA paper, https://arxiv.org/abs/2402.09353)</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!CpnG!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3d3550b9-14a6-4a1d-844d-d72c1bfceed3_1600x488.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: File-diff between LinearWithLoRAMerged and LinearWithDoRAMerged</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!3qw2!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F719ec33a-00f2-4542-a539-e3905574621e_1568x1146.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: DoRA code notebook: https://github.com/rasbt/dora-from-scratch</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!woQp!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fea1152a0-18d9-4a8a-9398-c6b1ca67726a_1600x900.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Build a Large Language Model (From Scratch) now available on Amazon</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>Low-rank adaptation (LoRA) is a machine learning technique that modifies a pretrained model (for example, an LLM or vision transformer) to better suit a specific, often smaller, dataset by adjusting only a small, low-rank subset of the model’s parameters.&nbsp;</p>
+<p>This approach is important because it allows for efficient finetuning of large models on task-specific data, significantly reducing the computational cost and time required for finetuning.</p>
+<p>Last week, researchers proposed DoRA: Weight-Decomposed Low-Rank Adaptation, a new alternative to LoRA, which may outperform LoRA by a large margin.</p>
+<p>DoRA is a promising alternative to standard LoRA (annotated figure from the DoRA paper: https://arxiv.org/abs/2402.09353)</p>
+<p>To understand how these methods work, we will implement both LoRA and DoRA in PyTorch from scratch in this article!</p>
+<p>LoRA Recap</p>
+<p>Before we dive into DoRA, here’s a brief recap of how LoRA works.</p>
+<p>Since LLMs are large, updating all model weights during training can be expensive due to GPU memory limitations. Suppose we have a large weight matrix W for a given layer. During backpropagation, we learn a ΔW matrix, which contains information on how much we want to update the original weights to minimize the loss function during training.&nbsp;</p>
+<p>In regular training and finetuning, the weight update is defined as follows:</p>
+<p>Wupdated = W + ΔW</p>
+<p>The LoRA method proposed by Hu et al.&nbsp;offers a more efficient alternative to computing the weight updates ΔW by learning an approximation of it, ΔW ≈ AB. In other words, in LoRA, we have the following, where A and B are two small weight matrices:</p>
+<p>Wupdated = W + A.B</p>
+<p>(The “.” in “A.B” stands for matrix multiplication.)</p>
+<p>The figure below illustrates these formulas for full finetuning and LoRA side by side.</p>
+<p>Figure: An illustration of regular finetuning (left) and LoRA finetuning (right).</p>
+<p>How does LoRA save GPU memory? If a pretrained weight matrix W is a 1,000×1,000 matrix, then the weight update matrix ΔW in regular finetuning is a 1,000×1,000 matrix as well. In this case, ΔW has 1,000,000 parameters. If we consider a LoRA rank of 2, then A is a 1000×2 matrix, and B is a 2×1000 matrix, and we only have 2×2×1,000 = 4,000 parameters that we need to update when using LoRA. In the previous example, with a rank of 2, that’s 250 times fewer parameters.</p>
+<p>Of course, A and B can’t capture all the information that ΔW could capture, but this is by design. When using LoRA, we hypothesize that the model requires W to be a large matrix with full rank to capture all the knowledge in the pretraining dataset. However, when we finetune an LLM, we don’t need to update all the weights and capture the core information for the adaptation in a smaller number of weights than ΔW would; hence, we have the low-rank updates via AB.</p>
+<p>If you paid close attention, the full finetuning and LoRA depictions in the figure above look slightly different from the formulas I have shown earlier. That’s due to the distributive law of matrix multiplication: we don’t have to add the weights with the updated weights but can keep them separate. For instance, if x is the input data, then we can write the following for regular finetuning:</p>
+<p>x.(W+ΔW) = x.W + x.ΔW</p>
+<p>Similarly, we can write the following for LoRA:</p>
+<p>x.(W+A.B) = x.W + x.A.B &nbsp;</p>
+<p>The fact that we can keep the LoRA weight matrices separate makes LoRA especially attractive. In practice, this means that we don’t have to modify the weights of the pretrained model at all, as we can apply the LoRA matrices on the fly. This is especially useful if you are considering hosting a model for multiple customers. Instead of having to save the large updated models for each customer, you only have to save a small set of LoRA weights alongside the original pretrained model.</p>
+<p>To make this less abstract and to provide additional intuition, we will implement LoRA in code from scratch in the next section.</p>
+<p>A LoRA Layer Code Implementation</p>
+<p>We begin by initializing a LoRALayer that creates the matrices A and B, along with the alpha scaling hyperparameter and the rank hyperparameters. This layer can accept an input and compute the corresponding output, as illustrated in the figure below.</p>
+<p>Illustration of the LoRA matrices A and B with rank r.</p>
+<p>In code, this LoRA layer depicted in the figure above looks like as follows:</p>
+<p>import torch.nn as nn</p>
+<p>class LoRALayer(nn.Module): &nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, in_dim, out_dim, rank, alpha): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;std_dev = 1 / torch.sqrt(torch.tensor(rank).float()) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.A = nn.Parameter(torch.randn(in_dim, rank) * std_dev) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.B = nn.Parameter(torch.zeros(rank, out_dim)) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.alpha = alpha</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x = self.alpha * (x @ self.A @ self.B) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return x</p>
+<p>In the code above, rank is a hyperparameter that controls the inner dimension of the matrices A and B. In other words, this parameter controls the number of additional parameters introduced by LoRA and is a key factor in determining the balance between model adaptability and parameter efficiency.</p>
+<p>The second hyperparameter, alpha, is a scaling hyperparameter applied to the output of the low-rank adaptation. It essentially controls the extent to which the adapted layer’s output is allowed to influence the original output of the layer being adapted. This can be seen as a way to regulate the impact of the low-rank adaptation on the layer’s output.</p>
+<p>So far, the LoRALayer class we implemented above allows us to transform the layer inputs x. However, in LoRA, we are usually interested in replacing existing Linear layers so that the weight update is applied to the existing pretrained weights, as shown in the figure below:</p>
+<p>LoRA applied to an existing linear layer</p>
+<p>To incorporate the original Linear layer weights as shown in the figure above, we will implement a LinearWithLoRA layer that uses the previously implemented LoRALayer and can be used to replace existing Linear layers in a neural network, for example, the self-attention module or feed forward modules in an LLM:</p>
+<p>class LinearWithLoRA(nn.Module):</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, linear, rank, alpha): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.linear = linear &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.lora = LoRALayer( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;linear.in_features, linear.out_features, rank, alpha &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return self.linear(x) + self.lora(x)</p>
+<p>Note that since we initialize the weight matrix B (self.B in LoraLayer) with zero values in the LoRA layer, the matrix multiplication between A and B results in a matrix consisting of 0’s and doesn’t affect the original weights (since adding 0 to the original weights does not modify them).&nbsp;</p>
+<p>Let’s try out LoRA on a small neural network layer represented by a single Linear layer:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) layer = nn.Linear(10, 2) x = torch.randn((1, 10))</p>
+<p>print(“Original output:”, layer(x))</p>
+<p>Out:</p>
+<p>Original output: tensor([[0.6639, 0.4487]], grad_fn=<addmmbackward0>)</addmmbackward0></p>
+<p>Now, applying LoRA to the Linear layer, we see that the results are the same since we haven’t trained the LoRA weights yet. In other words, everything works as expected:</p>
+<p>In:</p>
+<p>layer_lora_1 = LinearWithLoRA(layer, rank=2, alpha=4) print(“LoRA output:”, layer_lora_1(x))</p>
+<p>Out:</p>
+<p>LoRA output: tensor([[0.6639, 0.4487]], grad_fn=<addmmbackward0>)</addmmbackward0></p>
+<p>Earlier, I mentioned the distributive law of matrix multiplication:</p>
+<p>x.(W+A.B) = x.W + x.A.B.&nbsp;</p>
+<p>Here, this means that we can also combine or merge the LoRA matrices and original weights, which should result in an equivalent implementation. In code, this alternative implementation to the LinearWithLoRA layer looks as follows:</p>
+<p>class LinearWithLoRAMerged(nn.Module): &nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, linear, rank, alpha): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.linear = linear &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.lora = LoRALayer( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;linear.in_features, linear.out_features, rank, alpha &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lora = self.lora.A @ self.lora.B # Combine LoRA matrices &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Then combine LoRA with orig. weights &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;combined_weight = self.linear.weight + self.lora.alpha*lora.T&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return F.linear(x, combined_weight, self.linear.bias)</p>
+<p>In short, LinearWithLoRAMerged computes the left side of the equation x.(W+A.B) = x.W + x.A.B &nbsp;whereas LinearWithLoRA computes the right side – both are equivalent.</p>
+<p>We can verify that this results in the same outputs as before via the following code:</p>
+<p>In:</p>
+<p>layer_lora_2 = LinearWithLoRAMerged(layer, rank=2, alpha=4) print(“LoRA output:”, layer_lora_2(x))</p>
+<p>Out:</p>
+<p>LoRA output: tensor([[0.6639, 0.4487]], grad_fn=<addmmbackward0>)</addmmbackward0></p>
+<p>Now that we have a working LoRA implementation let’s see how we can apply it to a neural network in the next section.</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<p>Applying LoRA Layers</p>
+<p>Why did we implement LoRA in the manner described above using PyTorch modules? This approach enables us to easily replace a Linear layer in an existing neural network (for example, the feed forward or attention modules of a Large Language Model) with our new LinearWithLoRA (or LinearWithLoRAMerged) layers.</p>
+<p>For simplicity, let’s focus on a small 3-layer multilayer perceptron instead of an LLM for now, which is illustrated in the figure below:</p>
+<p>A simple 3-layer multilayer perceptron</p>
+<p>In code, we can implement the multilayer perceptron, shown above, as follows:</p>
+<p>In:</p>
+<p>class MultilayerPerceptron(nn.Module): &nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, num_features, num_hidden_1, num_hidden_2, num_classes): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.layers = nn.Sequential( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nn.Linear(num_features, num_hidden_1), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nn.ReLU(), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nn.Linear(num_hidden_1, num_hidden_2), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nn.ReLU(),</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;nn.Linear(num_hidden_2, num_classes) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x = self.layers(x) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return x</p>
+<p>model = MultilayerPerceptron( &nbsp;&nbsp;&nbsp;&nbsp;num_features=num_features, &nbsp;&nbsp;&nbsp;&nbsp;num_hidden_1=num_hidden_1, &nbsp;&nbsp;&nbsp;&nbsp;num_hidden_2=num_hidden_2,&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;num_classes=num_classes )</p>
+<p>print(model)</p>
+<p>Out:</p>
+<p>MultilayerPerceptron( &nbsp;&nbsp;(layers): Sequential( &nbsp;&nbsp;&nbsp;&nbsp;(0): Linear(in_features=784, out_features=128, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;(1): ReLU() &nbsp;&nbsp;&nbsp;&nbsp;(2): Linear(in_features=128, out_features=256, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;(3): ReLU() &nbsp;&nbsp;&nbsp;&nbsp;(4): Linear(in_features=256, out_features=10, bias=True) &nbsp;&nbsp;) )</p>
+<p>Using LinearWithLora, we can then add the LoRA layers by replacing the original Linear layers in the multilayer perceptron model:</p>
+<p>In:</p>
+<p>model.layers[0] = LinearWithLoRA(model.layers[0], rank=4, alpha=8) model.layers[2] = LinearWithLoRA(model.layers[2], rank=4, alpha=8) model.layers[4] = LinearWithLoRA(model.layers[4], rank=4, alpha=8)</p>
+<p>print(model)</p>
+<p>Out:</p>
+<p>MultilayerPerceptron( &nbsp;&nbsp;(layers): Sequential( &nbsp;&nbsp;&nbsp;&nbsp;(0): LinearWithLoRA( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(linear): Linear(in_features=784, out_features=128, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(lora): LoRALayer() &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;(1): ReLU() &nbsp;&nbsp;&nbsp;&nbsp;(2): LinearWithLoRA( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(linear): Linear(in_features=128, out_features=256, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(lora): LoRALayer() &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;(3): ReLU() &nbsp;&nbsp;&nbsp;&nbsp;(4): LinearWithLoRA( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(linear): Linear(in_features=256, out_features=10, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(lora): LoRALayer() &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;) )</p>
+<p>Then, we can freeze the original Linear layers and only make the LoRALayer layers trainable, as follows:</p>
+<p>In:</p>
+<p>def freeze_linear_layers(model): &nbsp;&nbsp;&nbsp;&nbsp;for child in model.children(): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if isinstance(child, nn.Linear): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for param in child.parameters(): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;param.requires_grad = False &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;else: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Recursively freeze linear layers in children modules &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;freeze_linear_layers(child)</p>
+<p>freeze_linear_layers(model) for name, param in model.named_parameters(): &nbsp;&nbsp;&nbsp;&nbsp;print(f”{name}: {param.requires_grad}“)</p>
+<p>Out:</p>
+<p>layers.0.linear.weight: False layers.0.linear.bias: False layers.0.lora.A: True layers.0.lora.B: True layers.2.linear.weight: False layers.2.linear.bias: False layers.2.lora.A: True layers.2.lora.B: True layers.4.linear.weight: False layers.4.linear.bias: False layers.4.lora.A: True layers.4.lora.B: True</p>
+<p>Based on the True and False values above, we can visually confirm that only the LoRA layers are trainable now (True means trainable, False means frozen). In practice, we would then train the network with this LoRA configuration on a new dataset or task.</p>
+<p>To avoid making this a very long article, I am skipping over the boilerplate code to train this model. But if you are interested in the full code, you can find a standalone code notebook here: https://github.com/rasbt/dora-from-scratch.</p>
+<p>Furthermore, if you are interested in a LoRA from scratch explanation and application to an LLM, also check out my Lightning Studio LoRA From Scratch – Implement Low-Rank Adaptation for LLMs in PyTorch.</p>
+<p>Understanding Weight-Decomposed Low-Rank Adaptation (DoRA)</p>
+<p>You may have noticed that we spent a lot of time implementing and talking about LoRA. That’s because DoRA (Weight-Decomposed Low-Rank Adaptation) can be seen as an improvement or extension of LoRA that is built on top of it, and we can now easily adapt some of our previous code to implement DoRA.</p>
+<p>DoRA can be described in two steps, where the first step is to decompose a pretrained weight matrix into a magnitude vector (m) and a directional matrix (V). The second step is applying LoRA to the directional matrix V and training the magnitude vector m separately.</p>
+<p>The decomposition into magnitude and directional components is inspired by the mathematical principle that any vector can be represented as the product of its magnitude (a scalar value indicating its length) and its direction (a unit vector indicating its orientation in space).</p>
+<p>Illustration of the direction and magnitude of a single vector. For example, if have a 2D vector [1, 2], we can decompose it into a magnitude 2.24 and a directional vector [0.447, 0.894]. Then 2.24 * [0.447, 0.894] = [1, 2].</p>
+<p>In DoRA, we apply the decomposition into magnitude and directional components to a whole pretrained weight matrix W instead of a vector, where each column (vector) of the weight matrix corresponds to the weights connecting all inputs to a particular output neuron.</p>
+<p>So, the result of decomposing W is a magnitude vector m that represents the scale or length of each column vector in the weight matrix, as illustrated in the figure below.</p>
+<p>Illustration of the weight matrix decomposition in DoRA</p>
+<p>Then, DoRA takes the directional matrix V and applies standard LoRA, for instance:</p>
+<p>W’ = m (V + ΔV)/norm = m (W + AB)/norm&nbsp;</p>
+<p>The normalization, which I abbreviated as “norm” to not further complicate things in this overview, is based on the weight normalization method proposed in Saliman’s and Kingma’s 2016 Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks paper.</p>
+<p>The DoRA two-step process (decomposing a pretrained weight matrix and applying LoRA to the directional matrix) is further illustrated in the figure from the DoRA paper below.</p>
+<p>Annotated illustration from the DoRA paper (https://arxiv.org/abs/2402.09353)</p>
+<p>The motivation for developing DoRA is based on analyzing and comparing the LoRA and full finetuning learning patterns. The DoRA authors found that LoRA either increases or decreases magnitude and direction updates proportionally but seems to lack the capability to make only subtle directional changes as found in full finetuning. Hence, the researchers propose the decoupling of magnitude and directional components.&nbsp;</p>
+<p>In other words, their DoRA method aims to apply LoRA only to the directional component, V, while also allowing the magnitude component, m, to be trained separately.</p>
+<p>Introducing the magnitude vector m adds 0.01% more parameters if DoRA is compared to LoRA. However, across both LLM and vision transformer benchmarks, they found that DoRA even outperforms LoRA if the DoRA rank is halved, for instance, when DoRA only uses half the parameters of regular LoRA, as shown in the performance comparison below.</p>
+<p>Comparison between LoRA and DoRA from the DoRA paper (https://arxiv.org/abs/2402.09353)</p>
+<p>As I wrote in another article a few months ago, LoRA requires careful tuning of the rank to optimize performance: Practical Tips for Finetuning LLMs Using LoRA (Low-Rank Adaptation).&nbsp;However, DoRA seems to be much more robust to changes in rank, as shown in the comparison below.</p>
+<p>DoRA is more robust to the rank hyperparameter than LoRA (annotated figure from the DoRA paper, https://arxiv.org/abs/2402.09353)</p>
+<p>The possibility to successfully use DoRA with relatively small ranks makes this method even more parameter-efficient than LoRA.</p>
+<p>Overall, I am quite impressed by the results, and it should not be too big of a lift to upgrade a LoRA implementation to DoRA, which we will do in the next section.</p>
+<p>Implementing DoRA Layers in PyTorch</p>
+<p>In this section, we will see what DoRA looks like in code. Previously, we said that we can initialize a pretrained weight W0 with magnitude m and directional component V. For instance, we have the following equation:</p>
+<p>𝑊 0 = 𝑚 𝑉 | | 𝑉 | | 𝑐</p>
+<p>where ||V||c is the vector-wise norm of V. Then we can write DoRA including the LoRA weight update BA as shown below:</p>
+<p>𝑊 ′ = 𝑚 𝑉 + 𝐵 𝐴 ‖ 𝑉 + 𝐵 𝐴 ‖ 𝑐</p>
+<p>Now, in the DoRA paper, the authors formulate DoRA as follows, where they use the initial pretrained weights W0 as the directional component directly and learn magnitude vector m during training:</p>
+<p>𝑊 ′ = 𝑚 𝑉 + Δ 𝑉 ‖ 𝑉 + Δ 𝑉 ‖ 𝑐 = 𝑚 𝑊 0 + 𝐵 𝐴 ‖ 𝑊 0 + 𝐵 𝐴 ‖ 𝑐</p>
+<p>Here, ΔV is the update to the directional component, matrix V.</p>
+<p>While the original authors haven’t released the official implementation yet, you can find an independent implementation here, which loosely inspired my implementation below</p>
+<p>Taking our previous LinearWithLoRAMerged implementation, we can upgrade it to DoRA as follows:</p>
+<p>class LinearWithDoRAMerged(nn.Module):</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def <strong>init</strong>(self, linear, rank, alpha): &nbsp;&nbsp;&nbsp;&nbsp; super().__init__() &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.linear = linear &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.lora = LoRALayer( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;linear.in_features, linear.out_features, rank, alpha &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.m = nn.Parameter( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.linear.weight.norm(p=2, dim=0, keepdim=True))</p>
+<p>&nbsp;&nbsp; # Code loosely inspired by<br>
+# https://github.com/catid/dora/blob/main/dora.py</p>
+<p>&nbsp; &nbsp;def forward(self, x): &nbsp;&nbsp; lora = self.lora.A @ self.lora.B &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;numerator = self.linear.weight + self.lora.alpha<em>lora.T &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;denominator = numerator.norm(p=2, dim=0, keepdim=True) &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;directional_component = numerator / denominator &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;new_weight = self.m </em> directional_component &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;return F.linear(x, new_weight, self.linear.bias)</p>
+<p>The LinearWithDoRAMerged class is different from our previous LinearWithLoRAMerged class in several key aspects, primarily in how it modifies and applies the weights of the Linear layer. However, both classes integrate a LoRALayer to augment the original linear layer’s weights, but DoRA adds weight normalization and adjustment.&nbsp;</p>
+<p>The figure below shows a file-diff of both classes side by side:</p>
+<p>File-diff between LinearWithLoRAMerged and LinearWithDoRAMerged</p>
+<p>As we can see in the figure above, LinearWithDoRAMerged introduces an additional step involving dynamic normalization of the augmented weights.</p>
+<p>After combining the original weights with the LoRA-adjusted weights (self.linear.weight + self.lora.alpha*lora.T), it calculates the norm of these combined weights across columns (column_norm). Then, it normalizes the combined weights by dividing them by their norms (V = combined_weight / column_norm). This step ensures that each column of the combined weight matrix has a unit norm, which can help stabilize the learning process by maintaining the scale of weight updates.</p>
+<p>DoRA also introduces a learnable vector self.m, which represents the magnitude of each column of the normalized weight matrix. This parameter allows the model to dynamically adjust the scale of each weight vector in the combined weight matrix during training. This additional flexibility can help the model better capture the importance of different features.</p>
+<p>In summary, LinearWithDoRAMerged extends the concept of LinearWithLoRAMerged by incorporating dynamic weight normalization and scaling to improve the training performance.</p>
+<p>In practice, considering the multilayer perceptron from earlier, we can simply swap existing Linear layers with our LinearWithDoRAMerged layers as follows:</p>
+<p>In:</p>
+<p>model.layers[0] = LinearWithDoRAMerged(model.layers[0], rank=4, alpha=8) model.layers[2] = LinearWithDoRAMerged(model.layers[2], rank=4, alpha=8) model.layers[4] = LinearWithDoRAMerged(model.layers[4], rank=4, alpha=8)</p>
+<p>print(model)</p>
+<p>Out:</p>
+<p>MultilayerPerceptron( &nbsp;&nbsp;(layers): Sequential( &nbsp;&nbsp;&nbsp;&nbsp;(0): LinearWithDoRAMerged( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(linear): Linear(in_features=784, out_features=128, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(lora): LoRALayer() &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;(1): ReLU() &nbsp;&nbsp;&nbsp;&nbsp;(2): LinearWithDoRAMerged( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(linear): Linear(in_features=128, out_features=256, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(lora): LoRALayer() &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;(3): ReLU() &nbsp;&nbsp;&nbsp;&nbsp;(4): LinearWithDoRAMerged( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(linear): Linear(in_features=256, out_features=10, bias=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(lora): LoRALayer() &nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;) )</p>
+<p>Before we finetune the model, we can reuse the freeze_linear_layers function we implemented earlier to only make the LoRA weights and magnitude vectors trainable:</p>
+<p>In:</p>
+<p>freeze_linear_layers(model) for name, param in model.named_parameters(): &nbsp;&nbsp;&nbsp;&nbsp;print(f”{name}: {param.requires_grad}“)</p>
+<p>Out:</p>
+<p>layers.0.m: True layers.0.linear.weight: False layers.0.linear.bias: False layers.0.lora.A: True layers.0.lora.B: True layers.2.m: True layers.2.linear.weight: False layers.2.linear.bias: False layers.2.lora.A: True layers.2.lora.B: True layers.4.m: True layers.4.linear.weight: False layers.4.linear.bias: False layers.4.lora.A: True layers.4.lora.B: True</p>
+<p>The full code example, including model training, is available in my GitHub repo here: https://github.com/rasbt/dora-from-scratch.</p>
+<p>DoRA code notebook: https://github.com/rasbt/dora-from-scratch</p>
+<p>Conclusion</p>
+<p>In my opinion, DoRA seems like a logical, effective, and promising extension of LoRA, and I am excited to try it in real-world LLM finetuning contexts.&nbsp;</p>
+<p>In the meantime, I also added the DoRA implementation above to the LoRA From Scratch – Implement Low-Rank Adaptation for LLMs in PyTorch Lightning Studio to finetune a DistilBERT language model (see bonus_02_finetune-with-dora.ipynb). Even without hyperparameter tuning, I already saw a &gt;1% prediction accuracy improvement over LoRA.</p>
+<p>This magazine is a personal passion project. For those who wish to support me, please consider purchasing a copy of my Build a Large Language Model (From Scratch) book. (I am confident that you’ll get lots out of this book as it explains how LLMs work in a level of detail that is not found anywhere else.)</p>
+<p>Build a Large Language Model (From Scratch) now available on Amazon</p>
+<p>If you read the book and have a few minutes to spare, I’d really appreciate a brief review. It helps us authors a lot!</p>
+<p>Alternatively, I also recently enabled the paid subscription option on Substack to support this magazine directly.</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

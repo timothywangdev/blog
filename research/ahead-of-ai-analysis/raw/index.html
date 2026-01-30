@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>index – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#ahead-of-ai---scraped-articles-index" id="toc-ahead-of-ai---scraped-articles-index" class="nav-link active" data-scroll-target="#ahead-of-ai---scraped-articles-index">Ahead of AI - Scraped Articles Index</a>
+  <ul class="collapse">
+  <li><a href="#articles" id="toc-articles" class="nav-link" data-scroll-target="#articles">Articles</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="ahead-of-ai---scraped-articles-index" class="level1">
+<h1>Ahead of AI - Scraped Articles Index</h1>
+<p><strong>Scraped on:</strong> 2026-01-27T18:08:43.608Z</p>
+<p><strong>Source:</strong> https://magazine.sebastianraschka.com</p>
+<p><strong>Total Articles:</strong> 65</p>
+<hr>
+<section id="articles" class="level2">
+<h2 class="anchored" data-anchor-id="articles">Articles</h2>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Title</th>
+<th>Date</th>
+<th>Images</th>
+<th>Words</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/02-the-state-of-llms-2025-progress-problems-and-predictions.html">The State Of LLMs 2025: Progress, Problems, and Predictions</a></td>
+<td>JUL 19, 2025</td>
+<td>28</td>
+<td>~6857</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/02-the-state-of-llms-2025-progress-problems-and-predictions.html">The State Of LLMs 2025: Progress, Problems, and Predictions</a></td>
+<td>JUL 19, 2025</td>
+<td>28</td>
+<td>~6857</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>1</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/01-categories-of-inference-time-scaling-for-improved-llm-reason.html">Categories of Inference-Time Scaling for Improved LLM Reasoning</a></td>
+<td>JUL 19, 2025</td>
+<td>17</td>
+<td>~7335</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/01-categories-of-inference-time-scaling-for-improved-llm-reason.html">Categories of Inference-Time Scaling for Improved LLM Reasoning</a></td>
+<td>JUL 19, 2025</td>
+<td>17</td>
+<td>~7335</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/03-llm-research-papers-the-2025-list-july-to-december.html">LLM Research Papers: The 2025 List (July to December)</a></td>
+<td>JUL 19, 2025</td>
+<td>16</td>
+<td>~3314</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>3</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/03-llm-research-papers-the-2025-list-july-to-december.html">LLM Research Papers: The 2025 List (July to December)</a></td>
+<td>JUL 19, 2025</td>
+<td>16</td>
+<td>~3314</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>4</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/04-from-deepseek-v3-to-v3-2-architecture-sparse-attention-and-r.html">From DeepSeek V3 to V3.2: Architecture, Sparse Attention, and RL Updates</a></td>
+<td>JUL 19, 2025</td>
+<td>22</td>
+<td>~5889</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/04-from-deepseek-v3-to-v3-2-architecture-sparse-attention-and-r.html">From DeepSeek V3 to V3.2: Architecture, Sparse Attention, and RL Updates</a></td>
+<td>JUL 19, 2025</td>
+<td>22</td>
+<td>~5889</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/05-beyond-standard-llms.html">Beyond Standard LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>28</td>
+<td>~7404</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/05-beyond-standard-llms.html">Beyond Standard LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>28</td>
+<td>~7404</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/06-understanding-the-4-main-approaches-to-llm-evaluation-from-s.html">Understanding the 4 Main Approaches to LLM Evaluation (From Scratch)</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~6473</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/06-understanding-the-4-main-approaches-to-llm-evaluation-from-s.html">Understanding the 4 Main Approaches to LLM Evaluation (From Scratch)</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~6473</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/07-understanding-and-implementing-qwen3-from-scratch.html">Understanding and Implementing Qwen3 From Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~7964</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/07-understanding-and-implementing-qwen3-from-scratch.html">Understanding and Implementing Qwen3 From Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~7964</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>8</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/08-from-gpt-2-to-gpt-oss-analyzing-the-architectural-advances.html">From GPT-2 to gpt-oss: Analyzing the Architectural Advances</a></td>
+<td>JUL 19, 2025</td>
+<td>26</td>
+<td>~5647</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/08-from-gpt-2-to-gpt-oss-analyzing-the-architectural-advances.html">From GPT-2 to gpt-oss: Analyzing the Architectural Advances</a></td>
+<td>JUL 19, 2025</td>
+<td>26</td>
+<td>~5647</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/09-the-big-llm-architecture-comparison.html">The Big LLM Architecture Comparison</a></td>
+<td>FEB 5, 2025</td>
+<td>60</td>
+<td>~12056</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>9</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/09-the-big-llm-architecture-comparison.html">The Big LLM Architecture Comparison</a></td>
+<td>FEB 5, 2025</td>
+<td>60</td>
+<td>~12056</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>10</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/10-llm-research-papers-the-2025-list-january-to-june.html">LLM Research Papers: The 2025 List (January to June)</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~4119</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/10-llm-research-papers-the-2025-list-january-to-june.html">LLM Research Papers: The 2025 List (January to June)</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~4119</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/11-understanding-and-coding-the-kv-cache-in-llms-from-scratch.html">Understanding and Coding the KV Cache in LLMs from Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~3110</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>11</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/11-understanding-and-coding-the-kv-cache-in-llms-from-scratch.html">Understanding and Coding the KV Cache in LLMs from Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~3110</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>12</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/12-coding-llms-from-the-ground-up-a-complete-course.html">Coding LLMs from the Ground Up: A Complete Course</a></td>
+<td>JUL 19, 2025</td>
+<td>1</td>
+<td>~1017</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/12-coding-llms-from-the-ground-up-a-complete-course.html">Coding LLMs from the Ground Up: A Complete Course</a></td>
+<td>JUL 19, 2025</td>
+<td>1</td>
+<td>~1017</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/13-the-state-of-reinforcement-learning-for-llm-reasoning.html">The State of Reinforcement Learning for LLM Reasoning</a></td>
+<td>JUL 19, 2025</td>
+<td>36</td>
+<td>~7957</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>13</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/13-the-state-of-reinforcement-learning-for-llm-reasoning.html">The State of Reinforcement Learning for LLM Reasoning</a></td>
+<td>JUL 19, 2025</td>
+<td>36</td>
+<td>~7957</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>14</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/14-first-look-at-reasoning-from-scratch-chapter-1.html">First Look at Reasoning From Scratch: Chapter 1</a></td>
+<td>JUL 19, 2025</td>
+<td>7</td>
+<td>~3935</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/14-first-look-at-reasoning-from-scratch-chapter-1.html">First Look at Reasoning From Scratch: Chapter 1</a></td>
+<td>JUL 19, 2025</td>
+<td>7</td>
+<td>~3935</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/15-the-state-of-llm-reasoning-model-inference.html">The State of LLM Reasoning Model Inference</a></td>
+<td>JUL 19, 2025</td>
+<td>26</td>
+<td>~4627</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>15</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/15-the-state-of-llm-reasoning-model-inference.html">The State of LLM Reasoning Model Inference</a></td>
+<td>JUL 19, 2025</td>
+<td>26</td>
+<td>~4627</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>16</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/16-understanding-reasoning-llms.html">Understanding Reasoning LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~4363</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>16</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/16-understanding-reasoning-llms.html">Understanding Reasoning LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~4363</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>17</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/17-noteworthy-ai-research-papers-of-2024-part-two.html">Noteworthy AI Research Papers of 2024 (Part Two)</a></td>
+<td>JUL 19, 2025</td>
+<td>22</td>
+<td>~5751</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>17</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/17-noteworthy-ai-research-papers-of-2024-part-two.html">Noteworthy AI Research Papers of 2024 (Part Two)</a></td>
+<td>JUL 19, 2025</td>
+<td>22</td>
+<td>~5751</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>18</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/18-noteworthy-ai-research-papers-of-2024-part-one.html">Noteworthy AI Research Papers of 2024 (Part One)</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~3402</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/18-noteworthy-ai-research-papers-of-2024-part-one.html">Noteworthy AI Research Papers of 2024 (Part One)</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~3402</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>19</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/19-llm-research-papers-the-2024-list.html">LLM Research Papers: The 2024 List</a></td>
+<td>JUL 19, 2025</td>
+<td>2</td>
+<td>~6515</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>19</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/19-llm-research-papers-the-2024-list.html">LLM Research Papers: The 2024 List</a></td>
+<td>JUL 19, 2025</td>
+<td>2</td>
+<td>~6515</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>20</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/20-understanding-multimodal-llms.html">Understanding Multimodal LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>31</td>
+<td>~5021</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>20</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/20-understanding-multimodal-llms.html">Understanding Multimodal LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>31</td>
+<td>~5021</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>21</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/21-building-a-gpt-style-llm-classifier-from-scratch.html">Building A GPT-Style LLM Classifier From Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~4475</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>21</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/21-building-a-gpt-style-llm-classifier-from-scratch.html">Building A GPT-Style LLM Classifier From Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~4475</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>22</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/22-building-llms-from-the-ground-up-a-3-hour-coding-workshop.html">Building LLMs from the Ground Up: A 3-hour Coding Workshop</a></td>
+<td>JUL 19, 2025</td>
+<td>1</td>
+<td>~355</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>22</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/22-building-llms-from-the-ground-up-a-3-hour-coding-workshop.html">Building LLMs from the Ground Up: A 3-hour Coding Workshop</a></td>
+<td>JUL 19, 2025</td>
+<td>1</td>
+<td>~355</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>23</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/23-new-llm-pre-training-and-post-training-paradigms.html">New LLM Pre-training and Post-training Paradigms</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~4595</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>23</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/23-new-llm-pre-training-and-post-training-paradigms.html">New LLM Pre-training and Post-training Paradigms</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~4595</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>24</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/24-instruction-pretraining-llms.html">Instruction Pretraining LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~6797</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>24</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/24-instruction-pretraining-llms.html">Instruction Pretraining LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~6797</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>25</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/25-developing-an-llm-building-training-finetuning.html">Developing an LLM: Building, Training, Finetuning</a></td>
+<td>JUL 19, 2025</td>
+<td>0</td>
+<td>~204</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>25</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/25-developing-an-llm-building-training-finetuning.html">Developing an LLM: Building, Training, Finetuning</a></td>
+<td>JUL 19, 2025</td>
+<td>0</td>
+<td>~204</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>26</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/26-llm-research-insights-instruction-masking-and-new-lora-finet.html">LLM Research Insights: Instruction Masking and New LoRA Finetuning Experiments</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~4398</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>26</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/26-llm-research-insights-instruction-masking-and-new-lora-finet.html">LLM Research Insights: Instruction Masking and New LoRA Finetuning Experiments</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~4398</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>27</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/27-how-good-are-the-latest-open-llms-and-is-dpo-better-than-ppo.html">How Good Are the Latest Open LLMs? And Is DPO Better Than PPO?</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~5651</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>27</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/27-how-good-are-the-latest-open-llms-and-is-dpo-better-than-ppo.html">How Good Are the Latest Open LLMs? And Is DPO Better Than PPO?</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~5651</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>28</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/28-using-and-finetuning-pretrained-transformers.html">Using and Finetuning Pretrained Transformers</a></td>
+<td>JUL 19, 2025</td>
+<td>9</td>
+<td>~3541</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>28</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/28-using-and-finetuning-pretrained-transformers.html">Using and Finetuning Pretrained Transformers</a></td>
+<td>JUL 19, 2025</td>
+<td>9</td>
+<td>~3541</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>29</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/29-tips-for-llm-pretraining-and-evaluating-reward-models.html">Tips for LLM Pretraining and Evaluating Reward Models</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~5333</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>29</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/29-tips-for-llm-pretraining-and-evaluating-reward-models.html">Tips for LLM Pretraining and Evaluating Reward Models</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~5333</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>30</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/30-a-lora-successor-small-finetuned-llms-vs-generalist-llms-and.html">A LoRA Successor, Small Finetuned LLMs Vs Generalist LLMs, and Transparent LLM Research</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~5229</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>30</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/30-a-lora-successor-small-finetuned-llms-vs-generalist-llms-and.html">A LoRA Successor, Small Finetuned LLMs Vs Generalist LLMs, and Transparent LLM Research</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~5229</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>31</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/31-improving-lora-implementing-weight-decomposed-low-rank-adapt.html">Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~3241</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>31</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/31-improving-lora-implementing-weight-decomposed-low-rank-adapt.html">Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~3241</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>32</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/32-model-merging-mixtures-of-experts-and-towards-smaller-llms.html">Model Merging, Mixtures of Experts, and Towards Smaller LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~5792</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>32</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/32-model-merging-mixtures-of-experts-and-towards-smaller-llms.html">Model Merging, Mixtures of Experts, and Towards Smaller LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~5792</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>33</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/33-understanding-and-coding-self-attention-multi-head-attention.html">Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~4997</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>33</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/33-understanding-and-coding-self-attention-multi-head-attention.html">Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~4997</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>34</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/34-ten-noteworthy-ai-research-papers-of-2023.html">Ten Noteworthy AI Research Papers of 2023</a></td>
+<td>JUL 19, 2025</td>
+<td>27</td>
+<td>~4553</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>34</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/34-ten-noteworthy-ai-research-papers-of-2023.html">Ten Noteworthy AI Research Papers of 2023</a></td>
+<td>JUL 19, 2025</td>
+<td>27</td>
+<td>~4553</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>35</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/35-tackling-hallucinations-boosting-reasoning-abilities-and-new.html">Tackling Hallucinations, Boosting Reasoning Abilities, and New Insights into the Transformer Architecture</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~5369</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>35</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/35-tackling-hallucinations-boosting-reasoning-abilities-and-new.html">Tackling Hallucinations, Boosting Reasoning Abilities, and New Insights into the Transformer Architecture</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~5369</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>36</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/36-practical-tips-for-finetuning-llms-using-lora-low-rank-adapt.html">Practical Tips for Finetuning LLMs Using LoRA (Low-Rank Adaptation)</a></td>
+<td>JUL 19, 2025</td>
+<td>17</td>
+<td>~3605</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>36</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/36-practical-tips-for-finetuning-llms-using-lora-low-rank-adapt.html">Practical Tips for Finetuning LLMs Using LoRA (Low-Rank Adaptation)</a></td>
+<td>JUL 19, 2025</td>
+<td>17</td>
+<td>~3605</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>37</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/37-a-potential-successor-to-rlhf-for-efficient-llm-alignment-an.html">A Potential Successor to RLHF for Efficient LLM Alignment and the Resurgence of CNNs</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~3559</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>37</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/37-a-potential-successor-to-rlhf-for-efficient-llm-alignment-an.html">A Potential Successor to RLHF for Efficient LLM Alignment and the Resurgence of CNNs</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~3559</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>38</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/38-ai-and-open-source-in-2023.html">AI and Open Source in 2023</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~3238</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>38</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/38-ai-and-open-source-in-2023.html">AI and Open Source in 2023</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~3238</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>39</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/39-llm-business-and-busyness-recent-company-investments-and-ai-.html">LLM Business and Busyness: Recent Company Investments and AI Adoption, New Small Openly Available LLMs, and LoRA Research</a></td>
+<td>JUL 19, 2025</td>
+<td>14</td>
+<td>~3326</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>39</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/39-llm-business-and-busyness-recent-company-investments-and-ai-.html">LLM Business and Busyness: Recent Company Investments and AI Adoption, New Small Openly Available LLMs, and LoRA Research</a></td>
+<td>JUL 19, 2025</td>
+<td>14</td>
+<td>~3326</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>40</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/40-from-self-alignment-to-longlora.html">From Self-Alignment to LongLoRA</a></td>
+<td>JUL 19, 2025</td>
+<td>23</td>
+<td>~1976</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>40</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/40-from-self-alignment-to-longlora.html">From Self-Alignment to LongLoRA</a></td>
+<td>JUL 19, 2025</td>
+<td>23</td>
+<td>~1976</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>41</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/41-llm-training-rlhf-and-its-alternatives.html">LLM Training: RLHF and Its Alternatives</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~3362</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>41</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/41-llm-training-rlhf-and-its-alternatives.html">LLM Training: RLHF and Its Alternatives</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~3362</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>42</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/42-the-missing-bits-llama-2-weights-have-changed.html">The Missing Bits: Llama 2 Weights Have Changed</a></td>
+<td>JUL 19, 2025</td>
+<td>10</td>
+<td>~1283</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>42</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/42-the-missing-bits-llama-2-weights-have-changed.html">The Missing Bits: Llama 2 Weights Have Changed</a></td>
+<td>JUL 19, 2025</td>
+<td>10</td>
+<td>~1283</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>43</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/43-new-foundation-models-codellama-and-other-highlights-in-open.html">New Foundation Models: CodeLlama and other highlights in Open-Source AI</a></td>
+<td>JUL 19, 2025</td>
+<td>22</td>
+<td>~4244</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>43</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/43-new-foundation-models-codellama-and-other-highlights-in-open.html">New Foundation Models: CodeLlama and other highlights in Open-Source AI</a></td>
+<td>JUL 19, 2025</td>
+<td>22</td>
+<td>~4244</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>44</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/44-llama-2-flash-attention-2-and-more.html">Llama 2, Flash-Attention 2, and More</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~1250</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>44</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/44-llama-2-flash-attention-2-and-more.html">Llama 2, Flash-Attention 2, and More</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~1250</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>45</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/45-large-language-models-and-nearest-neighbors.html">Large Language Models and Nearest Neighbors</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~3039</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>45</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/45-large-language-models-and-nearest-neighbors.html">Large Language Models and Nearest Neighbors</a></td>
+<td>JUL 19, 2025</td>
+<td>11</td>
+<td>~3039</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>46</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/46-long-contexts-and-scaling-transformers-to-1-000-000-000-toke.html">Long Contexts and Scaling Transformers to 1,000,000,000 Tokens</a></td>
+<td>JUL 19, 2025</td>
+<td>23</td>
+<td>~1822</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>46</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/46-long-contexts-and-scaling-transformers-to-1-000-000-000-toke.html">Long Contexts and Scaling Transformers to 1,000,000,000 Tokens</a></td>
+<td>JUL 19, 2025</td>
+<td>23</td>
+<td>~1822</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>47</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/47-state-of-computer-vision-2023-from-vision-transformers-to-ne.html">State of Computer Vision 2023: From Vision Transformers to Neural Radiance Fields</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~3132</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>47</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/47-state-of-computer-vision-2023-from-vision-transformers-to-ne.html">State of Computer Vision 2023: From Vision Transformers to Neural Radiance Fields</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~3132</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>48</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/48-accelerating-pytorch-model-training.html">Accelerating PyTorch Model Training</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~2002</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>48</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/48-accelerating-pytorch-model-training.html">Accelerating PyTorch Model Training</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~2002</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>49</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/49-understanding-encoder-and-decoder-llms.html">Understanding Encoder And Decoder LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>5</td>
+<td>~1566</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>49</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/49-understanding-encoder-and-decoder-llms.html">Understanding Encoder And Decoder LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>5</td>
+<td>~1566</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>50</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/50-direct-preference-optimization-for-human-feedback-and-more.html">Direct-Preference Optimization for Human Feedback and More</a></td>
+<td>JUL 19, 2025</td>
+<td>25</td>
+<td>~1999</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>50</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/50-direct-preference-optimization-for-human-feedback-and-more.html">Direct-Preference Optimization for Human Feedback and More</a></td>
+<td>JUL 19, 2025</td>
+<td>25</td>
+<td>~1999</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>51</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/51-llm-tuning-dataset-perspectives.html">LLM Tuning &amp; Dataset Perspectives</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~3462</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>51</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/51-llm-tuning-dataset-perspectives.html">LLM Tuning &amp; Dataset Perspectives</a></td>
+<td>JUL 19, 2025</td>
+<td>19</td>
+<td>~3462</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>52</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/52-about-layernorm-variants-in-the-original-transformer-paper-a.html">About LayerNorm Variants in the Original Transformer Paper, and Some Other Interesting Historical Tidbits About LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>6</td>
+<td>~1156</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>52</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/52-about-layernorm-variants-in-the-original-transformer-paper-a.html">About LayerNorm Variants in the Original Transformer Paper, and Some Other Interesting Historical Tidbits About LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>6</td>
+<td>~1156</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>53</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/53-finetuning-llms-efficiently-with-adapters.html">Finetuning LLMs Efficiently with Adapters</a></td>
+<td>JUL 19, 2025</td>
+<td>12</td>
+<td>~1830</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>53</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/53-finetuning-llms-efficiently-with-adapters.html">Finetuning LLMs Efficiently with Adapters</a></td>
+<td>JUL 19, 2025</td>
+<td>12</td>
+<td>~1830</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>54</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/54-transformers-for-long-inputs-and-less-training-data.html">Transformers for Long Inputs and Less Training Data</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~1772</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>54</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/54-transformers-for-long-inputs-and-less-training-data.html">Transformers for Long Inputs and Less Training Data</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~1772</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>55</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/55-insights-from-large-scale-llm-training-runs.html">Insights from Large-Scale LLM Training Runs</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~2923</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>55</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/55-insights-from-large-scale-llm-training-runs.html">Insights from Large-Scale LLM Training Runs</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~2923</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>56</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/56-understanding-parameter-efficient-llm-finetuning-prompt-tuni.html">Understanding Parameter-Efficient LLM Finetuning: Prompt Tuning And Prefix Tuning</a></td>
+<td>JUL 19, 2025</td>
+<td>8</td>
+<td>~1016</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>56</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/56-understanding-parameter-efficient-llm-finetuning-prompt-tuni.html">Understanding Parameter-Efficient LLM Finetuning: Prompt Tuning And Prefix Tuning</a></td>
+<td>JUL 19, 2025</td>
+<td>8</td>
+<td>~1016</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>57</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/57-finetuning-large-language-models.html">Finetuning Large Language Models</a></td>
+<td>JUL 19, 2025</td>
+<td>9</td>
+<td>~2246</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>57</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/57-finetuning-large-language-models.html">Finetuning Large Language Models</a></td>
+<td>JUL 19, 2025</td>
+<td>9</td>
+<td>~2246</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>58</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/58-understanding-large-language-models.html">Understanding Large Language Models</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~3501</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>58</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/58-understanding-large-language-models.html">Understanding Large Language Models</a></td>
+<td>JUL 19, 2025</td>
+<td>21</td>
+<td>~3501</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>59</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/59-large-language-models-3-0.html">Large Language Models 3.0</a></td>
+<td>JUL 19, 2025</td>
+<td>16</td>
+<td>~4087</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>59</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/59-large-language-models-3-0.html">Large Language Models 3.0</a></td>
+<td>JUL 19, 2025</td>
+<td>16</td>
+<td>~4087</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>60</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/60-train-differently-do-we-need-reinforcement-learning-with-hum.html">TrAIn Differently: Do We Need Reinforcement Learning with Human Feedback (RLHF)?</a></td>
+<td>JUL 19, 2025</td>
+<td>17</td>
+<td>~4586</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>60</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/60-train-differently-do-we-need-reinforcement-learning-with-hum.html">TrAIn Differently: Do We Need Reinforcement Learning with Human Feedback (RLHF)?</a></td>
+<td>JUL 19, 2025</td>
+<td>17</td>
+<td>~4586</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>61</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/61-revaival-of-ideas-from-next-generation-convolutional-neural-.html">RevAIval of Ideas: From Next-Generation Convolutional Neural Networks to LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>26</td>
+<td>~4682</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>61</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/61-revaival-of-ideas-from-next-generation-convolutional-neural-.html">RevAIval of Ideas: From Next-Generation Convolutional Neural Networks to LLMs</a></td>
+<td>JUL 19, 2025</td>
+<td>26</td>
+<td>~4682</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>62</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/62-looking-back-at-2022-a-big-year-for-ai.html">Looking Back at 2022: A Big Year For AI</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~3059</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>62</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/62-looking-back-at-2022-a-big-year-for-ai.html">Looking Back at 2022: A Big Year For AI</a></td>
+<td>JUL 19, 2025</td>
+<td>15</td>
+<td>~3059</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>63</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/63-launching-large-language-models-and-open-source-software.html">Launching Large Language Models and Open Source Software</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~2936</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>63</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/63-launching-large-language-models-and-open-source-software.html">Launching Large Language Models and Open Source Software</a></td>
+<td>JUL 19, 2025</td>
+<td>18</td>
+<td>~2936</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>64</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/64-transformers-fast-and-slow-new-developments-in-language-proc.html">Transformers, Fast and Slow: New Developments in Language Processing</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~2953</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>64</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/64-transformers-fast-and-slow-new-developments-in-language-proc.html">Transformers, Fast and Slow: New Developments in Language Processing</a></td>
+<td>JUL 19, 2025</td>
+<td>13</td>
+<td>~2953</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="odd">
+<td>65</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/65-a-diffusion-of-innovations-recent-developments-in-generative.html">A Diffusion of Innovations: Recent Developments in Generative Learning</a></td>
+<td>JUL 19, 2025</td>
+<td>12</td>
+<td>~2110</td>
+<td>✅ Complete</td>
+</tr>
+<tr class="even">
+<td>65</td>
+<td><a href="../../../research/ahead-of-ai-analysis/raw/65-a-diffusion-of-innovations-recent-developments-in-generative.html">A Diffusion of Innovations: Recent Developments in Generative Learning</a></td>
+<td>JUL 19, 2025</td>
+<td>12</td>
+<td>~2110</td>
+<td>✅ Complete</td>
+</tr>
+</tbody>
+</table>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

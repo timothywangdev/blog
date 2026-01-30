@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>instruction-pretraining-llms – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#instruction-pretraining-llms" id="toc-instruction-pretraining-llms" class="nav-link active" data-scroll-target="#instruction-pretraining-llms">Instruction Pretraining LLMs</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="instruction-pretraining-llms" class="level1">
+<h1>Instruction Pretraining LLMs</h1>
+<p><strong>Subtitle:</strong> The Latest Research in Instruction Finetuning</p>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/instruction-pretraining-llms</p>
+<p><strong>Likes:</strong> LIKE (2)</p>
+<p><strong>Image Count:</strong> 18</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!0QPB!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1c9aef22-3864-4212-ac39-cf73d569831b_1600x1175.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated illustration of the Magpie method for generating a synthetic dataset for instruction finetuning. The figure is based on illustrations from the Magpie paper: https://arxiv.org/abs/2406.08464</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!akSq!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb417eecf-8f0c-4cdb-8a6b-899d515172bd_1510x1526.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A Llama 3 8B base model finetuned on the Magpie-generated instruction dataset beats the original Llama 3 8B Instruct model. Based on an annotated illustration from the Magpie paper: https://arxiv.org/abs/2406.08464</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!5nwy!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F8633e941-ac42-4968-a53f-15edd93aad18_1600x1472.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Code screenshot from a reimplementation of the Magpie method that runs locally. The code is available here.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!a2TC!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F8b72fca8-af33-4b89-bb6d-8646b88c51f6_1224x1342.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated plots from the Magpie paper showing the dataset quality and difficulty of the Air and Pro datasets relative to each other.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ey74!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F60d806cb-bbec-4b01-8c8e-7fd52ad28d41_1600x1430.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An overview of chapter 7 in my “Build a Large Language Model From Scratch” book. Supplementary code materials are available here on GitHub.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!1qne!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe7b54f6a-21ba-4cfc-ba11-84869fe4c1b1_1444x838.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A comparison between regular pretraining (top) and the proposed instruction pretraining approach (bottom) via an annotated figure from https://arxiv.org/abs/2406.14491</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!JMNR!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F048c0532-67b6-4e47-b9b1-abacbd2d7b33_1600x822.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The input and output data of the instruction synthesizer via an annotated figure from https://arxiv.org/abs/2406.14491</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!AXY8!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F92c31ec9-e599-42f9-adbf-7d5af05e9aec_1600x1110.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The formatting of the instruction-data for finetuning (and using) the instruction synthesizer via an annotated figure from https://arxiv.org/abs/2406.14491</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!4mSs!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4e191e7e-4b9c-442d-9fc6-194b8eb0b989_1600x782.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A comparison of 3 different pretraining approaches used to train models from scratch (annotated table from https://arxiv.org/abs/2406.14491)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!EUJj!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F57961fbf-d0ce-42d7-bbeb-c7f7222d5221_1600x1016.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Finetuning LLMs that have been pretrained with either the traditional pretraining pardigm (Vanilla PT) or instruction pretraining (annotated figure from https://arxiv.org/abs/2406.14491)</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vNyr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F469a29ba-6d63-4b4b-8f83-c17359302975_1600x670.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: A comparison of 3 different pretraining approaches used for continual pretraining (annotated table from https://arxiv.org/abs/2406.14491)</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!grze!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F336099c3-5356-4b59-bf0e-ab66585fa6aa_1999x1060.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from https://arxiv.org/abs/2310.06825 explaining sliding window attention.</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!dSDK!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fcb1b8411-dfa2-4ff9-adac-59b09106df99_962x436.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: An ablation study from the Gemma 2 technical report showing that a decreased block size for the sliding window barely impacts the modeling performance of the 9B parameter model during inference.</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!o3c-!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbdd3b29b-438c-4a08-af54-1c579cdc7463_1600x687.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from Ainslie et al.&nbsp;2023</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!bxeb!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F273cd779-88f1-430c-950a-05c75f828d79_1600x760.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: An overview of knowledge distillation from my Machine Learning Q and AI book in the context of computer vision. In an LLM-context, think of text instead of images and predicted tokens instead of class labels.</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!mUlT!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F47e61f11-d421-4b8d-911c-ef24cff0d15e_1194x744.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: A comparison between two other popular models with openly available weights: Llama 3 and Qwen 1.5. (Annotated table from the Gemma 2 technical report).</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!pi1N!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe2e16f45-736e-48ef-ac40-c7c418aabb0b_908x598.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: An example of one of the ablation studies included in the Gemma 2 technical report. Here “wide” refers to a model with 28 layers and an intermediate size of 24,576, and “deep” refers to a architecture with 42 layers with an intermediate size of 14,336.</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!nVlV!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0bbf4f30-91b2-4e5c-988b-be6329f4d1dc_1752x758.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Build A Large Language Model (From Scratch), Machine Learning Q And AI, and Machine Learning with PyTorch and Scikit-Learn</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>A lot has happened last month: Apple announced the integration of on-device LLMs, Nvidia shared their large Nemotron model, FlashAttention-3 was announced, Google’s Gemma 2 came out, and much more.&nbsp;</p>
+<p>You’ve probably already read about it all in various news outlets. So, in this article, I want to focus on recent research centered on instruction finetuning, a fundamental technique for training LLMs.</p>
+<p>What I am going to cover in this article:</p>
+<p>A new, cost-effective method for generating data for instruction finetuning</p>
+<p>Instruction finetuning from scratch</p>
+<p>Pretraining LLMs with instruction data</p>
+<p>An overview of what’s new in Gemma 2</p>
+<p>An overview of all the other interesting research papers that came out in June</p>
+<p>Happy reading!</p>
+<ol type="1">
+<li>Creating Alignment Data from Scratch</li>
+</ol>
+<p>The Magpie: Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing paper shares a fascinating hack to generate a high-quality dataset for LLM instruction finetuning. While this doesn’t offer any particularly recent research insights, it’s one of those interesting, practical exploits that seems super useful.</p>
+<p>1.1 Generating An Instruction Dataset From Nothing</p>
+<p>What distinguishes this instruction-data-generating method from others is that it can be fully automated and doesn’t require any initial questions or instructions. As the paper title suggests, it enables the creation of an instruction dataset from “Nothing” – the only thing we need is a locally running Llama 3 8B model. The figure below summarizes how this method works.</p>
+<p>Annotated illustration of the Magpie method for generating a synthetic dataset for instruction finetuning. The figure is based on illustrations from the Magpie paper: https://arxiv.org/abs/2406.08464</p>
+<p>Essentially, as shown in the figure above, we just have to prompt the Llama 3 8B Instruct model with a pre-query template, and it will generate an instruction for us. Then, we feed that instruction back to the LLM, and it will generate a response. If we repeat this procedure a couple of thousand times, we obtain a dataset for instruction finetuning. (Optionally, we can apply an LLM to filter the instruction-response pairs by quality.)</p>
+<p>1.2 Dataset quality</p>
+<p>What’s fascinating is that with the resulting instruction dataset, the authors found that finetuning a Llama 3 8B base model with just instruction finetuning (no preference finetuning via RLHF and DPO) beats the original Llama 2 8B Instruct model by Meta AI, as shown in the figure below.</p>
+<p>A Llama 3 8B base model finetuned on the Magpie-generated instruction dataset beats the original Llama 3 8B Instruct model. Based on an annotated illustration from the Magpie paper: https://arxiv.org/abs/2406.08464</p>
+<p>The Magpie results shown in the figure above wer achieved with 300 thousand samples only. In comparison, The original Llama 3 Instruct model was finetuned and aligned on 100 million samples!</p>
+<p>1.3 Running the Dataset Generation Locally</p>
+<p>I was skeptical at first, so I tried to implement this myself. It really works! Here, you can find my reimplementation using Ollama, which even runs fine locally on a MacBook Air.</p>
+<p>Code screenshot from a reimplementation of the Magpie method that runs locally. The code is available here.</p>
+<p>1.4 Additional Details</p>
+<p>The authors created two sets of datasets: A “Pro” version using the Llama 3 70B Instruct model and an “Air” version using the Llama 3 8B Instruct model. As an earlier figure showed, the Magpie-Pro-generated dataset results in slightly stronger models compared to the Magpie-Air dataset when using it to instruction-finetune a Llama 3 8B base model.</p>
+<p>The figure below shows an additional comparison of the dataset qualities and difficulties as rated via an LLM.</p>
+<p>Annotated plots from the Magpie paper showing the dataset quality and difficulty of the Air and Pro datasets relative to each other.</p>
+<p>As the figure above shows, the quality of the Air and Pro datasets is roughly on par. In addition, it would have been interesting to see how the Alpaca dataset compares to these. (The assumption is that the Magpie data is of much higher quality than Alpaca, but a reference point would be interesting.)</p>
+<p>Furthermore, the paper contains an analysis showing that the breadth or diversity in this dataset is much larger than that of other popular datasets for instruction finetuning, such as Alpaca, Evol Instruct, and UltraChat. In addition, when compared to models trained with other instruction finetuning datasets, the Magpie-Pro finetuned model also compares very favorably.</p>
+<p>1.5 Conclusion</p>
+<p>Overall, I think that Magpie is an interesting exploit that is, on the one hand, fascinating in its effectiveness and, on the other hand, has a lot of practical utility. I will certainly consider it as an interesting, simple, and cost-effective candidate for constructing general-purpose instruction datasets in the future.</p>
+<ol start="2" type="1">
+<li>Instruction Finetuning from Scratch</li>
+</ol>
+<p>If you are looking for a resource to understand the instruction finetuning process in LLMs, I am happy to share that Chapter 7 on instruction finetuning LLMs is now finally live on the Manning website.</p>
+<p>This is the longest chapter in the book and takes a from-scratch approach to implementing the instruction finetuning pipeline. This includes everything from input formatting to batching with a custom collate function, masking padding tokens, the training loop itself, and scoring the response quality of the finetuned LLM on a custom test set.</p>
+<p>(The exercises include changing prompt styles, instruction masking, and adding LoRA.)</p>
+<p>Happy coding!</p>
+<p>An overview of chapter 7 in my “Build a Large Language Model From Scratch” book. Supplementary code materials are available here on GitHub.</p>
+<p>PS: it’s also the last chapter, and the publisher is currently preparing the layouts for the print version.</p>
+<ol start="3" type="1">
+<li>Instruction Pretraining LLMs</li>
+</ol>
+<p>In the paper “Instruction Pre-Training: Language Models are Supervised Multitask Learners” (https://arxiv.org/abs/2406.14491), researchers investigate whether LLM pretraining can be made more efficient by including synthetic instruction-response pairs instead of just raw text. (Here, “raw text” means text from books, websites, papers, and so forth that has not been reprocessed into a specific format.)</p>
+<p>A comparison between regular pretraining (top) and the proposed instruction pretraining approach (bottom) via an annotated figure from https://arxiv.org/abs/2406.14491</p>
+<p>Specifically, the researchers experiment with generating instruction-response data from the raw training corpus itself via an “instruction synthesizer,” an LLM specifically finetuned for this task.</p>
+<p>(Note that this is not the first paper proposing the formatting of raw text as instruction data. Another work that comes to mind is “Genie: Achieving Human Parity in Content-Grounded Datasets Generation” (https://arxiv.org/abs/2401.14367). I also recall seeing another paper or blog post using instruction data during pretraining a few months ago—I discussed this method with some of my colleagues—but unfortunately, I couldn’t find the reference. Nonetheless, the paper discussed here is particularly intriguing since it builds on openly available LLMs that run locally and covers both pretraining and continual pretraining.)</p>
+<p>3.1 Instruction Synthesizer</p>
+<p>Before we dive into the pretraining and continual pretraining results, let’s talk about the core component of this method: the instruction synthesizer. This is an openly available Mistral 7B v0.1 LLM (which I wrote about last year here: https://magazine.sebastianraschka.com/i/138555764/mistral-b) that has been finetuned to generate instruction-response pairs from raw text.</p>
+<p>To finetune this synthesizer, the researchers use datasets such as HotpotQA (https://arxiv.org/abs/1809.09600), which consists of passages from Wikipedia associated with questions and answers. For this, the authors also ensure that a variety of tasks, like commonsense reasoning, sentiment analysis, math problems, etc., are covered.</p>
+<p>The input and output data of the instruction synthesizer via an annotated figure from https://arxiv.org/abs/2406.14491</p>
+<p>Once this instruction synthesizer is developed (i.e., finetuned), it can be used to generate the input data for pretraining the target LLMs.</p>
+<p>One last noteworthy detail regarding the instruction synthesizer is that multiple raw texts (Tn) and instruction-response pairs (In ⊕ Rn) are concatenated as few-shot examples, as shown in the figure below.</p>
+<p>The formatting of the instruction-data for finetuning (and using) the instruction synthesizer via an annotated figure from https://arxiv.org/abs/2406.14491</p>
+<p>3.2 Pretraining with Instruction Data</p>
+<p>Now that we have discussed the method to generate the instruction-response pairs, let’s get to the interesting part: how well do models train on this augmented dataset. The first set of results looks at two small models trained from scratch: 500M parameters and 1.3B parameters (both are based on the Mistral architecture).</p>
+<p>A comparison of 3 different pretraining approaches used to train models from scratch (annotated table from https://arxiv.org/abs/2406.14491)</p>
+<p>As we can see in the table above, the model trained via the proposed instruction pretraining approach (Instruct PT) performs best on most benchmark tasks (higher values are better).&nbsp;</p>
+<p>Note, though, that it has seen more tokens than the Vanilla PT approach since it included the synthesized instruction-response pairs. Hence, the authors included the Mix PT comparison, which is a model that has been trained on a data mix containing both the raw text and the instruction data used to train the synthesizer.</p>
+<p>From this comparison, we can see that not simply using any instruction data makes the difference. The fact that Instruct PT performs better than Mix PT on most tasks illustrates that the nature of the instruction-response data (i.e., instruction-response data related to the raw data) makes the difference. (The authors conducted all experiments using the same number of tokens.)</p>
+<p>In addition, it’s worth noting that the Instruct PT pretrained models have another advantage: They improve a more when they are instruction-finetuned afterwards, as the figure below shows.</p>
+<p>Finetuning LLMs that have been pretrained with either the traditional pretraining pardigm (Vanilla PT) or instruction pretraining (annotated figure from https://arxiv.org/abs/2406.14491)</p>
+<p>3.3 Continual Pretraining with Instruction Data</p>
+<p>Pretraining from scratch is interesting because that’s how LLMs are created in the first place. However, I’d say that practitioners care more about continual pretraining and finetuning.&nbsp;</p>
+<p>Continual pretraining here means that we take an existing pretrained model and pretrain it further on new domain data. For instance, think of a Llama 3 8B base model that has been trained on a general text corpus and that you want to adapt for finance, medical, legal, or other domains.</p>
+<p>The table below summarizes the results the researchers obtained when applying the instruction pretraining method to a pretrained Llama 3 8B base model. Specifically, they conducted continual pretraining with both biomedical texts and finance texts.</p>
+<p>A comparison of 3 different pretraining approaches used for continual pretraining (annotated table from https://arxiv.org/abs/2406.14491)</p>
+<p>Looking at the table above, we can see that the instruction pretraining approach (Instruct PT) clearly outperforms the vanilla pretraining (Vanilla PT) approach (here, this means regular continual pretraining of the base model).&nbsp;</p>
+<p>The Llama 3 70B base model is included as a reference; I suppose to showcase that small specialized models can beat larger general models.</p>
+<p>3.4 Conclusion</p>
+<p>Almost every time I explain the LLM pretraining pipeline to someone, they are surprised by its simplicity and the fact that this is still what’s commonly used to train LLMs today. The instruction pretraining approach is quite refreshing in that sense.&nbsp;</p>
+<p>One caveat is that for large pretraining corpora, it might still be expensive to create the instruction-augmented corpora. However, the nice thing about generated data is that it can be reused in many different projects once created.</p>
+<ol start="4" type="1">
+<li>Gemma 2</li>
+</ol>
+<p>I cannot write this article without mentioning Google’s new Gemma 2 models, which are arguably the biggest model release last month. However, when it comes to pure size, Nvidia’s Nemotron-4 340B takes the crown (https://arxiv.org/abs/2406.11704). The Gemma 2 models come in 2.6B, 9B, and 27B parameter versions.</p>
+<p>Since this article is already quite lengthy, and you’re likely familiar with Gemma 2 from other sources, let’s cut to the chase. What are the main highlights and noteworthy updates in Google’s newly released Gemma 2 LLMs? The main theme is exploring techniques without necessarily increasing the size of training datasets but rather focusing on developing relatively small and efficient LLMs.</p>
+<p>Specifically, they blend three main architectural and training choices to create the 2.6B and 9B parameter models: sliding window attention, grouped-query attention, and knowledge distillation.</p>
+<p>4.1 Sliding window attention</p>
+<p>Sliding window attention (e.g., as popularized by Mistral) is a technique using a fixed-sized attention block that allows a current token to attend to only a specific number of previous tokens instead of all previous tokens, as illustrated in the figure below.</p>
+<p>Annotated figure from https://arxiv.org/abs/2310.06825 explaining sliding window attention.</p>
+<p>In the case of Gemma 2, the authors alternated between regular attention and sliding window attention layers. The sliding attention block size was 4096 tokens, spanning a total block size of 8192 tokens.&nbsp;</p>
+<p>Sliding window attention is mainly used to improve computational performance, and the researchers also included a small ablation study showing that there’s a barely noticeable difference in perplexity when shrinking the block size during inference.</p>
+<p>An ablation study from the Gemma 2 technical report showing that a decreased block size for the sliding window barely impacts the modeling performance of the 9B parameter model during inference.</p>
+<p>(It would have been interesting to see the GPU memory improvement side-by-side.)</p>
+<p>4.2 Group-query attention</p>
+<p>Group-query attention (like in Llama 2 and 3) can be regarded as a more generalized form of multi-query attention. The motivation behind this is to reduce the number of trainable parameters by sharing the same Keys and Values heads for multiple Query heads, thereby lowering computational requirements.</p>
+<p>Annotated figure from Ainslie et al.&nbsp;2023</p>
+<p>4.3 Knowledge distillation</p>
+<p>The general idea of Knowledge distillation (as in MiniLLM, https://arxiv.org/abs/2306.08543) is to transfer knowledge from a larger model (the teacher) to a smaller model (the student). Here, they trained a 27B (teacher) model from scratch and then trained the smaller 2B and 9B (student) models on the outputs of the larger teacher model. The 27B model doesn’t use knowledge distillation but was trained from scratch to serve as a “teacher” for the smaller models.</p>
+<p>An overview of knowledge distillation from my Machine Learning Q and AI book in the context of computer vision. In an LLM-context, think of text instead of images and predicted tokens instead of class labels.</p>
+<p>4.4 Other interesting architecture details</p>
+<p>The paper contains many other interesting tidbits. For instance, one hallmark of Gemma 2 is its relatively large vocabulary size: 256,000 tokens. This is similar to the first Gemma model, but it’s still worth noting since it’s twice the size of the Llama 3 vocabulary (128,000) and eight times the size of the Phi-3 vocabulary (32,000).</p>
+<p>The vocabulary size of an LLM refers to the number of unique tokens (words, subwords, or characters) that the model can recognize and generate.&nbsp;</p>
+<p>A large vocabulary size in LLMs allows for better coverage of words and concepts, improved handling of multilingual content, and reduced tokenization artifacts. However, a large vocabulary size also comes with trade-offs, such as increased model size and potentially slower inference due to the larger embedding and output layers. (That’s where the sliding window attention and multi-query attention mechanism are important to offset this.)</p>
+<p>There’s also an interesting section on “logit capping,” a technique I haven’t seen used before. Essentially, it is a form of min-max normalizing and clipping of the logit values to keep them within a certain range. I presume this is to improve stability and gradient flow during training.</p>
+<p>logits ← soft_cap ∗ tanh(logits/soft_cap).</p>
+<p>Additionally, they leverage model merging techniques to combine models from multiple runs with different hyperparameters, although the paper doesn’t provide much detail about that. (However, interested readers can read more about this in WARP: On the Benefits of Weight Averaged Rewarded Policies, which Gemma 2 uses for this.)&nbsp;</p>
+<p>In terms of modeling performance, Gemma 2 is almost as good as the 3x larger Llama 3 70B, and it beats the old Qwen 1.5 32B model. It would be interesting to see a comparison with the more recent Qwen 2 model.</p>
+<p>A comparison between two other popular models with openly available weights: Llama 3 and Qwen 1.5. (Annotated table from the Gemma 2 technical report).</p>
+<p>Personally, a highlight is that the Gemma 2 report includes ablation studies for some of its architectural choices. This was once a given in academic research but is increasingly rare for LLM research.</p>
+<p>An example of one of the ablation studies included in the Gemma 2 technical report. Here “wide” refers to a model with 28 layers and an intermediate size of 24,576, and “deep” refers to a architecture with 42 layers with an intermediate size of 14,336.</p>
+<p>4.5 Conclusion</p>
+<p>It’s refreshing to see such a relatively detailed technical report from Google. When it comes to the model itself, based on public consensus, Gemma 2 is likely the most capable model for single-GPU use cases today. For larger models, Llama 3 70B and Qwen 2 72B remain strong contenders.</p>
+<p>Supporting Ahead of AI</p>
+<p>Ahead of AI is a personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues.</p>
+<p>If you have a few moments, a review of Machine Learning Q and AI or Machine Learning with PyTorch and Scikit-Learn on Amazon would really help, too!</p>
+<p>Your support means a great deal and is tremendously helpful in continuing this journey. Thank you!</p>
+<ol start="5" type="1">
+<li>Other Interesting Research Papers In April</li>
+</ol>
+<p>Below is a selection of other interesting papers I stumbled upon this month. Given the length of this list, I highlighted those 20 I found particularly interesting with an asterisk (*). However, please note that this list and its annotations are purely based on my interests and relevance to my own projects.</p>
+<p>Scaling Synthetic Data Creation with 1,000,000,000 Personas by Chan, Wang, Yu, et al.&nbsp;(28 June), https://arxiv.org/abs/2406.20094</p>
+<p>The research proposes a persona-driven data synthesis methodology that utilizes an LLM to create diverse synthetic data by leveraging a vast collection of automatically curated personas, called Persona Hub, which represents about 13% of the world’s population.</p>
+<p>LLM Critics Help Catch LLM Bugs by McAleese, Pokorny, Ceron Uribe, et al.&nbsp;(28 June), https://arxiv.org/abs/2407.00215</p>
+<p>This study develops “critic” models using RLHF to assist humans in evaluating model-generated code, training LLMs to write natural language feedback on code errors, and demonstrating their effectiveness in catching bugs across various tasks.</p>
+<p>Direct Preference Knowledge Distillation for Large Language Models by Li, Gu, Dong, et al.&nbsp;(28 June), https://arxiv.org/abs/2406.19774</p>
+<p>DPKD reformulates Knowledge Distillation for LLMs into a two-stage process: first optimizing an objective combining implicit reward and reverse KL divergence, then improving the preference probability of teacher outputs over student outputs.</p>
+<p>Changing Answer Order Can Decrease MMLU Accuracy by Gupta, Pantoja, Ross, et al.&nbsp;(27 June), https://arxiv.org/abs/2406.19470</p>
+<p>This study investigates the robustness of accuracy measurements on the MMLU benchmark for LLMs, revealing that shuffling answer label contents leads to decreased accuracy across models, with varying sensitivity.</p>
+<p>From Artificial Needles to Real Haystacks: Improving Retrieval Capabilities in LLMs by Finetuning on Synthetic Data by Xiong, Papageorgiou, Lee, and Papailiopoulos (27 June), https://arxiv.org/abs/2406.19292</p>
+<p>This study proposes a finetuning approach using a synthetic dataset of numerical key-value retrieval tasks to improve LLM’s long-context information retrieval and reasoning capabilities.&nbsp;</p>
+<p>Dataset Size Recovery from LoRA Weights by Salama, Kahana, Horwitz, and Hoshen (27 June), https://arxiv.org/abs/2406.19395</p>
+<p>This study introduces a method for recovering the number of images used to finetune a vision model using LoRA, by analyzing the norm and spectrum of LoRA matrices.&nbsp;</p>
+<p>Step-DPO: Step-wise Preference Optimization for Long-chain Reasoning of LLMs by Azerbayev, Shao, Lin, et al.&nbsp;(26 June), https://arxiv.org/abs/2406.18629</p>
+<p>This paper introduces Step-DPO, a method that optimizes individual reasoning steps in mathematical problem-solving for LLMs using a custom 10K step-wise preference pair dataset.</p>
+<p>RouteLLM: Learning to Route LLMs with Preference Data by Ong, Amjad, et al.&nbsp;(26 June), https://arxiv.org/abs/2406.18665</p>
+<p>This study proposes efficient router models that dynamically select between stronger and weaker LLMs during inference to optimize cost-performance trade-offs.&nbsp;</p>
+<ul>
+<li>A Closer Look into Mixture-of-Experts in Large Language Models by Zhang, Liu, Patel, et al.&nbsp;(26 June), https://arxiv.org/abs/2406.18219</li>
+</ul>
+<p>This study looks at the inner workings of Mixture-of-Experts (MoE) LLMs to share&nbsp; insights about neuron behavior, expert selection criteria, and expert diversity across layers, while providing practical suggestions for MoE design and implementation based on these observations.</p>
+<ul>
+<li>Following Length Constraints in Instructions by Yuan, Kulikov, Yu, et al.&nbsp;(25 June), https://arxiv.org/abs/2406.17744</li>
+</ul>
+<p>This study introduces a method to train LLMs that can follow user-specified length constraints at inference time, addressing the length bias in model evaluation and outperforming standard instruction-following models in length-controlled tasks.</p>
+<p>LongIns: A Challenging Long-context Instruction-based Exam for LLMs by Shaham, Bai, An, et al.&nbsp;(25 June), https://arxiv.org/abs/2406.17588</p>
+<p>LongIns is a new benchmark for evaluating LLM’s long-context capabilities, using three settings to assess retrieval and reasoning abilities.</p>
+<ul>
+<li>The FineWeb Datasets: Decanting the Web for the Finest Text Data at Scale by He, Wang, Shen, et al.&nbsp;(25 June), https://arxiv.org/abs/2406.17557</li>
+</ul>
+<p>This report introduces FineWeb, a 15-trillion token dataset derived from Common Crawl, and FineWeb-Edu, a 1.3-trillion token educational subset.</p>
+<p>Adam-mini: Use Fewer Learning Rates To Gain More by Zhang, Chen, Li, et al.&nbsp;(24 June), https://arxiv.org/abs/2406.16793</p>
+<p>Adam-mini is a proposed optimizer that achieves comparable or better performance than AdamW while using 45-50% less memory by strategically reducing learning rate resources, partitioning parameters based on Hessian structure, and assigning optimized single learning rates to parameter blocks.</p>
+<p>WARP: On the Benefits of Weight Averaged Rewarded Policies by Ramé, Ferret, Vieillard, et al.&nbsp;(24 June), https://arxiv.org/abs/2406.16768</p>
+<p>The paper introduces a new alignment strategy for LLMs that merges policies at three stages: using exponential moving average for dynamic KL regularization, spherical interpolation of independently fine-tuned policies, and linear interpolation with initialization.</p>
+<p>Sparser is Faster and Less is More: Efficient Sparse Attention for Long-Range Transformers by Lou, Jia, Zheng, and Tu (24 June), https://arxiv.org/abs/2406.16747</p>
+<p>The authors propose a new sparse attention mechanism for autoregressive Transformers, using a scoring network and differentiable top-k mask operator to select a constant number of KV pairs per query to achieve linear time complexity and a constant memory footprint.</p>
+<p>Efficient Continual Pre-training by Mitigating the Stability Gap by Wang, Hu, Xiong, et al.&nbsp;(21 June), https://arxiv.org/abs/2406.14833</p>
+<p>This study proposes three strategies to improve continual pretraining of LLMs: multiple epochs on a subset, focusing on high-quality data, and using a mixture similar to pretraining data.</p>
+<p>MoA: Mixture of Sparse Attention for Automatic Large Language Model Compression by Fu, Huang, Ning, et al.&nbsp;(21 June), https://arxiv.org/abs/2406.14909</p>
+<p>Mixture of Attention (MoA) automatically optimizes sparse attention patterns for different model components and input lengths in LLMs, improving context length, accuracy, and efficiency over uniform sparse attention approaches.</p>
+<p>LongRAG: Enhancing Retrieval-Augmented Generation with Long-context LLMs by Jiang, Ma, Chen, et al.&nbsp;(21 June), https://arxiv.org/abs/2406.15319</p>
+<p>LongRAG introduces a new RAG framework using 4K-token retrieval units and long-context LLMs for answer extraction, which improves retrieval performance and achieving state-of-the-art results on question-answering tasks without additional training.</p>
+<ul>
+<li>A Tale of Trust and Accuracy: Base vs.&nbsp;Instruct LLMs in RAG Systems by Cuconasu, Trappolini, Tonellotto, et al.&nbsp;(21 June), https://arxiv.org/abs/2406.14972</li>
+</ul>
+<p>This study challenges conventional wisdom by demonstrating that base LLMs outperform instruction-tuned models in Retrieval Augmented Generation (RAG) tasks.</p>
+<p>Can LLMs Learn by Teaching? A Preliminary Study by Ning, Wang, Li, Lin, et al.&nbsp;(20 June), https://arxiv.org/abs/2406.14629</p>
+<p>The authors develop and test three methods for implementing “Learning by Teaching” in LLMs, mimicking human teaching processes at different levels: observing student feedback, learning from feedback, and iterative learning, to improve model performance without relying on additional human-produced data or stronger models.</p>
+<ul>
+<li>Instruction Pre-Training: Language Models are Supervised Multitask Learners by Cheng, Gu, Huang, et al.&nbsp;(20 June), https://arxiv.org/abs/2406.14491</li>
+</ul>
+<p>This study introduces a framework for supervised multitask pretraining of LLMs that augments raw corpora with synthetically generated instruction-response pairs.</p>
+<ul>
+<li>Can Long-Context Language Models Subsume Retrieval, RAG, SQL, and More? by Wu, Zhang, Johnson, et al.&nbsp;(19 June), https://arxiv.org/abs/2406.13121</li>
+</ul>
+<p>This study introduces a benchmark for evaluating long-context LLMs on tasks requiring up to millions of tokens, demonstrating that these long-context LLMs can compete with specialized retrieval and RAG systems in in-context retrieval and reasoning tasks.</p>
+<p>Judging the Judges: Evaluating Alignment and Vulnerabilities in LLMs-as-Judges by Ye, Turpin, Li, He, et al.&nbsp;(18 June), https://arxiv.org/abs/2406.12624</p>
+<p>This paper evaluates the LLM-as-a-judge paradigm using TriviaQA as a benchmark, comparing 9 judge models and 9 exam taker models against human annotations, revealing that models with high human alignment may not necessarily be the best at ranking exam taker models.</p>
+<p>From RAGs to Rich Parameters: Probing How Language Models Utilize External Knowledge Over Parametric Information for Factual Queries by Wadhwa, Seetharaman, Aggarwal, et al.&nbsp;(18 June), https://arxiv.org/abs/2406.12824</p>
+<p>The authors investigate the mechanics of Retrieval Augmented Generation (RAG) in LLMs to reveal that models predominantly rely on retrieved context information rather than their parametric memory when answering questions, exhibiting a shortcut behavior across different model families.</p>
+<p>Self-MoE: Towards Compositional Large Language Models with Self-Specialized Experts by Kang, Karlinsky, and Luo, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.12034</p>
+<p>This paper introduces a method that transforms a monolithic (LLM into a modular system called MiXSE (MiXture of Self-specialized Experts), using self-generated synthetic data to create specialized expert modules with shared base LLM and self-optimized routing.</p>
+<p>Measuring memorization in RLHF for code completion by Pappu, Porter, Shumailov, and Hayes (17 June), https://arxiv.org/abs/2406.11715</p>
+<p>This study investigates the impact of Reinforcement Learning with Human Feedback (RLHF) on data memorization in LLMs, focusing on code completion tasks, and finds that while RLHF reduces memorization of data used in reward modeling and reinforcement learning compared to direct finetuning, it largely preserves memorization from the initial finetuning stage.</p>
+<p>HARE: HumAn pRiors, a key to small language model Efficiency by Zhang, Jin, Ge, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11410</p>
+<p>This study proposes a principle for leveraging human priors in data construction for Small Language Models (SLMs) that focuses on semantic diversity and data quality consistency while avoiding benchmark data leakage.</p>
+<p>Iterative Length-Regularized Direct Preference Optimization: A Case Study on Improving 7B Language Models to GPT-4 Level by Kim, Lee, Park, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11817</p>
+<p>This study introduces iterative length-regularized Direct Preference Optimization (iLR-DPO), a method that improves LLM alignment with human preferences while controlling response verbosity.</p>
+<p>Unveiling Encoder-Free Vision-Language Models by Choi, Yoon, Lee, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11832</p>
+<p>This study presents an encoder-free vision-language model (VLM) that directly processes both visual and textual inputs in a unified decoder.</p>
+<ul>
+<li>DeepSeek-Coder-V2: Breaking the Barrier of Closed-Source Models in Code Intelligence by Zhu, Wang, Lee, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11931</li>
+</ul>
+<p>DeepSeek-Coder-V2 is an open-source Mixture-of-Experts code LLM that achieves GPT4-Turbo-level performance on coding tasks through continued pretraining on 6 trillion additional tokens.</p>
+<p>Tokenization Falling Short: The Curse of Tokenization by Nguyen, Kim, Patel, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11687</p>
+<p>This study investigates the “curse of tokenization” in LLMs by examining their performance on complex problem solving, token structure probing, and resilience to typographical variation, revealing that while scaling model size helps, LLMs remain susceptible to tokenization-induced biases</p>
+<p>DataComp-LM: In Search of the Next Generation of Training Sets for Language Models by Li, Fang, Smyrnis, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11794</p>
+<p>The authors provide a standardized testbed for experimenting with dataset curation strategies in language model training, including a 240T token corpus, pretraining recipes, and 53 downstream evaluations,</p>
+<p>*Nemotron-4 340B Technical Report by Unknown Authors at NVIDIA (17 June),&nbsp; https://arxiv.org/abs/2406.11704</p>
+<p>This technical report accompanies NVIDIA release of the Nemotron-4 340B model family, which performs competitively on various benchmarks and excels in synthetic data generation, along with open-sourcing its data generation pipeline for further research and development.</p>
+<p>mDPO: Conditional Preference Optimization for Multimodal Large Language Models by Wang, Zhou, Huang, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11839</p>
+<p>mDPO addresses the unconditional preference problem in multimodal DPO by optimizing image preference alongside language preferences and introducing a reward anchor to prevent likelihood decrease for chosen responses.</p>
+<ul>
+<li>How Do Large Language Models Acquire Factual Knowledge During Pretraining? by Chang, Park, Ye, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11813</li>
+</ul>
+<p>Task Me Anything by Zhang, Huang, Ma, et al.&nbsp;(17 June), https://arxiv.org/abs/2406.11775</p>
+<p>Task-Me-Anything is a benchmark generation engine that creates tailored benchmarks for multimodal language models by programmatically generating task instances from a vast taxonomy of images and videos.</p>
+<p>THEANINE: Revisiting Memory Management in Long-term Conversations with Timeline-augmented Response Generation by Kim, Ong, Kwon, et al.&nbsp;(16 June), https://arxiv.org/abs/2406.10996</p>
+<p>Theanine augments LLMs’ response generation by using memory timelines (series of memories showing the development and causality of past events) to improve the model’s ability to recall and utilize information from lengthy dialogue histories.</p>
+<p>Regularizing Hidden States Enables Learning Generalizable Reward Model for LLMs by Yang, Ding, Lin, et al.&nbsp;(14 June) https://arxiv.org/abs/2406.10216</p>
+<p>This study proposes enhancing reward model generalization in RLHF by regularizing hidden states through retaining the base model’s language model head and incorporating text-generation losses, while simultaneously learning a reward head, thus improving out-of-distribution task performance and mitigating reward over-optimization.</p>
+<p>Be like a Goldfish, Don’t Memorize! Mitigating Memorization in Generative LLMs by Hans, Wen, Jain, et al.&nbsp;(14 Jun) , https://arxiv.org/abs/2406.10209</p>
+<p>The “goldfish loss” technique reduces model memorization in LLMs by randomly excluding a subset of tokens from the loss computation during training, preventing the model from learning complete verbatim sequences from the training data.</p>
+<p>Bootstrapping Language Models with DPO Implicit Rewards by Chen, Liu, Du, et al.&nbsp;(14 June), https://arxiv.org/abs/2406.09760</p>
+<p>Researchers find that using the aligned model, an implicit reward model, generated during direct preference optimization (DPO) can itself be used to generate a preference dataset to further substantially improve itself.</p>
+<p>FouRA: Fourier Low Rank Adaptation by Borse, Kadambi, Pandey, et al.&nbsp;(13 June), https://arxiv.org/abs/2406.08798</p>
+<p>This research introduces FouRA, a new low-rank adaptation (LoRA) method that operates in the Fourier domain and uses adaptive rank selection, addressing issues of data copying and distribution collapse in LoRA-fine-tuned text-to-image diffusion models while improving image quality and generalization.</p>
+<ul>
+<li>An Image is Worth More Than 16x16 Patches: Exploring Transformers on Individual Pixels by Nguyen, Mahmoud Assran, Jain, et al.&nbsp;(13 June), https://arxiv.org/abs/2406.09415</li>
+</ul>
+<p>This research reveals that vanilla Transformers can achieve high performance in various computer vision tasks by treating individual pixels as tokens, which challenges the assumed necessity of locality-based inductive bias in modern vision architectures and suggests new possibilities for future neural network designs in computer vision.</p>
+<p>MLKV: Multi-Layer Key-Value Heads for Memory Efficient Transformer Decoding by Zuhri, Adilazuarda,Purwarianti, and Aji (13 June), https://arxiv.org/abs/2406.09297</p>
+<p>This research introduces Multi-Layer Key-Value (MLKV) sharing, a new technique that extends Key-Value (KV) caching across transformer layers, which substantially reduces memory usage during auto-regressive inference beyond existing methods like Multi-Query Attention (MQA) and Grouped-Query Attention (GQA), while maintaining performance on NLP tasks.</p>
+<p>Transformers Meet Neural Algorithmic Reasoners by Bounsi, Ibarz, Dudzik, et al.&nbsp;(13 June), https://arxiv.org/abs/2406.09308</p>
+<p>TransNAR is a hybrid architecture combining Transformers with graph neural network-based neural algorithmic reasoners (NARs), which enables improved performance on algorithmic reasoning tasks by allowing the Transformer to leverage the robust computational capabilities of NARs while maintaining strong natural language understanding.</p>
+<p>Discovering Preference Optimization Algorithms with and for Large Language Models by Lu, Holt, Fanconi, et al.&nbsp;(12 June), https://arxiv.org/abs/2406.08414</p>
+<p>The proposed Discovered Preference Optimization method uses LLMs to automatically discover and implement new preference optimization algorithms for improving LLM outputs.</p>
+<ul>
+<li>An Empirical Study of Mamba-based Language Models by Waleffe, Byeon, Riach, et al.&nbsp;(12 June), https://arxiv.org/abs/2406.07887</li>
+</ul>
+<p>This research compares 8B-parameter state-space models (Mamba, Mamba-2) and Transformer models trained on large datasets, finding that while pure state-space models match or exceed Transformers on many tasks, they lag behind on tasks requiring strong copying, in-context learning, or long-context reasoning; however, hybrids seem to offer the best of both worlds.</p>
+<ul>
+<li>Large Language Models Must Be Taught to Know What They Don’t Know by Kapoor, Gruver, Roberts, et al.&nbsp;(12 June), https://arxiv.org/abs/2406.08391</li>
+</ul>
+<p>This research demonstrates that finetuning LLMs on a small dataset of graded examples can produce more reliable uncertainty estimates than prompting alone, with the resulting models capable of estimating uncertainty for themselves and other models.</p>
+<p>Large Language Model Unlearning via Embedding-Corrupted Prompts by Liu, Flannigan, and Liu (12 June), https://arxiv.org/abs/2406.07933</p>
+<p>This research introduces embedding-corrupted prompts, a method for selective knowledge unlearning in LLMs that uses prompt classification and embedding corruption to achieve targeted forgetting with minimal side effects across a wide range of model sizes.</p>
+<p>What If We Recaption Billions of Web Images with LLaMA-3? by Li, Tu, Hui, et al.&nbsp;(12 June) https://arxiv.org/abs/2406.08478</p>
+<p>This research demonstrates that using a finetuned Llama 3-powered LLaVA-1.5 multimodal LLM to recaption 1.3 billion images from the DataComp-1B dataset significantly improves the performance of vision-language models in various tasks.</p>
+<ul>
+<li>Magpie: Alignment Data Synthesis from Scratch by Prompting Aligned LLMs with Nothing by Xu, Jiang, Niu et al.&nbsp;(12 June), https://arxiv.org/abs/2406.08464</li>
+</ul>
+<p>Researchers propose a synthetic instruction data generation method that generates 300,000 high-quality instruction-response pairs from Llama-3-Instruct; this data can be used for supervised instruction fine-tuning to rival the performance of aligned LLMs without requiring an actual alignment step.</p>
+<ul>
+<li>Samba: Simple Hybrid State Space Models for Efficient Unlimited Context Language Modeling by (11 June), https://arxiv.org/abs/2406.07522</li>
+</ul>
+<p>Samba is a hybrid model combining selective state space models (think Mamba) with sliding window attention that scales efficiently to 3.8B parameters.</p>
+<ul>
+<li>Never Miss A Beat: An Efficient Recipe for Context Window Extension of Large Language Models with Consistent “Middle” Enhancement (11 June) by Wu, Zhao, and Zheng, https://arxiv.org/abs/2406.07138</li>
+</ul>
+<p>CREAM is a training-efficient method for extending the context length of LLMs by interpolating positional encodings and using a truncated Gaussian to prioritize middle-context information.</p>
+<p>Simple and Effective Masked Diffusion Language Models by Sahoo, Arriola, Schiff, et al.&nbsp;(11 June), https://arxiv.org/abs/2406.07524</p>
+<p>This work demonstrates that masked discrete diffusion models, when trained with an effective recipe and a simplified objective, can substantially narrow the performance gap with autoregressive methods in language modeling.</p>
+<p>TextGrad: Automatic “Differentiation” via Text by Yuksekgonul, Bianchi, Boen, et al.&nbsp;(11 June), https://arxiv.org/abs/2406.07496</p>
+<p>TextGrad is a framework that leverages LLMs to “backpropagate” textual feedback for optimizing building blocks (such as “tool caller”, “search engine”, etc.) in compound AI systems.</p>
+<p>An Image is Worth 32 Tokens for Reconstruction and Generation by Yu, Weber, Deng, et al.&nbsp;(11 June), https://arxiv.org/abs/2406.07550</p>
+<p>The authors propose a transformer-based 1-dimensional tokenizer for image generation that reduces a 256x256x3 image to just 32 discrete tokens.</p>
+<ul>
+<li>Self-Tuning: Instructing LLMs to Effectively Acquire New Knowledge through Self-Teaching by Zhang, Peng, Zhou, et al., (10 June), https://arxiv.org/abs/2406.06326</li>
+</ul>
+<p>The Self-Tuning framework improves the knowledge acquisition of LLMs from raw documents through self-teaching tasks focused on memorization, comprehension, and self-reflection.</p>
+<p>Turbo Sparse: Achieving LLM SOTA Performance with Minimal Activated Parameters by Song, Xie, Zhang, et al.&nbsp;(10 June), https://arxiv.org/abs/2406.05955</p>
+<p>This paper proposes the dReLU activation function and an optimized training data mixture to improve activation sparsity in LLMs.</p>
+<p>Husky: A Unified, Open-Source Language Agent for Multi-Step Reasoning by Kim, Paranjape, Khot, and Hajishirzi (10 June), https://arxiv.org/abs/2406.06469</p>
+<p>Husky is an open-source language agent that learns to reason over a unified action space to tackle diverse tasks involving numerical, tabular, and knowledge-based reasoning by iterating between generating and executing actions with expert models.</p>
+<p>Margin-aware Preference Optimization for Aligning Diffusion Models Without Reference by Hong, Paul, Lee, et al.&nbsp;(10 June), https://arxiv.org/abs/2406.06424</p>
+<p>To address limitations of traditional alignment techniques like RLHF and DPO, the authors propose Margin-Aware Preference Optimization (MaPO) for text-to-image diffusion models, which maximizes the likelihood margin between preferred and dispreferred image sets without using a reference model.</p>
+<ul>
+<li>Autoregressive Model Beats Diffusion: Llama for Scalable Image Generation by Sun, Jian, Chen, et al.&nbsp;(10 June), https://arxiv.org/abs/2406.06525</li>
+</ul>
+<p>The authors propose LlamaGen, which involves applying the “next-token prediction” paradigm of large language models to image generation.</p>
+<p>Creativity Has Left the Chat: The Price of Debiasing Language Models by Mohammidi (8 June), https://arxiv.org/abs/2406.05587</p>
+<p>This research reveals that while alignment techniques like RLHF mitigate biases in LLMs, they can diminish the models’ creative capabilities, impacting syntactic and semantic diversity, which is crucial for tasks requiring creative output.</p>
+<p>3D-GRAND: A Million-Scale Dataset for 3D-LLMs with Better Grounding and Less Hallucination by Yang, Chen, Madaan, et al.&nbsp;(7 June), https://arxiv.org/abs/2406.05132</p>
+<p>This research introduces 3D-GRAND, a dataset of 40,087 household scenes paired with 6.2 million scene-language instructions, and utilizes instruction tuning and the 3D-POPE benchmark to enhance grounding capabilities and reduce hallucinations in 3D-LLMs</p>
+<p>BERTs are Generative In-Context Learners by Samuel (7 June), https://arxiv.org/abs/2406.04823</p>
+<p>This paper demonstrates that masked language models, like DeBERTa, can perform in-context learning using a simple inference technique that reformats the sequence of input tokens with mask tokens that resemble the structure of a causal attention mask.</p>
+<p>June 7, Mixture-of-Agents Enhances Large Language Model Capabilities, https://arxiv.org/abs/2406.04692</p>
+<p>WildBench: Benchmarking LLMs with Challenging Tasks from Real Users in the Wild by Lin, Deng, Chandu, et al.&nbsp;(7 June), https://arxiv.org/abs/2406.04770</p>
+<p>The authors introduce an automated evaluation framework for benchmarking LLMs using real-world user queries, featuring 1,024 tasks and two advanced metrics, WB-Reward and WB-Score, which provide reliable and interpretable automatic judgments by employing task-specific checklists and structured explanations.</p>
+<p>CRAG – Comprehensive RAG Benchmark by Yang, Sun, Xin, et al.&nbsp;(7 June), https://arxiv.org/abs/2406.04744</p>
+<p>This research introduces a factual question answering dataset of 4,409 question-answer pairs with mock APIs simulating web and Knowledge Graph searches, designed to reflect diverse, dynamic real-world QA tasks.</p>
+<p>Boosting Large-scale Parallel Training Efficiency with C4: A Communication-Driven Approach by Dong, Luo, Zhang, et al.&nbsp;(7 June), https://arxiv.org/abs/2406.04594</p>
+<p>This research introduces C4, a communication-driven solution for parallel training of LLMs, which rapidly identifies and isolates hardware faults and optimizes traffic planning to reduce network congestion, which can cut error-induced overhead by up to 30% and improving runtime performance by up to 15%.</p>
+<p>Step-aware Preference Optimization: Aligning Preference with Denoising Performance at Each Step by Liang, Yuan, Gu, et al.&nbsp;(6 June), https://arxiv.org/abs/2406.04314</p>
+<p>This research introduces Step-aware Preference Optimization, a post-training approach that independently evaluates and adjusts denoising performance at each step in text-to-image diffusion models, which outperforms Diffusion-DPO in image alignment and aesthetics while offering 20x faster training efficiency.</p>
+<ul>
+<li>Are We Done with MMLU? by Gema, Leang, Hong, et al.&nbsp;(6 June), https://arxiv.org/abs/2406.04127</li>
+</ul>
+<p>This study identifies numerous errors in the widely-used MMLU benchmark, creates a re-annotated subset called MMLU-Redux that reveals significant discrepancies in reported model performance, and advocates for revising MMLU to improve its reliability.</p>
+<ul>
+<li>Transformers Need Glasses! Information Over-Squashing in Language Tasks by Barbero, Banino, Kapturowski, et al.&nbsp;(6 June), https://arxiv.org/abs/2406.04267</li>
+</ul>
+<p>The study analyzes information propagation in LLMs (specifically: decoder-only transformers), revealing a representational collapse phenomenon where distinct input sequences can yield arbitrarily close final token representations, leading to errors in tasks like counting or copying and loss of sensitivity to specific input tokens.</p>
+<p>The Prompt Report: A Systematic Survey of Prompting Techniques by Schulhoff, Ilie, Balepur, et al.&nbsp;(6 June), https://arxiv.org/abs/2406.06608&nbsp;</p>
+<p>This 76-page paper aims to provide a clear and organized framework for understanding prompts and prompting techniques.</p>
+<p>Buffer of Thoughts: Thought-Augmented Reasoning with Large Language Models by Yang, Yu, Zhang, et al.&nbsp;(6 June), https://arxiv.org/abs/2406.04271</p>
+<p>This Buffer of Thoughts approach improves LLMs by retrieving and instantiating thought-templates, which are generic problem-solving blueprints, for reasoning across various domains.</p>
+<p>Block Transformer: Global-to-Local Language Modeling for Fast Inference (4 June) by Ho, Bae, Kim, et al., https://arxiv.org/abs/2406.02657</p>
+<p>The proposed Block Transformer improves inference throughput 10-20x by isolating expensive global attention to lower layers on fixed-size token blocks and applying fast local attention in upper layers.</p>
+<ul>
+<li>Scalable MatMul-free Language Modeling by Zhu, Zhang, Sifferman, et al.&nbsp;(4 June), https://arxiv.org/abs/2406.02528</li>
+</ul>
+<p>This paper presents a scalable MatMul-free language model architecture that replaces matrix multiplications with element-wise products and accumulations using ternary weights that works well even in billion-parameter scales.</p>
+<p>Towards Scalable Automated Alignment of LLMs: A Survey, (3 June) by Cao, Lu, Lu, et al.&nbsp;https://arxiv.org/abs/2406.01252</p>
+<p>This paper reviews the recent and emerging automated alignment methods for LLMs that typically follow the instruction finetuning step in an LLM development pipeline.</p>
+<p>The Geometry of Categorical and Hierarchical Concepts in Large Language Models by by Park, Choe, Jiang, and Veitch (3 June),&nbsp; https://arxiv.org/abs/2406.01506</p>
+<p>Using a Gemma LLM, this paper extends the linear representation hypothesis, showing that categorical concepts are simplices, hierarchical relations are orthogonal, and complex concepts are polytopes, validated with 957 WordNet concepts.</p>
+<p>OLoRA: Orthonormal Low-Rank Adaptation of Large Language Models by Büyükakyüz (3 June), https://arxiv.org/abs/2406.01775</p>
+<p>OLoRA is an enhancement of Low-Rank Adaptation (LoRA) using orthonormal matrix initialization via QR decomposition, which accelerates the convergence of LLM training compared to regular LoRA.</p>
+<p>Skywork-MoE: A Deep Dive into Training Techniques for Mixture-of-Experts Language Models by Wei, Zhu, Zhao et al.&nbsp;(3 June), https://arxiv.org/abs/2406.06563</p>
+<p>A report that describes some of the approaches and methods behind developing a 146B parameter mixture-of-experts LLM from an existing 13B parameter dense (non-mixture-of-experts) model.</p>
+<p>Show, Don’t Tell: Aligning Language Models with Demonstrated Feedback by Shaikh, Lam, Hejna, et al.&nbsp;(2 June), https://arxiv.org/abs/2406.00888</p>
+<p>The proposed method aligns method aligns LLM outputs to specific user behaviors using fewer than 10 demonstrations as feedback, leveraging imitation learning.</p>
+<p>This magazine is personal passion project that does not offer direct compensation. However, for those who wish to support me, please consider purchasing a copy of one of my books. If you find them insightful and beneficial, please feel free to recommend them to your friends and colleagues. (Sharing your feedback with others via a book review on Amazon helps a lot, too!)</p>
+<p>Build A Large Language Model (From Scratch), Machine Learning Q And AI, and Machine Learning with PyTorch and Scikit-Learn</p>
+<p>Your support means a great deal! Thank you!</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

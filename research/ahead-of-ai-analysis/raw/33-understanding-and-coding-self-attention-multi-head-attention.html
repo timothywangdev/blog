@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>understanding-and-coding-self-attention-multi-head-attention – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#understanding-and-coding-self-attention-multi-head-attention-causal-attention-and-cross-attention-in-llms" id="toc-understanding-and-coding-self-attention-multi-head-attention-causal-attention-and-cross-attention-in-llms" class="nav-link active" data-scroll-target="#understanding-and-coding-self-attention-multi-head-attention-causal-attention-and-cross-attention-in-llms">Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="understanding-and-coding-self-attention-multi-head-attention-causal-attention-and-cross-attention-in-llms" class="level1">
+<h1>Understanding and Coding Self-Attention, Multi-Head Attention, Causal-Attention, and Cross-Attention in LLMs</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/understanding-and-coding-self-attention</p>
+<p><strong>Likes:</strong> LIKE (5)</p>
+<p><strong>Image Count:</strong> 21</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!zkNz!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F924a2d16-e8c2-4acb-84ba-bf95f2df1b31_1342x440.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An overview of the topics covered in the Build a Large Language Model (from Scratch) book</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!BtVj!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F97567e7b-f8b9-4dea-a678-162378609a75_1304x1150.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The original transformer architecture from https://arxiv.org/abs/1706.03762</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!uRaO!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F2d632b81-5bd6-432a-a456-37f20788be20_1180x614.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An incorrect word-by-word translation (top) compared to a correct translation (bottom)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!sSRX!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F49828e20-cd55-47bb-84a3-59effec1be79_3140x4251.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A visualization from the “Attention is All You Need” paper (https://arxiv.org/abs/1706.03762) showing how much the word “making” depends or focuses on other words in the input via attention weights (the color intensity is proportional the attention weight value).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!3woZ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fecef3e00-4c0e-4c7a-9a9f-42ac4e4ada69_366x786.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Computing the query, key, and value vectors via the input x and weights W.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!qmcs!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff9774001-ea9d-48bf-9857-3c911b0a279d_588x962.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: For the following sections below, we focus on the second input, x(2)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!7mUN!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbaf9e308-223b-429e-8527-a7b868003e8c_814x912.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Computing the unnormalized attention weights ω (omega)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!rgXp!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F42da287a-18e8-45c7-860c-46e8a3a534fc_1400x798.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Computing the normalized attention weights α</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!GpWw!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6e1dcdeb-e096-4ff9-bdf9-3338e4efa4b4_1916x1048.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The attention weights are specific to a certain input element. Here, we chose input element x(2).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vVWg!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F57269a7a-8ecc-4ed6-b6d7-79a9982dd776_918x1152.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: The multi-head attention modules in the original transformer architecture from https://arxiv.org/abs/1706.03762</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!sfR2!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F7651e279-01ed-4316-91dc-d6be8ef4e947_1836x1116.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summarizing the self-attention mechanism implemented previously</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!57T6!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff406d55e-990a-4e3b-be82-d966eb74a3e7_1766x1154.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Multi-head attention: self-attention with multiple heads</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vQYr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fc51bfe11-c2cf-4ce5-95d4-4f8a57eac997_1026x1148.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: The causal self-attention module in the original transformer architecture (via “Attention Is All You Need”, https://arxiv.org/abs/1706.03762)</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!W-5R!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb7dd5ec8-4912-4e0d-8265-b335c08d2958_1760x1126.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!rOs7!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fe1317a05-3542-4158-94bf-085109a5793a_1220x702.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Attention weights above the diagonal should be masked out</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!pRz7!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F7fcce180-cda2-4094-bb7c-32ea12e60c9a_1468x274.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: The previously implemented causal self-attention procedure</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!vh8x!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa94e36c7-ec67-43d6-96c0-7f9781f402b5_1054x270.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: An alternative, more efficient approach to implementing causal self-attention</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!6v8V!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb75a8df1-0a82-4f79-8e68-4fe16587063d_1474x1108.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Another view of the self-attention mechanism implemented previously, with a focus on the matrix dimensions</li>
+</ul>
+<ol start="19" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!wmzT!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9057444e-4934-4253-bc91-9e768d23b0c2_846x972.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!oTbL!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa16d2bd0-984d-4224-9c4c-2f0cc144a599_1520x1108.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!jzWO!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb4dfd356-1cfa-4601-a05d-57bc15024970_1204x590.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>This article will teach you about self-attention mechanisms used in transformer architectures and large language models (LLMs) such as GPT-4 and Llama. Self-attention and related mechanisms are core components of LLMs, making them a useful topic to understand when working with these models.</p>
+<p>However, rather than just discussing the self-attention mechanism, we will code it in Python and PyTorch from the ground up. In my opinion, coding algorithms, models, and techniques from scratch is an excellent way to learn!</p>
+<p>As a side note, this article is a modernized and extended version of “Understanding and Coding the Self-Attention Mechanism of Large Language Models From Scratch,” which I published on my old blog almost exactly a year ago. Since I really enjoy writing (and reading) ‘from scratch’ articles, I wanted to modernize this article for Ahead of AI.</p>
+<p>Additionally, this article motivated me to write the book Build a Large Language Model (from Scratch), which is currently in progress. Below is a mental model that summarizes the book and illustrates how the self-attention mechanism fits into the bigger picture.</p>
+<p>An overview of the topics covered in the Build a Large Language Model (from Scratch) book</p>
+<p>To keep the length of this article somewhat reasonable, I’ll assume you already know about LLMs and you also know about attention mechanisms on a basic level. The goal and focus of this article is to understand how attention mechanisms work via a Python &amp; PyTorch code walkthrough.</p>
+<p>Introducing Self-Attention</p>
+<p>Since its introduction via the original transformer paper (Attention Is All You Need), self-attention has become a cornerstone of many state-of-the-art deep learning models, particularly in the field of Natural Language Processing (NLP). Since self-attention is now everywhere, it’s important to understand how it works.</p>
+<p>The original transformer architecture from https://arxiv.org/abs/1706.03762</p>
+<p>The concept of “attention” in deep learning has its roots in the effort to improve Recurrent Neural Networks (RNNs) for handling longer sequences or sentences. For instance, consider translating a sentence from one language to another. Translating a sentence word-by-word is usually not an option because it ignores the complex grammatical structures and idiomatic expressions unique to each language, leading to inaccurate or nonsensical translations.</p>
+<p>An incorrect word-by-word translation (top) compared to a correct translation (bottom)</p>
+<p>To overcome this issue, attention mechanisms were introduced to give access to all sequence elements at each time step. The key is to be selective and determine which words are most important in a specific context. In 2017, the transformer architecture introduced a standalone self-attention mechanism, eliminating the need for RNNs altogether.</p>
+<p>(For brevity, and to keep the article focused on the technical self-attention details, I am keeping this background motivation section brief so that we can focus on the code implementation.)</p>
+<p>A visualization from the “Attention is All You Need” paper (https://arxiv.org/abs/1706.03762) showing how much the word “making” depends or focuses on other words in the input via attention weights (the color intensity is proportional the attention weight value).</p>
+<p>We can think of self-attention as a mechanism that enhances the information content of an input embedding by including information about the input’s context. In other words, the self-attention mechanism enables the model to weigh the importance of different elements in an input sequence and dynamically adjust their influence on the output. This is especially important for language processing tasks, where the meaning of a word can change based on its context within a sentence or document.</p>
+<p>Note that there are many variants of self-attention. A particular focus has been on making self-attention more efficient. However, most papers still implement the original scaled-dot product attention mechanism introduced in the Attention Is All You Need paper since self-attention is rarely a computational bottleneck for most companies training large-scale transformers.</p>
+<p>So, in this article, we focus on the original scaled-dot product attention mechanism (referred to as self-attention), which remains the most popular and most widely used attention mechanism in practice. However, if you are interested in other types of attention mechanisms, check out the 2020 Efficient Transformers: A Survey, the 2023 A Survey on Efficient Training of Transformers review, and the recent FlashAttention and FlashAttention-v2 papers.</p>
+<p>Embedding an Input Sentence</p>
+<p>Before we begin, let’s consider an input sentence “Life is short, eat dessert first” that we want to put through the self-attention mechanism. Similar to other types of modeling approaches for processing text (e.g., using recurrent neural networks or convolutional neural networks), we create a sentence embedding first.</p>
+<p>For simplicity, here our dictionary dc is restricted to the words that occur in the input sentence. In a real-world application, we would consider all words in the training dataset (typical vocabulary sizes range between 30k to 50k entries).</p>
+<p>In:</p>
+<p>sentence = ‘Life is short, eat dessert first’ ​ dc = {s:i for i,s in enumerate(sorted(sentence.replace(‘,’, ’’).split()))}</p>
+<p>print(dc)</p>
+<p>Out:</p>
+<p>{‘Life’: 0, ‘dessert’: 1, ‘eat’: 2, ‘first’: 3, ‘is’: 4, ‘short’: 5}</p>
+<p>Next, we use this dictionary to assign an integer index to each word:</p>
+<p>In:</p>
+<p>import torch ​ sentence_int = torch.tensor( [dc[s] for s in sentence.replace(‘,’, ’’).split()] ) print(sentence_int)</p>
+<p>Out:</p>
+<p>tensor([0, 4, 5, 2, 1, 3])</p>
+<p>Now, using the integer-vector representation of the input sentence, we can use an embedding layer to encode the inputs into a real-vector embedding. Here, we will use a tiny 3-dimensional embedding such that each input word is represented by a 3-dimensional vector.</p>
+<p>Note that embedding sizes typically range from hundreds to thousands of dimensions. For instance, Llama 2 utilizes embedding sizes of 4,096. The reason we use 3-dimensional embeddings here is purely for illustration purposes. This allows us to examine the individual vectors without filling the entire page with numbers.</p>
+<p>Since the sentence consists of 6 words, this will result in a 6×3-dimensional embedding:</p>
+<p>In:</p>
+<p>vocab_size = 50_000 ​ torch.manual_seed(123) embed = torch.nn.Embedding(vocab_size, 3) embedded_sentence = embed(sentence_int).detach() ​ print(embedded_sentence) print(embedded_sentence.shape)</p>
+<p>Out:</p>
+<p>tensor([[ 0.3374, -0.1778, -0.3035], &nbsp; &nbsp; &nbsp; [ 0.1794, &nbsp;1.8951, &nbsp;0.4954], &nbsp; &nbsp; &nbsp; [ 0.2692, -0.0770, -1.0205], &nbsp; &nbsp; &nbsp; [-0.2196, -0.3792, &nbsp;0.7671], &nbsp; &nbsp; &nbsp; [-0.5880, &nbsp;0.3486, &nbsp;0.6603], &nbsp; &nbsp; &nbsp; [-1.1925, &nbsp;0.6984, -1.4097]]) torch.Size([6, 3]) Defining the Weight Matrices</p>
+<p>Now, let’s discuss the widely utilized self-attention mechanism known as the scaled dot-product attention, which is an integral part of the transformer architecture.</p>
+<p>Self-attention utilizes three weight matrices, referred to as Wq, Wk, and Wv, which are adjusted as model parameters during training. These matrices serve to project the inputs into query, key, and value components of the sequence, respectively.</p>
+<p>The respective query, key and value sequences are obtained via matrix multiplication between the weight matrices W and the embedded inputs x:</p>
+<p>Query sequence: q(i) = x(i)Wq for i in sequence 1 … T</p>
+<p>Key sequence: k(i) = x(i)Wk for i in sequence 1 … T</p>
+<p>Value sequence: v(i) = x(i)Wv for i in sequence 1 … T</p>
+<p>The index i refers to the token index position in the input sequence, which has length T.</p>
+<p>Computing the query, key, and value vectors via the input x and weights W.</p>
+<p>Here, both q(i) and k(i) are vectors of dimension dk. The projection matrices Wq and Wk have a shape of d × dk , while Wv has the shape d × dv .</p>
+<p>(It’s important to note that d represents the size of each word vector, x.)</p>
+<p>Since we are computing the dot-product between the query and key vectors, these two vectors have to contain the same number of elements (dq = dk). In many LLMs, we use the same size for the value vectors such that dq = dk = dv. However, the number of elements in the value vector v(i), which determines the size of the resulting context vector, can be arbitrary.</p>
+<p>So, for the following code walkthrough, we will set dq = dk = 2 and use dv = 4, initializing the projection matrices as follows:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) ​ d = embedded_sentence.shape[1] ​ d_q, d_k, d_v = 2, 2, 4 ​ W_query = torch.nn.Parameter(torch.rand(d, d_q)) W_key = torch.nn.Parameter(torch.rand(d, d_k)) W_value = torch.nn.Parameter(torch.rand(d, d_v))</p>
+<p>(Similar to the word embedding vectors earlier, the dimensions dq, dk, dv are usually much larger, but we use small numbers here for illustration purposes.)</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<p>Computing the Unnormalized Attention Weights</p>
+<p>Now, let’s suppose we are interested in computing the attention vector for the second input element – the second input element acts as the query here:</p>
+<p>For the following sections below, we focus on the second input, x(2)</p>
+<p>In code, this looks like as follows:</p>
+<p>In:</p>
+<p>x_2 = embedded_sentence[1] query_2 = x_2 @ W_query key_2 = x_2 @ W_key value_2 = x_2 @ W_value ​ print(query_2.shape) print(key_2.shape) print(value_2.shape)</p>
+<p>Out:</p>
+<p>torch.Size([2]) torch.Size([2]) torch.Size([4])</p>
+<p>We can then generalize this to compute the remaining key, and value elements for all inputs as well, since we will need them in the next step when we compute the unnormalized attention weights later:</p>
+<p>In:</p>
+<p>keys = embedded_sentence @ W_key values = embedded_sentence @ W_value ​ print(“keys.shape:”, keys.shape) print(“values.shape:”, values.shape)</p>
+<p>Out:</p>
+<p>keys.shape: torch.Size([6, 2]) values.shape: torch.Size([6, 4])</p>
+<p>Now that we have all the required keys and values, we can proceed to the next step and compute the unnormalized attention weights ω (omega), which are illustrated in the figure below:</p>
+<p>Computing the unnormalized attention weights ω (omega)</p>
+<p>As illustrated in the figure above, we compute ωi,j as the dot product between the query and key sequences, ωi,j = q(i) k(j).</p>
+<p>For example, we can compute the unnormalized attention weight for the query and 5th input element (corresponding to index position 4) as follows:</p>
+<p>In:</p>
+<p>omega_24 = query_2.dot(keys[4]) print(omega_24)</p>
+<p>(Note that ω is the symbol for the Greek letter “omega”, hence the code variable with the same name above.)</p>
+<p>Out:</p>
+<p>tensor(1.2903)</p>
+<p>Since we will need those unnormalized attention weights ω to compute the actual attention weights later, let’s compute the ω values for all input tokens as illustrated in the previous figure:</p>
+<p>In:</p>
+<p>omega_2 = query_2 @ keys.T print(omega_2)</p>
+<p>Out:</p>
+<p>tensor([-0.6004, &nbsp;3.4707, -1.5023, &nbsp;0.4991, &nbsp;1.2903, -1.3374]) Computing the Attention Weights</p>
+<p>The subsequent step in self-attention is to normalize the unnormalized attention weights, ω, to obtain the normalized attention weights, α (alpha), by applying the softmax function. Additionally, 1/√{dk} is used to scale ω before normalizing it through the softmax function, as shown below:</p>
+<p>Computing the normalized attention weights α</p>
+<p>The scaling by the square-root of dk ensures that the Euclidean length of the weight vectors will be approximately in the same magnitude. This helps prevent the attention weights from becoming too small or too large, which could lead to numerical instability or affect the model’s ability to converge during training.</p>
+<p>Why does specifically √dk? The dot product between q and k is a sum of dk independent terms, each with variance about 1. That means the variance of the raw score grows linearly with dk. By dividing by √dk, we cancel that growth and bring the variance back to about 1.</p>
+<p>In code, we can implement the computation of the attention weights as follows:</p>
+<p>In:</p>
+<p>import torch.nn.functional as F ​ attention_weights_2 = F.softmax(omega_2 / d_k**0.5, dim=0) print(attention_weights_2)</p>
+<p>Out:</p>
+<p>tensor([0.0386, 0.6870, 0.0204, 0.0840, 0.1470, 0.0229])</p>
+<p>Finally, the last step is to compute the context vector z(2), which is an attention-weighted version of our original query input x(2), including all the other input elements as its context via the attention weights:</p>
+<p>The attention weights are specific to a certain input element. Here, we chose input element x(2).</p>
+<p>In code, this looks like as follows:</p>
+<p>In:</p>
+<p>context_vector_2 = attention_weights_2 @ values ​ print(context_vector_2.shape) print(context_vector_2)</p>
+<p>Out:</p>
+<p>torch.Size([4]) tensor([0.5313, 1.3607, 0.7891, 1.3110])</p>
+<p>Note that this output vector has more dimensions (dv = 4) than the original input vector (d = 3) since we specified dv &gt; d earlier; however, the embedding size choice dv is arbitrary.</p>
+<p>Self-Attention</p>
+<p>Now, to wrap up the code implementation of the self-attention mechanism in the previous sections above, we can summarize the previous code in a compact SelfAttention class:</p>
+<p>In:</p>
+<p>import torch.nn as nn ​ class SelfAttention(nn.Module): ​ &nbsp; &nbsp;def <strong>init</strong>(self, d_in, d_out_kq, d_out_v): &nbsp; &nbsp; &nbsp; &nbsp;super().__init__() &nbsp; &nbsp; &nbsp; &nbsp;self.d_out_kq = d_out_kq &nbsp; &nbsp; &nbsp; &nbsp;self.W_query = nn.Parameter(torch.rand(d_in, d_out_kq)) &nbsp; &nbsp; &nbsp; &nbsp;self.W_key &nbsp; = nn.Parameter(torch.rand(d_in, d_out_kq)) &nbsp; &nbsp; &nbsp; &nbsp;self.W_value = nn.Parameter(torch.rand(d_in, d_out_v)) ​ &nbsp; &nbsp;def forward(self, x): &nbsp; &nbsp; &nbsp; &nbsp;keys = x @ self.W_key &nbsp; &nbsp; &nbsp; &nbsp;queries = x @ self.W_query &nbsp; &nbsp; &nbsp; &nbsp;values = x @ self.W_value &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;attn_scores = queries @ keys.T &nbsp;# unnormalized attention weights &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;attn_weights = torch.softmax( attn_scores / self.d_out_kq**0.5, dim=-1 ) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;context_vec = attn_weights @ values &nbsp; &nbsp; &nbsp; &nbsp;return context_vec</p>
+<p>Following PyTorch conventions, the SelfAttention class above initializes the self-attention parameters in the <strong>init</strong> method and computes attention weights and context vectors for all inputs via the forward method. We can use this class as follows:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) ​ # reduce d_out_v from 4 to 1, because we have 4 heads d_in, d_out_kq, d_out_v = 3, 2, 4 ​ sa = SelfAttention(d_in, d_out_kq, d_out_v) print(sa(embedded_sentence))</p>
+<p>Out:</p>
+<p>tensor([[-0.1564, &nbsp;0.1028, -0.0763, -0.0764], &nbsp; &nbsp; &nbsp; [ 0.5313, &nbsp;1.3607, &nbsp;0.7891, &nbsp;1.3110], &nbsp; &nbsp; &nbsp; [-0.3542, -0.1234, -0.2627, -0.3706], &nbsp; &nbsp; &nbsp; [ 0.0071, &nbsp;0.3345, &nbsp;0.0969, &nbsp;0.1998], &nbsp; &nbsp; &nbsp; [ 0.1008, &nbsp;0.4780, &nbsp;0.2021, &nbsp;0.3674], &nbsp; &nbsp; &nbsp; [-0.5296, -0.2799, -0.4107, -0.6006]], grad_fn=<mmbackward0>)</mmbackward0></p>
+<p>If you look at the second row, you can see that it matches the values in context_vector_2 from the previous section exactly: tensor([0.5313, 1.3607, 0.7891, 1.3110]).</p>
+<p>Multi-Head Attention</p>
+<p>In the very first figure, at the top of this article (also shown again for convenience below), we saw that transformers use a module called multi-head attention.</p>
+<p>The multi-head attention modules in the original transformer architecture from https://arxiv.org/abs/1706.03762</p>
+<p>How does this “multi-head” attention module relate to the self-attention mechanism (scaled-dot product attention) we walked through above?</p>
+<p>In scaled dot-product attention, the input sequence was transformed using three matrices representing the query, key, and value. These three matrices can be considered as a single attention head in the context of multi-head attention. The figure below summarizes this single attention head we covered and implemented previously:</p>
+<p>Summarizing the self-attention mechanism implemented previously</p>
+<p>As its name implies, multi-head attention involves multiple such heads, each consisting of query, key, and value matrices. This concept is similar to the use of multiple kernels in convolutional neural networks, producing feature maps with multiple output channels.</p>
+<p>Multi-head attention: self-attention with multiple heads</p>
+<p>To illustrate this in code, we can write a MultiHeadAttentionWrapper class for our previous SelfAttention class:</p>
+<p>class MultiHeadAttentionWrapper(nn.Module): ​ &nbsp; &nbsp;def <strong>init</strong>(self, d_in, d_out_kq, d_out_v, num_heads): &nbsp; &nbsp; &nbsp; &nbsp;super().__init__() &nbsp; &nbsp; &nbsp; &nbsp;self.heads = nn.ModuleList( &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [SelfAttention(d_in, d_out_kq, d_out_v) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; for _ in range(num_heads)] &nbsp; &nbsp; &nbsp; ) ​ &nbsp; &nbsp;def forward(self, x): &nbsp; &nbsp; &nbsp; &nbsp;return torch.cat([head(x) for head in self.heads], dim=-1)</p>
+<p>The d_* parameters are the same as before in the SelfAttention class – the only new input parameter here is the number of attention heads:</p>
+<p>d_in: Dimension of the input feature vector.</p>
+<p>d_out_kq: Dimension for both query and key outputs.</p>
+<p>d_out_v: Dimension for value outputs.</p>
+<p>num_heads: Number of attention heads.</p>
+<p>We initialize the SelfAttention class num_heads times using these input parameters. And we use a PyTorch nn.ModuleList to store these multiple SelfAttention instances.</p>
+<p>Then, the forward pass involves applying each SelfAttention head (stored in self.heads) to the input x independently. The results from each head are then concatenated along the last dimension (dim=-1). Let’s see it in action below!</p>
+<p>First, let’s suppose we have a single Self-Attention head with output dimension 1 to keep it simple for illustration purposes:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) ​ d_in, d_out_kq, d_out_v = 3, 2, 1 ​ sa = SelfAttention(d_in, d_out_kq, d_out_v) print(sa(embedded_sentence))</p>
+<p>Out:</p>
+<p>tensor([[-0.0185], &nbsp; &nbsp; &nbsp; [ 0.4003], &nbsp; &nbsp; &nbsp; [-0.1103], &nbsp; &nbsp; &nbsp; [ 0.0668], &nbsp; &nbsp; &nbsp; [ 0.1180], &nbsp; &nbsp; &nbsp; [-0.1827]], grad_fn=<mmbackward0>)</mmbackward0></p>
+<p>Now, let’s extend this to 4 attention heads:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) ​ block_size = embedded_sentence.shape[1] mha = MultiHeadAttentionWrapper( d_in, d_out_kq, d_out_v, num_heads=4 ) ​ context_vecs = mha(embedded_sentence) ​ print(context_vecs) print(“context_vecs.shape:”, context_vecs.shape)</p>
+<p>Out:</p>
+<p>tensor([[-0.0185, &nbsp;0.0170, &nbsp;0.1999, -0.0860], &nbsp; &nbsp; &nbsp; [ 0.4003, &nbsp;1.7137, &nbsp;1.3981, &nbsp;1.0497], &nbsp; &nbsp; &nbsp; [-0.1103, -0.1609, &nbsp;0.0079, -0.2416], &nbsp; &nbsp; &nbsp; [ 0.0668, &nbsp;0.3534, &nbsp;0.2322, &nbsp;0.1008], &nbsp; &nbsp; &nbsp; [ 0.1180, &nbsp;0.6949, &nbsp;0.3157, &nbsp;0.2807], &nbsp; &nbsp; &nbsp; [-0.1827, -0.2060, -0.2393, -0.3167]], grad_fn=<catbackward0>) context_vecs.shape: torch.Size([6, 4])</catbackward0></p>
+<p>Based on the output above, you can see that the single self-attention head created earlier now represents the first column in the output tensor above.</p>
+<p>Notice that the multi-head attention result is a 6×4-dimensional tensor: We have 6 input tokens and 4 self-attention heads, where each self-attention head returns a 1-dimensional output. Previously, in the Self-Attention section, we also produced a 6×4-dimensional tensor. That’s because we set the output dimension to 4 instead of 1. In practice, why do we even need multiple attention heads if we can regulate the output embedding size in the SelfAttention class itself?</p>
+<p>The distinction between increasing the output dimension of a single self-attention head and using multiple attention heads lies in how the model processes and learns from the data. While both approaches increase the capacity of the model to represent different features or aspects of the data, they do so in fundamentally different ways.</p>
+<p>For instance, each attention head in multi-head attention can potentially learn to focus on different parts of the input sequence, capturing various aspects or relationships within the data. This diversity in representation is key to the success of multi-head attention.</p>
+<p>Multi-head attention can also be more efficient, especially in terms of parallel computation. Each head can be processed independently, making it well-suited for modern hardware accelerators like GPUs or TPUs that excel at parallel processing.</p>
+<p>In short, the use of multiple attention heads is not just about increasing the model’s capacity but about enhancing its ability to learn a diverse set of features and relationships within the data. For example, the 7B Llama 2 model uses 32 attention heads.</p>
+<p>Causal Self-Attention</p>
+<p>In this section, we are adapting the previously discussed self-attention mechanism into a causal self-attention mechanism, specifically for GPT-like (decoder-style) LLMs that are used to generate text. This causal self-attention mechanism is also often referred to as “masked self-attention”. In the original transformer architecture, it corresponds to the “masked multi-head attention” module — for simplicity, we will look at a single attention head in this section, but the same concept generalizes to multiple heads.</p>
+<p>The causal self-attention module in the original transformer architecture (via “Attention Is All You Need”, https://arxiv.org/abs/1706.03762)</p>
+<p>Causal self-attention ensures that the outputs for a certain position in a sequence is based only on the known outputs at previous positions and not on future positions. In simpler terms, it ensures that the prediction for each next word should only depend on the preceding words. To achieve this in GPT-like LLMs, for each token processed, we mask out the future tokens, which come after the current token in the input text.</p>
+<p>The application of a causal mask to the attention weights for hiding future input tokens in the inputs is illustrated in the figure below.</p>
+<p>To illustrate and implement causal self-attention, let’s work with the unweighted attention scores and attention weights from the previous section. First, we quickly recap the computation of the attention scores from the previous Self-Attention section:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) ​ d_in, d_out_kq, d_out_v = 3, 2, 4 ​ W_query = nn.Parameter(torch.rand(d_in, d_out_kq)) W_key &nbsp; = nn.Parameter(torch.rand(d_in, d_out_kq)) W_value = nn.Parameter(torch.rand(d_in, d_out_v)) ​ x = embedded_sentence ​ keys = x @ W_key queries = x @ W_query values = x @ W_value ​ # attn_scores are the “omegas”, # the unnormalized attention weights attn_scores = queries @ keys.T ​ print(attn_scores) print(attn_scores.shape)</p>
+<p>Out:</p>
+<p>tensor([[ 0.0613, -0.3491, &nbsp;0.1443, -0.0437, -0.1303, &nbsp;0.1076], &nbsp; &nbsp; &nbsp; [-0.6004, &nbsp;3.4707, -1.5023, &nbsp;0.4991, &nbsp;1.2903, -1.3374], &nbsp; &nbsp; &nbsp; [ 0.2432, -1.3934, &nbsp;0.5869, -0.1851, -0.5191, &nbsp;0.4730], &nbsp; &nbsp; &nbsp; [-0.0794, &nbsp;0.4487, -0.1807, &nbsp;0.0518, &nbsp;0.1677, -0.1197], &nbsp; &nbsp; &nbsp; [-0.1510, &nbsp;0.8626, -0.3597, &nbsp;0.1112, &nbsp;0.3216, -0.2787], &nbsp; &nbsp; &nbsp; [ 0.4344, -2.5037, &nbsp;1.0740, -0.3509, -0.9315, &nbsp;0.9265]], &nbsp; &nbsp; &nbsp; grad_fn=<mmbackward0>) torch.Size([6, 6])</mmbackward0></p>
+<p>Similar to the Self-Attention section before, the output above is a 6×6 tensor containing these pairwise unnormalized attention weights (also called attention scores) for the 6 input tokens.</p>
+<p>Previously, we then computed the scaled dot-product attention via the softmax function as follows:</p>
+<p>In:</p>
+<p>attn_weights = torch.softmax(attn_scores / d_out_kq**0.5, dim=1) print(attn_weights)</p>
+<p>Out:</p>
+<p>tensor([[0.1772, 0.1326, 0.1879, 0.1645, 0.1547, 0.1831], &nbsp; &nbsp; &nbsp; [0.0386, 0.6870, 0.0204, 0.0840, 0.1470, 0.0229], &nbsp; &nbsp; &nbsp; [0.1965, 0.0618, 0.2506, 0.1452, 0.1146, 0.2312], &nbsp; &nbsp; &nbsp; [0.1505, 0.2187, 0.1401, 0.1651, 0.1793, 0.1463], &nbsp; &nbsp; &nbsp; [0.1347, 0.2758, 0.1162, 0.1621, 0.1881, 0.1231], &nbsp; &nbsp; &nbsp; [0.1973, 0.0247, 0.3102, 0.1132, 0.0751, 0.2794]], &nbsp; &nbsp; &nbsp; grad_fn=<softmaxbackward0>)</softmaxbackward0></p>
+<p>The 6×6 output above represents the attention weights, which we also computed in the Self-Attention section before.</p>
+<p>Now, in GPT-like LLMs, we train the model to read and generate one token (or word) at a time, from left to right. If we have a training text sample like “Life is short eat desert first” we have the following setup, where the context vectors for the word to the right side of the arrow should only incorporate itself and the previous words:</p>
+<p>“Life” → “is”</p>
+<p>“Life is” → “short”</p>
+<p>“Life is short” → “eat”</p>
+<p>“Life is short eat” → “desert”</p>
+<p>“Life is short eat desert” → “first”</p>
+<p>The simplest way to achieve this setup above is to mask out all future tokens by applying a mask to the attention weight matrix above the diagonal, as illustrated in the figure below. This way, “future” words will not be included when creating the context vectors, which are created as a attention-weighted sum over the inputs.</p>
+<p>Attention weights above the diagonal should be masked out</p>
+<p>In code, we can achieve this via PyTorch’s tril function, which we first use to create a mask of 1’s and 0’s:</p>
+<p>In:</p>
+<p>block_size = attn_scores.shape[0] mask_simple = torch.tril(torch.ones(block_size, block_size)) print(mask_simple)</p>
+<p>Out:</p>
+<p>tensor([[1., 0., 0., 0., 0., 0.], &nbsp; &nbsp; &nbsp; [1., 1., 0., 0., 0., 0.], &nbsp; &nbsp; &nbsp; [1., 1., 1., 0., 0., 0.], &nbsp; &nbsp; &nbsp; [1., 1., 1., 1., 0., 0.], &nbsp; &nbsp; &nbsp; [1., 1., 1., 1., 1., 0.], &nbsp; &nbsp; &nbsp; [1., 1., 1., 1., 1., 1.]])</p>
+<p>Next, we multiply the attention weights with this mask to zero out all the attention weights above the diagonal:</p>
+<p>In:</p>
+<p>masked_simple = attn_weights*mask_simple print(masked_simple)</p>
+<p>Out:</p>
+<p>tensor([[0.1772, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.0386, 0.6870, 0.0000, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.1965, 0.0618, 0.2506, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.1505, 0.2187, 0.1401, 0.1651, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.1347, 0.2758, 0.1162, 0.1621, 0.1881, 0.0000], &nbsp; &nbsp; &nbsp; [0.1973, 0.0247, 0.3102, 0.1132, 0.0751, 0.2794]], &nbsp; &nbsp; &nbsp; grad_fn=<mulbackward0>)</mulbackward0></p>
+<p>While the above is one way to mask out future words, notice that the attention weights in each row don’t sum to one anymore. To mitigate that, we can normalize the rows such that they sum up to 1 again, which is a standard convention for attention weights:</p>
+<p>In:</p>
+<p>row_sums = masked_simple.sum(dim=1, keepdim=True) masked_simple_norm = masked_simple / row_sums print(masked_simple_norm)</p>
+<p>Out:</p>
+<p>tensor([[1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.0532, 0.9468, 0.0000, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.3862, 0.1214, 0.4924, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.2232, 0.3242, 0.2078, 0.2449, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.1536, 0.3145, 0.1325, 0.1849, 0.2145, 0.0000], &nbsp; &nbsp; &nbsp; [0.1973, 0.0247, 0.3102, 0.1132, 0.0751, 0.2794]], &nbsp; &nbsp; &nbsp; grad_fn=<divbackward0>)</divbackward0></p>
+<p>As we can see, the attention weights in each row now sum up to 1.</p>
+<p>Normalizing attention weights in neural networks, such as in transformer models, is advantageous over unnormalized weights for two main reasons. First, normalized attention weights that sum to 1 resemble a probability distribution. This makes it easier to interpret the model’s attention to various parts of the input in terms of proportions. Second, by constraining the attention weights to sum to 1, this normalization helps control the scale of the weights and gradients to improve the training dynamics.</p>
+<p>More efficient masking without renormalization</p>
+<p>In the causal self-attention procedure we coded above, we first compute the attention scores, then compute the attention weights, mask out attention weights above the diagonal, and lastly renormalize the attention weights. This is summarized in the figure below:</p>
+<p>The previously implemented causal self-attention procedure</p>
+<p>Alternatively, there is a more efficient way to achieve the same results. In this approach, we take the attention scores and replace the values above the diagonal with negative infinity before the values are input into the softmax function to compute the attention weights. This is summarized in the figure below:</p>
+<p>An alternative, more efficient approach to implementing causal self-attention</p>
+<p>We can code up this procedure in PyTorch as follows, starting with masking the attention scores above the diagonal:</p>
+<p>In:</p>
+<p>mask = torch.triu(torch.ones(block_size, block_size), diagonal=1) masked = attn_scores.masked_fill(mask.bool(), -torch.inf) print(masked)</p>
+<p>The code above first creates a mask with 0s below the diagonal, and 1s above the diagonal. Here, torch.triu (upper triangle) retains the elements on and above the main diagonal of a matrix, zeroing out the elements below it, thus preserving the upper triangular portion. In contrast, torch.tril (lower triangle) keeps the elements on and below the main diagonal.</p>
+<p>The masked_fill method then replaces all the elements above the diagonal via positive mask values (1s) with -torch.inf, with the results being shown below.</p>
+<p>Out:</p>
+<p>tensor([[ 0.0613, &nbsp; -inf, &nbsp; -inf, &nbsp; -inf, &nbsp; -inf, &nbsp; -inf], &nbsp; &nbsp; &nbsp; [-0.6004, 3.4707, &nbsp; -inf, &nbsp; -inf, &nbsp; -inf, &nbsp; -inf], &nbsp; &nbsp; &nbsp; [ 0.2432, -1.3934, 0.5869, &nbsp; -inf, &nbsp; -inf, &nbsp; -inf], &nbsp; &nbsp; &nbsp; [-0.0794, 0.4487, -0.1807, 0.0518, &nbsp; -inf, &nbsp; -inf], &nbsp; &nbsp; &nbsp; [-0.1510, 0.8626, -0.3597, 0.1112, 0.3216, &nbsp; -inf], &nbsp; &nbsp; &nbsp; [ 0.4344, -2.5037, 1.0740, -0.3509, -0.9315, 0.9265]], &nbsp; &nbsp; &nbsp; grad_fn=<maskedfillbackward0>)</maskedfillbackward0></p>
+<p>Then, all we have to do is to apply the softmax function as usual to obtain the normalized and masked attention weights:</p>
+<p>In:</p>
+<p>attn_weights = torch.softmax(masked / d_out_kq**0.5, dim=1) print(attn_weights)</p>
+<p>Out:</p>
+<p>tensor([[1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.0532, 0.9468, 0.0000, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.3862, 0.1214, 0.4924, 0.0000, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.2232, 0.3242, 0.2078, 0.2449, 0.0000, 0.0000], &nbsp; &nbsp; &nbsp; [0.1536, 0.3145, 0.1325, 0.1849, 0.2145, 0.0000], &nbsp; &nbsp; &nbsp; [0.1973, 0.0247, 0.3102, 0.1132, 0.0751, 0.2794]], &nbsp; &nbsp; &nbsp; grad_fn=<softmaxbackward0>)</softmaxbackward0></p>
+<p>Why does this work? The softmax function, applied in the last step, converts the input values into a probability distribution. When -inf is present in the inputs, softmax effectively treats them as zero probability. This is because e^(-inf) approaches 0, and thus these positions contribute nothing to the output probabilities.</p>
+<p>Conclusion</p>
+<p>In this article, we explored the inner workings of self-attention through a step-by-step coding approach. Using this as a foundation, we then looked into multi-head attention, a fundamental component of large language transformers.</p>
+<p>We then also coded cross-attention, a variant of self-attention that is particularly effective when applied between two distinct sequences. And lastly, we coded causal self-attention, a concept crucial for generating coherent and contextually appropriate sequences in decoder-style LLMs such as GPT and Llama.</p>
+<p>By coding these complex mechanisms from scratch, you hopefully gained a good understanding of the inner workings of the self-attention mechanism used in transformers and LLMs.</p>
+<p>(Note that the code presented in this article is intended for illustrative purposes. If you plan to implement self-attention for training LLMs, I recommend considering optimized implementations like Flash Attention, which reduce memory footprint and computational load.)</p>
+<p>Bonus Topic: Cross-Attention</p>
+<p>In the code walkthrough above, the sections on Self-Attention and Causal-Attention, we set d_q = d_k = 2 and d_v = 4. In other words, we used the same dimensions for query and key sequences. While the value matrix W_v is often chosen to have the same dimension as the query and key matrices (such as in PyTorch’s MultiHeadAttention class), we can select an arbitrary number size for the value dimensions…</p>
+<p>Since the dimensions are sometimes a bit tricky to keep track of, let’s summarize everything we have covered so far in the figure below, which depicts the various tensor sizes for a single attention head.</p>
+<p>Another view of the self-attention mechanism implemented previously, with a focus on the matrix dimensions</p>
+<p>Now, the illustration above corresponds to the self-attention mechanism used in transformers. One particular flavor of this attention mechanism we have yet to discuss is cross-attention.</p>
+<p>What is cross-attention, and how does it differ from self-attention?</p>
+<p>In self-attention, we work with the same input sequence. In cross-attention, we mix or combine two different input sequences. In the case of the original transformer architecture above, that’s the sequence returned by the encoder module on the left and the input sequence being processed by the decoder part on the right.</p>
+<p>Note that in cross-attention, the two input sequences x_1 and x_2 can have different numbers of elements. However, their embedding dimensions must match.</p>
+<p>The figure below illustrates the concept of cross-attention. If we set x_1 = x_2, this is equivalent to self-attention.</p>
+<p>(Note that the queries usually come from the decoder, and the keys and values typically come from the encoder.)</p>
+<p>How does that work in code? We will adopt and modify the SelfAttention class that we previously implemented in the Self-Attention section and only make some minor modifications:</p>
+<p>In:</p>
+<p>class CrossAttention(nn.Module): ​ def <strong>init</strong>(self, d_in, d_out_kq, d_out_v): super().__init__() self.d_out_kq = d_out_kq self.W_query = nn.Parameter(torch.rand(d_in, d_out_kq)) self.W_key = nn.Parameter(torch.rand(d_in, d_out_kq)) self.W_value = nn.Parameter(torch.rand(d_in, d_out_v)) ​ def forward(self, x_1, x_2): # x_2 is new queries_1 = x_1 @ self.W_query</p>
+<pre><code>    keys_2 = x_2 @ self.W_key          # new
+    values_2 = x_2 @ self.W_value      # new
+    
+    attn_scores = queries_1 @ keys_2.T # new 
+    attn_weights = torch.softmax(
+        attn_scores / self.d_out_kq**0.5, dim=-1)
+    
+    context_vec = attn_weights @ values_2
+    return context_vec</code></pre>
+<p>The differences between the CrossAttention class and the previous SelfAttention class are as follows:</p>
+<p>The forward method takes two distinct inputs, x_1 and x_2. The queries are derived from x_1, while the keys and values are derived from x_2. This means that the attention mechanism is evaluating the interaction between two different inputs.</p>
+<p>The attention scores are calculated by taking the dot product of the queries (from x_1) and keys (from x_2).</p>
+<p>Similar to SelfAttention, each context vector is a weighted sum of the values. However, in CrossAttention, these values are derived from the second input (x_2), and the weights are based on the interaction between x_1 and x_2.</p>
+<p>Let’s see it in action:</p>
+<p>In:</p>
+<p>torch.manual_seed(123) ​ d_in, d_out_kq, d_out_v = 3, 2, 4 ​ crossattn = CrossAttention(d_in, d_out_kq, d_out_v) ​ first_input = embedded_sentence second_input = torch.rand(8, d_in) ​ print(“First input shape:”, first_input.shape) print(“Second input shape:”, second_input.shape)</p>
+<p>Out:</p>
+<p>First input shape: torch.Size([6, 3]) Second input shape: torch.Size([8, 3])</p>
+<p>Notice that the first and second inputs don’t have to have the same number of tokens (here: rows) when computing cross-attention:</p>
+<p>In:</p>
+<p>context_vectors = crossattn(first_input, second_input) ​ print(context_vectors) print(“Output shape:”, context_vectors.shape)</p>
+<p>Out:</p>
+<p>tensor([[0.4231, 0.8665, 0.6503, 1.0042], [0.4874, 0.9718, 0.7359, 1.1353], [0.4054, 0.8359, 0.6258, 0.9667], [0.4357, 0.8886, 0.6678, 1.0311], [0.4429, 0.9006, 0.6775, 1.0460], [0.3860, 0.8021, 0.5985, 0.9250]], grad_fn=<mmbackward0>) Output shape: torch.Size([6, 4])</mmbackward0></p>
+<p>We talked a lot about language transformers above. In the original transformer architecture, cross-attention is useful when we go from an input sentence to an output sentence in the context of language translation. The input sentence represents one input sequence, and the translation represent the second input sequence (the two sentences can different numbers of words).</p>
+<p>Another popular model where cross-attention is used is Stable Diffusion. Stable Diffusion uses cross-attention between the generated image in the U-Net model and the text prompts used for conditioning as described in High-Resolution Image Synthesis with Latent Diffusion Models – the original paper that describes the Stable Diffusion model that was later adopted by Stability AI to implement the popular Stable Diffusion model.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

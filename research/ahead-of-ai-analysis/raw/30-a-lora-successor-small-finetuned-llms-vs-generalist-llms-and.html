@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>a-lora-successor-small-finetuned-llms-vs-generalist-llms-and – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#a-lora-successor-small-finetuned-llms-vs-generalist-llms-and-transparent-llm-research" id="toc-a-lora-successor-small-finetuned-llms-vs-generalist-llms-and-transparent-llm-research" class="nav-link active" data-scroll-target="#a-lora-successor-small-finetuned-llms-vs-generalist-llms-and-transparent-llm-research">A LoRA Successor, Small Finetuned LLMs Vs Generalist LLMs, and Transparent LLM Research</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  <li><a href="#feedforward-module-with-gelu-gpt-2" id="toc-feedforward-module-with-gelu-gpt-2" class="nav-link" data-scroll-target="#feedforward-module-with-gelu-gpt-2">Feedforward module with GELU (GPT-2)</a></li>
+  <li><a href="#feedforward-module-with-swiglu-llama-2" id="toc-feedforward-module-with-swiglu-llama-2" class="nav-link" data-scroll-target="#feedforward-module-with-swiglu-llama-2">Feedforward module with SwiGLU (Llama 2)</a></li>
+  <li><a href="#feedforward-module-with-geglu-gemma" id="toc-feedforward-module-with-geglu-gemma" class="nav-link" data-scroll-target="#feedforward-module-with-geglu-gemma">Feedforward module with GeGLU (Gemma)</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="a-lora-successor-small-finetuned-llms-vs-generalist-llms-and-transparent-llm-research" class="level1">
+<h1>A LoRA Successor, Small Finetuned LLMs Vs Generalist LLMs, and Transparent LLM Research</h1>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/research-papers-in-february-2024</p>
+<p><strong>Likes:</strong> LIKE (1)</p>
+<p><strong>Image Count:</strong> 18</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!WcoG!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd55dd150-cefd-460f-abb7-e6def2255116_1600x719.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated table (via https://arxiv.org/abs/2402.00841) showing the text summarization performance of available LLMs versus small finetuned LLMs</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!IFKr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb4f4d86b-7833-4041-b00f-8010ac6fdb9f_1600x437.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated table (via https://arxiv.org/abs/2402.00841) showing the different text lengths in the different datasets</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!iKP9!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0f217fcf-2336-429e-b307-5990daac64da_1322x646.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Annotated table (via https://arxiv.org/abs/2402.00841) showing the human evaluation results, where larger scores are better</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!LX62!,w_140,h_140,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F65c4cc25-a71e-4999-8bcf-a00a850de9a0_1510x876.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!DK4m!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fea9d4ba2-15cb-4711-bb62-12dcf45b93dd_1416x1244.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: OLMo architecture details (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!0R1Z!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fde81f535-2153-4800-a085-2063490e838e_1502x572.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: OLMo optimizer settings (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Z97A!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fcd75ac97-d627-4627-b521-f1c5bdd396a3_1370x688.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: OLMo training parameters (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!9JRS!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9ba4aaf9-52c2-44e0-8903-39edcc1a7a0f_1240x362.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A comparison of OLMo to other popular LLMs (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!5ud4!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4a8a6657-d510-48e2-970d-f4b877989d57_1559x1600.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Build a Large Language (From Scratch) GitHub repository and book</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!rY1t!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fc7a01b4a-bb23-49c1-9d6c-0ac6a152b4b2_1218x542.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated performance comparison from the Gemma technical report</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!4vu7!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F218c64db-2449-4a6e-b0cf-d5c5f1b75c41_1600x685.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Architecture comparison between Gemma, Llama 2, and OLMo. Annotated table from the Gemma report</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!AWdm!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F857936c3-751e-469d-82bf-892bbbb321fe_962x1170.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: The typical layer normalization locations in GPT, Llama 2, and other LLMs: there’s nothing new in Gemma. (Annotated figure from my Build a Large Language Model From Scratch book.)</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!VM40!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fdfa415a6-4b27-4fab-8fed-e712fc1587a0_1298x450.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: GELU and ReLU side by side (Figure from my Build a Large Language Model from Scratch book)</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!XQIq!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F97b8625e-9b13-4737-b966-38db6f0391c4_1600x341.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!cbIO!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F4a48b78d-c5cd-4166-81a4-47dced0481ec_1322x290.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Excerpt from the Attention Is All You Need paper, https://arxiv.org/abs/1706.03762</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!2bty!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbc39e6fc-6b60-4006-801b-857cab1af0de_1600x1188.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Multiplying the weights by the square root of the embedding dimensions yields weights on the same scale as the weights in standard linear layers.</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!FU_J!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F00fe2106-41da-4449-9f56-7ce300bf90dc_1170x1180.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Using Gemma via a Lit-GPT Studio (https://lightning.ai/lightning-ai/studios/understanding-using-and-finetuning-gemma)</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!oMCV!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff4080a3d-c911-49cf-88f8-ca79b64ff796_1600x1097.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Machine Learning Q and AI book</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>Once again, this has been an exciting month in AI research. This month, I’m covering two new openly available LLMs, insights into small finetuned LLMs, and a new parameter-efficient LLM finetuning technique.</p>
+<p>The two LLMs mentioned above stand out for several reasons. One LLM (OLMo) is completely open source, meaning that everything from the training code to the dataset to the log files is openly shared.</p>
+<p>The other LLM (Gemma) also comes with openly available weights but achieves state-of-the-art performance on several benchmarks and outperforms popular LLMs of similar size, such as Llama 2 7B and Mistral 7B, by a large margin.</p>
+<p>However, before we discuss the details of this new LLM’s architecture tweaks, let’s start by discussing the utility of small LLMs in more detail, beginning with the Tiny Titans paper below.</p>
+<ol type="1">
+<li>Tiny Titans: Can Smaller Language Models Punch Above Their Weight in the Real World for Meeting Summarization?</li>
+</ol>
+<p>In this Tiny Titans paper, researchers set out to answer a literal million-dollar question: can “small” finetuned LLMs with less than 2B parameters outperform larger, openly available LLMs like Llama 2 Chat, and proprietary LLMs like GPT-3.5?</p>
+<p>The answer is not very clear-cut. Before discussing the details, the results are summarized in the table below.</p>
+<p>Annotated table (via https://arxiv.org/abs/2402.00841) showing the text summarization performance of available LLMs versus small finetuned LLMs</p>
+<p>In the table above, “zero-shot” means that these models have not been further finetuned on meeting data and summaries, but were used off-the-shelf either via the openly available weights (e.g., Llama 2 7B Chat) or their proprietary API (e.g., GPT-3.5).</p>
+<p>However, a significant caveat to note is that while these “zero-shot” models were not finetuned further by the authors of the paper, their original creation already involved very extensive instruction finetuning, which also includes generating text summaries.</p>
+<p>Now, we can see that FLAN-T5-Large is a clear winner in the In-Domain Dataset category (real-world meeting data that is not available on the internet), so we can partly say yes, small finetuned LLMs can outperform larger available LLMs. However, why does it perform so much worse than, for example, GPT-3.5 and Mixtral-8x7B on the QMSUM-I dataset? The answer might be twofold.</p>
+<p>First, GPT-3.5 and Mixtral may have used some of the QMSUM data, which is publicly available, during their own training (since details about the data used for model training are not publicly disclosed, we cannot say for sure).</p>
+<p>The second plausible explanation is that FLAN-T5-Large has a context size limited to 2048 tokens, and the QMSUM dataset has inputs 4-5 times larger, as shown in the table below.</p>
+<p>Annotated table (via https://arxiv.org/abs/2402.00841) showing the different text lengths in the different datasets</p>
+<p>Are the Automated Metrics Reliable?</p>
+<p>Besides the truncation issue discussed above, are the ROUGE scores, which are automated metrics (a hands on example here), reliable at all?</p>
+<p>In general, ROUGE scores for summaries are considered reliable for evaluating the overlap between machine-generated summaries and reference summaries, particularly in terms of n-gram overlap, word sequences, and word pair matches. However, they may not fully capture the quality of a summary in terms of coherence, readability, or factual accuracy, and are thus not a perfect tool. Therefore, the researchers also looked into human evaluations, which are summarized in the table below.</p>
+<p>Annotated table (via https://arxiv.org/abs/2402.00841) showing the human evaluation results, where larger scores are better</p>
+<p>Based on the results in the table above, it appears that FLAN performs really well compared to Llama 2 7B on the In-Domain dataset and is roughly on par with GPT-3.5. The weakness on the QMSUM-I dataset is similar to what we observed when looking at the ROUGE scores earlier.</p>
+<p>Another point to note here is that GPT-4 was used for the gold-reference summaries. Assuming GPT-3.5 was pretrained and instruction-finetuned in a similar fashion as GPT-4, I expect the results to be slightly biased in favor of GPT-3.5.</p>
+<p>Why Did the Small Models Perform Relatively Badly?</p>
+<p>In general, besides FLAN-T5 on the In-Domain dataset, we observed that small finetuned LLMs performed poorly compared to the larger LLMs.</p>
+<p>One reason is their limited context size, which leads to truncation of the input data. This is problematic when generating summaries. One could address this by extending the context lengths during training and inference, which doesn’t necessarily mean an increase in model size.</p>
+<p>Another reason might be the models’ smaller capacity to store and process information in the intermediate states. To investigate this, we would have to train various LLMs with different context lengths at the very least.</p>
+<p>The chosen task for the small LLMs was finetuning on summarization tasks. However, summarization finetuning has also been a significant part of training the large proprietary LLMs. In other words, we are comparing large finetuned LLMs to small finetuned LLMs. It would be interesting to see this comparison for novel domain-specific tasks that were not already part of the instruction finetuning pipeline of LLMs.</p>
+<p>Takeaways</p>
+<p>Mixtral (covered in the last edition) is really good! And FLAN-T5, which is magnitudes smaller, remains a great model for certain finetuning tasks.</p>
+<ol start="2" type="1">
+<li>DoRA: Weight-Decomposed Low-Rank Adaptation</li>
+</ol>
+<p>In DoRA: Weight-Decomposed Low-Rank Adaptation, researchers introduce an innovative alternative to LoRA, the most widely adopted parameter-efficient finetuning method for LLMs and Vision Transformers. I originally planned to cover it in this article, but I found this method so exciting that I couldn’t resist and implemented it a few weeks ago.&nbsp;</p>
+<p>For those interested in further details and the paper discussion, I have written a comprehensive article and a from-scratch implementation guide covering DoRA here:</p>
+<p>Improving LoRA: Implementing Weight-Decomposed Low-Rank Adaptation (DoRA) from Scratch SEBASTIAN RASCHKA, PHD · FEBRUARY 18, 2024 Read full story</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<ol start="3" type="1">
+<li>OLMo: Accelerating the Science of Language Models</li>
+</ol>
+<p>The “OLMo” in OLMo: Accelerating the Science of Language Models refers to Open Language Model, a recently released open-source LLM (available in 1B and 7B parameter versions). What’s notable about OLMo is that the researchers not only shared the model weights but also all training details, including the training code, training data, model evaluation code, log files, and finetuning code.</p>
+<p>I highly recommend reading the OLMo paper itself. I wish it contained more insights and analyses, but seeing the list of small architecture choices and hyperparameter configurations is already useful for my own experiments. Here are two notable ones:</p>
+<p>They disabled the bias vectors in all linear layers (similar to Llama) to improve training stability.</p>
+<p>Instead of using standard LayerNorm (with trainable scale and shift parameters) or RMSNorm, they used a LayerNorm variant without any trainable parameters.</p>
+<p>Furthermore, the table below lists the key architecture differences compared to other popular LLMs.</p>
+<p>OLMo architecture details (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</p>
+<p>Moreover, the OLMo paper provides useful details about the optimizer hyperparameters and learning rate for AdamW, which are summarized in the following table.</p>
+<p>OLMo optimizer settings (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</p>
+<p>Regarding the learning rate, they used a 5000-step (~21B tokens) warm-up and then applied a linear (rather than cosine) decay down to one tenth of the learning rate shown in the table above. In addition, they clipped the gradients to an L2-norm maximum value of 1.0.</p>
+<p>Lastly, it’s interesting to note that they used a linear rather than a cosine learning rate schedule for decaying the learning rate, as shown in the comparison table below</p>
+<p>OLMo training parameters (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</p>
+<p>While these choices are all interesting, how does it actually compare to other LLMs? It turns out that OLMo is comparable to Llama 2 and Falcon, as shown in the table below.</p>
+<p>A comparison of OLMo to other popular LLMs (Source: OLMo paper, https://arxiv.org/abs/2402.00838)</p>
+<p>While there are no additional ablation studies on certain hyperparameter and architecture choices, all the log files are available on W&amp;B, so we could potentially do our own analyses in the upcoming weeks or months. Overall, I think OLMo is a really nice contribution to the open-source and research communities, and I really appreciate the authors sharing all the code and training artifacts.</p>
+<p>Build an LLM from Scratch</p>
+<p>If you are interested in improving your understanding of LLMs by building an LLM from scratch (just using PyTorch without external LLM libraries), Chapter 4 in my Build a Large Language From Scratch book is now available in Manning’s early access version.</p>
+<p>Build a Large Language (From Scratch) GitHub repository and book</p>
+<ol start="4" type="1">
+<li>Gemma</li>
+</ol>
+<p>Of course, we have to discuss Gemma, a suite of LLMs recently introduced by Google. The Gemma LLMs, built on the Gemini architecture, are available in four variants: the pretrained Gemma 2B and 7B base models, along with the Gemma 2B and 7B instruction-finetuned models.</p>
+<p>In addition to sharing the model weights, Google has also published a technical report titled Gemma: Open Models Based on Gemini Research and Technology, which we will discuss in greater detail below.</p>
+<p>Gemma Performance</p>
+<p>The most notable aspect of Gemma is its impressive performance compared to other popular and widely used open-source models, such as Llama 2 7B and Mistral, as shown in the figure below</p>
+<p>Annotated performance comparison from the Gemma technical report</p>
+<p>It’s not entirely clear whether the scores mentioned above refer to the pretrained or instruction-finetuned variants; however, I assume they likely represent the performance of the instruction-finetuned models.</p>
+<p>What contributes to Gemma’s outstanding performance? The reasons are not explicitly stated in the paper, but I assume it’s due to:</p>
+<p>The large vocabulary size of 256,000 words (in contrast, Llama has a vocabulary of 32,000 words);</p>
+<p>The extensive 6 trillion token training dataset (Llama was trained on only one-third of that amount).</p>
+<p>Moreover, upon integrating Gemma into our open-source Lit-GPT repository, my colleagues and I noticed that its overall architecture bears a strong resemblance to that of Llama 2. Let’s examine this aspect more closely in the next section.</p>
+<p>Gemma Architecture Insights</p>
+<p>What are some of the interesting design choices behind Gemma? As mentioned above, its vocabulary size (and consequently the embedding matrix size) is very large. The table below shows an architecture overview comparing Gemma to LLama 2 7B and OLMo 7B, which we discussed earlier.</p>
+<p>Architecture comparison between Gemma, Llama 2, and OLMo. Annotated table from the Gemma report</p>
+<p>Model Sizes</p>
+<p>Something else worth noting is that Gemma 2B utilized multi-query attention, whereas Gemma 7B did not. Additionally, Gemma 7B features a relatively large feedforward layer compared to Llama 2, despite having fewer layers in total (28 versus 32). However, despite having fewer layers, the number of parameters in Gemma is quite large.&nbsp;</p>
+<p>Although it is called Gemma 7B, it actually has 9.3 billion parameters in total, and 8.5 billion parameters if you account for weight tying. Weight tying means that it shares the same weights in the input embedding and output projection layer, similar to GPT-2&nbsp; and OLMo 1B (OLMO 7B was trained without weight tying).</p>
+<p>Normalization Layers</p>
+<p>Another detail that stands out is the following quote from the paper:&nbsp;</p>
+<blockquote class="blockquote">
+<p>Normalizer Location. We normalize both the input and the output of each transformer sub-layer, a deviation from the standard practice of solely normalizing one or the other. We use RMSNorm (Zhang and Sennrich, 2019) as our normalization layer.</p>
+</blockquote>
+<p>At first glance, it sounds like Gemma has an additional RMSNorm layer after each transformer block. However, looking at the official code implementation, it turns out that Gemma just uses the regular pre-normalization scheme that is used by other LLMs like GPT-2, Llama 2, and so on, as illustrated below.</p>
+<p>The typical layer normalization locations in GPT, Llama 2, and other LLMs: there’s nothing new in Gemma. (Annotated figure from my Build a Large Language Model From Scratch book.)</p>
+<p>GeGLU Activations</p>
+<p>One notable deviation from other architectures is that Gemma uses GeGLU activations, which was proposed in the 2020 paper GLU Variants Improve Transformer.&nbsp;</p>
+<p>GeLU, or Gaussian Error Linear Unit, is an activation function that has become increasingly popular as an alternative to the traditional ReLU. The popularity of GeLU stems from its ability to introduce nonlinearity while also allowing for the propagation of gradients for negative input values, addressing one of the limitations of ReLU, which blocks negative values completely</p>
+<p>GELU and ReLU side by side (Figure from my Build a Large Language Model from Scratch book)</p>
+<p>Now, GeGLU is a gated linear unit variant of GELU, where the activation is split into two parts, a sigmoidal part and a linear projection that is element-wise multiplied with the output of the first part, as illustrated below.&nbsp;</p>
+<p>As illustrated above, GeGLU is analogous to SwiGLU activations used by other LLMs (for example, Llama 2 and Mistral), except that it uses GELU as the base activation rather than Swish.</p>
+<p>This is perhaps easier to see when looking at the pseudo-code of these activations:</p>
+</section>
+</section>
+<section id="feedforward-module-with-gelu-gpt-2" class="level1">
+<h1>Feedforward module with GELU (GPT-2)</h1>
+<p>x = linear(x) x = gelu(x) x = linear_projection(x)</p>
+</section>
+<section id="feedforward-module-with-swiglu-llama-2" class="level1">
+<h1>Feedforward module with SwiGLU (Llama 2)</h1>
+<p>x_1 = self.linear_1(x) x_2 = self.linear_2(x) x = silu(x_1) * x_2 x = linear_projection(x)</p>
+</section>
+<section id="feedforward-module-with-geglu-gemma" class="level1">
+<h1>Feedforward module with GeGLU (Gemma)</h1>
+<p>x_1 = self.linear_1(x) x_2 = self.linear_2(x) x = gelu(x_1) * x_2 x = linear_projection(x)</p>
+<p>Note that feedforward modules with SwiGLU and GeGLU effectively have one more linear layer (linear_1 and linear_2) compared to the regular feedforward module with GeLU (only linear). However, in GeGLU and SwiGLU feedforward modules, the linear_1 and linear_2 are typically obtained by splitting a single linear layer into two parts so that it doesn’t necessarily increase the parameter size.</p>
+<p>Is GeGLU better than SwiGLU? There are no ablation studies to say for sure. I suspect the choice could have also been just to make Gemma slightly more different from Llama 2.</p>
+<p>Other Design Choices</p>
+<p>Moreover, when adding Gemma support for Lit-GPT, Andrei Aksionov found some other interesting design choices.</p>
+<p>For instance, Gemma adds an offset of +1 to the RMSNorm layers and normalizes the embeddings by the square root of the hidden layer dimension. The latter is also done in the original Attention Is All You Need Transformer but not in other models like GPT-2 or OLMo, which also use weight tying.</p>
+<p>Excerpt from the Attention Is All You Need paper, https://arxiv.org/abs/1706.03762</p>
+<p>These details are not mentioned or discussed in the paper, and the significance of this is not clear.&nbsp;</p>
+<p>A potential explanation that comes to mind is that while linear layers and embedding layers do the same thing (see my write-up on Embedding Layers and Linear Layers), the initial weights are on a different scale. And since researchers at Google preferred TensorFlow for their experiments, multiplying by the square root of the embedding dimension was perhaps a way to bring the weights onto a more reasonable scale as I am showing in the example code below.</p>
+<p>Multiplying the weights by the square root of the embedding dimensions yields weights on the same scale as the weights in standard linear layers.</p>
+<p>Conclusion</p>
+<p>Gemma is a nice contribution to the openly-available LLM collection. It appears that the 7B model is a very strong model that could potentially replace Llama 2 and Mistral in real-world use cases.&nbsp;</p>
+<p>In addition, since we already have a large collection of ~7B models openly available, the Gemma 2B is almost more interesting as it comfortably runs on a single GPU. It’ll be interesting to see how it compares to phi-2, which is 2.7B in size as well.</p>
+<p>If you want to use Gemma in practice via the aforementioned Lit-GPT implementation, I created a Studio environment here.</p>
+<p>Using Gemma via a Lit-GPT Studio (https://lightning.ai/lightning-ai/studios/understanding-using-and-finetuning-gemma) Other Interesting Research Papers In February</p>
+<p>Below is a selection of other interesting papers I stumbled upon this month. Given the length of this list, I highlighted those 10 I found particularly interesting with an asterisk (*). However, please note that this list and its annotations are purely based on my interests and relevance to my own projects.</p>
+<p>Griffin: Mixing Gated Linear Recurrences with Local Attention for Efficient Language Models by De, Smith, Fernando et al.&nbsp;(29 Feb), https://arxiv.org/abs/2402.19427</p>
+<p>The paper introduces Hawk and Griffin, a recurrent neural network LLM and a LLM hybrid architecture that combines recurrent neural network elements with local attention to present new efficient alternatives to transformer-based LLMs.</p>
+<p>When Scaling Meets LLM Finetuning: The Effect of Data, Model and Finetuning Method by Zhang, Liu, Cherry, and Firat (27 Feb), https://arxiv.org/abs/2402.17193</p>
+<p>This study systematically explores how scaling factors like model size, pretraining data size, finetuning parameter size, and finetuning data size influence finetuning performance in large LLMs, comparing full-model tuning with parameter-efficient tuning (including prompt tuning and LoRA) in scenarios where LLM size exceeds finetuning data size.</p>
+<p>Sora Generates Videos with Stunning Geometrical Consistency by Li, Zhou, Zhang et al.&nbsp;(27 Feb), https://arxiv.org/abs/2402.17403</p>
+<p>This paper introduces a benchmark for evaluating the Sora model’s video generation fidelity to real-world physics by transforming generated videos into 3D models and using the accuracy of 3D reconstruction as a metric to assess adherence to physical principles and find that Sora compares very favorably to other text-to-video models like Pika.</p>
+<ul>
+<li>The Era of 1-bit LLMs: All Large Language Models are in 1.58 Bits by Ma, Wang, Ma et al.&nbsp;(27 Feb), https://arxiv.org/abs/2402.17764</li>
+</ul>
+<p>This research introduces a 1-bit LLM variant (only supporting values -1, 0, and 1) that matches&nbsp; LLMs with the conventional 16-bit precision in perplexity and downstream-task performance during inference.</p>
+<p>Genie: Generative Interactive Environments by Bruce, Dennis, Edwards et al.&nbsp;(23 Feb), https://arxiv.org/abs/2402.15391</p>
+<p>Genie is a pioneering 11B-parameter generative interactive environment (based on spatiotemporal transformers), trained unsupervised from internet videos, that enables the creation of endlessly variable, action-controllable virtual worlds from text, images, and sketches.</p>
+<ul>
+<li>Back to Basics: Revisiting REINFORCE Style Optimization for Learning from Human Feedback in LLMs by Ahmadian, Cremer, Galle, et al.&nbsp;(22 Feb), https://arxiv.org/abs/2402.14740</li>
+</ul>
+<p>This research suggests that simpler REINFORCE-style optimization methods are more efficient and effective than Proximal Policy Optimization (PPO) for AI alignment in large language models through Reinforcement Learning from Human Feedback (RLHF),</p>
+<p>TinyLLaVA: A Framework of Small-scale Large Multimodal Models by Zhou, Hu, Weng, et al.&nbsp;(22 Feb), https://arxiv.org/abs/2402.14289</p>
+<p>The TinyLLaVA framework demonstrates that small Large Multimodal Models (LMMs), using high-quality data and optimized training, can match or outperform larger models, with its best model, TinyLLaVA-3.1B, surpassing existing 7B models.</p>
+<p>Large Language Models for Data Annotation: A Survey by Tan, Beigi, Wang et al.&nbsp;(21 Feb), https://arxiv.org/abs/2402.13446</p>
+<p>This paper explores the potential of Large Language Models (LLMs) like GPT-4 to automate the labor-intensive process of data annotation, focusing on their application in data annotation, evaluation of LLM-generated annotations, and learning from these annotations.</p>
+<ul>
+<li>LongRoPE: Extending LLM Context Window Beyond 2 Million Tokens by Ding, Zhang, Zhang, et al.&nbsp;(21 Feb), https://arxiv.org/abs/2402.13753</li>
+</ul>
+<p>LongRoPE is a new approach that extends the context window of pre-trained LLMs to 2,048,000 tokens with minimal finetuning, maintaining performance across context sizes through improvements in positional interpolation and a progressive extension strategy.</p>
+<p>YOLOv9: Learning What You Want to Learn Using Programmable Gradient Information by Wang, Yeh, and Liao (21 Feb), https://arxiv.org/abs/2402.13616</p>
+<p>This research proposes solutions to the information bottleneck and unsuitability of deep supervision mechanisms and proposes YOLOv9 with improved efficiency and performance over YOLOv8 on the MS COCO dataset.</p>
+<p>Neural Network Diffusion by Wang, Xu, Zhou, et al.&nbsp;(20 Feb), https://arxiv.org/abs/2402.13144</p>
+<p>This study showcases how diffusion models, traditionally used for image and video generation, can be&nbsp; applied to generate high-performing neural network parameters.</p>
+<ul>
+<li>LoRA+: Efficient Low Rank Adaptation of Large Models by Hayou, Ghosh, and Yu (Feb 19),&nbsp; https://arxiv.org/abs/2402.12354</li>
+</ul>
+<p>The paper introduces LoRA+, an improvement over the original Low Rank Adaptation (LoRA) method, by using different learning rates for adapter matrices A and B to enhance feature learning, resulting in 1-2% performance gains and up to 2x faster finetuning without extra computational cost.</p>
+<p>Towards Cross-Tokenizer Distillation: the Universal Logit Distillation Loss for LLMs by Boizard, Haddad, Hudelot, and Colombo (19 Feb), https://arxiv.org/abs/2402.12030</p>
+<p>The paper introduces Universal Logit Distillation loss, enabling effective knowledge distillation across large language models with different architectures and tokenizers, overcoming the shared tokenizer limitation.</p>
+<p>AnyGPT: Unified Multimodal LLM with Discrete Sequence Modeling by Zhan, Dai, Ye, and Zhou (19 Feb), https://arxiv.org/abs/2402.12226</p>
+<p>AnyGPT is a multimodal language model that seamlessly integrates speech, text, images, and music through discrete representations, enabling versatile any-to-any multimodal interactions without altering the core architecture of large language models.</p>
+<ul>
+<li>Reformatted Alignment by Fan, Li, Zou, and Li (19 Feb), https://arxiv.org/abs/2402.12219</li>
+</ul>
+<p>The paper introduces ReAlign, a method for enhancing the quality of finetuning data for large language models (LLMs) to better align with human values through a simple reformatting approach.</p>
+<p>LongAgent: Scaling Language Models to 128k Context through Multi-Agent Collaboration by Zhao, Zu, Xu, et al (18 Feb), https://arxiv.org/abs/2402.11550</p>
+<p>LongAgent improves LLMs’ long-text processing through multi-agent collaboration and an inter-member communication mechanism, outperforming models like GPT-4 in tasks like text retrieval and multi-hop question answering.</p>
+<p>Vision-Flan: Scaling Human-Labeled Tasks in Visual Instruction Tuning by Xu, Feng, Shao, et al.&nbsp;(2024), https://arxiv.org/abs/2402.11690</p>
+<p>The study introduces Vision-Flan, a diverse visual instruction tuning dataset, and a two-stage instruction tuning framework for vision-language models, which addresses issues like poor generalizability and bias by combining expert and GPT-4 synthesized data.</p>
+<p>OneBit: Towards Extremely Low-bit Large Language Models by Xu, Han, Yang, et al.&nbsp;(17 Feb), https://arxiv.org/abs/2402.11295</p>
+<p>The paper presents OneBit, a 1-bit quantization-aware training framework for LLMs, achieving significant storage and computational efficiency with minimal performance loss, through new parameter representation and initialization methods.</p>
+<p>FinTral: A Family of GPT-4 Level Multimodal Financial Large Language Models by Bhatia, Nagoudi, Cavusoglu, and Abdul-Mageed (16 Feb), https://arxiv.org/abs/2402.10986</p>
+<p>FinTral is multimodal LLM suite optimized for financial analysis, built on Mistral-7b and enhanced with domain-specific training and benchmarks, outperforming ChatGPT-3.5 and GPT-4 in key tasks – a nice case study for AI for finance.</p>
+<p>Generative Representational Instruction Tuning by Muennighoff, Su, Wang, et al.&nbsp;(15 Feb), https://arxiv.org/abs/2402.09906</p>
+<p>GRIT is a new training approach that enables an LLM, GritLM, to excel in both generative and embedding tasks by following instructions.</p>
+<p>Recovering the Pre-Fine-Tuning Weights of Generative Models by Horwitz, Kahana, and Hoshen (15 Feb), https://arxiv.org/abs/2402.10208</p>
+<p>The paper introduces Spectral DeTuning, which is able to recover pre-finetuning weights from finetuned models in large-scale models like Stable Diffusion and Mistral.</p>
+<p>BASE TTS: Lessons From Building a Billion-Parameter Text-to-Speech Model on 100K Hours of Data by Lajszczak, Cambara, Li, at al.&nbsp;(15 Feb), https://arxiv.org/abs/2402.08093</p>
+<p>BASE TTS is a new text-to-speech model by Amazon researchers that achieves unprecedented speech naturalness by training on 100K hours of data with a billion-parameter transformer architecture.</p>
+<p>Transformers Can Achieve Length Generalization But Not Robustly by Zhou, Alon, Chen, et al.&nbsp;(14 Feb) https://arxiv.org/abs/2402.09371</p>
+<p>This paper explores the challenge of length generalization in language models, demonstrating that standard Transformers can extrapolate to sequence lengths 2.5 times their training input using specific data formats and position encodings, although this ability is highly sensitive to factors such as weight initialization and data order.</p>
+<ul>
+<li>DoRA: Weight-Decomposed Low-Rank Adaptation by Liu, Wang, Yin et al.&nbsp;(14 Feb), https://arxiv.org/abs/2402.09353</li>
+</ul>
+<p>DoRA is an improvement over standard low-rank adaption (LoRA) that bridges the accuracy gap between parameter-efficient finetuning methods like LoRA and full finetuning by decomposing pre-trained weights into magnitude and direction for more effective updates.</p>
+<p>Mixtures of Experts Unlock Parameter Scaling for Deep RL by Obando-Ceron, Sokar, Willi, et al.&nbsp;(13 Feb), https://arxiv.org/abs/2402.08609</p>
+<p>This paper shows that integrating Mixture-of-Expert (MoE) modules, especially Soft MoEs, into value-based networks for reinforcement learning leads to models that scale more effectively with size, suggesting a pathway towards establishing scaling laws in reinforcement learning domains.</p>
+<p>World Model on Million-Length Video And Language With RingAttention by Liu, Yan, Zaharia, and Abbeel (13 Feb), https://arxiv.org/abs/2402.08268</p>
+<p>This work proposes the training of neural networks on massive datasets of long video and language sequences using recent techniques like RingAttention.</p>
+<p>Suppressing Pink Elephants with Direct Principle Feedback (12 Feb), https://arxiv.org/abs/2402.07896</p>
+<p>This research introduces Direct Principle Feedback (DPF) as a new approach to adjust LLMs’ responses in real-time, showcasing its capabilities on the Pink Elephant Problem by successfully directing the model to avoid specific topics.</p>
+<p>Step-On-Feet Tuning: Scaling Self-Alignment of LLMs via Bootstrapping Wang, Ma, Meng, et al.&nbsp;(12 Feb), https://arxiv.org/abs/2402.07610</p>
+<p>The study explores multi-time bootstrapping self-alignment in LLMs via Step-On-Feet Tuning (SOFT), which improves model performance by utilizing iterative alignment and optimized training sequences compared to single-step methods.</p>
+<p>Aya Model: An Instruction Finetuned Open-Access Multilingual Language Model by Ustun, Aryabumi, Yong, et al.&nbsp;(12 Feb), https://arxiv.org/abs/2402.07610</p>
+<p>The research introduces Aya, a multilingual generative language model proficient in 101 languages.</p>
+<p>Scaling Laws for Fine-Grained Mixture of Experts by Jakub Krajewski, Jan Ludziejewski, Kamil Adamczewski, et al.&nbsp;(12 Feb), https://arxiv.org/abs/2402.07871</p>
+<p>This work explores the scaling properties of Mixture of Experts (MoE) models, introducing “granularity” as a new hyperparameter for finetuning the expert size, and showing the superiority of MoE models over dense transformers.</p>
+<p>Policy Improvement using Language Feedback Models by Zhong, Misra, Yuan, and Cote (12 Feb), https://arxiv.org/abs/2402.07876</p>
+<p>Language Feedback Models (LFMs) improve imitation learning by using feedback from LLMs on verbalized visual trajectories, outperforming traditional methods in task completion and adapting to new environments, with the added benefit of providing human-interpretable feedback for verifying desirable behaviors.</p>
+<p>ODIN: Disentangled Reward Mitigates Hacking in RLHF by Chen, Zhu, Soselia et al.&nbsp;(11 Feb), https://arxiv.org/abs/2402.07319</p>
+<p>The research addresses reward hacking in LLMs by developing a nuanced evaluation protocol and an improved reward model that jointly trains two heads to prioritize content over length, significantly reducing length bias and enhancing policy outcomes.</p>
+<p>The Boundary of Neural Network Trainability is Fractal by Dickstein (9 Feb), https://arxiv.org/abs/2402.06184</p>
+<p>The study uncovers fractal-like boundaries in neural network training, emphasizing the extreme sensitivity of training dynamics to minor hyperparameter adjustments, across a wide range of configurations and scales.</p>
+<p>Buffer Overflow in Mixture of Experts by Hayes, Shumailov, and Yona (8 Feb), https://arxiv.org/abs/2402.05526</p>
+<p>This research shows that Mixture of Experts (MoE) models are susceptible to attacks via expert routing strategies with cross-batch dependencies, where malicious queries can influence the output of benign queries within the same batch.</p>
+<p>Direct Language Model Alignment from Online AI Feedback by Guo, Zhang, Liu, et al.&nbsp;(7 Feb), https://arxiv.org/abs/2402.04792</p>
+<p>This paper proposes an online feedback method for model training that surpasses Direct Alignment from Preferences (DAP) methods like DPO, and RLHF, by using real-time evaluations from an LLM.</p>
+<p>Grandmaster-Level Chess Without Search by Ruoss, Deletang, and Medapati (7 Feb), https://arxiv.org/abs/2402.04494</p>
+<p>This paper by Google Deepmind presents a “small” 270M parameter transformer model trained on 10 million chess games and surpassing AlphaZero’s networks and GPT-3.5-turbo-instruct in chess performance.</p>
+<p>Self-Discover: Large Language Models Self-Compose Reasoning Structures by Zhou, Pujara, Ren, et al.&nbsp;(6 Feb), https://arxiv.org/abs/2402.03620</p>
+<p>SELF-DISCOVER enables LLMs to autonomously create reasoning strategies, improving their problem-solving abilities with notable efficiency and cross-model applicability, which may be closer aligned to human reasoning.</p>
+<p>Vision Superalignment: Weak-to-Strong Generalization for Vision Foundation Models by Guo, Chen, Wang et al.&nbsp;(6 Feb), https://arxiv.org/abs/2402.03749</p>
+<p>This paper explores weak-to-strong generalization in vision foundation models through an adaptive confidence loss for knowledge distillation, showing that weaker models can effectively enhance stronger ones, marking a significant advancement in AI capabilities for visual tasks.</p>
+<p>MOMENT: A Family of Open Time-series Foundation Models by Goswami, Szafer, Choudhry, et al.&nbsp;(6 Feb), https://arxiv.org/abs/2402.03885</p>
+<p>MOMENT introduces a new approach to general-purpose time-series analysis with open-source foundation models, addressing challenges such as the lack of a cohesive time-series dataset and the complexity of multi-dataset training by creating the Time-series Pile and designing benchmarks for evaluating models in low-supervision settings.</p>
+<p>Scaling Laws for Downstream Task Performance of Large Language Models by Isik, Ponomareva, Hazimeh, et al.&nbsp;(6 Feb), https://arxiv.org/abs/2402.04177</p>
+<p>This research explores how the size and relevance of pretraining data affect machine translation performance in LLMs, finding that alignment improves outcomes, while misalignment can cause inconsistent results.</p>
+<p>A Phase Transition Between Positional and Semantic Learning in a Solvable Model of Dot-Product Attention by Cui, Behrens, Krzakala, and Zdeborova (6 Feb), https://arxiv.org/abs/2402.03902</p>
+<p>This research explores how dot-product attention layers learn to focus on position or meaning within data, revealing that with enough data, these layers can outperform linear models by transitioning from positional to semantic attention mechanisms.</p>
+<p>MobileVLM V2: Faster and Stronger Baseline for Vision Language Model by Chu, Qiao, Zhang et al.&nbsp;(6 Feb), https://arxiv.org/abs/2402.03766</p>
+<p>MobileVLM V2 introduces small and efficient vision language models that outperform larger models with the 1.7B version matching or surpassing 3B scale models and the 3B version exceeding those at the 7B+ scale.</p>
+<p>DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models by Shao, Wang, Zhu et al.&nbsp;(5 Feb), https://arxiv.org/abs/2402.03300&nbsp;</p>
+<p>DeepSeekMath 7B, an LLM pretrained on 120B math-related tokens, achieves a 51.7% score on the MATH benchmark by leveraging web data and introducing Group Relative Policy Optimization (an alternative for PPO) for mathematical reasoning, nearing the performance of leading models like Gemini-Ultra and GPT-4.</p>
+<p>More Agents Is All You Need by Li, Zhang, Yu, Fu, and Ye (3 Feb), https://arxiv.org/abs/2402.05120</p>
+<p>This study shows that LLM performance can be scaled up by using a simple majority voting ensemble method across multiple LLMs, with improvements that complement existing methods and are more pronounced in harder tasks.</p>
+<p>FindingEmo: An Image Dataset for Emotion Recognition in the Wild by Mertens, Yargholi, Op de Beeck at el. (2 Feb), https://arxiv.org/abs/2402.01355</p>
+<p>FindingEmo is a new dataset with 25k images annotated for emotion recognition, focusing on complex, multi-person scenes in naturalistic settings, with data and source code openly shared.</p>
+<ul>
+<li>LiPO: Listwise Preference Optimization through Learning-to-Rank by Liu, Qin, Wu, et al.&nbsp;(2 Feb), https://arxiv.org/abs/2402.01878</li>
+</ul>
+<p>This work introduces Listwise Preference Optimization (LiPO) for aligning LLMs with human feedback by treating alignment as a listwise ranking problem, showing LiPO outperforms current policy optimization methods like DPO.</p>
+<ul>
+<li>Repeat After Me: Transformers are Better than State Space Models at Copying by Jelassi, Brandfonbrener, Kakade, and Malach (1 Feb), https://arxiv.org/abs/2402.01032</li>
+</ul>
+<p>This paper demonstrates that while State Space Models offer inference-time efficiency, they fall short of transformers on tasks requiring input context copying, due to GSSMs’ inherent limitations from their fixed-size latent state,</p>
+<ul>
+<li>Tiny Titans: Can Smaller Large Language Models Punch Above Their Weight in the Real World for Meeting Summarization? by Fu, Laskar, Khasanonva et al.&nbsp;(Feb 1), https://arxiv.org/abs/2402.00841</li>
+</ul>
+<p>This study finds that compact Large Language Models like FLAN-T5 can match or surpass larger models in efficiency and performance for specific tasks like meeting summarization, which has its utility in being a cost-effective alternative for deployment.</p>
+<ul>
+<li>OLMo: Accelerating the Science of Language Models by Groeneveld, Beltagy, Walsh, et al.&nbsp;(1 Feb),&nbsp; https://arxiv.org/abs/2402.00838</li>
+</ul>
+<p>This technical report introduces OLMo, a fully open LLM, along with its complete framework including training data, and training and evaluation code.</p>
+<p>Efficient Exploration for LLMs by by Dwaracherla, Asghari, Hao, and Van Roy (1 Feb), https://arxiv.org/abs/2402.00396</p>
+<p>This research paper demonstrates that efficiently exploring different ways to generate queries for human feedback can substantially improve the performance of LLMs with fewer queries by continuously refining a reward model based on the feedback received.</p>
+<p>Machine Learning Q and AI</p>
+<p>I am very excited that Machine Learning Q and AI is finally coming out, and I just received my author copies this week.&nbsp;</p>
+<p>If you’ve been on the hunt for the next resource to improve your understanding of machine learning and AI concepts, Machine Learning Q and AI introduces intermediate to advanced concepts in an accessible way.</p>
+<p>Machine Learning Q and AI book</p>
+<p>Ahead of AI is a personal passion project that does not offer direct compensation. If you want to support me with these efforts, I’d appreciate it if you’d consider purchasing a copy of my book.</p>
+<p>Order directly from No Starch Press</p>
+<p>Order from Amazon.com</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

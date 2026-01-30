@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>new-llm-pre-training-and-post-training-paradigms – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#new-llm-pre-training-and-post-training-paradigms" id="toc-new-llm-pre-training-and-post-training-paradigms" class="nav-link active" data-scroll-target="#new-llm-pre-training-and-post-training-paradigms">New LLM Pre-training and Post-training Paradigms</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="new-llm-pre-training-and-post-training-paradigms" class="level1">
+<h1>New LLM Pre-training and Post-training Paradigms</h1>
+<p><strong>Subtitle:</strong> A Look at How Modern LLMs Are Trained</p>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/new-llm-pre-training-and-post-training</p>
+<p><strong>Likes:</strong> LIKE (4)</p>
+<p><strong>Image Count:</strong> 21</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!H0ge!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd4d4ee2d-c249-4b5f-8dae-a82cd648e990_1600x549.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An overview of the LLM development and training pipeline, with a focus on new pre-training and post-training methodologies discussed in this article</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!6HyS!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F14cc04f8-e484-4d81-8613-45ace975d38a_1600x714.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Build a Large Language Model (from Scratch), Machine Learning Q and AI, and Machine Learning with PyTorch and Scikit-Learn</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Fjp9!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3fb28d6f-b871-46f2-9e5d-10db467fc058_1130x772.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: MMLU benchmark scores for the latest open-weight models (higher values are better). I collected the scores for this plot from the official research papers of each model.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Gjf9!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fb62d2b9b-7970-40ad-ae2b-0625d022fd36_1286x620.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Summary of techniques for Qwen 2 pre-training. “Continued pre-training” refers to the 2-stage pre-training, where the researchers started with regular pre-training and followed up with a long-context continued pre-training.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!QHYg!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd8e7f5ec-c333-4890-8430-7f73fe9e89fa_1588x386.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: A typical LLM development flow.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!mK92!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbb5fd595-e50a-465f-9a42-910716f559b7_1366x704.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Summary of techniques for Qwen 2 post-training.&nbsp;</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!nJpm!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F352b4b67-fc83-4bb0-a0f0-1a3821cab11a_1528x1218.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An overview of DPO for LLM alignment</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!IFIp!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F062d0d5e-8cb1-4245-b61d-8b017d2612c6_1478x338.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Overview of the 3-step pre-training process that the AFM models underwent.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ufbo!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd280bf5a-f665-4048-9e56-0d69d3155876_1420x722.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: An overview of knowledge distillation, where a small model (here, the AFM-device 3B model) is trained on the original training tokens plus the outputs from a larger teacher model (here, a 6.4B model). Note that the cross entropy loss in a) is the regular training loss used for pre-training LLMs (see chapter 5 in my “Build a Large Language Model from Scratch” book for more details on how the regular pre-training step is implemented).</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!hbSl!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F74603220-97f3-4d30-925a-3deb62ea3f86_1394x676.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summary of techniques for AFM pre-training.</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!YE49!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F74efa5f7-c819-4d53-8a49-850ce0880871_1302x680.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summary of techniques for AFM post-training.</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!iUYj!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9f0bcd36-6925-4505-b871-e38eb4bd5e52_1322x664.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summary of techniques for Gemma 2 pre-training.</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!3Hjl!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3f6b97fc-19b2-4e30-ad42-bebd2d77c36b_1406x708.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summary of techniques for Gemma 2 post-training.</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!4Xl8!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fcadd97b5-5e57-4a48-aa87-23c9ab3f65af_1600x941.jpeg" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: I am excited to be invited to give a keynote talk at the upcoming PyTorch conference. It will be my first PyTorch conference, and I look forward to meeting the community and chatting about the latest AI and LLM developments!&nbsp;</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!iRcP!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F696d1ce9-2c77-4edf-a528-2091efb7c0d6_1316x798.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: MMLU benchmark performance of different models.&nbsp;</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ha-l!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F50f5b3ae-0ebb-4301-9858-05e4efe7a045_1362x666.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summary of techniques for Llama 3.1 pre-training.</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!QM2O!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa9056ee8-5d36-40c1-8494-5d4feca7cf28_1600x671.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Annotated figure from the Llama 3.1 paper describing the post-training procedure</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!7xoS!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F715efb66-baef-4675-832d-7b30eb4b3fb0_1374x714.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Summary of techniques for Llama 3.1 post-training.</li>
+</ul>
+<ol start="19" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Oer7!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F5fbe18a3-08b9-4bdc-86ec-c972a50abf35_1886x686.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Overview of the techniques used for pre-training</li>
+</ul>
+<ol start="20" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!YS6R!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F2b276839-de37-4609-a61e-bd0c5893086b_1432x1034.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Overview of the techniques used for post-training</li>
+</ul>
+<ol start="21" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!woQp!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fea1152a0-18d9-4a8a-9398-c6b1ca67726a_1600x900.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Build a Large Language Model (From Scratch) now available on Amazon</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>The development of large language models (LLMs) has come a long way, from the early GPT models to the sophisticated open-weight LLMs we have today. Initially, the LLM training process focused solely on pre-training, but it has since expanded to include both pre-training and post-training. Post-training typically encompasses supervised instruction fine-tuning and alignment, which was popularized by ChatGPT.</p>
+<p>Training methodologies have evolved since ChatGPT was first released. In this article, I review the latest advancements in both pre-training and post-training methodologies, particularly those made in recent months.</p>
+<p>An overview of the LLM development and training pipeline, with a focus on new pre-training and post-training methodologies discussed in this article</p>
+<p>There are hundreds of LLM papers each month proposing new techniques and approaches. However, one of the best ways to see what actually works well in practice is to look at the pre-training and post-training pipelines of the most recent state-of-the-art models. Luckily, four major new LLMs have been released in the last months, accompanied by relatively detailed technical reports.</p>
+<p>In this article, I focus on the pre-training and post-training pipelines of the following models:</p>
+<p>Alibaba’s Qwen 2</p>
+<p>Apple Intelligence Foundation Language Models</p>
+<p>Google’s Gemma 2</p>
+<p>Meta AI’s Llama 3.1</p>
+<p>These models are presented in order based on the publication dates of their respective technical papers on arXiv.org, which also happens to align with their alphabetical order.</p>
+<p>This article is a passion project that I created in my free time and over the weekends. If you find it valuable and would like to support my work, please consider purchasing a copy of my books and recommending them to your colleagues. Your review on Amazon would also be greatly appreciated!</p>
+<p>Build a Large Language Model (from Scratch), Machine Learning Q and AI, and Machine Learning with PyTorch and Scikit-Learn</p>
+<p>Build a Large Language Model (from Scratch) is a highly focused book dedicated to coding LLMs from the ground up in PyTorch, covering everything from pre-training to post-training—arguably the best way to truly understand LLMs.</p>
+<p>Machine Learning Q and AI is a great book for those who are already familiar with the basics; it dives into intermediate and advanced concepts covering deep neural networks, vision transformers, multi-GPU training paradigms, LLMs, and many more.</p>
+<p>Machine Learning with PyTorch and Scikit-Learn is a comprehensive guide to machine learning, deep learning, and AI, offering a well-balanced mix of theory and practical code. It’s the ideal starting point for anyone new to the field.&nbsp;</p>
+<ol type="1">
+<li>Alibaba’s Qwen 2</li>
+</ol>
+<p>Let’s begin with Qwen 2, a really strong LLM model family that is competitive with other major LLMs. However, for some reason, it’s less popular than the open-weight models from Meta AI, Microsoft, and Google.</p>
+<p>1.1 Qwen 2 Overview</p>
+<p>Before looking at the pre-training and post-training methods discussed in the Qwen 2 Technical Report, let’s briefly summarize some core specifications.</p>
+<p>Qwen 2 models come in 5 flavors. There are 4 regular (dense) LLMs with sizes 0.5 billion, 1.5 billion, 7 billion, and 72 billion parameters. In addition, there is a Mixture-of-Experts model with 57 billion parameters, where 14 billion parameters are activated at the same time. (Since architecture details are not the focus this time, I won’t go too much into the Mixture-of-Experts model; however, in a nutshell, this is similar to Mixtral by Mistral AI, except that it has more active experts. For a high-level overview, see the Mixtral Architecture section in my Model Merging, Mixtures of Experts, and Towards Smaller LLMs article.)</p>
+<p>One of the stand-out features of Qwen 2 LLMs are their good multilingual capabilities in 30 languages. They also have a surprisingly large 151,642 token vocabulary (for reference, Llama 2 uses a 32k vocabulary, and Llama 3.1 uses a 128k token vocabulary); as a rule of thumb, increasing the vocab size by 2x reduces the number of input tokens by 2x so we can fit more text into the same input. Also it especially helps with multilingual data and coding to cover words outside the standard English vocabulary.</p>
+<p>Below is a brief MMLU benchmark comparison with other LLMs covered later. (Note that MMLU is a multiple-choice benchmark and thus has its limitations; however, it still is one of the most popular methods for reporting LLM performance.)</p>
+<p>MMLU benchmark scores for the latest open-weight models (higher values are better). I collected the scores for this plot from the official research papers of each model.</p>
+<p>(If you are new to MMLU, I briefly discussed it in my recent talk at minute 46:05.)</p>
+<p>1.2 Qwen 2 Pre-training</p>
+<p>The Qwen 2 team trained the 1.5 billion, 7 billion, and 72 billion parameter models on 7 trillion training tokens, which is a reasonable size. For comparison, Llama 2 models were trained on 2 trillion tokens, and Llama 3.1 models were trained on 15 trillion tokens.</p>
+<p>Interestingly, the 0.5 billion parameter model was trained on 12 trillion tokens. However, the researchers did not train the other models on the larger 12 trillion token dataset because they did not observe any improvements during training, and the additional computational costs were not justified.</p>
+<p>One of the focus areas has been improving the data filtering pipeline to remove low-quality data and enhancing data mixing to increase data diversity— a theme we will revisit when examining other models later.</p>
+<p>Interestingly, they also used Qwen models (although they didn’t specify details, I assume they mean previous generation Qwen models) to synthesize additional pre-training data. And the pre-training involved “multi-task instruction data… to enhance in-context learning and instruction-following abilities.”</p>
+<p>Furthermore, they performed training in two stages: regular pre-training followed by long-context training. The latter increased the context length from 4,096 to 32,768 tokens at the end phase of pre-training using “high-quality, lengthy data.”</p>
+<p>Summary of techniques for Qwen 2 pre-training. “Continued pre-training” refers to the 2-stage pre-training, where the researchers started with regular pre-training and followed up with a long-context continued pre-training.</p>
+<p>(Unfortunately, another theme of the technical reports is that details about the dataset are scarce, so if my write-up does not appear very detailed, it’s due to the lack of publicly available information.)</p>
+<p>1.3 Qwen 2 Post-training</p>
+<p>The Qwen 2 team employed the popular two-phase post-training methodology, starting with supervised instruction fine-tuning (SFT), which was applied across 500,000 examples for 2 epochs. This phase aimed to refine the model’s response accuracy in predetermined scenarios.</p>
+<p>A typical LLM development flow.</p>
+<p>After SFT, they used direct preference optimization (DPO) to align the LLM with human preferences. (Interestingly referred to in their terminology as reinforcement learning from human feedback, RLHF.) As I discussed in my Tips for LLM Pretraining and Evaluating Reward Models article a few weeks ago, the SFT+DPO approach seems to be the most popular preference tuning strategy at the moment due to the ease of use compared to other methods, such as RLHF with PPO. (If you want to learn how DPO works, I recently implemented it from scratch here.)</p>
+<p>The alignment phase itself was also done in 2 stages. First using DPO on an existing dataset (offline stage). Second, using a reward model to form the preference pair (online). Here, the model generates multiple responses during training, and a reward model selects the preferred response for the optimization step in “real-time” (that is, during training). This is also often referred to as “rejection sampling.”</p>
+<p>For the construction of the dataset, they used existing corpora complemented by human labeling to determine target responses for SFT and identify preferred and rejected responses essential for DPO. The researchers also synthesized artificially annotated data.&nbsp;</p>
+<p>Moreover, the team used LLMs to generate instruction-response pairs specifically tailored for “high-quality literary data,” to create high-quality Q&amp;A pairs for training.</p>
+<p>Summary of techniques for Qwen 2 post-training.&nbsp;</p>
+<p>1.4 Conclusion</p>
+<p>Qwen 2 is a relatively capable model, and similar to earlier generations of Qwen. When attending the NeurIPS LLM efficiency challenge in December 2023, I remember that most of the winning approaches involved a Qwen model.&nbsp;</p>
+<p>Regarding the training pipeline of Qwen 2, what stands out is that synthetic data has been used for both pre-training and post-training. Also, the focus on dataset filtering (rather than collecting as much data as possible) is one of the notable trends in LLM training. Here, I would say, more is better, but only if it meets certain quality standards.</p>
+<p>Aligning LLMs with Direct Preference Optimization from Scratch</p>
+<p>Direct Preference Optimization (DPO) has become one of the go-to methods to align LLMs more closely with user preferences, and it’s something you will read a lot in this article. If you want to learn how it works, I coded it from scratch here:&nbsp;</p>
+<p>Direct Preference Optimization (DPO) for LLM Alignment (From Scratch).</p>
+<p>An overview of DPO for LLM alignment</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+<ol start="2" type="1">
+<li>Apple’s Apple Intelligence Foundation Language Models (AFM)</li>
+</ol>
+<p>I was really delighted to see another technical paper by Apple on arXiv.org that outlines their model training. An unexpected but definitely positive surprise!</p>
+<p>2.1 AFM Overview</p>
+<p>In the Apple Intelligence Foundation Language Models paper, available at, the research team outlines the development of two primary models designed for use in the “Apple Intelligence” context on Apple devices. For brevity, these models will be abbreviated as AFM for “Apple Foundation Models” throughout this section.</p>
+<p>Specifically, the paper describes two versions of the AFM: a 3-billion-parameter on-device model intended for deployment on phones, tablets, or laptops, and a more capable server model of unspecified size.&nbsp;</p>
+<p>These models are developed for chat, math, and coding tasks, although the paper does not discuss any of the coding-specific training and capabilities.</p>
+<p>Like the Qwen 2, the AFMs are dense LLMs and do not utilize a mixture-of-experts approach.</p>
+<p>2.2 AFM Pre-training</p>
+<p>I’d like to extend two big kudos to the researchers. First, besides using publicly available data and data licensed by publishers, they respected the robots.txt files on websites and refrained from crawling these. Second, they also mentioned that they performed decontamination with benchmark data.</p>
+<p>To reinforce one of the takeaways of the Qwen 2 paper, the researchers mentioned that quality was much more important than quantity. (With a vocabulary size of 49k tokens for the device model and 100k tokens for the server model, the vocabulary sizes were noticeably smaller than those of the Qwen 2 models, which used 150k token vocabulary.)</p>
+<p>Interestingly, the pre-training was not done in 2 but 3 stages!</p>
+<p>Core (regular) pre-training</p>
+<p>Continued pre-training where web-crawl (lower-quality) data was down-weighted; math and code was up-weighted</p>
+<p>Context-lengthening with longer sequence data and synthetic data</p>
+<p>Overview of the 3-step pre-training process that the AFM models underwent.</p>
+<p>Let’s take a look at these 3 steps in a bit more detail.</p>
+<p>2.2.1 Pre-training I: Core Pre-training</p>
+<p>Core pre-training describes the first pre-training stage in Apple’s pre-training pipeline. This is akin to regular pre-training, where the AFM-server model was trained on 6.3 trillion tokens, a batch size of 4096 batch size and a 4096-token sequence length. This is very similar to Qwen 2 models, which were trained in 7 trillion tokens.</p>
+<p>However, it gets more interesting for the AFM-on-device model, which is distilled and pruned from a larger 6.4-billion-parameter model (trained from scratch like the AFM-server model described in the previous paragraph.</p>
+<p>There’s not much detail on the distillation process besides “a distillation loss is used by replacing the target labels with a convex combination of the true labels and the teacher model’s top-1 predictions (with 0.9 weight assigned to the teacher labels).”</p>
+<p>I feel that knowledge distillation is becoming increasingly prevalent and useful for LLM pre-training (Gemma-2 uses it, too). I plan to cover it in more detail one day. For now, here’s a brief overview of how this process would work on a high level.</p>
+<p>An overview of knowledge distillation, where a small model (here, the AFM-device 3B model) is trained on the original training tokens plus the outputs from a larger teacher model (here, a 6.4B model). Note that the cross entropy loss in a) is the regular training loss used for pre-training LLMs (see chapter 5 in my “Build a Large Language Model from Scratch” book for more details on how the regular pre-training step is implemented).</p>
+<p>Knowledge distillation, as illustrated above, still involves training on the original dataset. However, in addition to the training tokens in the dataset, the model to be trained (referred to as the student) receives information from the larger (teacher) model, which provides a richer signal compared to training without knowledge distillation. The downside is that you must: 1) train the larger teacher model first, and 2) compute predictions on all training tokens using the larger teacher model. These predictions can be computed ahead of time (which requires substantial storage space) or during training (which may slow down the training process).</p>
+<p>2.2.2 Pre-training II: Continued Pre-training&nbsp;</p>
+<p>The continued pre-training stage includes a small context lengthening step from 4,096 to 8,192 tokens on a dataset consisting of 1 trillion tokens (the core pre-training set was five times larger). The primary focus, however, is on training with a high-quality data mix, with an emphasis on math and code.&nbsp;</p>
+<p>Interestingly, the researchers found that the distillation loss was not beneficial in this context.</p>
+<p>2.2.3 Pre-training III: Context Lengthening</p>
+<p>The third pre-training stage involves only 100 billion tokens (10% of the tokens used in the second stage) but represents a more significant context lengthening to 32,768 tokens. To achieve this, the researchers augmented the dataset with synthetic long-context Q&amp;A data.</p>
+<p>Summary of techniques for AFM pre-training. 2.3 AFM Post-training</p>
+<p>Apple appears to have taken a similarly comprehensive approach to their post-training process as they did with pre-training. They leveraged both human-annotated and synthetic data, emphasizing that data quality was prioritized over quantity. Interestingly, they did not rely on predetermined data ratios; instead, they fine-tuned the data mixture through multiple experiments to achieve the optimal balance.</p>
+<p>The post-training phase involved a two-step process: supervised instruction fine-tuning followed by several rounds of reinforcement learning with human feedback (RLHF).</p>
+<p>A particularly noteworthy aspect of this process is Apple’s introduction of two new algorithms for the RLHF stage:</p>
+<p>Rejection Sampling Fine-tuning with Teacher Committee (iTeC)</p>
+<p>RLHF with Mirror Descent Policy Optimization</p>
+<p>Given the length of this article, I won’t go into the technical details of these methods, but here’s a brief overview:</p>
+<p>The iTeC algorithm combines rejection sampling with multiple preference tuning techniques—specifically, SFT, DPO, IPO, and online RL. Rather than relying on a single algorithm, Apple trained models using each approach independently. These models then generated responses, which were evaluated by humans who provided preference labels. This preference data was used to iteratively train a reward model in an RLHF framework. During the rejection sampling phase, a committee of models generated multiple responses, with the reward model selecting the best one.</p>
+<p>This committee-based approach is quite complex but should be relatively feasible, particularly given the relatively small size of the models involved (around 3 billion parameters). Implementing such a committee with much larger models, like the 70B or 405B parameter models in Llama 3.1, would definitely be more challenging.</p>
+<p>As for the second algorithm, RLHF with Mirror Descent, it was chosen because it proved more effective than the commonly used PPO (Proximal Policy Optimization).</p>
+<p>Summary of techniques for AFM post-training.</p>
+<p>2.4 Conclusion</p>
+<p>Apple’s approach to pre-training and post-training is relatively comprehensive, likely because the stakes are very high (the model is deployed on millions, if not billions, of devices). However, given the small nature of these models, a vast array of techniques also becomes feasible, since a 3B model is less than half the size of the smallest Llama 3.1 model.</p>
+<p>One of the highlights is that it’s not a simple choice between RLHF and DPO; instead, they used multiple preference-tuning algorithms in the form of a committee.</p>
+<p>It’s also interesting that they explicitly used Q&amp;A data as part of the pre-training—something I discussed in my previous article, Instruction Pretraining LLMs.</p>
+<p>All in all, it’s a refreshing and delightful technical report.</p>
+<ol start="3" type="1">
+<li>Google’s Gemma 2</li>
+</ol>
+<p>Google’s Gemma models were recently described in Gemma 2: Improving Open Language Models at a Practical Size.</p>
+<p>&nbsp;I’ll provide an overview of some of key facts in the following overview section before discussing the pre-training and post-training processes.</p>
+<p>3.1 Gemma 2 Overview</p>
+<p>The Gemma 2 models are available in three sizes: 2 billion, 9 billion, and 27 billion parameters. The primary focus is on exploring techniques that do not necessarily require increasing the size of training datasets but rather on developing relatively small and efficient LLMs.</p>
+<p>Notably, Gemma 2 features a substantial vocabulary size of 256k tokens. For comparison, Llama 2 uses a 32k token vocabulary, and Llama 3 has a 128k token vocabulary.</p>
+<p>Additionally, Gemma 2 employs sliding window attention, similar to Mistral’s early models, likely to reduce memory costs. For more details on the Gemma 2 architecture, please refer to the Gemma 2 section in my previous article.</p>
+<p>3.2 Gemma 2 Pre-training</p>
+<p>The Gemma researchers argue that even small models are often undertrained. However, rather than simply increasing the size of the training dataset, they focus on maintaining quality and achieve improvements through alternative methods, such as knowledge distillation, similar to Apple’s approach.&nbsp;</p>
+<p>While the 27B Gemma 2 model was trained from scratch, the smaller models were trained using knowledge distillation similar to Apple’s approach explained previously.&nbsp;</p>
+<p>The 27B model was trained on 13 trillion tokens, the 9B model on 8 trillion tokens, and the 2B model on 2 trillion tokens. Additionally, similar to Apple’s approach, the Gemma team optimized the data mixture to improve performance.</p>
+<p>Summary of techniques for Gemma 2 pre-training. 3.3 Gemma 2 Post-training</p>
+<p>The post-training process for the Gemma models involved the typical supervised fine-tuning (SFT) and reinforcement learning with human feedback (RLHF) steps.&nbsp;</p>
+<p>The instruction data involved using English-only prompt pairs, which were a mix of human-generated and synthetic-generated content. Specifically, and interestingly, the responses were primarily generated by teacher models, and knowledge distillation was also applied during the SFT phase.</p>
+<p>An interesting aspect of their RLHF approach, following SFT, is that the reward model used for RLHF is ten times larger than the policy (target) model.</p>
+<p>The RLHF algorithm employed by Gemma is fairly standard, but with a unique twist: they average the policy models through a method called WARP, a successor to WARM (weight-averaged reward models). I previously discussed this method in detail in my article “Model Merging, Mixtures of Experts, and Towards Smaller LLMs”.</p>
+<p>Summary of techniques for Gemma 2 post-training. 3.4 Conclusion</p>
+<p>The Gemma team seems to really double down on knowledge distillation, which they use during both pre-training and post-training similar to Apple. Interestingly, they didn’t use a multi-stage pre-training approach though, or at least, they didn’t detail it in their paper.</p>
+<p>I am excited to be invited to give a keynote talk at the upcoming PyTorch conference. It will be my first PyTorch conference, and I look forward to meeting the community and chatting about the latest AI and LLM developments!&nbsp; 4. Meta AI’s Llama 3.1</p>
+<p>New releases of Meta’s Llama LLMs are always a big thing. This time, the release was accompanied by a 92-page technical report: The Llama 3 Herd of Models. Last but not least, in this section, we will look at the fourth big model paper released last month.</p>
+<p>4.1 Llama 3.1 Overview</p>
+<p>Along with releasing a huge 405 billion parameter model, Meta updated their previous 8 billion and 70 billion parameter models, giving them a slight MMLU performance boost.</p>
+<p>MMLU benchmark performance of different models.&nbsp;</p>
+<p>While Llama 3 uses group query attention like other recent LLMs, surprisingly, Meta AI said no to sliding window attention and Mixture-of-Experts approaches. In other words, the Llama 3.1 looks very traditional, and the focus was clearly on the pre-training and post-training rather than architecture innovations.</p>
+<p>Similar to previous Llama releases, the weights are openly available. Moreover, Meta said that they updated the Llama 3 license so that it’s now finally possible (allowed) to use Llama 3 for synthetic data generation or knowledge distillation to improve other models.</p>
+<p>4.2 Llama 3.1 Pre-training</p>
+<p>Llama 3 was trained on a massive 15.6 trillion tokens dataset, which is a substantial increase from Llama 2’s 1.8 trillion tokens. The researchers say that it supports at least eight languages, (whereas Qwen 2 is capable of handling 20).&nbsp;</p>
+<p>An interesting aspect of Llama 3 is its vocabulary size of 128,000, which was developed using OpenAI’s tiktoken tokenizer. (For those interested in tokenizer performance, I did a simple benchmark comparison here.)</p>
+<p>In terms of pre-training data quality control, Llama 3 employs heuristic-based filtering alongside model-based quality filtering, utilizing fast classifiers like Meta AI’s fastText and RoBERTa-based classifiers. These classifiers also help in determining the context categories for the data mix used during training.</p>
+<p>The pre-training for Llama 3 is divided into three stages. The first stage involves standard initial pre-training using the 15.6 trillion tokens with an 8k context window. The second stage continues with the pre-training but extends the context length to 128k. The final stage involves annealing, which further enhances the model’s performance. Let’s look into these stages in more detail below.</p>
+<p>4.2.1 Pre-training I: Standard (Initial) Pre-training</p>
+<p>In their training setup, they began with batches consisting of 4 million tokens, each with a sequence length of 4096. This implies a batch size of approximately 1024 tokens, assuming that the 4 million figure is rounded to the nearest digit. After processing the first 252 million tokens, they doubled the sequence length to 8192. Further into the training process, after 2.87 trillion tokens, they doubled the batch size again.</p>
+<p>Additionally, the researchers did not keep the data mix constant throughout the training. Instead, they adjusted the mix of data being used during the training process to optimize model learning and performance. This dynamic approach to data handling likely helped in improving the model’s ability to generalize across different types of data.</p>
+<p>4.2.2 Pre-training II: Continued Pre-training for Context Lengthening</p>
+<p>Compared to other models that increased their context window in a single step, the Llama 3.1 context lengthening was a more gradual approach: Here, the researchers increased the context length through six distinct stages from 8,000 to 128,000 tokens. This stepwise increment likelely allowed the model to adapt more smoothly to larger contexts.&nbsp;</p>
+<p>The training set utilized for this process was involved 800 billion tokens, about 5% of the total dataset size.</p>
+<p>4.2.3 Pre-training III: Annealing on High-quality Data</p>
+<p>For the third pre-training stage, the researchers trained the model on a small but high-quality mix, which they found helps improve the performance on benchmark datasets. For example, annealing on the GSM8K and MATH training sets provided a significant boost on the respective GSM8K and MATH validation sets.</p>
+<p>In section 3.1.3 of the paper, the researchers stated that the annealing dataset size was 40 billion tokens (0.02% of the total dataset size); this 40B annealing dataset was used to assess data quality. In section 3.4.3, they state that the actual annealing was done only on 40 million tokens (0.1% of the annealing data).</p>
+<p>Summary of techniques for Llama 3.1 pre-training.</p>
+<p>4.3 Llama 3.1 Post-training</p>
+<p>For their post-training process, the Meta AI team employed a relatively straightforward method that included supervised fine-tuning (SFT), rejection sampling, and direct preference optimization (DPO).&nbsp;</p>
+<p>They observed that reinforcement learning algorithms like RLHF with PPO were less stable and more challenging to scale compared to these techniques. It’s worth noting that the SFT and DPO steps were iteratively repeated over multiple rounds, incorporating both human-generated and synthetic data.</p>
+<p>Before describing the further details, their workflow is illustrated in the figure below.</p>
+<p>Annotated figure from the Llama 3.1 paper describing the post-training procedure</p>
+<p>Note that even though they used DPO, they also developed a reward model as you’d do in RLHF. Initially, they trained the reward model using a checkpoint from the pre-training phase, utilizing human-annotated data. This reward model was then used for the rejection sampling process, helping to select appropriate prompts for further training.&nbsp;</p>
+<p>In each training round, they applied model averaging techniques not only to the reward model but also to the SFT and DPO models. This averaging involved merging the parameters from recent and previous models to stabilize (and improve) performance over time.</p>
+<p>For those interested in the technical specifics of model averaging, I discussed this topic in the section “Understanding Model Merging and Weight Averaging” of my earlier article Model Merging, Mixtures of Experts, and Towards Smaller LLMs.</p>
+<p>To sum it up, at the core, it’s a relatively standard SFT + DPO stage. However, this stage is repeated over multiple rounds. Then, they sprinkled in a reward model for rejection sampling (like Qwen 2 and AFM). They also used model averaging like Gemma; however, it’s not just for the reward models but all models involved.</p>
+<p>Summary of techniques for Llama 3.1 post-training. 4.4 Conclusion</p>
+<p>The Llama 3 models remain fairly standard and similar to the earlier Llama 2 models but with some interesting approaches. Notably, the large 15 trillion token training set distinguishes Llama 3 from other models. Interestingly, like Apple’s AFM model, Llama 3 also implemented a 3-stage pre-training process.</p>
+<p>In contrast to other recent large language models, Llama 3 did not employ knowledge distillation techniques, opting instead for a more straightforward model development path. For post-training, the model utilized Direct Preference Optimization (DPO) instead of the more complex reinforcement learning strategies that have been popular in other models. Overall, this choice is interesting as it indicates a focus on refining LLM performance through simpler (but proven) methods.</p>
+<ol start="5" type="1">
+<li>Main Takeaways</li>
+</ol>
+<p>What can we learn from these four models discussed in this article: Alibaba’s Qwen 2, Apple’s foundational models (AFM), Google’s Gemma 2, and Meta’s Llama 3?</p>
+<p>All four models take somewhat different approaches to pre-training and post-training. Of course, methodologies overlap, but no training pipeline is quite the same. For pre-training, a shared feature seems to be that all methods use a multi-stage pre-training pipeline, where a general core pre-training is followed by a context lengthening and sometimes high-quality annealing step. The figure below shows again the different methods employed in pre-training at a glance.</p>
+<p>Overview of the techniques used for pre-training</p>
+<p>When it comes to post-training, also none of the pipelines was exactly the same. It seems that rejection sampling is now a common staple in the post-training process. However, when it comes to DPO or RLHF, there’s no consensus or preference (no pun intended) yet.</p>
+<p>Overview of the techniques used for post-training</p>
+<p>So, in all, there is no single recipe but many paths to developing highly-performant LLMs.</p>
+<p>Lastly, the four models perform in the same ballpark. Unfortunately, several of these models have not made it into the LMSYS and AlpacaEval leaderboards, so we have no direct comparison yet, except for the scores on multiple-choice benchmarks like MMLU and others.</p>
+<p>Supporting Ahead of AI</p>
+<p>This magazine is a personal passion project. For those who wish to support me, please consider purchasing a copy of my Build a Large Language Model (From Scratch) book. (I am confident that you’ll get lots out of this book as it explains how LLMs work in a level of detail that is not found anywhere else.)</p>
+<p>Build a Large Language Model (From Scratch) now available on Amazon</p>
+<p>If you read the book and have a few minutes to spare, I’d really appreciate a brief review. It helps us authors a lot!</p>
+<p>Alternatively, I also recently enabled the paid subscription option on Substack to support this magazine directly.</p>
+<p>Ahead of AI is a reader-supported publication. To receive new posts and support my work, consider becoming a free or paid subscriber.</p>
+<p>Subscribed</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

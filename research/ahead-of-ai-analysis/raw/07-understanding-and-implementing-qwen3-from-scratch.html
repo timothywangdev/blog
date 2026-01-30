@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>understanding-and-implementing-qwen3-from-scratch – LayerNorm</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-6fa8e29006c77475f08b454ece139f94.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="../../../site_libs/bootstrap/bootstrap-121593df2a75119923bedf1cd8a03e8e.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">LayerNorm</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#understanding-and-implementing-qwen3-from-scratch" id="toc-understanding-and-implementing-qwen3-from-scratch" class="nav-link active" data-scroll-target="#understanding-and-implementing-qwen3-from-scratch">Understanding and Implementing Qwen3 From Scratch</a>
+  <ul class="collapse">
+  <li><a href="#images" id="toc-images" class="nav-link" data-scroll-target="#images">Images</a></li>
+  <li><a href="#full-text-content" id="toc-full-text-content" class="nav-link" data-scroll-target="#full-text-content">Full Text Content</a></li>
+  </ul></li>
+  <li><a href="#𝑥" id="toc-𝑥" class="nav-link" data-scroll-target="#𝑥">𝑥</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content"><header id="title-block-header" class="quarto-title-block"></header>
+
+
+
+
+
+<section id="understanding-and-implementing-qwen3-from-scratch" class="level1">
+<h1>Understanding and Implementing Qwen3 From Scratch</h1>
+<p><strong>Subtitle:</strong> A Detailed Look at One of the Leading Open-Source LLMs</p>
+<p><strong>Date:</strong> JUL 19, 2025</p>
+<p><strong>URL:</strong> https://magazine.sebastianraschka.com/p/qwen3-from-scratch</p>
+<p><strong>Likes:</strong> LIKE (4)</p>
+<p><strong>Image Count:</strong> 21</p>
+<hr>
+<section id="images" class="level2">
+<h2 class="anchored" data-anchor-id="images">Images</h2>
+<ol type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!_APX!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbb3d5266-b65a-45ea-9f8f-98d7d8038b8e_3432x1536.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 1: Preview of the Qwen3 Dense and Mixture-of-Experts architectures discussed and (re)implemented in pure PyTorch in this article.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!7MUr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff92574ae-35c1-480f-9738-f2db5bd3bc74_1285x1167.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 2: The original Qwen3 model suite released in May 2025.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!styW!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F9138cf23-6b5e-41a5-b99b-2ab25fad1a4c_1285x733.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 3: The updated Qwen3 models that were released on July 25.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!FEew!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F23419b33-c51f-459a-82a5-76f54f15c1f5_1285x312.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 4: Qwen3 code models.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!NfaX!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F43e8c76e-825f-4571-825e-c18f0ba474d1_3134x2480.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 5: A visual summary of Qwen3’s pre- and post-training stages.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!6uL0!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F28a02f63-fda1-446e-b27d-65cd3d91fd9f_2165x1535.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 6: Even when given a simple multiple-choice question (here from MMLU), the Qwen3 0.6B base model provides an explanation along with the answer, which is atypical for base models and likely a consequence of including chain-of-thought data in the pre-training mix.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!YZs-!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F412329e0-16d6-4ffe-8ae2-17ad2233033a_1867x1302.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 7: The Qwen3 post-training stages mapped onto the DeepSeek R1 training pipeline.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!9bfK!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F549733de-748d-4655-9090-71d87a4c84f0_4009x2580.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: Figure 8: The smaller Qwen3 MoE and dense models are distilled from the largest MoE and largest dense model, respectively.</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!83ox!,w_140,h_140,c_fill,f_auto,q_auto:good,fl_progressive:steep,g_auto/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fd72e5a99-1a11-42b7-8831-8f5785ed2bc1_1600x1116.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div>
+<ul>
+<li>Caption: The Big LLM Architecture Comparison</li>
+</ul></li>
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!GGk9!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fa8fa602a-aa4d-4526-9252-c2f09dd5de92_1871x1920.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 9: Architectural comparison between Qwen3 0.6B and the 127M parameter GPT-2 variant. Both models process text through embedding layers and stacked transformer blocks, but they differ in certain design choices.</li>
+</ul>
+<ol start="11" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!gFcS!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F2e00e609-422c-43c3-9c2b-248b3d06e9c2_3056x1337.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 10: Comparison of LayerNorm and RMSNorm. LayerNorm (left) normalizes activations so that their average value (mean) is exactly zero and their spread (variance) is exactly one. RMSNorm (right) instead scales activations based on their root mean square, which does not enforce zero mean or unit variance, but still keeps the mean and variance within a reasonable range for stable training.</li>
+</ul>
+<ol start="12" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!ULYT!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F98603a39-5ec3-4635-8604-ef5289a28ffb_1470x1494.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 11: In GPT-2 (top), the feed forward module consists of two fully connected (linear) layers separated by a non-linear activation function. In Qwen3 (bottom), this module is replaced with a gated linear unit (GLU) variant, which adds a third linear layer and multiplies its output elementwise with the activated output of the second linear layer.</li>
+</ul>
+<ol start="13" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!OetQ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F7dd8fbed-8264-420f-8c9a-e1a46c2d0029_1666x1701.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 12: Different activation functions that can be used in a feed forward module (neural network). GELU and SiLU (Swish) offer smooth alternatives to ReLU, which has a sharp kink at input zero.</li>
+</ul>
+<ol start="14" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Qxzv!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3949bd97-08fc-4d46-8950-4342cc0f2e1d_1305x840.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 13: Illustration of the RoPE two-halves variant. Here, it shows how a position pair in the query (or key) vector is rotated via a rotation angle α_{i,j}, which is based on a position i and a frequency constant ω_j. The figure is inspired by Figure 1 in the original RoPE paper.</li>
+</ul>
+<ol start="15" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!PbpQ!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F0ed80850-b4c2-4c9d-a3fa-66bdc84567ec_2523x1248.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 14: A comparison between MHA and GQA. Here, the group size is 2, where a key and value pair is shared among 2 queries.</li>
+</ul>
+<ol start="16" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!GovF!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Faf683ff6-ab5b-4d50-b517-9862a88c2227_1002x1920.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 15: The Structure of the transformer block in Qwen3. Each block includes RMSNorm, RoPE, masked grouped-query attention, and a feed-forward module, and is repeated 28 times in the 0.6B-parameter model.</li>
+</ul>
+<ol start="17" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!4EV1!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F93cdaaca-2dd7-4883-8b4c-efdea0324ff2_1394x1463.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 16: Architecture of the Qwen3 0.6B model. The model consists of a token embedding layer followed by 28 transformer blocks, each containing RMSNorm, RoPE, QKNorm, masked grouped-query attention with 16 heads, and a feed-forward module with an intermediate size of 3,072.</li>
+</ul>
+<ol start="18" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!3VAr!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbfef9e17-206d-48f1-8edf-adb8ffb36bdb_3298x2159.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 17: Speed-comparison between a regular and KV cache implementation of Qwen3 0.6B.</li>
+</ul>
+<ol start="19" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!go9g!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3f2c50ae-86ae-4466-ae70-e4fc03cce5de_1816x965.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 18: The typical one-token-at-a-time text-generation pipeline of an LLM with KV cache.</li>
+</ul>
+<ol start="20" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!1zVC!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F1bcd5e8d-51ea-4a4e-85d3-c042fb673eba_1906x1536.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 20: The Qwen3 MoE architecture.</li>
+</ul>
+<ol start="21" type="1">
+<li><div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://substackcdn.com/image/fetch/$s_!Igdm!,w_1456,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Fbcaeec7d-58bd-4d19-aa00-dcb1ea011ad6_2647x1224.png" class="img-fluid figure-img"></p>
+<figcaption>Figure</figcaption>
+</figure>
+</div></li>
+</ol>
+<ul>
+<li>Caption: Figure 21: Visual overview of the Build a Reasoning Model (From Scratch) book.</li>
+</ul>
+<hr>
+</section>
+<section id="full-text-content" class="level2">
+<h2 class="anchored" data-anchor-id="full-text-content">Full Text Content</h2>
+<p>Previously, I compared the most notable open-weight architectures of 2025 in The Big LLM Architecture Comparison. Then, I zoomed in and discussed the various architecture components in From GPT-2 to gpt-oss: Analyzing the Architectural Advances on a conceptual level.</p>
+<p>Since all good things come in threes, before covering some of the noteworthy research highlights of this summer, I wanted to now dive into these architectures hands-on, in code. By following along, you will understand how it actually works under the hood and gain building blocks you can adapt for your own experiments or projects.</p>
+<p>For this, I picked Qwen3 (initially released in May and updated in July) because it is one of the most widely liked and used open-weight model families as of this writing.</p>
+<p>The reasons why Qwen3 models are so popular are, in my view, as follows:</p>
+<p>A developer- and commercially friendly open-source (Apache License v2.0) without any strings attached beyond the original open-source license terms (some other open-weight LLMs impose additional usage limits)</p>
+<p>The performance is really good; for example, as of this writing, the open-weight 235B-Instruct variant is ranked 8 on the LMArena leaderboard, tied with the proprietary Claude Opus 4. The only 2 other open-weight LLMs that rank higher are DeepSeek 3.1 (3x larger) and Kimi K2 (4x larger). On September 5th, Qwen3 released a 1T parameter “max” variant on their platform that beats Kimi K2, DeepSeek 3.1, and Claude Opus 4 on all major benchmarks; however, this model is closed-source for now.</p>
+<p>There are many different model sizes available for different compute budgets and use-cases, from 0.6B dense models to 480B parameter Mixture-of-Experts models.</p>
+<p>This is going to be a long article due to the from-scratch code in pure PyTorch. While the code sections may look verbose, I hope that they help explain the building blocks better than conceptual figures alone!</p>
+<p>Tip 1: If you are reading this article in your email inbox, the narrow line width may cause code snippets to wrap awkwardly. For a better experience, I recommend opening it in your web browser.</p>
+<p>Tip 2: You can use the table of contents on the left side of the website for easier navigation between sections.</p>
+<p>Figure 1: Preview of the Qwen3 Dense and Mixture-of-Experts architectures discussed and (re)implemented in pure PyTorch in this article.</p>
+<p>1 Qwen3 Model Family Overview</p>
+<p>Before we go over the step-by-step Qwen3 implementation, a quick note: “Qwen3” is a family, not a single model. It comes in multiple sizes and in both dense and MoE variants. The initial release in May included the models listed in the table below, with additional updates in July.</p>
+<p>Figure 2: The original Qwen3 model suite released in May 2025.</p>
+<p>In Figure 2,&nbsp;</p>
+<p>“MoE” is short for Mixture-of-Experts, and “Dense” is the regular, non-MoE models;</p>
+<p>“Base” means pre-trained (but not fine-tuned) base model;</p>
+<p>“Reasoning/Instruct hybrid” means that the model can be either used as a Chain-of-Thought (CoT)-style reasoning model or a regular instruction-following model; a user can choose the behavior by adding <think></think> tags, as we will see later.</p>
+<p>Then, later in July, a week after the Kimi K2 release, the Qwen3 team updated some of its models, as shown in Figure 3:</p>
+<p>Figure 3: The updated Qwen3 models that were released on July 25.</p>
+<p>(On September 5th, Qwen3 released a 1T parameter “max” instruct variant on their platform that beats Kimi K2, DeepSeek 3.1, and Claude Opus 4 on all major benchmarks. However, this model is closed-source for now, so it’s not further discussed in this article as there is no public information available about it yet. However, I suspect that it is simply a scaled up version of the 235B-A22B model, that is, an MoE with 96B active parameters.)</p>
+<p>As Figure 3 shows, Qwen3 now ships separate instruction-following (“instruct”) and reasoning (“thinking”) models rather than hybrids. The “2507” in the model name stands for the July 25 release.</p>
+<p>A quick timeline for context:</p>
+<p>Pre-Qwen3: Qwen2.5 offered distinct instruction-following and reasoning (QwQ) models.</p>
+<p>May: the first Qwen3 suite introduced a hybrid reasoning model.</p>
+<p>July 25: the team split Qwen3 into separate instruct and reasoning variants.</p>
+<p>The shift away from hybrids is notable because DeepSeek moved in the opposite direction. It began with separate models (V3 base and R1 reasoning) and later introduced a hybrid with toggled thinking modes (V3.1).</p>
+<p>In my experience, specialization tends to win. Training a base for instruction following and then further for reasoning usually improves reasoning, but can slightly diminish pre-training knowledge and some instruction behavior. So, separate lines avoid that compromise.</p>
+<p>On the other hand, hybrids are attractive in production since a single served model can toggle reasoning on or off. (We don’t have to load two separate sets of model weights into memory.)</p>
+<p>In short, separate models may result in slightly better task (or at least benchmark) performance, while hybrids simplify serving.</p>
+<p>Lastly, the Qwen3 team also released two instruction-following models specialized for coding tasks:</p>
+<p>Figure 4: Qwen3 code models.</p>
+<p>All Qwen3 models can handle code to some extent, but the Qwen3-Coder models (listed in Figure 4) are additionally fine-tuned on coding tasks. This gives them more specialized behavior on coding tasks compared to the general-purpose models.</p>
+<p>I think this is a smart design choice. If you are building or integrating code into a specific application, it usually makes more sense to use a specialized model than a general-purpose “jack-of-all-trades” model, which inevitably involves compromises.</p>
+<p>This observation ties back to a research paper I discussed last year, which showed that fine-tuning or further pre-training an LLM on one domain tends to degrade its performance in another. For example, training on math problems improves reasoning in that area but reduces coding performance, and the reverse is true when the model is tuned for coding.</p>
+<p>2 Training Methodology</p>
+<p>Lastly, before we finally get to the from-scratch implementation of Qwen3, I want to summarize the training pipeline that was used to develop the models discussed in the previous section.</p>
+<p>According to the Qwen3 technical report, the pre- and post-training consists of several stages each, which I summarized in Figure 5 below.</p>
+<p>Figure 5: A visual summary of Qwen3’s pre- and post-training stages.</p>
+<p>Note that the steps shown in Figure 5 correspond to the Qwen3 base and hybrid models released in May. There was no separate paper for the separate reasoning and instruct variants released in July. However, I suspect the reasoning model includes all these steps except post-training stage 3. And the Instruct model includes all these steps except for post-training stages 1 and 2.</p>
+<p>Overall, the pre-training stages depicted in Figure 5 look fairly standard. The interesting aspect here is that in Stage 2, the Qwen3 team explicitly included knowledge-intensive (chain-of-thought-style) data, which is said to enhance reasoning capabilities later on. Nowadays, I suspect that most pre-training datasets already contain such data incidentally (as it is present in internet corpora), but the explicit inclusion is still interesting.</p>
+<p>Personally, I have observed that the Qwen3 base models (before being post-trained for reasoning) already exhibit some reasoning behavior, as shown in Figure 6. This is likely a consequence of the pre-training data mix.</p>
+<p>Figure 6: Even when given a simple multiple-choice question (here from MMLU), the Qwen3 0.6B base model provides an explanation along with the answer, which is atypical for base models and likely a consequence of including chain-of-thought data in the pre-training mix.</p>
+<p>Now, coming back to the post-training pipeline shown in Figure 5, this post-training looks pretty straightforward:&nbsp;</p>
+<p>Stage 1: Supervised fine-tuning on chain-of-thought data</p>
+<p>Stage 2: Reinforcement learning with verifiable rewards</p>
+<p>Stage 3: more supervised fine-tuning (this time including general, non-reasoning data to support the reasoning/instruct hybrid behavior)</p>
+<p>Stage 4: General-domain reinforcement learning</p>
+<p>These 4 stages are essentially similar to DeepSeek R1. I tried to overlay the Qwen3 stages onto the DeepSeek R1 approach in Figure 7 below.</p>
+<p>Figure 7: The Qwen3 post-training stages mapped onto the DeepSeek R1 training pipeline.</p>
+<p>Note that the DeepSeek R1 pipeline looks more complex than Qwen3’s, mainly because the data generation steps are explicitly shown for DeepSeek.&nbsp;</p>
+<p>The biggest difference is at Stage 4: Qwen3’s report describes this as general-domain reinforcement learning, but it is unclear whether verifiable rewards were used here or if the training was purely preference-based.</p>
+<p>Overall, though, the Qwen3 pipeline closely mirrors DeepSeek R1.&nbsp;</p>
+<p>To conclude this section, it’s also worth noting that Qwen3 provides distilled variants, as shown in Figure 8.</p>
+<p>Figure 8: The smaller Qwen3 MoE and dense models are distilled from the largest MoE and largest dense model, respectively.</p>
+<p>3 Qwen3 Evolved from GPT</p>
+<p>Training large language models (LLMs) is extremely costly (many millions of dollars) so we cannot replicate it here. What we can do, however, is study the architecture, reimplement it from scratch in pure PyTorch, and load open-source weights. This approach allows us to better understand the design choices behind Qwen3.</p>
+<p>Similar to the other architectures I discussed in The Big LLM Architecture Comparison, Qwen3 ultimately traces back to the original GPT model. The foundation remains the same, but with additional refinements and extensions.</p>
+<p>The Big LLM Architecture Comparison SEBASTIAN RASCHKA, PHD · JULY 19, 2025 Read full story</p>
+<p>Figure 9 shows a side-by-side comparison between Qwen3 and GPT-2.&nbsp;</p>
+<p>Figure 9: Architectural comparison between Qwen3 0.6B and the 127M parameter GPT-2 variant. Both models process text through embedding layers and stacked transformer blocks, but they differ in certain design choices.</p>
+<p>As illustrated in Figure 9, Qwen3 and GPT-2 both build on the decoder submodule of the original transformer architecture. Yet, the design has matured in the years since GPT-2. But most of Qwen3’s changes are not unique to this model: they reflect common practices across many contemporary LLMs, as I previously discussed in my architecture comparison article.</p>
+<p>For readers new to LLMs, I think that GPT-2 is still an excellent starting point. Its simpler design makes it easier to implement and understand before implementing more advanced variations like Qwen3.</p>
+<p>In case you read my Build a Large Language Model From Scratch book (which implements GPT-2), the Qwen3 implementation in the next sections follows a similar style, so if you are already comfortable with GPT-2, I hope it will be an easy read.</p>
+<p>4 Normalization Layers</p>
+<p>In contrast to GPT-2, which used standard LayerNorm, the newer Qwen3 architecture replaces it with root mean square layer normalization (RMSNorm). This is a trend that has become increasingly common in recent model architectures.</p>
+<p>RMSNorm fulfills the same core function as LayerNorm: normalizing layer activations to stabilize and improve training. However, it simplifies the computation by removing the mean-centering step, as shown in Figure 10. This means that activations will still be normalized, but they are not centered at 0.</p>
+<p>Figure 10: Comparison of LayerNorm and RMSNorm. LayerNorm (left) normalizes activations so that their average value (mean) is exactly zero and their spread (variance) is exactly one. RMSNorm (right) instead scales activations based on their root mean square, which does not enforce zero mean or unit variance, but still keeps the mean and variance within a reasonable range for stable training.</p>
+<p>As we can see in Figure 10, both LayerNorm and RMSNorm scale the layer outputs to be in a reasonable range.</p>
+<p>LayerNorm subtracts the mean and divides by the standard deviation such that the layer outputs have a zero mean and unit variance (variance of one and standard deviation of one), which results in favorable properties, in terms of gradient values, for stable training.</p>
+<p>RMSNorm divides the inputs by the root mean square. This scales activations to a comparable magnitude without enforcing zero mean or unit variance. In this particular example shown in Figure 10, the mean is 0.77 and the variance is 0.41.</p>
+<p>Both LayerNorm and RMSNorm stabilize activation scales and improve optimization; however, RMSNorm is often preferred in large-scale LLMs because it is computationally cheaper. Unlike LayerNorm, RMSNorm does not use a bias (shift) term by default, which reduces the number of trainable parameters. Moreover, RMSNorm reduces the expensive mean and variance computations to a single root-mean-square operation. This reduces the number of cross-feature reductions from two to one, which lowers communication overhead on GPUs and slightly improves training efficiency.</p>
+<p>Below is how this looks like in code:&nbsp; &nbsp; &nbsp; &nbsp;</p>
+<p>import torch.nn as nn</p>
+<p>class RMSNorm(nn.Module):</p>
+<pre><code>def __init__(
+    self,
+    emb_dim,
+    eps=1e-6,
+    bias=False,
+    qwen3_compatible=True,
+):
+    super().__init__()
+    self.eps = eps
+    self.qwen3_compatible = qwen3_compatible
+    self.scale = nn.Parameter(torch.ones(emb_dim))
+    self.shift = (
+        nn.Parameter(torch.zeros(emb_dim)) if bias
+        else None
+    )</code></pre>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;def forward(self, x): &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;input_dtype = x.dtype</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if self.qwen3_compatible: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;x = x.to(torch.float32)</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;variance = x.pow(2).mean(dim=-1, keepdim=True) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;norm_x = x * torch.rsqrt(variance + self.eps) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;norm_x = norm_x * self.scale</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if self.shift is not None: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;norm_x = norm_x + self.shift</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return norm_x.to(input_dtype)</p>
+<p>Note that, for brevity, this article does not provide detailed code walkthroughs for each LLM component. Instead, in section 9 (Main Model Class), we will integrate all components into the Qwen3Model class, load the pre-trained weights into it, and then use this model to generate text in section 12 (Using the Model).</p>
+<p>While you can copy &amp; paste the code into your editor or retype it (for a better learning experience), all the code examples are also available here on GitHub. In particular, see the:</p>
+<p>standalone-qwen3-plus-kvcache.ipynb notebook for the dense model;</p>
+<p>standalone-qwen3-moe-plus-kvcache.ipynb notebook for the MoE variant.</p>
+<p>5 Feed Forward Module</p>
+<p>The feed forward module (a small multi-layer perceptron) is replaced with a gated linear unit (GLU) variant, introduced in a 2020 paper. In this design, the standard two fully connected layers are replaced by three, as shown in Figure 11.</p>
+<p>Figure 11: In GPT-2 (top), the feed forward module consists of two fully connected (linear) layers separated by a non-linear activation function. In Qwen3 (bottom), this module is replaced with a gated linear unit (GLU) variant, which adds a third linear layer and multiplies its output elementwise with the activated output of the second linear layer.</p>
+<p>Qwen3’s feed forward module (Figure 12) can be implemented as shown below:</p>
+<p>class FeedForward(nn.Module): def <strong>init</strong>(self, cfg): super().__init__() self.fc1 = nn.Linear( cfg[“emb_dim”], cfg[“hidden_dim”], dtype=cfg[“dtype”], bias=False ) self.fc2 = nn.Linear( cfg[“emb_dim”], cfg[“hidden_dim”], dtype=cfg[“dtype”], bias=False ) self.fc3 = nn.Linear( cfg[“hidden_dim”], cfg[“emb_dim”], dtype=cfg[“dtype”], bias=False )</p>
+<pre><code>def forward(self, x):
+    x_fc1 = self.fc1(x)
+    x_fc2 = self.fc2(x)
+    
+    # The non-linear activation function here is a SiLU function,           
+    # which will be discussed later
+    x = nn.functional.silu(x_fc1) * x_fc2
+    return self.fc3(x)</code></pre>
+<p>At first glance, it might seem that the GLU feed forward variant used in Qwen3 should outperform the standard feed forward variant in GPT-2, simply because it adds an extra linear layer (three instead of two) and therefore appears to have more parameters.</p>
+<p>However, this intuition is misleading. In practice, the fc1 and fc2 layers in the GLU variant are each half the width of the fc1 layer in a standard feed forward module, and in practice, it has fewer parameters.</p>
+<p>To illustrate this with a concrete example, suppose the input dimension to the “Linear layer 1” in Figure 12 is 1024. This corresponds to cfg[“emb_dim”] in the previous code. The output dimension of fc1 is 3,072 (cfg[“hidden_dim”]). Note that these are the actual numbers used in the Qwen3 0.6B variant. In this case, we have the following parameter counts for the GLU variant in the previous code:</p>
+<p>fc1: 1024 × 3,072 = 3,145,728&nbsp;&nbsp;</p>
+<p>fc2: 1024 × 3,072 = 3,145,728&nbsp;</p>
+<p>fc3: 1024 × 3,072 = 3,145,728&nbsp;&nbsp;</p>
+<p>Total: 3 × 3,145,728 = 9,437,184 parameters</p>
+<p>If we assume that fc1 in this GLU variant has half the width as would be typically chosen for an fc1 in a standard feed forward module, the parameter counts of the standard feed forward module would be as follows:</p>
+<p>fc1: 1024 × 2×3,072 = 6,291,456&nbsp;&nbsp;</p>
+<p>fc2: 1024 × 2×3,072 = 6,291,456&nbsp;</p>
+<p>Total: 2 × 6,291,456 = 12,582,912 parameters</p>
+<p>While GLU variants usually have fewer parameters than regular feed forward modules, they perform better. The improvement comes from the additional multiplicative interaction introduced by the gating mechanism, activation(x_fc1) * x_fc2, which increases the model’s expressivity. This is similar to how deeper, slimmer networks can outperform shallower, wider ones, given proper training.</p>
+<p>Before we proceed to the next section, there is one more thing to address. Note that the feed forward module shown in Figure 12 contains an element labeled as “Activation function,” whereas we used a nn.functional.silu activation as a concrete example in the previous code sample.</p>
+<p>Historically, activation functions were a hot topic of debate until the deep learning community largely converged on the rectified linear unit (ReLU) more than a decade ago. ReLU is simple and computationally cheap, but it has a sharp kink at zero. This motivated researchers to explore smoother functions such as the Gaussian error linear unit (GELU) and the sigmoid linear unit (SiLU), as shown in Figure 12.</p>
+<p>Figure 12: Different activation functions that can be used in a feed forward module (neural network). GELU and SiLU (Swish) offer smooth alternatives to ReLU, which has a sharp kink at input zero.</p>
+<p>GELU involves the Gaussian cumulative distribution function (CDF). Computing this CDF is slow because it uses piecewise logic and exponentials, which makes it hard to write fused, optimized GPU kernels (although a tanh approximation exists that uses cheaper operations and runs faster with near-identical results).</p>
+<p>In short, while GELU produces smooth activation curves, it is overall computationally more expensive than simpler functions.&nbsp;</p>
+<p>Newer models have largely replaced GELU with the SiLU (also known as Swish) function, which smoothly suppresses large negative inputs toward ~0 and is approximately linear for large positive inputs, as shown in Figure 12.</p>
+<p>SiLU has a similar smoothness, but it is slightly cheaper to compute than GELU and offers comparable modeling performance. In practice, SiLU is now used in most architectures, while GELU remains in use in only some models, such as Google’s Gemma open-weight LLM. In the implementation of the feed forward module in the previous FeedForward code, this SiLU function is called via nn.functional.silu. The feed forward module (FeedForward) is also often called SwiGLU, an abbreviation that is derived from the terms Swish and GLU.</p>
+<p>6 Rotary Position Embeddings (RoPE)</p>
+<p>In transformer-based LLMs, positional encoding is necessary because of the attention mechanism. By default, attention treats the input tokens as if they have no order. In the original GPT architecture, absolute positional embeddings addressed this by adding a learned embedding vector for each position in the sequence, which is then added to the token embeddings.</p>
+<p>RoPE (short for rotary position embeddings) introduced a different approach: instead of adding position information as separate embeddings, it encodes position information by rotating the query and key vectors in the attention mechanism (section 7) in a way that depends on each token’s position. RoPE is an elegant idea, but also a long topic in itself. Interested readers can find more information in the original RoPE paper. (While first introduced in 2021, RoPE became widely adopted with the release of the original Llama model in 2023 and has since become a staple in modern LLMs, so it is not unique to Qwen3.)</p>
+<p>RoPE can be implemented in two mathematically equivalent ways: the interleaved form, which pairs adjacent dimensions for rotation, or in a two-halves form, which splits the dimension into cosine and sine halves for convenience. The code below implements the two-halves variant, which can be easier to read.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>import torch</p>
+<p>def compute_rope_params( head_dim, theta_base=10_000, context_length=4096, dtype=torch.float32, ): assert head_dim % 2 == 0, “Embedding dim must be even”</p>
+<pre><code>inv_freq = 1.0 / (
+    theta_base
+    ** (
+        torch.arange(0, head_dim, 2, dtype=dtype)[: head_dim // 2]
+        .float()
+        / head_dim
+    )
+)
+
+positions = torch.arange(context_length, dtype=dtype)
+angles = positions[:, None] * inv_freq[None, :]
+angles = torch.cat([angles, angles], dim=1)
+
+cos = torch.cos(angles)
+sin = torch.sin(angles)
+
+return cos, sin</code></pre>
+<p>def apply_rope(x, cos, sin, offset=0):</p>
+<pre><code>batch_size, num_heads, seq_len, head_dim = x.shape
+assert head_dim % 2 == 0, "Head dimension must be even"
+
+# Split x into first half and second half
+x1 = x[..., : head_dim // 2]  # First half
+x2 = x[..., head_dim // 2:]  # Second half
+
+
+cos = cos[offset:offset + seq_len, :].unsqueeze(0).unsqueeze(0)
+sin = sin[offset:offset + seq_len, :].unsqueeze(0).unsqueeze(0)
+# Shape after:  (1, 1, seq_len, head_dim)
+
+rotated = torch.cat((-x2, x1), dim=-1)
+x_rotated = (x * cos) + (rotated * sin)
+
+
+return x_rotated.to(dtype=x.dtype)</code></pre>
+<p>Later, in the Qwen3Model class implementation (section 9), we will compute and store the cos and sin values:</p>
+<p>cos, sin = compute_rope_params( head_dim=head_dim, theta_base=cfg[“rope_base”], context_length=cfg[“context_length”] )</p>
+<p>Then, inside the grouped query attention module (section 7) inside each transformer block, we apply the rotation to the queries and keys:</p>
+<p>queries = apply_rope(queries, cos, sin, offset=start_pos) keys = apply_rope(keys_new, cos, sin, offset=start_pos)</p>
+<p>Let’s briefly go over what’s happening in the two functions (compute_rope_params and apply_rope) that implement the RoPE two-halves variant, using the same indices as in the figure.</p>
+<p>Inside the apply_rope function, we take a d-dimensional query or key (with even d) for each attention head and pair across the two halves:</p>
+</section>
+</section>
+<section id="𝑥" class="level1">
+<h1>𝑥</h1>
+<p>[ 𝑥 1 , … , 𝑥 𝑑] ∈ 𝑅 𝑑 , pairs&nbsp; ( 𝑥 𝑗 , 𝑥 𝑗 + 𝑑 / 2 ) &nbsp;for&nbsp; 𝑗 = 1 , … , 𝑑 2 .</p>
+<p>Each pair</p>
+<p>( 𝑥 𝑗 , 𝑥 𝑗 + 𝑑 / 2 )</p>
+<p>is treated as a 2D coordinate that is rotated by an angle depending on the token position i, as illustrated in Figure 13.</p>
+<p>Figure 13: Illustration of the RoPE two-halves variant. Here, it shows how a position pair in the query (or key) vector is rotated via a rotation angle α_{i,j}, which is based on a position i and a frequency constant ω_j. The figure is inspired by Figure 1 in the original RoPE paper.</p>
+<p>The rotation depicted in Figure 13 works as follows, in 3 main steps.</p>
+<p>Step 1: Construct the frequency basis</p>
+<p>In compute_rope_params we define the vector inv_freq of length d/2:</p>
+<p>𝜔 𝑗 = inv_freq 𝑗 = 𝜃 base − 2 ( 𝑗 − 1 ) 𝑑 , 𝑗 = 1 , … , 𝑑 2 .</p>
+<p>(Note that the code uses 0-based indexing instead of 1-based indexing due to how Python and PyTorch work.)</p>
+<p>The base constant, θ_base (theta_base) is a hyperparameter set to a default value of 10,000 in the code signature above. Qwen3 uses θ_base = 1,000,000 to enable much longer contexts than the classic 10,000 setting.</p>
+<p>Step 2: Compute angles for each position</p>
+<p>For every token position i, we build the angle table for angles α_{i,j}:</p>
+<p>𝛼 𝑖 , 𝑗 = 𝑖 ⋅ inv_freq 𝑗 ,</p>
+<p>and then precompute</p>
+<p>cos 𝑖 , 𝑗 = cos ⁡ ( 𝛼 𝑖 , 𝑗 ) , sin 𝑖 , 𝑗 = sin ⁡ ( 𝛼 𝑖 , 𝑗 ) .</p>
+<p>Step 3: Rotate the two halves</p>
+<p>Given a pair</p>
+<p>( 𝑥 𝑗 , 𝑥 𝑗 + 𝑑 / 2 )</p>
+<p>at token position i, we can then rotate it by the corresponding entry from the cos/sin tables:</p>
+<p>𝑥 𝑗 ′</p>
+<p>= 𝑥 𝑗 cos 𝑖 , 𝑗 − 𝑥 𝑗 + 𝑑 / 2 sin 𝑖 , 𝑗 ,</p>
+<p>𝑥 𝑗 + 𝑑 / 2 ′</p>
+<p>= 𝑥 𝑗 sin 𝑖 , 𝑗 + 𝑥 𝑗 + 𝑑 / 2 cos 𝑖 , 𝑗 .</p>
+<p>Equivalently, for each j-th pair, we can compute the rotated pair using a rotation matrix:</p>
+<p>[ 𝑥 𝑗 ′</p>
+<p>𝑥 𝑗 + 𝑑 / 2 ′ ] = [ cos 𝑖 , 𝑗</p>
+<p>− sin 𝑖 , 𝑗</p>
+<p>sin 𝑖 , 𝑗</p>
+<p>&nbsp; cos 𝑖 , 𝑗 ] [ 𝑥 𝑗</p>
+<p>𝑥 𝑗 + 𝑑 / 2 ] .</p>
+<p>Note that we look at a single head for simplicity. However, RoPE is applied identically to every attention head: we compute one cos/sin table for shape (context_length, head_dim) and broadcast it across the num_heads dimension for both queries and keys (including KV-groups in GQA).</p>
+<p>7 Grouped Query Attention (GQA)</p>
+<p>Grouped query attention (GQA) has become the standard, more compute- and parameter-efficient alternative to the original multi-head attention (MHA) mechanism.</p>
+<p>Unlike MHA, where each head also has its own set of keys and values, to reduce memory usage, GQA groups multiple heads to share the same key and value projections, as shown in Figure 14.</p>
+<p>Figure 14: A comparison between MHA and GQA. Here, the group size is 2, where a key and value pair is shared among 2 queries.</p>
+<p>So, the core idea behind GQA, shown in Figure 14, is to reduce the number of key and value heads by sharing them across multiple query heads. This (1) lowers the model’s parameter count and (2) reduces the memory bandwidth usage for key and value tensors during inference since fewer keys and values need to be stored and retrieved from the KV cache (section 10).</p>
+<p>While GQA is primarily a computational efficiency workaround for MHA, ablation studies (as presented in the original GQA paper) show that it performs comparably to standard MHA in terms of LLM modeling performance.</p>
+<p>The code below implements the GQA mechanism with KV cache support.</p>
+<p>class GroupedQueryAttention(nn.Module): def <strong>init</strong>(self, d_in, num_heads, num_kv_groups, head_dim=None, qk_norm=False, dtype=None): super().__init__() assert num_heads % num_kv_groups == 0</p>
+<pre><code>    self.num_heads = num_heads
+    self.num_kv_groups = num_kv_groups
+    self.group_size = num_heads // num_kv_groups
+
+    if head_dim is None:
+        assert d_in % num_heads == 0
+        head_dim = d_in // num_heads
+
+    self.head_dim = head_dim
+    self.d_out = num_heads * head_dim
+
+    self.W_query = nn.Linear(
+        d_in, self.d_out, bias=False, dtype=dtype
+    )
+    self.W_key = nn.Linear(
+        d_in, num_kv_groups * head_dim, bias=False,dtype=dtype
+    )
+    self.W_value = nn.Linear(
+        d_in, num_kv_groups * head_dim, bias=False, dtype=dtype
+    )
+
+    self.out_proj = nn.Linear(
+        self.d_out, d_in, bias=False, dtype=dtype
+    )
+
+    if qk_norm:
+        self.q_norm = RMSNorm(head_dim, eps=1e-6)
+        self.k_norm = RMSNorm(head_dim, eps=1e-6)
+    else:
+        self.q_norm = self.k_norm = None
+
+def forward(self, x, mask, cos, sin, start_pos=0, cache=None):
+    b, num_tokens, _ = x.shape
+
+    queries = self.W_query(x)  # (b, n_tok, n_heads * head_dim)
+    keys = self.W_key(x) (b,   # (b, n_tok, n_kv_groups * head_dim)
+    values = self.W_value(x)   # (b, n_tok, n_kv_groups * head_dim)
+
+    queries = queries.view(b, num_tokens, self.num_heads,
+                           self.head_dim).transpose(1, 2)
+    keys_new = keys.view(b, num_tokens, self.num_kv_groups,
+                         self.head_dim).transpose(1, 2)
+    values_new = values.view(b, num_tokens, self.num_kv_groups,
+                             self.head_dim).transpose(1, 2)
+
+    if self.q_norm:
+        queries = self.q_norm(queries)
+    if self.k_norm:
+        keys_new = self.k_norm(keys_new)
+
+    queries = apply_rope(queries, cos, sin, offset=start_pos)
+    keys_new = apply_rope(keys_new, cos, sin, offset=start_pos)
+
+    if cache is not None:
+        prev_k, prev_v = cache
+        keys = torch.cat([prev_k, keys_new], dim=2)
+        values = torch.cat([prev_v, values_new], dim=2)
+    else:
+        start_pos = 0  # Reset RoPE
+        keys, values = keys_new, values_new            
+    next_cache = (keys, values)
+
+    # Expand K and V to match number of heads
+    keys = keys.repeat_interleave(  
+        self.group_size, dim=1
+    )
+    values = values.repeat_interleave(
+        self.group_size, dim=1
+    )
+
+    attn_scores = queries @ keys.transpose(2, 3)
+    attn_scores = attn_scores.masked_fill(mask, -torch.inf)
+    attn_weights = torch.softmax(
+        attn_scores / self.head_dim**0.5, dim=-1</code></pre>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>You may have noticed that the GQA mechanism in the code above also includes a qk_norm parameter. This is not part of the standard GQA design. When qk_norm=True, an additional Query/Key-RMSNorm-based normalization, called QKNorm, is applied to both the queries and keys, which is a technique used in Qwen3. As discussed earlier in the RMSNorm section (section 4), QKNorm helps improve training stability.</p>
+<p>8 The Transformer Block</p>
+<p>The transformer block is the central component of an LLM, which combines all the individual elements covered in this appendix so far. As shown in Figure 15, it is repeated multiple times; in the 0.6-billion-parameter version of Qwen3, it is repeated 28 times.</p>
+<p>Figure 15: The Structure of the transformer block in Qwen3. Each block includes RMSNorm, RoPE, masked grouped-query attention, and a feed-forward module, and is repeated 28 times in the 0.6B-parameter model.</p>
+<p>The following code implements the transformer block:</p>
+<p>class TransformerBlock(nn.Module): def <strong>init</strong>(self, cfg): super().__init__() self.att = GroupedQueryAttention( d_in=cfg[“emb_dim”], num_heads=cfg[“n_heads”], head_dim=cfg[“head_dim”], num_kv_groups=cfg[“n_kv_groups”], qk_norm=cfg[“qk_norm”], dtype=cfg[“dtype”] ) self.ff = FeedForward(cfg) self.norm1 = RMSNorm(cfg[“emb_dim”], eps=1e-6) self.norm2 = RMSNorm(cfg[“emb_dim”], eps=1e-6)</p>
+<pre><code>def forward(self, x, mask, cos, sin, start_pos=0, cache=None):
+    shortcut = x
+    x = self.norm1(x)
+    x, next_cache = self.att(
+        x, mask, cos, sin, start_pos=start_pos,cache=cache
+    )  # (batch_size, num_tokens, emb_size)
+    x = x + shortcut
+
+    shortcut = x
+    x = self.norm2(x)
+    x = self.ff(x)
+    x = x + shortcut
+
+    return x, next_cache&nbsp;</code></pre>
+<p>As we can see, the transformer block simply connects various elements we implemented in previous sections.</p>
+<p>9 Main Model Class</p>
+<p>In this section, we will define the Qwen3Model class, where the previously implemented transformer block sits at the heart of the LLM.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>class Qwen3Model(nn.Module): def <strong>init</strong>(self, cfg): super().__init__()</p>
+<pre><code>    # Main model parameters
+    self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"],
+                                dtype=cfg["dtype"])
+
+    self.trf_blocks = nn.ModuleList(
+        [TransformerBlock(cfg) for _ in range(cfg["n_layers"])]
+    )
+    self.final_norm = RMSNorm(cfg["emb_dim"])
+    self.out_head = nn.Linear(
+        cfg["emb_dim"], cfg["vocab_size"],
+        bias=False, dtype=cfg["dtype"]
+    )
+
+    # Reusable utilities
+    if cfg["head_dim"] is None:
+        head_dim = cfg["emb_dim"] // cfg["n_heads"]
+    else:
+        head_dim = cfg["head_dim"]
+    cos, sin = compute_rope_params(
+        head_dim=head_dim,
+        theta_base=cfg["rope_base"],
+        context_length=cfg["context_length"]
+    )
+    self.register_buffer("cos", cos, persistent=False)
+    self.register_buffer("sin", sin, persistent=False)
+    self.cfg = cfg
+    self.current_pos = 0  # Track current position in KV cache
+
+def forward(self, in_idx, cache=None):
+    # Forward pass
+    tok_embeds = self.tok_emb(in_idx)
+    x = tok_embeds
+
+    num_tokens = x.shape[1]
+    if cache is not None:
+        pos_start = self.current_pos
+        pos_end = pos_start + num_tokens
+        self.current_pos = pos_end
+        mask = torch.triu(
+            torch.ones(
+                pos_end, pos_end, device=x.device, dtype=torch.bool
+            ),
+            diagonal=1
+        )[pos_start:pos_end, :pos_end]
+    else:
+        pos_start = 0  # Not strictly necessary but helps torch.compile
+        mask = torch.triu(
+            torch.ones(num_tokens, num_tokens, device=x.device,
+                       dtype=torch.bool),
+            diagonal=1
+        )
+    # Prefill (no cache): mask starts as (num_tokens, num_tokens)
+    # Cached decoding: mask starts as (num_tokens, prev_k_number_tokens + num_tokens)
+    #
+    # We add two leading dimensions so the mask becomes
+    # (1, 1, num_tokens, num_tokens) during prefill and
+    # (1, 1, num_tokens, total_key_tokens) during cached decoding.
+    # These extra dimensions let PyTorch broadcast the same mask
+    # across all batches and attention heads when applying it to
+    # attn_scores of shape (batch, num_heads, num_tokens, total_key_tokens).
+    mask = mask[None, None, :, :]
+
+    for i, block in enumerate(self.trf_blocks):
+        blk_cache = cache.get(i) if cache else None
+        x, new_blk_cache = block(x, mask, self.cos, self.sin,
+                                 start_pos=pos_start,
+                                 cache=blk_cache)
+        if cache is not None:
+            cache.update(i, new_blk_cache)
+
+    x = self.final_norm(x)
+    logits = self.out_head(x.to(self.cfg["dtype"]))
+    return logits
+
+def reset_kv_cache(self):
+    self.current_pos = 0</code></pre>
+<p>Since we already have all the main ingredients, the Qwen3Model class only adds a few more components around the transformer block, namely the embedding and output layers (including one more RMSNorm layer). However, the code may appear somewhat complicated, which is due to the KV cache option.</p>
+<p>As discussed in my earlier Understanding and Coding the KV Cache in LLMs from Scratch article, the KV cache can speed up the text generation process, but it is a topic outside the scope of this book.</p>
+<p>Note that the Qwen3Model class supports various model sizes. The overall architecture along with the differences for each size, is shown in Figure 16 below.</p>
+<p>Figure 16: Architecture of the Qwen3 0.6B model. The model consists of a token embedding layer followed by 28 transformer blocks, each containing RMSNorm, RoPE, QKNorm, masked grouped-query attention with 16 heads, and a feed-forward module with an intermediate size of 3,072.</p>
+<p>To use the 0.6B model via the Qwen3Model class, we can define the following configuration in that we provide as input (cfg=QWEN_CONFIG) upon instantiating a new Qwen3Model instance.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>CHOOSE_MODEL = “0.6B”</p>
+<p>if CHOOSE_MODEL == “0.6B”: QWEN3_CONFIG = { “vocab_size”: 151_936, # Vocabulary size “context_length”: 40_960, # Context length that was used to train the model “emb_dim”: 1024, # Embedding dimension “n_heads”: 16, # Number of attention heads “n_layers”: 28, # Number of layers “hidden_dim”: 3072, # Size of the intermediate dimension in FeedForward “head_dim”: 128, # Size of the heads in GQA “qk_norm”: True, # Whether to normalize queries and keys in GQA “n_kv_groups”: 8, # Key-Value groups for grouped-query attention “rope_base”: 1_000_000.0, # The base in RoPE’s “theta” “dtype”: torch.bfloat16, # Lower-precision dtype to reduce memory usage }</p>
+<p>elif CHOOSE_MODEL == “1.7B”: QWEN3_CONFIG = { “vocab_size”: 151_936, “context_length”: 40_960, “emb_dim”: 2048, # 2x larger than above “n_heads”: 16, “n_layers”: 28, “hidden_dim”: 6144, # 2x larger than above “head_dim”: 128, “qk_norm”: True, “n_kv_groups”: 8, “rope_base”: 1_000_000.0, “dtype”: torch.bfloat16, }</p>
+<p>elif CHOOSE_MODEL == “4B”: QWEN3_CONFIG = { “vocab_size”: 151_936, “context_length”: 40_960, “emb_dim”: 2560, # 25% larger than above “n_heads”: 32, # 2x larger than above “n_layers”: 36, # 29% larger than above “hidden_dim”: 9728, # ~3x larger than above “head_dim”: 128, “qk_norm”: True, “n_kv_groups”: 8, “rope_base”: 1_000_000.0, “dtype”: torch.bfloat16, }</p>
+<p>elif CHOOSE_MODEL == “8B”: QWEN3_CONFIG = { “vocab_size”: 151_936, “context_length”: 40_960, “emb_dim”: 4096, # 60% larger than above “n_heads”: 32, “n_layers”: 36,<br>
+“hidden_dim”: 12288, # 26% larger than above “head_dim”: 128, “qk_norm”: True, “n_kv_groups”: 8, “rope_base”: 1_000_000.0, “dtype”: torch.bfloat16, }</p>
+<p>elif CHOOSE_MODEL == “14B”: QWEN3_CONFIG = { “vocab_size”: 151_936, “context_length”: 40_960, “emb_dim”: 5120, # 25% larger than above “n_heads”: 40, # 25% larger than above “n_layers”: 40, # 11% larger than above “hidden_dim”: 17408, # 42% larger than above “head_dim”: 128, “qk_norm”: True, “n_kv_groups”: 8, “rope_base”: 1_000_000.0, “dtype”: torch.bfloat16, }</p>
+<p>elif CHOOSE_MODEL == “32B”: QWEN3_CONFIG = { “vocab_size”: 151_936, “context_length”: 40_960, “emb_dim”: 5120,<br>
+“n_heads”: 64, # 60% larger than above “n_layers”: 64, # 60% larger than above “hidden_dim”: 25600, # 47% larger than above “head_dim”: 128, “qk_norm”: True, “n_kv_groups”: 8, “rope_base”: 1_000_000.0, “dtype”: torch.bfloat16, }</p>
+<p>else: raise ValueError(f”{CHOOSE_MODEL} is not supported.”)</p>
+<p>We can then initiate the model as follows:</p>
+<p>model = Qwen3Model(QWEN3_CONFIG)</p>
+<p>10 KV Cache</p>
+<p>The KV-cache-related heavy-lifting is mostly done in the Qwen3Model (section 9) and GroupedQueryAttention (section 7) code. Since the article on KV caching was so recent, I hope you don’t mind me just linking it here for reference instead of providing a longer explanation.</p>
+<p>The KVCache, shown below, stores the key-value pairs themselves during text generation, which results in the speedup we experienced when enabling KV caching.</p>
+<p>class KVCache: def <strong>init</strong>(self, n_layers): self.cache = [None] * n_layers</p>
+<pre><code>def get(self, layer_idx):
+    return self.cache[layer_idx]
+
+def update(self, layer_idx, value):
+    self.cache[layer_idx] = value
+
+def get_all(self):
+    return self.cache
+
+def reset(self):
+    for i in range(len(self.cache)):
+        self.cache[i] = None</code></pre>
+<p>The KVCache class is used inside the generate_text_basic_cache function that we implemented in chapter 2.</p>
+<p>The speed-up is summarized in the table below for the 0.6B model in PyTorch 2.7.1.</p>
+<p>Figure 17: Speed-comparison between a regular and KV cache implementation of Qwen3 0.6B.</p>
+<p>11 Tokenizer</p>
+<p>The tokenizer code is somewhat complicated, as it supports a variety of special tokens, in addition to the base model and the so-called “Thinking” model variant of Qwen3, which is a reasoning model. The full reimplementation of the tokenizer is shown below.</p>
+<p>from pathlib import Path import re from tokenizers import Tokenizer</p>
+<p>class Qwen3Tokenizer: _SPECIALS = [ “&lt;|endoftext|&gt;”, “&lt;|im_start|&gt;”, “&lt;|im_end|&gt;”, “&lt;|object_ref_start|&gt;”, “&lt;|object_ref_end|&gt;”, “&lt;|box_start|&gt;”, “&lt;|box_end|&gt;”, “&lt;|quad_start|&gt;”, “&lt;|quad_end|&gt;”, “&lt;|vision_start|&gt;”, “&lt;|vision_end|&gt;”, “&lt;|vision_pad|&gt;”, “&lt;|image_pad|&gt;”, “&lt;|video_pad|&gt;”, ] _SPLIT_RE = re.compile(r”(&lt;|[^&gt;]+?|&gt;)“)</p>
+<pre><code>def __init__(self,
+             tokenizer_file_path="tokenizer-base.json",
+             apply_chat_template=False,
+             add_generation_prompt=False,
+             add_thinking=False):
+
+    self.apply_chat_template = apply_chat_template
+    self.add_generation_prompt = add_generation_prompt
+    self.add_thinking = add_thinking
+
+    tok_path = Path(tokenizer_file_path)
+    if not tok_path.is_file():
+        raise FileNotFoundError(
+            f"Tokenizer file '{tok_path}' not found. "
+        )
+
+    self._tok = Tokenizer.from_file(str(tok_path))
+    self._special_to_id = {t: self._tok.token_to_id(t) 
+                           for t in self._SPECIALS}
+
+    self.pad_token = "&lt;|endoftext|&gt;"
+    self.pad_token_id = self._special_to_id.get(self.pad_token)
+
+    # Match HF behavior: chat model: &lt;|im_end|&gt;, base model: &lt;|endoftext|&gt;
+    f = tok_path.name.lower()    
+    if "base" in f and "reasoning" not in f:
+        self.eos_token = "&lt;|endoftext|&gt;"
+    else:                              
+        self.eos_token = "&lt;|im_end|&gt;"
+    self.eos_token_id = self._special_to_id.get(self.eos_token)
+
+def encode(self, prompt, chat_wrapped=None):
+    if chat_wrapped is None:
+        chat_wrapped = self.apply_chat_template
+
+    stripped = prompt.strip()
+    if stripped in self._special_to_id and "\n" not in stripped:
+        return [self._special_to_id[stripped]]
+
+    if chat_wrapped:
+        prompt = self._wrap_chat(prompt)
+
+    ids = []
+    for part in filter(None, self._SPLIT_RE.split(prompt)):
+        if part in self._special_to_id:
+            ids.append(self._special_to_id[part])
+        else:
+            ids.extend(self._tok.encode(part).ids)
+    return ids
+
+def decode(self, token_ids):
+    return self._tok.decode(token_ids, skip_special_tokens=False)
+
+def _wrap_chat(self, user_msg):
+    s = f"&lt;|im_start|&gt;user\n{user_msg}&lt;|im_end|&gt;\n"
+    if self.add_generation_prompt:
+        s += "&lt;|im_start|&gt;assistant"
+        if self.add_thinking:
+            s += "\n" #insert no &lt;think&gt; tag, just a new line
+        else:
+            s += "\n&lt;think&gt;\n\n&lt;/think&gt;\n\n"
+    return s</code></pre>
+<p>Note that my Qwen3Tokenizer reimplementation may appear somewhat complicated, as it aims to replicate the behavior of the official tokenizer released by the Qwen3 team in the Hugging Face transformers library (I have unit tests that check for parity).</p>
+<p>At first glance, it appears to have a few quirks. For example, when add_thinking=True, no “<think></think>” tokens are inserted (where is a newline character), and when add_thinking=False, these tokens are added. This is intentional because the non-base Qwen3 0.6B model is a hybrid that supports both reasoning (“thinking”) and standard modes.&nbsp;</p>
+<p>12 Using the Model</p>
+<p>Let’s now instantiate and use the model to confirm that the code works by loading the pre-trained Qwen3 weights and using the model on a prompt</p>
+<p>In section 9, we briefly talked about the model initialization via</p>
+<p>model = Qwen3Model(QWEN3_CONFIG)</p>
+<p>This code above initializes the model with random weights. Now, to load the official pre-trained weights into our architecture, we can define the following helper function:</p>
+<p>def load_weights_into_qwen(model, param_config, params): def assign(left, right, tensor_name=“unknown”): if left.shape != right.shape: raise ValueError( f”Shape mismatch in tensor ” f”‘{tensor_name}’. Left: {left.shape}, ” f”Right: {right.shape}” ) return torch.nn.Parameter( right.clone().detach() if isinstance(right, torch.Tensor) else torch.tensor(right) )</p>
+<pre><code>model.tok_emb.weight = assign(
+    model.tok_emb.weight,
+    params["model.embed_tokens.weight"],
+    "model.embed_tokens.weight"
+)
+
+for l in range(param_config["n_layers"]):
+    block = model.trf_blocks[l]
+    att = block.att
+
+    # Q, K, V projections
+    att.W_query.weight = assign(
+        att.W_query.weight,
+        params[f"model.layers.{l}.self_attn.q_proj.weight"],
+        f"model.layers.{l}.self_attn.q_proj.weight"
+    )
+    att.W_key.weight = assign(
+        att.W_key.weight,
+        params[f"model.layers.{l}.self_attn.k_proj.weight"],
+        f"model.layers.{l}.self_attn.k_proj.weight"
+    )
+    att.W_value.weight = assign(
+        att.W_value.weight,
+        params[f"model.layers.{l}.self_attn.v_proj.weight"],
+        f"model.layers.{l}.self_attn.v_proj.weight"
+    )
+
+    # Output projection
+    att.out_proj.weight = assign(
+        att.out_proj.weight,
+        params[f"model.layers.{l}.self_attn.o_proj.weight"],
+        f"model.layers.{l}.self_attn.o_proj.weight"
+    )
+
+    # QK norms
+    if hasattr(att, "q_norm") and att.q_norm is not None:
+        att.q_norm.scale = assign(
+            att.q_norm.scale,
+            params[f"model.layers.{l}.self_attn.q_norm.weight"],
+            f"model.layers.{l}.self_attn.q_norm.weight"
+        )
+    if hasattr(att, "k_norm") and att.k_norm is not None:
+        att.k_norm.scale = assign(
+            att.k_norm.scale,
+            params[f"model.layers.{l}.self_attn.k_norm.weight"],
+            f"model.layers.{l}.self_attn.k_norm.weight"
+        )
+
+    # Attention layernorm
+    block.norm1.scale = assign(
+        block.norm1.scale,
+        params[f"model.layers.{l}.input_layernorm.weight"],
+        f"model.layers.{l}.input_layernorm.weight"
+    )
+
+    # Feedforward weights
+    block.ff.fc1.weight = assign(
+        block.ff.fc1.weight,
+        params[f"model.layers.{l}.mlp.gate_proj.weight"],
+        f"model.layers.{l}.mlp.gate_proj.weight"
+    )
+    block.ff.fc2.weight = assign(
+        block.ff.fc2.weight,
+        params[f"model.layers.{l}.mlp.up_proj.weight"],
+        f"model.layers.{l}.mlp.up_proj.weight"
+    )
+    block.ff.fc3.weight = assign(
+        block.ff.fc3.weight,
+        params[f"model.layers.{l}.mlp.down_proj.weight"],
+        f"model.layers.{l}.mlp.down_proj.weight"
+    )
+    block.norm2.scale = assign(
+        block.norm2.scale,
+        params[f"model.layers.{l}.post_attention_layernorm.weight"],
+        f"model.layers.{l}.post_attention_layernorm.weight"
+    )
+
+# Final normalization and output head
+model.final_norm.scale = assign(
+    model.final_norm.scale,
+    params["model.norm.weight"],
+    "model.norm.weight"
+)
+
+if "lm_head.weight" in params:
+    model.out_head.weight = assign(
+        model.out_head.weight,
+        params["lm_head.weight"],
+        "lm_head.weight"
+    )
+else:
+    # Model uses weight tying
+    print("Model uses weight tying.")
+    model.out_head.weight = assign(
+        model.out_head.weight,
+        params["model.embed_tokens.weight"],
+        "model.embed_tokens.weight"
+    )</code></pre>
+<p>Next, we download the model weights and load them into the model:</p>
+<p>import json import os from pathlib import Path from safetensors.torch import load_file from huggingface_hub import hf_hub_download, snapshot_download</p>
+<p>USE_REASONING_MODEL = False</p>
+<p>if USE_REASONING_MODEL: repo_id = f”Qwen/Qwen3-{CHOOSE_MODEL}” else: repo_id = f”Qwen/Qwen3-{CHOOSE_MODEL}-Base”</p>
+<p>local_dir = Path(repo_id).parts[-1]</p>
+<p>if CHOOSE_MODEL == “0.6B”: weights_file = hf_hub_download( repo_id=repo_id, filename=“model.safetensors”, local_dir=local_dir, ) weights_dict = load_file(weights_file) else: repo_dir = snapshot_download(repo_id=repo_id, local_dir=local_dir) index_path = os.path.join(repo_dir, “model.safetensors.index.json”) with open(index_path, “r”) as f: index = json.load(f)</p>
+<pre><code>weights_dict = {}
+for filename in set(index["weight_map"].values()):
+    shard_path = os.path.join(repo_dir, filename)
+    shard = load_file(shard_path)
+    weights_dict.update(shard)</code></pre>
+<p>load_weights_into_qwen(model, QWEN3_CONFIG, weights_dict) del weights_dict # Delete to save memory</p>
+<p>While this model runs fine on a CPU due to its small size, let’s take advantage of your computer’s GPU if available and supported:</p>
+<p>def get_device(): if torch.cuda.is_available(): device = torch.device(“cuda”) print(“Using NVIDIA CUDA GPU”) elif torch.backends.mps.is_available(): device = torch.device(“mps”) print(“Using Apple Silicon GPU (MPS)”) elif torch.xpu.is_available(): device = torch.device(“xpu”) print(“Intel GPU”) else: device = torch.device(“cpu”) print(“Using CPU”) return device</p>
+<p>device = get_device() model.to(device)</p>
+<p>Now, the last puzzle piece we need is a text generation function wrapper to generate one word (token) at a time in typical LLM fashion, as illustrated in Figure 18:</p>
+<p>Figure 18: The typical one-token-at-a-time text-generation pipeline of an LLM with KV cache.</p>
+<p>The following code implements a text generation function with streaming, meaning that it is a Python generator that yields each token as it is generated, so that we can print it live:</p>
+<p>def generate_text_basic_stream( model, token_ids, max_new_tokens, eos_token_id=None, context_size=None ): model.eval()</p>
+<pre><code>with torch.no_grad():
+    cache = KVCache(n_layers=model.cfg["n_layers"])
+    model.reset_kv_cache()
+
+    # Prime the cache with the initial context
+    logits = model(token_ids, cache=cache)
+
+    for _ in range(max_new_tokens):
+        next_token = torch.argmax(
+            logits[:, -1], dim=-1, keepdim=True
+        )
+
+        if (eos_token_id is not None and
+            torch.all(next_token == eos_token_id)):
+            break
+
+        yield next_token
+
+        token_ids = torch.cat(
+            [token_ids, next_token], dim=1
+        )
+
+        # Feed only the new token to the model;
+        # cache handles history
+        logits = model(next_token, cache=cache)</code></pre>
+<p>input_token_ids_tensor = torch.tensor( input_token_ids, device=device ).unsqueeze(0)</p>
+<p>for token in generate_text_basic_stream( model=model, token_ids=input_token_ids_tensor, max_new_tokens=500, eos_token_id=tokenizer.eos_token_id ): token_id = token.squeeze(0).tolist() print( tokenizer.decode(token_id), end=““, flush=True )</p>
+<p>The generated response is as follows:</p>
+<p>Large language models (LLMs) are advanced artificial intelligence systems designed to generate human-like text. They are trained on vast amounts of text data, allowing them to understand and generate coherent, contextually relevant responses. LLMs are used in a variety of applications, including chatbots, virtual assistants, content generation, and more. They are powered by deep learning algorithms that enable them to process and generate text in a way that mimics human language.</p>
+<p>Using the Reasoning Variant</p>
+<p>In this section, we used the Qwen3 base model, which has not been fine-tuned or trained for reasoning (but thanks to the instruction and reasoning data in the pre-training data mix, it still follows instructions quite well).</p>
+<p>To use the reasoning variant, you can replace USE_REASONING_MODEL=False with USE_REASONING_MODEL=True.</p>
+<p>13 An Interactive Chat Interface</p>
+<p>One step at a time, we implemented a fully-functional Qwen3 model that we can use for text generation tasks. However, while the PyTorch code serves educational purposes to solidify (and demystify) LLM concepts, it’s not the prettiest to look at as a primary user interface.</p>
+<p>Optionally, I used the chainlit open-source library to create a quick and simple ChatGPT-like user interface for the code above. The code can be found here in my GitHub repository.</p>
+<p>(Video/) Figure 19: An interactive chat interface for the Qwen3 model. This example shows the Qwen3 0.6B reasoning model.</p>
+<p>14 Mixture-of-Experts Variant</p>
+<p>I realize that this article is already way too long. However, as a last point, I also wanted to also offer a few words about the Mixture-of-Experts (MoE) variants of Qwen3 shown in Figure 20.</p>
+<p>Figure 20: The Qwen3 MoE architecture.</p>
+<p>You are likely already familiar with MoE, but a quick recap may be helpful.</p>
+<p>The core idea in MoE is to replace each FeedForward module in a transformer block with multiple expert layers, where each of these expert layers is also a FeedForward module. This means that we swap a single FeedForward block for multiple FeedForward blocks</p>
+<p>So, replacing a single FeedForward block with multiple FeedForward blocks (as done in a MoE setup) substantially increases the model’s total parameter count. However, the key trick is that we don’t use (“activate”) all experts for every token. Instead, a router selects only a small subset of experts per token. (In the interest of time, or rather article space, I’ll cover the router in more detail another time.)</p>
+<p>Because only a few experts are active at a time, MoE modules are often referred to as sparse, in contrast to dense modules that always use the full parameter set. However, the large total number of parameters via an MoE increases the capacity of the LLM, which means it can take up more knowledge during training. The sparsity keeps inference efficient, though, as we don’t use all the parameters at the same time.</p>
+<p>So far, we implemented the dense Qwen3 architecture. Modifying it to also support the MoE variants is relatively simple and only requires a handful of changes. Note that this is not a very efficient implementation and more meant for illustration purposes, but it runs, albeit very slowly, on a single A100 (80 GB RAM).</p>
+<p>First, we replace FeedForward by MoEFeedForward:</p>
+<p>class MoEFeedForward(nn.Module): def <strong>init</strong>(self, cfg): super().__init__() self.num_experts_per_tok = cfg[“num_experts_per_tok”] self.num_experts = cfg[“num_experts”] self.gate = nn.Linear( cfg[“emb_dim”], cfg[“num_experts”], bias=False, dtype=cfg[“dtype”] )</p>
+<pre><code>    # meta device reduces memory pressure when
+    # initializing before loading weights
+    meta_device = torch.device("meta")
+
+    self.fc1 = nn.ModuleList([
+        nn.Linear(
+            cfg["emb_dim"], cfg["moe_intermediate_size"],
+            bias=False, dtype=cfg["dtype"],
+            device=meta_device
+        ) for _ in range(cfg["num_experts"])
+    ])
+    self.fc2 = nn.ModuleList([
+        nn.Linear(
+            cfg["emb_dim"], cfg["moe_intermediate_size"],
+            bias=False, dtype=cfg["dtype"],
+            device=meta_device
+        ) for _ in range(cfg["num_experts"])
+    ])
+    self.fc3 = nn.ModuleList([
+        nn.Linear(
+            cfg["moe_intermediate_size"], cfg["emb_dim"],
+            bias=False, dtype=cfg["dtype"],
+            device=meta_device
+        ) for _ in range(cfg["num_experts"])
+    ])
+
+def forward(self, x):
+    b, seq_len, embed_dim = x.shape
+    scores = self.gate(x)  # (b, t, num_experts)
+    topk_scores, topk_indices = torch.topk(
+        scores, self.num_experts_per_tok, dim=-1
+    )
+    topk_probs = torch.softmax(topk_scores, dim=-1)
+
+    expert_outputs = []
+    for e in range(self.num_experts):
+        hidden = torch.nn.functional.silu(
+            self.fc1[e](x)
+        ) * self.fc2[e](x)
+        out = self.fc3[e](hidden)
+        expert_outputs.append(out.unsqueeze(-2))
+    expert_outputs = torch.cat(
+        expert_outputs, dim=-2
+    )  # (b, t, num_experts, emb_dim)
+
+    gating_probs = torch.zeros_like(scores)
+
+    for i in range(self.num_experts_per_tok):
+        indices = topk_indices[..., i:i+1]
+        prob = topk_probs[..., i:i+1]
+        gating_probs.scatter_(
+            dim=-1, index=indices, src=prob
+        )
+    gating_probs = gating_probs.unsqueeze(
+        -1
+    )  # (b, t, num_experts, 1)
+
+    # Weighted sum over experts
+    y = (gating_probs * expert_outputs).sum(dim=-2)
+    return y</code></pre>
+<p>Next, we have to make a small modification to the TransformerBlock:</p>
+<p>class TransformerBlock(nn.Module): def <strong>init</strong>(self, cfg): super().__init__() self.att = GroupedQueryAttention( d_in=cfg[“emb_dim”], num_heads=cfg[“n_heads”], head_dim=cfg[“head_dim”], num_kv_groups=cfg[“n_kv_groups”], qk_norm=cfg[“qk_norm”], dtype=cfg[“dtype”] ) if cfg[“num_experts”] &gt; 0: # NEW self.ff = MoEFeedForward(cfg) # NEW else: self.ff = FeedForward(cfg) self.norm1 = RMSNorm(cfg[“emb_dim”], eps=1e-6) self.norm2 = RMSNorm(cfg[“emb_dim”], eps=1e-6)</p>
+<p>The config for the 30B-A3B variant looks like as follows, with 3 new keys added (“num_experts”, “num_experts_per_tok”, “moe_intermediate_size”):</p>
+<p>QWEN3_CONFIG = { “vocab_size”: 151_936, “context_length”: 262_144, “emb_dim”: 2048, “n_heads”: 32, “n_layers”: 48, “head_dim”: 128, “qk_norm”: True, “n_kv_groups”: 4, “rope_base”: 10_000_000.0, “dtype”: torch.bfloat16, “num_experts”: 128, # NEW “num_experts_per_tok”: 8, # NEW “moe_intermediate_size”: 768, # NEW }</p>
+<p>Finally, we have to modify the weight loading function with these new keys in mind:</p>
+<p>def load_weights_into_qwen(model, param_config, params): # … # Feedforward weights if “num_experts” in param_config: # Load router (gating) weights block.ff.gate.weight = assign( block.ff.gate.weight, params[f”model.layers.{l}.mlp.gate.weight”], f”model.layers.{l}.mlp.gate.weight” ) # Load expert weights for e in range(param_config[“num_experts”]): prefix = f”model.layers.{l}.mlp.experts.{e}” block.ff.fc1[e].weight = assign( block.ff.fc1[e].weight, params[f”{prefix}.gate_proj.weight”], f”{prefix}.gate_proj.weight” ) block.ff.fc2[e].weight = assign( block.ff.fc2[e].weight, params[f”{prefix}.up_proj.weight”], f”{prefix}.up_proj.weight” ) block.ff.fc3[e].weight = assign( block.ff.fc3[e].weight, params[f”{prefix}.down_proj.weight”], f”{prefix}.down_proj.weight” ) # After assignin weights, # move expert layers from meta to CPU, # which is slower, # but allows the model to run on a single GPU block.ff.fc1[e] = block.ff.fc1[e].to(“cpu”) block.ff.fc2[e] = block.ff.fc2[e].to(“cpu”) block.ff.fc3[e] = block.ff.fc3[e].to(“cpu”) # …</p>
+<p>You can find a standalone notebook with this MoE implementation here: standalone-qwen3-moe-plus-kvcache.ipynb</p>
+<p>Conclusion</p>
+<p>In this walkthrough, we stripped Qwen3 down to its core components and rebuilt it in plain PyTorch.</p>
+<p>Along the way, we implemented all the essential building bloks: RMSNorm and QK-Norm normalization (and training stability), SwiGLU for for the feed-forward component, RoPE for positional encoding, grouped-query attention (GQA) for scalable memory use (esp.&nbsp;when used with a KV cache).</p>
+<p>Once the building blocks were in place, we assembled them into a reusable <code>Qwen3Model</code>, loaded real, trained Qwen3 weights, implemented a text generation function, added a lightweight chat UI, and finally showed how the same design generalizes to Mixture-of-Experts (MoE) variants.</p>
+<p>The code examples hopefully made these components more clear and tangible!</p>
+<p>A final note: this code and write-up are meant for learning and experimentation. For production workloads, you will be much better off with optimized serving tools like Ollama (for simple local serving) or vLLM (for high-throughput, production-ready inference)</p>
+<p>In any case, my hope is that this deep dive helps with your intuition for reading modern LLM papers and gives you confidence and motivation to tinker!&nbsp;</p>
+<p>Happy coding!</p>
+<p>Build A Reasoning Model From Scratch</p>
+<p>I have been working on something new: 📚 Build a Reasoning Model (From Scratch).</p>
+<p>The first chapters just went live last week!</p>
+<p>Figure 21: Visual overview of the Build a Reasoning Model (From Scratch) book.</p>
+<p>Reasoning is one of the most exciting and important recent advances in improving LLMs, but it’s also one of the easiest to misunderstand if you only hear the term reasoning and read about it in theory. So, in this book, I am taking a hands-on approach to building a reasoning LLM from scratch.</p>
+<p>If you liked “Build A Large Language Model (From Scratch)”, this book is written in a similar style in terms of building everything from scratch in pure PyTorch.</p>
+<p>It’s a standalone book, but it basically continues where “Build A Large Language Model (From Scratch)” left off: we start with a pre-trained LLM (the Qwen3 base model we implemented in this article) and add reasoning methods (inference-time scaling, reinforcement learning, distillation) to improve its reasoning capabilities.</p>
+<p>Here’s the table of contents to give you a better idea:</p>
+<p>Chapter 1: Understanding reasoning models</p>
+<p>Chapter 2: Generating text with a pre-trained LLM</p>
+<p>Chapter 3: Evaluating reasoning models</p>
+<p>Chapter 4: Improving reasoning with inference-time scaling</p>
+<p>Chapter 5: Training reasoning models with reinforcement learning</p>
+<p>Chapter 6: Distilling reasoning models for efficient reasoning</p>
+<p>Chapter 7: Improving the reasoning pipeline and future research directions</p>
+<p>Appendix A: References and further reading</p>
+<p>Appendix B: Exercise solutions</p>
+<p>Appendix C: LLM source code step by step</p>
+<p>Appendix D: Loading larger models</p>
+<p>Appendix E: KV-caching with batch support</p>
+<p>If you want to check it out, it’s available for pre-order from the publisher here.</p>
+<p>(How it works is you will get immediate access to the first chapters, each new chapter as it’s released, and the full book once complete.)</p>
+<p>Thanks for subscribing to Ahead of AI! Your support means a great deal and is tremendously helpful in continuing this journey as an independent researcher. Thank you!</p>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, LayerNorm</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
