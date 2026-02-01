@@ -1,2 +1,2561 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"></html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2026-01-20">
+
+<title>Why Robots Keep Crashing Into Walls (And How Diffusion Fixed It) – Foundation Models &amp; Robotics</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="../../../site_libs/quarto-contrib/videojs/video.min.js"></script>
+<link href="../../../site_libs/quarto-contrib/videojs/video-js.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Foundation Models &amp; Robotics</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#sec-explicit" id="toc-sec-explicit" class="nav-link active" data-scroll-target="#sec-explicit">Explicit Policies (And Why They Fail)</a></li>
+  <li><a href="#sec-multimodality" id="toc-sec-multimodality" class="nav-link" data-scroll-target="#sec-multimodality">The Multimodality Problem</a>
+  <ul class="collapse">
+  <li><a href="#what-about-mixture-models" id="toc-what-about-mixture-models" class="nav-link" data-scroll-target="#what-about-mixture-models">What About Mixture Models?</a></li>
+  <li><a href="#implicit-policies" id="toc-implicit-policies" class="nav-link" data-scroll-target="#implicit-policies">Implicit Policies</a></li>
+  </ul></li>
+  <li><a href="#enter-diffusion-policy" id="toc-enter-diffusion-policy" class="nav-link" data-scroll-target="#enter-diffusion-policy">Enter Diffusion Policy</a>
+  <ul class="collapse">
+  <li><a href="#why-diffusion-handles-multimodality" id="toc-why-diffusion-handles-multimodality" class="nav-link" data-scroll-target="#why-diffusion-handles-multimodality">Why Diffusion Handles Multimodality</a></li>
+  </ul></li>
+  <li><a href="#sec-formulation" id="toc-sec-formulation" class="nav-link" data-scroll-target="#sec-formulation">The Diffusion Policy Formulation</a>
+  <ul class="collapse">
+  <li><a href="#forward-process-training" id="toc-forward-process-training" class="nav-link" data-scroll-target="#forward-process-training">Forward Process (Training)</a></li>
+  <li><a href="#reverse-process-inference" id="toc-reverse-process-inference" class="nav-link" data-scroll-target="#reverse-process-inference">Reverse Process (Inference)</a></li>
+  <li><a href="#training-objective" id="toc-training-objective" class="nav-link" data-scroll-target="#training-objective">Training Objective</a></li>
+  </ul></li>
+  <li><a href="#sec-action-chunking" id="toc-sec-action-chunking" class="nav-link" data-scroll-target="#sec-action-chunking">Action Chunking: Predicting Sequences</a>
+  <ul class="collapse">
+  <li><a href="#the-compounding-error-problem" id="toc-the-compounding-error-problem" class="nav-link" data-scroll-target="#the-compounding-error-problem">The Compounding Error Problem</a></li>
+  <li><a href="#the-idle-action-problem" id="toc-the-idle-action-problem" class="nav-link" data-scroll-target="#the-idle-action-problem">The Idle Action Problem</a></li>
+  <li><a href="#the-three-horizons" id="toc-the-three-horizons" class="nav-link" data-scroll-target="#the-three-horizons">The Three Horizons</a></li>
+  <li><a href="#receding-horizon-control" id="toc-receding-horizon-control" class="nav-link" data-scroll-target="#receding-horizon-control">Receding Horizon Control</a></li>
+  </ul></li>
+  <li><a href="#sec-architectures" id="toc-sec-architectures" class="nav-link" data-scroll-target="#sec-architectures">Network Architectures</a>
+  <ul class="collapse">
+  <li><a href="#cnn-based-u-net" id="toc-cnn-based-u-net" class="nav-link" data-scroll-target="#cnn-based-u-net">CNN-Based (U-Net)</a></li>
+  <li><a href="#transformer-based" id="toc-transformer-based" class="nav-link" data-scroll-target="#transformer-based">Transformer-Based</a></li>
+  </ul></li>
+  <li><a href="#sec-conditioning" id="toc-sec-conditioning" class="nav-link" data-scroll-target="#sec-conditioning">Visual Conditioning</a>
+  <ul class="collapse">
+  <li><a href="#conditional-vs.-joint-distributions" id="toc-conditional-vs.-joint-distributions" class="nav-link" data-scroll-target="#conditional-vs.-joint-distributions">Conditional vs.&nbsp;Joint Distributions</a></li>
+  <li><a href="#why-conditional-modeling-works" id="toc-why-conditional-modeling-works" class="nav-link" data-scroll-target="#why-conditional-modeling-works">Why Conditional Modeling Works</a></li>
+  <li><a href="#efficient-feature-extraction" id="toc-efficient-feature-extraction" class="nav-link" data-scroll-target="#efficient-feature-extraction">Efficient Feature Extraction</a></li>
+  </ul></li>
+  <li><a href="#sec-ddim" id="toc-sec-ddim" class="nav-link" data-scroll-target="#sec-ddim">DDIM: Fast Inference</a>
+  <ul class="collapse">
+  <li><a href="#why-can-we-skip-steps" id="toc-why-can-we-skip-steps" class="nav-link" data-scroll-target="#why-can-we-skip-steps">Why Can We Skip Steps?</a></li>
+  <li><a href="#intuition-gps-vs.-turn-by-turn" id="toc-intuition-gps-vs.-turn-by-turn" class="nav-link" data-scroll-target="#intuition-gps-vs.-turn-by-turn">Intuition: GPS vs.&nbsp;Turn-by-Turn</a></li>
+  <li><a href="#why-it-works-theoretically" id="toc-why-it-works-theoretically" class="nav-link" data-scroll-target="#why-it-works-theoretically">Why It Works Theoretically</a></li>
+  </ul></li>
+  <li><a href="#sec-results" id="toc-sec-results" class="nav-link" data-scroll-target="#sec-results">Results</a>
+  <ul class="collapse">
+  <li><a href="#simulation-results" id="toc-simulation-results" class="nav-link" data-scroll-target="#simulation-results">Simulation Results</a></li>
+  <li><a href="#real-world-results" id="toc-real-world-results" class="nav-link" data-scroll-target="#real-world-results">Real-World Results</a></li>
+  <li><a href="#the-push-t-visualization" id="toc-the-push-t-visualization" class="nav-link" data-scroll-target="#the-push-t-visualization">The Push-T Visualization</a></li>
+  <li><a href="#robustness-to-perturbations" id="toc-robustness-to-perturbations" class="nav-link" data-scroll-target="#robustness-to-perturbations">Robustness to Perturbations</a></li>
+  </ul></li>
+  <li><a href="#sec-misconceptions" id="toc-sec-misconceptions" class="nav-link" data-scroll-target="#sec-misconceptions">Common Misconceptions</a></li>
+  <li><a href="#sec-control-theory" id="toc-sec-control-theory" class="nav-link" data-scroll-target="#sec-control-theory">Connection to Optimal Control Theory</a>
+  <ul class="collapse">
+  <li><a href="#the-setup" id="toc-the-setup" class="nav-link" data-scroll-target="#the-setup">The Setup</a></li>
+  <li><a href="#the-result" id="toc-the-result" class="nav-link" data-scroll-target="#the-result">The Result</a></li>
+  <li><a href="#intuition-whats-happening" id="toc-intuition-whats-happening" class="nav-link" data-scroll-target="#intuition-whats-happening">Intuition: What’s Happening?</a></li>
+  <li><a href="#multi-step-extension" id="toc-multi-step-extension" class="nav-link" data-scroll-target="#multi-step-extension">Multi-Step Extension</a></li>
+  </ul></li>
+  <li><a href="#whos-using-this" id="toc-whos-using-this" class="nav-link" data-scroll-target="#whos-using-this">Who’s Using This?</a></li>
+  <li><a href="#practical-implementation" id="toc-practical-implementation" class="nav-link" data-scroll-target="#practical-implementation">Practical Implementation</a></li>
+  <li><a href="#sec-open-questions" id="toc-sec-open-questions" class="nav-link" data-scroll-target="#sec-open-questions">Open Questions and Recent Progress</a>
+  <ul class="collapse">
+  <li><a href="#diffusion-is-too-slow-solved" id="toc-diffusion-is-too-slow-solved" class="nav-link" data-scroll-target="#diffusion-is-too-slow-solved">1. “Diffusion is Too Slow” — Solved ✅</a></li>
+  <li><a href="#cant-scale-to-humanoids-solved" id="toc-cant-scale-to-humanoids-solved" class="nav-link" data-scroll-target="#cant-scale-to-humanoids-solved">2. “Can’t Scale to Humanoids” — Solved ✅</a></li>
+  <li><a href="#optimal-action-chunk-length-task-dependent" id="toc-optimal-action-chunk-length-task-dependent" class="nav-link" data-scroll-target="#optimal-action-chunk-length-task-dependent">3. Optimal Action Chunk Length — Task-Dependent ⚠️</a></li>
+  <li><a href="#why-does-diffusion-actually-work-surprising-answer" id="toc-why-does-diffusion-actually-work-surprising-answer" class="nav-link" data-scroll-target="#why-does-diffusion-actually-work-surprising-answer">4. Why Does Diffusion Actually Work? — Surprising Answer 🤔</a></li>
+  <li><a href="#nonlinear-control-theory-active-research" id="toc-nonlinear-control-theory-active-research" class="nav-link" data-scroll-target="#nonlinear-control-theory-active-research">5. Nonlinear Control Theory — Active Research 📚</a></li>
+  </ul></li>
+  <li><a href="#sec-insights" id="toc-sec-insights" class="nav-link" data-scroll-target="#sec-insights">Research Insights</a>
+  <ul class="collapse">
+  <li><a href="#the-real-contribution-isnt-diffusion-for-robotics" id="toc-the-real-contribution-isnt-diffusion-for-robotics" class="nav-link" data-scroll-target="#the-real-contribution-isnt-diffusion-for-robotics">The Real Contribution Isn’t “Diffusion for Robotics”</a></li>
+  <li><a href="#challenging-dogma-leads-to-insight" id="toc-challenging-dogma-leads-to-insight" class="nav-link" data-scroll-target="#challenging-dogma-leads-to-insight">Challenging Dogma Leads to Insight</a></li>
+  <li><a href="#the-right-factorization-depends-on-the-task" id="toc-the-right-factorization-depends-on-the-task" class="nav-link" data-scroll-target="#the-right-factorization-depends-on-the-task">The Right Factorization Depends on the Task</a></li>
+  <li><a href="#action-chunking-connects-to-temporal-abstraction" id="toc-action-chunking-connects-to-temporal-abstraction" class="nav-link" data-scroll-target="#action-chunking-connects-to-temporal-abstraction">Action Chunking Connects to Temporal Abstraction</a></li>
+  <li><a href="#the-meta-lesson-import-and-adapt" id="toc-the-meta-lesson-import-and-adapt" class="nav-link" data-scroll-target="#the-meta-lesson-import-and-adapt">The Meta-Lesson: Import and Adapt</a></li>
+  </ul></li>
+  <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Why Robots Keep Crashing Into Walls (And How Diffusion Fixed It)</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">robotics</div>
+    <div class="quarto-category">diffusion-policy</div>
+    <div class="quarto-category">imitation-learning</div>
+    <div class="quarto-category">robot-learning</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 20, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Train a robot to avoid an obstacle. Show it 100 demos going left, 100 going right. What does it learn?</p>
+<p>It drives straight into the wall.</p>
+<p>This isn’t a bug. It’s a fundamental flaw in how we’ve been teaching robots for decades. The neural network <em>averages</em> “go left” and “go right” into “go straight ahead” — directly into the obstacle.</p>
+<p>In 2023, a single paper fixed this. <strong>Diffusion Policy</strong><span class="math inline">\(^{[1]}\)</span> showed that the same technique generating Stable Diffusion images could teach robots to move — and outperformed everything before it by 46.9%.</p>
+<div id="fig-teaser" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-teaser-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="teaser.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-teaser-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Diffusion Policy generates robot actions by iteratively denoising random noise, conditioned on visual observations. Figure from Chi et al.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Diffusion Policy</strong> (Chi et al., RSS 2023)<span class="math inline">\(^{[1]}\)</span> — 2,000+ citations, now the standard approach for robot learning.</p>
+<ul>
+<li><strong>Problem</strong>: Behavioral cloning averages multiple valid actions → nonsense</li>
+<li><strong>Fix</strong>: Generate actions like images — denoise from random noise</li>
+<li><strong>Result</strong>: 46.9% improvement across 12 tasks</li>
+</ul>
+</div>
+</div>
+<section id="sec-explicit" class="level2">
+<h2 class="anchored" data-anchor-id="sec-explicit">Explicit Policies (And Why They Fail)</h2>
+<p>Your first instinct for robot learning is probably: “collect demos, train a neural net to predict actions.” This is the <strong>explicit policy</strong> approach — direct regression from observations to actions:</p>
+<p><span id="eq-bc-loss"><span class="math display">\[
+\pi_\theta(s) = \arg\min_\theta \mathbb{E}_{(s,a) \sim \mathcal{D}} \left[ \| \pi_\theta(s) - a \|^2 \right]
+\tag{1}\]</span></span></p>
+<p>Here <span class="math inline">\(s\)</span> is the <strong>state</strong> (what the robot observes), <span class="math inline">\(a\)</span> is the <strong>action</strong> (what it should do), and <span class="math inline">\(\mathcal{D}\)</span> is your dataset of expert demonstrations. Train a network <span class="math inline">\(\pi_\theta\)</span> to minimize the mean squared error between predicted and demonstrated actions. What could go wrong?</p>
+<p>As it turns out, quite a lot.</p>
+</section>
+<section id="sec-multimodality" class="level2">
+<h2 class="anchored" data-anchor-id="sec-multimodality">The Multimodality Problem</h2>
+<p>Consider a robot approaching an obstacle. In your demonstrations, sometimes the expert goes <strong>left</strong>, sometimes <strong>right</strong> — both are valid. What does a standard neural network trained with MSE loss learn?</p>
+<div id="fig-multimodal" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-multimodal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="multimodality-problem.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multimodal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The averaging problem: two valid paths (left and right) get averaged into a collision course
+</figcaption>
+</figure>
+</div>
+<div id="multimodal-problem" class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>The Averaging Disaster
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When demonstrations contain multiple valid actions for the same state, MSE loss produces the <strong>average</strong> of those actions. Going left and going right averages to going <strong>straight ahead</strong> — directly into the obstacle (<a href="#fig-multimodal" class="quarto-xref">Figure&nbsp;2</a>).</p>
+<p>This isn’t a rare edge case. Multimodality appears everywhere in manipulation:</p>
+<ul>
+<li><strong>Short-horizon</strong>: Approach an object from the left or right</li>
+<li><strong>Long-horizon</strong>: Different orderings of subtasks (stack blocks A-B-C or C-B-A)</li>
+<li><strong>Grasping</strong>: Multiple valid grasp poses for the same object</li>
+</ul>
+</div>
+</div>
+<p>The mathematical reason is fundamental: neural networks with continuous activations draw smooth curves through data. They cannot represent the <strong>sharp discontinuity</strong> between “go left” and “go right” — the decision boundary would need to be infinitely steep.<span class="math inline">\(^{[2]}\)</span></p>
+<section id="what-about-mixture-models" class="level3">
+<h3 class="anchored" data-anchor-id="what-about-mixture-models">What About Mixture Models?</h3>
+<p>You might think: “Use a Gaussian Mixture Model (GMM) to capture multiple modes!” Methods like LSTM-GMM try this, but face challenges:</p>
+<ul>
+<li>Must <strong>pre-specify</strong> the number of modes (how many valid actions exist?)</li>
+<li>Often <strong>biased toward one mode</strong> in practice</li>
+<li>Struggles with <strong>high-dimensional</strong> action spaces</li>
+</ul>
+<p>These are still <strong>explicit policies</strong> — they output actions directly, just with a more flexible distribution.</p>
+</section>
+<section id="implicit-policies" class="level3">
+<h3 class="anchored" data-anchor-id="implicit-policies">Implicit Policies</h3>
+<p><strong>Implicit policies</strong> take a different approach: instead of outputting actions directly, they learn an <strong>energy function</strong> <span class="math inline">\(E(s, a)\)</span> over state-action pairs. Low energy = good action. This naturally represents multimodal distributions — multiple actions can have low energy.</p>
+<p>Energy-based methods like Implicit BC (IBC)<span class="math inline">\(^{[3]}\)</span> can represent arbitrary distributions, but require <strong>negative sampling</strong> during training — notoriously unstable and prone to mode collapse.</p>
+</section>
+</section>
+<section id="enter-diffusion-policy" class="level2">
+<h2 class="anchored" data-anchor-id="enter-diffusion-policy">Enter Diffusion Policy</h2>
+<div id="fig-policy-types" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-policy-types-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="policy-representations.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-policy-types-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Three policy representations: (a) Explicit policies output actions directly, (b) Implicit policies use energy functions, (c) Diffusion policies iteratively refine noise via learned gradients. Figure from Chi et al.&nbsp;2023.
+</figcaption>
+</figure>
+</div>
+<p>Here’s the key insight from Chi et al.<span class="math inline">\(^{[1]}\)</span>: <strong>diffusion models naturally represent multimodal distributions</strong>. The same property that lets them generate diverse images lets them generate diverse robot actions.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: From Images to Actions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In image generation, diffusion starts with noise and iteratively refines it into a coherent image. For robotics, we start with noise and refine it into a coherent <strong>action sequence</strong>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 48%">
+<col style="width: 51%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Image Diffusion</th>
+<th>Action Diffusion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Random pixels → Image</td>
+<td>Random actions → Trajectory</td>
+</tr>
+<tr class="even">
+<td>Conditioned on text prompt</td>
+<td>Conditioned on visual observation</td>
+</tr>
+<tr class="odd">
+<td>Multiple valid images per prompt</td>
+<td>Multiple valid trajectories per observation</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The denoising process acts like <strong>gradient descent on a learned energy landscape</strong>. Different random initializations converge to different modes — the policy “commits” to one valid action sequence per rollout while learning the full multimodal distribution.</p>
+<section id="why-diffusion-handles-multimodality" class="level3">
+<h3 class="anchored" data-anchor-id="why-diffusion-handles-multimodality">Why Diffusion Handles Multimodality</h3>
+<p>Three mechanisms make this work:</p>
+<ol type="1">
+<li><p><strong>Stochastic initialization</strong>: Each inference starts from random Gaussian noise, naturally exploring different modes</p></li>
+<li><p><strong>Score function learning</strong>: Instead of predicting actions directly, the network predicts the <strong>gradient</strong> of log-probability. This sidesteps the normalization constant that makes energy-based methods unstable</p></li>
+<li><p><strong>Iterative refinement</strong>: Langevin dynamics sampling follows the learned gradient field toward high-probability regions, allowing the model to express arbitrarily complex distributions</p></li>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>What is Langevin Dynamics?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><strong>Langevin dynamics</strong> is a sampling algorithm that draws samples from a distribution using only its <strong>score function</strong> <span class="math inline">\(\nabla \log p(x)\)</span>:</p>
+<p><span class="math display">\[
+x_{t+1} = x_t + \frac{\eta}{2} \nabla \log p(x_t) + \sqrt{\eta} \, \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\]</span></p>
+<p><strong>Intuition</strong>: It’s gradient ascent with noise.</p>
+<ul>
+<li>The gradient term <span class="math inline">\(\nabla \log p(x)\)</span> pushes toward high-probability regions</li>
+<li>The noise term <span class="math inline">\(\sqrt{\eta} \epsilon\)</span> prevents getting stuck and enables exploration of multiple modes</li>
+</ul>
+<p><strong>Why it matters for diffusion</strong>: The reverse diffusion process is essentially Langevin dynamics with a time-varying score. The SDE formulation from <a href="../../diffusion/6-score-functions/">Part 6</a> of our diffusion series shows this connection:</p>
+<p><span class="math display">\[
+dX_t = \underbrace{u_t^{target}}_{\text{deterministic flow}} + \underbrace{\frac{\sigma_t^2}{2} \nabla \log p_t}_{\text{score correction}} \, dt + \sigma_t \, dW_t
+\]</span></p>
+<p>The score correction term is the Langevin-like component — it counteracts noise dispersion by pointing toward high-probability regions.</p>
+</div>
+</div>
+</div>
+<p>Watch this in action — Diffusion Policy learns both modes and commits to one per episode:</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video1" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title=""><source src="multimodal-demo.mp4"></video></div>
+<p><em>Diffusion Policy commits to one mode per rollout while learning multiple valid trajectories. Video from <a href="https://diffusion-policy.cs.columbia.edu/">Chi et al.</a><span class="math inline">\(^{[1]}\)</span></em></p>
+<p>Now let’s see exactly how this works mathematically.</p>
+</section>
+</section>
+<section id="sec-formulation" class="level2">
+<h2 class="anchored" data-anchor-id="sec-formulation">The Diffusion Policy Formulation</h2>
+<p>Understanding the math is essential for debugging, tuning, and extending the method. Let’s make this precise. Given an observation <span class="math inline">\(O_t\)</span>, we want to sample from the action distribution <span class="math inline">\(p(A_t | O_t)\)</span>, where <span class="math inline">\(A_t\)</span> is a <strong>sequence</strong> of future actions (more on this shortly).</p>
+<section id="forward-process-training" class="level3">
+<h3 class="anchored" data-anchor-id="forward-process-training">Forward Process (Training)</h3>
+<p>During training, we gradually corrupt clean action sequences with noise. This teaches the network what noise “looks like” at each corruption level:</p>
+<p><span id="eq-forward"><span class="math display">\[
+A_t^k = \sqrt{\bar{\alpha}_k} \cdot A_t^0 + \sqrt{1 - \bar{\alpha}_k} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
+\tag{2}\]</span></span></p>
+<p>Here <span class="math inline">\(A_t^0\)</span> is the <strong>clean action sequence</strong> from demonstrations, <span class="math inline">\(\epsilon\)</span> is <strong>random Gaussian noise</strong>, <span class="math inline">\(k\)</span> indexes <strong>diffusion timesteps</strong> (not robot timesteps), and <span class="math inline">\(\bar{\alpha}_k\)</span> is a noise schedule controlling how much signal remains at step <span class="math inline">\(k\)</span>.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Notation: DDPM (This Paper) vs Continuous Diffusion (Our Series)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>This paper uses <strong>DDPM</strong> (Ho et al.&nbsp;2020), which is a <strong>discrete-time</strong> formulation. Our <a href="../../diffusion/5-diffusion-sde/">diffusion series</a> uses a <strong>continuous-time SDE</strong> formulation (Song et al.&nbsp;2021), which came later and simplified many things.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 3%">
+<col style="width: 39%">
+<col style="width: 57%">
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>DDPM (this paper, 2020)</th>
+<th>Continuous SDE (our series, 2021+)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Time</strong></td>
+<td>Discrete: <span class="math inline">\(k \in \{0, 1, ..., K\}\)</span></td>
+<td>Continuous: <span class="math inline">\(t \in [0, 1]\)</span></td>
+</tr>
+<tr class="even">
+<td><strong>Convention</strong></td>
+<td><span class="math inline">\(k=0\)</span> = data, <span class="math inline">\(k=K\)</span> = noise</td>
+<td><span class="math inline">\(t=0\)</span> = noise, <span class="math inline">\(t=1\)</span> = data</td>
+</tr>
+<tr class="odd">
+<td><strong>Forward process</strong></td>
+<td>Markov chain with noise schedule <span class="math inline">\(\alpha_k, \beta_k\)</span></td>
+<td>SDE: <span class="math inline">\(dX_t = f_t dt + g_t dW_t\)</span></td>
+</tr>
+<tr class="even">
+<td><strong>Training</strong></td>
+<td>Variational lower bound derivation</td>
+<td>Direct score matching</td>
+</tr>
+<tr class="odd">
+<td><strong>Noise schedule</strong></td>
+<td>Must carefully design <span class="math inline">\(\beta_1, ..., \beta_K\)</span></td>
+<td>Simpler, often just linear</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why continuous simplifies things:</strong></p>
+<ol type="1">
+<li><strong>No complex schedules</strong>: DDPM requires careful tuning of discrete <span class="math inline">\(\beta_k\)</span> values. Continuous formulation uses simpler schedules.</li>
+<li><strong>Cleaner math</strong>: Theorems become equalities instead of bounds. The loss is tight, not a lower bound.</li>
+<li><strong>Flexible sampling</strong>: Can use any number of steps at inference (10, 50, 100) without retraining.</li>
+</ol>
+<p><strong>The formulas:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 36%">
+<col style="width: 63%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>DDPM (discrete)</th>
+<th>Continuous SDE (our series)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(A^k = \sqrt{\bar{\alpha}_k} A^0 + \sqrt{1-\bar{\alpha}_k} \epsilon\)</span></td>
+<td><span class="math inline">\(dX_t = u_t(X_t) dt + \sigma_t dW_t\)</span></td>
+</tr>
+<tr class="even">
+<td>Forward: add noise step-by-step</td>
+<td>Forward: continuous noising process</td>
+</tr>
+<tr class="odd">
+<td>Reverse: predict <span class="math inline">\(\epsilon\)</span>, denoise</td>
+<td>Reverse: follow score <span class="math inline">\(\nabla \log p_t\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>The connection: DDPM is a <strong>discretization</strong> of the continuous VP-SDE. See <a href="../../diffusion/5-diffusion-sde/">Part 5</a> for the SDE derivation and <a href="../../diffusion/6-score-functions/">Part 6</a> for score functions.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="reverse-process-inference" class="level3">
+<h3 class="anchored" data-anchor-id="reverse-process-inference">Reverse Process (Inference)</h3>
+<p>At test time, we start from pure noise and iteratively denoise (<a href="#fig-denoising" class="quarto-xref">Figure&nbsp;4</a>):</p>
+<div id="fig-denoising" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-denoising-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="diffusion-denoising.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-denoising-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Diffusion Policy iteratively refines random noise into a coherent action trajectory, conditioned on the observation
+</figcaption>
+</figure>
+</div>
+<p><span id="eq-reverse"><span class="math display">\[
+A_t^{k-1} = \frac{1}{\sqrt{\alpha_k}} \left( A_t^k - \frac{1 - \alpha_k}{\sqrt{1 - \bar{\alpha}_k}} \epsilon_\theta(O_t, A_t^k, k) \right) + \sigma_k z
+\tag{3}\]</span></span></p>
+<p>Here <span class="math inline">\(\epsilon_\theta\)</span> is a neural network predicting the noise, <span class="math inline">\(z \sim \mathcal{N}(0, I)\)</span> is fresh noise for stochasticity, and <span class="math inline">\(\alpha_k, \sigma_k\)</span> are schedule parameters. See the derivation below for how this formula arises.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Derivation: Where Does This Equation Come From?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><strong>The goal</strong>: We want to reverse the noising process. Given a noisy action, recover the clean one.</p>
+<p><strong>The key idea</strong>: If we knew what noise was added, we could subtract it out. We train a neural network to predict that noise.</p>
+<p><strong>Variables</strong> (refer back to these):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 52%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(A^0\)</span></td>
+<td>Clean action (what we want)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(A^k\)</span></td>
+<td>Noisy action at diffusion step <span class="math inline">\(k\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\epsilon\)</span></td>
+<td>The actual noise that was added (unknown at inference)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\epsilon_\theta\)</span></td>
+<td>Network’s <strong>prediction</strong> of the noise</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\bar{\alpha}_k\)</span></td>
+<td>Cumulative noise schedule (how much signal remains at step <span class="math inline">\(k\)</span>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Step 1 — The forward process is a simple formula:</strong></p>
+<p>From <a href="#eq-forward" class="quarto-xref">Equation&nbsp;2</a>, we can write any noisy action as: <span class="math display">\[A^k = \underbrace{\sqrt{\bar{\alpha}_k}}_{\text{signal scaling}} \cdot A^0 + \underbrace{\sqrt{1-\bar{\alpha}_k}}_{\text{noise scaling}} \cdot \epsilon\]</span></p>
+<p>This is just: (scaled clean action) + (scaled noise). No iterative steps needed.</p>
+<p><strong>Step 2 — Rearrange to solve for the clean action:</strong></p>
+<p>If we knew the noise <span class="math inline">\(\epsilon\)</span>, we could solve for the clean action <span class="math inline">\(A^0\)</span>: <span class="math display">\[A^0 = \frac{A^k - \sqrt{1-\bar{\alpha}_k} \cdot \epsilon}{\sqrt{\bar{\alpha}_k}}\]</span></p>
+<p>Read this as: “subtract the scaled noise from the noisy action, then rescale.”</p>
+<p><strong>Step 3 — Train a network to predict the noise:</strong></p>
+<p>We don’t know the true noise <span class="math inline">\(\epsilon\)</span> at inference time. So we train a neural network <span class="math inline">\(\epsilon_\theta\)</span> to predict it from the noisy action and observation.</p>
+<p>Substituting the network’s prediction gives us an <strong>estimate</strong> of the clean action: <span class="math display">\[\hat{A}^0 = \frac{A^k - \sqrt{1-\bar{\alpha}_k} \cdot \epsilon_\theta(O, A^k, k)}{\sqrt{\bar{\alpha}_k}}\]</span></p>
+<p><strong>Step 4 — Use the estimate to take a denoising step:</strong></p>
+<p>We want <span class="math inline">\(p(A^{k-1} | A^k)\)</span> — the reverse step. Using Bayes and conditioning on <span class="math inline">\(A^0\)</span>:</p>
+<p><span class="math display">\[q(A^{k-1} | A^k, A^0) = \mathcal{N}(A^{k-1}; \tilde{\mu}_k, \tilde{\sigma}_k^2 I)\]</span></p>
+<p>The posterior mean and variance work out to: <span class="math display">\[
+\tilde{\mu}_k = \frac{\sqrt{\bar{\alpha}_{k-1}} \beta_k}{1-\bar{\alpha}_k} A^0 + \frac{\sqrt{\alpha_k}(1-\bar{\alpha}_{k-1})}{1-\bar{\alpha}_k} A^k
+\]</span> <span class="math display">\[
+\tilde{\sigma}_k^2 = \frac{\beta_k (1-\bar{\alpha}_{k-1})}{1-\bar{\alpha}_k}
+\]</span></p>
+<p>where <span class="math inline">\(\beta_k = 1 - \alpha_k\)</span> (noise added at step <span class="math inline">\(k\)</span>).</p>
+<p>Now substitute our estimate <span class="math inline">\(\hat{A}^0\)</span> from Step 3. After simplification (grouping terms in <span class="math inline">\(A^k\)</span> and <span class="math inline">\(\epsilon_\theta\)</span>), we get <a href="#eq-reverse" class="quarto-xref">Equation&nbsp;3</a>:</p>
+<p><span class="math display">\[
+A^{k-1} = \frac{1}{\sqrt{\alpha_k}} \left( A^k - \frac{1-\alpha_k}{\sqrt{1-\bar{\alpha}_k}} \epsilon_\theta \right) + \sigma_k z
+\]</span></p>
+<p>The first term removes predicted noise; the second adds fresh noise for the next step.</p>
+<p><strong>Connection to our diffusion series:</strong></p>
+<p>In <a href="../../diffusion/6-score-functions/">Part 6</a>, we derived the conditional score function for a Gaussian. For DDPM’s forward process <span class="math inline">\(p_k(A^k | A^0) = \mathcal{N}(\sqrt{\bar{\alpha}_k} A^0, (1-\bar{\alpha}_k) I)\)</span>:</p>
+<p><span class="math display">\[\nabla_{A^k} \log p_k(A^k | A^0) = -\frac{A^k - \sqrt{\bar{\alpha}_k} A^0}{1-\bar{\alpha}_k} = -\frac{\epsilon}{\sqrt{1-\bar{\alpha}_k}}\]</span></p>
+<p>(The second equality uses the forward process: <span class="math inline">\(A^k - \sqrt{\bar{\alpha}_k} A^0 = \sqrt{1-\bar{\alpha}_k} \epsilon\)</span>)</p>
+<p><strong>Predicting noise is equivalent to predicting the score direction!</strong> The network learns which way leads to valid actions.</p>
+<p>In <a href="../../diffusion/6-score-functions/">Part 6</a>, we also showed the SDE extension trick — given an ODE with drift <span class="math inline">\(u_t\)</span>, we can add noise while preserving the same probability path: <span class="math display">\[dX_t = \left[u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t\right] dt + \sigma_t dW_t\]</span></p>
+<p>The score term <span class="math inline">\(\frac{\sigma_t^2}{2} \nabla \log p_t\)</span> corrects for noise dispersion, pointing samples toward high-probability regions. The DDPM reverse step is a discrete-time version of this principle.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: What the Network Learns
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The network <span class="math inline">\(\epsilon_\theta(O_t, A_t^k, k)\)</span> learns to answer: “Given this noisy action sequence and this observation, what noise was added?”</p>
+<p>Equivalently, it learns the <strong>score function</strong> — the gradient of log-probability pointing toward valid actions. The denoising process follows this gradient field from noise toward high-probability action sequences.</p>
+</div>
+</div>
+</section>
+<section id="training-objective" class="level3">
+<h3 class="anchored" data-anchor-id="training-objective">Training Objective</h3>
+<p>The training objective is beautifully simple. We add noise to expert actions, then train the network to predict what noise was added:</p>
+<p>The loss is simply mean squared error between true and predicted noise:</p>
+<p><span id="eq-loss"><span class="math display">\[
+\mathcal{L}(\theta) = \mathbb{E}_{k, \epsilon, (A_t^0, O_t)} \left[ \| \epsilon - \epsilon_\theta(O_t, A_t^k, k) \|^2 \right]
+\tag{4}\]</span></span></p>
+<p>This elegant formulation avoids the normalization constant entirely — we never need to compute <span class="math inline">\(Z = \int \exp(-E(a)) da\)</span>.</p>
+<p>So far, we’ve focused on <em>what</em> to predict. But there’s another crucial design choice: predicting <strong>sequences</strong> of actions, not just single steps. This turns out to be just as important as the diffusion formulation itself.</p>
+</section>
+</section>
+<section id="sec-action-chunking" class="level2">
+<h2 class="anchored" data-anchor-id="sec-action-chunking">Action Chunking: Predicting Sequences</h2>
+<p>A crucial design choice in Diffusion Policy is predicting <strong>sequences</strong> of future actions rather than single-step actions. This is called <strong>action chunking</strong>, and it solves several problems at once.</p>
+<section id="the-compounding-error-problem" class="level3">
+<h3 class="anchored" data-anchor-id="the-compounding-error-problem">The Compounding Error Problem</h3>
+<p>In standard closed-loop control, errors compound quadratically:</p>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Compounding Errors in Imitation Learning
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>With matched train/test distributions, total error scales as <span class="math inline">\(O(\epsilon T)\)</span> — linear in horizon <span class="math inline">\(T\)</span>.</p>
+<p>With distribution shift (the reality), error scales as <span class="math inline">\(O(\epsilon T^2)\)</span> — <strong>quadratic</strong> growth.<span class="math inline">\(^{[4]}\)</span></p>
+<p>A small mistake pushes the robot into unfamiliar states, causing larger mistakes, causing even more unfamiliar states…</p>
+</div>
+</div>
+<p>Action chunking dramatically reduces this: a 500-step task with chunk size <span class="math inline">\(k=100\)</span> becomes effectively a <strong>5-step problem</strong>.</p>
+</section>
+<section id="the-idle-action-problem" class="level3">
+<h3 class="anchored" data-anchor-id="the-idle-action-problem">The Idle Action Problem</h3>
+<p>Human demonstrations contain pauses — waiting before prying open a lid, hesitating before a delicate insertion. A single-step policy sees the same observation and must choose between “stay still” and “move” — impossible from current state alone.</p>
+<p>With action chunking, the sequence encodes timing implicitly: “stay still for 10 steps, then move.” The behavior becomes Markovian again as long as pauses fit within a chunk.</p>
+</section>
+<section id="the-three-horizons" class="level3">
+<h3 class="anchored" data-anchor-id="the-three-horizons">The Three Horizons</h3>
+<div id="fig-action-chunking" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-action-chunking-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="action-chunking.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-action-chunking-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Receding horizon control: predict 16 actions, execute 8, then replan with new observations
+</figcaption>
+</figure>
+</div>
+<p>Diffusion Policy uses three temporal parameters (<a href="#fig-action-chunking" class="quarto-xref">Figure&nbsp;5</a>):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 17%">
+<col style="width: 31%">
+<col style="width: 27%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>Symbol</th>
+<th>Typical Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Observation horizon</td>
+<td><span class="math inline">\(T_o\)</span></td>
+<td>2</td>
+<td>Past observation steps used as context</td>
+</tr>
+<tr class="even">
+<td>Prediction horizon</td>
+<td><span class="math inline">\(T_p\)</span></td>
+<td>16</td>
+<td>Future actions predicted by the model</td>
+</tr>
+<tr class="odd">
+<td>Action horizon</td>
+<td><span class="math inline">\(T_a\)</span></td>
+<td>8</td>
+<td>Actions actually executed before replanning</td>
+</tr>
+</tbody>
+</table>
+<p>The key insight is <span class="math inline">\(T_a &lt; T_p\)</span>: we predict more actions than we execute, then <strong>replan</strong> with updated observations.</p>
+</section>
+<section id="receding-horizon-control" class="level3">
+<h3 class="anchored" data-anchor-id="receding-horizon-control">Receding Horizon Control</h3>
+<p>This creates a receding horizon scheme:</p>
+<pre><code>Time 0: Predict actions [0, 1, 2, ..., 15]
+        Execute actions [0, 1, 2, ..., 7]
+
+Time 8: Observe new state
+        Predict actions [8, 9, 10, ..., 23]
+        Execute actions [8, 9, 10, ..., 15]
+
+Time 16: Observe, replan, execute...</code></pre>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: GPS Navigation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Think of it like a GPS that continuously replans. You compute a route to the destination (prediction horizon), drive for a few miles (action horizon), then replan based on current position. This balances commitment to plans with responsiveness to new information.</p>
+</div>
+</div>
+<p><strong>Temporal ensembling</strong> further improves smoothness: query the policy at every timestep, producing overlapping predictions, then average them with exponential weights. This creates a voting mechanism across multiple predictions.<span class="math inline">\(^{[5]}\)</span></p>
+<p>With the formulation and temporal structure established, what neural network architectures work best for learning the denoising function <span class="math inline">\(\epsilon_\theta\)</span>?</p>
+</section>
+</section>
+<section id="sec-architectures" class="level2">
+<h2 class="anchored" data-anchor-id="sec-architectures">Network Architectures</h2>
+<p>What neural network actually learns the denoising function <span class="math inline">\(\epsilon_\theta\)</span>? The architecture choice significantly impacts both performance and training stability.</p>
+<div id="fig-architectures" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-architectures-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="paper-arch-figure.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-architectures-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Diffusion Policy architectures: (a) general formulation with observation/action horizons, (b) CNN-based with FiLM conditioning, (c) Transformer-based with cross-attention. Figure from Chi et al.&nbsp;2023.
+</figcaption>
+</figure>
+</div>
+<p>Diffusion Policy supports two architectures, each with distinct tradeoffs:</p>
+<section id="cnn-based-u-net" class="level3">
+<h3 class="anchored" data-anchor-id="cnn-based-u-net">CNN-Based (U-Net)</h3>
+<p>The default architecture uses a <strong>1D temporal U-Net</strong> (see <a href="#fig-architectures" class="quarto-xref">Figure&nbsp;6</a>(b)):</p>
+<ul>
+<li><strong>Visual encoder</strong>: ResNet-18 with spatial softmax pooling (extracts 32 keypoints per image)</li>
+<li><strong>Denoising network</strong>: 1D convolutions along the time axis with FiLM conditioning</li>
+<li><strong>Conditioning</strong>: Observations modulate every convolution layer via scale/shift</li>
+</ul>
+<p><strong>Strengths</strong>: Stable training, fewer hyperparameters, good default choice <strong>Weakness</strong>: Low-pass filtering bias — struggles with high-frequency action changes</p>
+</section>
+<section id="transformer-based" class="level3">
+<h3 class="anchored" data-anchor-id="transformer-based">Transformer-Based</h3>
+<p>The alternative uses a <strong>decoder-only transformer</strong> (see <a href="#fig-architectures" class="quarto-xref">Figure&nbsp;6</a>(c)):</p>
+<ul>
+<li><strong>Encoder</strong>: Processes conditioning (timestep embedding + observation embedding)</li>
+<li><strong>Decoder</strong>: Generates action sequence with causal attention</li>
+<li><strong>Cross-attention</strong>: Actions attend to observation embeddings in each layer</li>
+</ul>
+<p><strong>Strengths</strong>: Better for complex tasks, captures long-range dependencies <strong>Weakness</strong>: More hyperparameter-sensitive, requires careful tuning</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Practical Recommendation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Start with the <strong>CNN architecture</strong> (DP-C). It’s more stable and works well on most tasks. Switch to transformer (DP-T) if you see performance plateaus on complex, long-horizon tasks.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-conditioning" class="level2">
+<h2 class="anchored" data-anchor-id="sec-conditioning">Visual Conditioning</h2>
+<p>Both architectures need to incorporate visual observations. A key design choice distinguishes Diffusion Policy from earlier diffusion-based planning methods: <strong>what distribution do we model?</strong></p>
+<section id="conditional-vs.-joint-distributions" class="level3">
+<h3 class="anchored" data-anchor-id="conditional-vs.-joint-distributions">Conditional vs.&nbsp;Joint Distributions</h3>
+<p>Diffusion Policy models the <strong>conditional distribution</strong> <span class="math inline">\(p(A_t | O_t)\)</span> — actions given observations. This contrasts with Diffuser<span class="math inline">\(^{[7]}\)</span> (Janner et al.&nbsp;2022), which models the <strong>joint distribution</strong> <span class="math inline">\(p(A_t, O_t)\)</span> over both actions and observations.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Intuition: Planning vs.&nbsp;Reacting
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 19%">
+<col style="width: 30%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Approach</th>
+<th>What it models</th>
+<th>How it generates actions</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Diffuser</strong> (joint <span class="math inline">\(p(A, O)\)</span>)</td>
+<td>Actions <em>and</em> future states together</td>
+<td>Denoise both actions and predicted future observations</td>
+</tr>
+<tr class="even">
+<td><strong>Diffusion Policy</strong> (conditional <span class="math inline">\(p(A \| O)\)</span>)</td>
+<td>Actions <em>given</em> observations</td>
+<td>Denoise only actions, observations are fixed inputs</td>
+</tr>
+</tbody>
+</table>
+<p>Diffuser generates <strong>trajectories</strong> — sequences of (action, state) pairs. It must predict what will happen in the world. Diffusion Policy generates only <strong>actions</strong> — it doesn’t predict future states, just reacts to current observations.</p>
+</div>
+</div>
+<p>From the paper:</p>
+<blockquote class="blockquote">
+<p>“This formulation allows the model to predict actions conditioned on observations <strong>without the cost of inferring future states</strong>, speeding up the diffusion process and improving the accuracy of generated actions.”</p>
+</blockquote>
+<p>The practical benefits:</p>
+<ol type="1">
+<li><p><strong>No state prediction errors</strong>: Diffuser must accurately predict future observations to plan through them. Errors compound. Diffusion Policy sidesteps this entirely — it never predicts what the world will look like.</p></li>
+<li><p><strong>Faster inference</strong>: Denoising a 16-step action sequence is faster than denoising a 16-step trajectory of (action, observation) pairs. The exclusion of observation features from the denoising output “significantly improves inference speed and better accommodates real-time control.”</p></li>
+<li><p><strong>More accurate actions</strong>: The network capacity focuses entirely on action quality, not split between action and state prediction.</p></li>
+</ol>
+</section>
+<section id="why-conditional-modeling-works" class="level3">
+<h3 class="anchored" data-anchor-id="why-conditional-modeling-works">Why Conditional Modeling Works</h3>
+<p>You might wonder: is directly conditioning on observations theoretically valid? Don’t we need to model the full joint distribution to capture dependencies?</p>
+<p>The answer comes from how conditional diffusion training works (see <a href="../../diffusion/8-guidance/">Guidance in our diffusion series</a>). The key insight:</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Marginalization Trick
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When training conditional diffusion, the noise target <span class="math inline">\(\epsilon\)</span> doesn’t depend on the conditioning variable <span class="math inline">\(O_t\)</span>: <span class="math display">\[
+u_t^{target}(A_t^k | A_t^0, O_t) = u_t^{target}(A_t^k | A_t^0)
+\]</span></p>
+<p>Why? Because the forward process (adding noise to actions) is purely mechanical — it doesn’t care about observations. The noise schedule corrupts actions the same way regardless of what the robot saw.</p>
+</div>
+</div>
+<p>This means we can train the conditional model <span class="math inline">\(p(A|O)\)</span> with the same loss as unconditional diffusion — we just include <span class="math inline">\(O_t\)</span> as an additional network input:</p>
+<p><span class="math display">\[
+\mathcal{L}(\theta) = \mathbb{E}_{k, \epsilon, (A_t^0, O_t)} \left[ \| \epsilon - \epsilon_\theta(O_t, A_t^k, k) \|^2 \right]
+\]</span></p>
+<p>The network learns to denoise actions <em>given</em> observations. By sampling <span class="math inline">\((A_t^0, O_t)\)</span> pairs from demonstration data and regressing against the noise <span class="math inline">\(\epsilon\)</span>, least-squares regression automatically learns the conditional distribution — no joint modeling required.</p>
+<p>This is identical to how text-to-image diffusion works: Stable Diffusion models <span class="math inline">\(p(\text{image} | \text{text})\)</span>, not <span class="math inline">\(p(\text{image}, \text{text})\)</span>. The conditioning (text prompt) enters through cross-attention, and the model learns to generate images that match the prompt without ever modeling the joint distribution of images and text.</p>
+</section>
+<section id="efficient-feature-extraction" class="level3">
+<h3 class="anchored" data-anchor-id="efficient-feature-extraction">Efficient Feature Extraction</h3>
+<p>A practical benefit of conditional modeling: observations are extracted <strong>once</strong> per inference, not once per denoising step.</p>
+<ol type="1">
+<li>Extract visual features from images</li>
+<li>Run 10-100 denoising iterations using those same features</li>
+<li>Total visual encoding cost: 1x, not 10-100x</li>
+</ol>
+<p>For <strong>FiLM conditioning</strong> (CNN architecture), the observation modulates the denoising network at every layer:</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>How FiLM Conditioning Works
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><strong>The idea</strong>: Instead of concatenating the observation to the input (which only affects the first layer), we let the observation <strong>modulate every layer</strong> of the network.</p>
+<p><strong>The mechanism</strong>: For each hidden layer with features <span class="math inline">\(h\)</span>:</p>
+<p><span id="eq-film"><span class="math display">\[
+h' = \gamma(O_t, k) \odot h + \beta(O_t, k)
+\tag{5}\]</span></span></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 47%">
+<col style="width: 52%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(h\)</span></td>
+<td>Hidden features from the denoising network (e.g., 256-dim vector)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\gamma\)</span></td>
+<td><strong>Scale</strong> parameters — “how much to amplify each feature”</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\beta\)</span></td>
+<td><strong>Shift</strong> parameters — “what baseline to add to each feature”</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\odot\)</span></td>
+<td>Element-wise multiplication</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(O_t, k\)</span></td>
+<td>The observation and diffusion timestep</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Intuition</strong>: A small network takes <span class="math inline">\((O_t, k)\)</span> and outputs <span class="math inline">\(\gamma\)</span> and <span class="math inline">\(\beta\)</span> vectors. These act like “dials” that adjust how the main network processes information:</p>
+<ul>
+<li><span class="math inline">\(\gamma\)</span> controls <strong>which features matter</strong> — amplify task-relevant features, suppress irrelevant ones</li>
+<li><span class="math inline">\(\beta\)</span> controls <strong>the baseline</strong> — shift feature activations based on context</li>
+</ul>
+<p><strong>Example</strong>: If the observation shows “gripper is near the cup”, FiLM might amplify features related to grasping and suppress features related to navigation.</p>
+<p><strong>Why it works</strong>: This is more expressive than simple concatenation. The observation can influence <em>how</em> the network computes, not just <em>what</em> it computes on.</p>
+</div>
+</div>
+</div>
+<p>One remaining challenge: the iterative denoising is slow. If we need 100 steps per action prediction, that’s too slow for real-time robotics.</p>
+</section>
+</section>
+<section id="sec-ddim" class="level2">
+<h2 class="anchored" data-anchor-id="sec-ddim">DDIM: Fast Inference</h2>
+<p>Standard DDPM requires as many denoising steps as training noise levels (typically 100). This is too slow for real-time control.</p>
+<p><strong>DDIM</strong> (Denoising Diffusion Implicit Models)<span class="math inline">\(^{[6]}\)</span> decouples training and inference:</p>
+<ul>
+<li><strong>Training</strong>: 100 noise levels</li>
+<li><strong>Inference</strong>: 10 denoising steps</li>
+<li><strong>Result</strong>: ~0.1 second latency on an NVIDIA 3080</li>
+</ul>
+<section id="why-can-we-skip-steps" class="level3">
+<h3 class="anchored" data-anchor-id="why-can-we-skip-steps">Why Can We Skip Steps?</h3>
+<p>This seems suspicious: we trained the network to denoise step-by-step, so how can we skip 90% of steps at inference?</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Key Insight
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>DDPM training teaches the network to predict the <strong>noise <span class="math inline">\(\epsilon\)</span></strong> added at each step — not just “how to go from step <span class="math inline">\(k\)</span> to step <span class="math inline">\(k-1\)</span>”.</p>
+<p>This noise prediction implicitly encodes the <strong>direction toward the clean data</strong>: <span class="math display">\[
+\hat{A}^0 = \frac{A^k - \sqrt{1-\bar{\alpha}_k} \cdot \epsilon_\theta(A^k, k)}{\sqrt{\bar{\alpha}_k}}
+\]</span></p>
+<p>From any noisy point <span class="math inline">\(A^k\)</span>, we can directly estimate the clean action <span class="math inline">\(\hat{A}^0\)</span>.</p>
+</div>
+</div>
+<p>DDIM exploits this: instead of taking tiny steps, it <strong>jumps directly toward the predicted clean point</strong>, then adds back the appropriate noise level for the target step.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-15-contents" aria-controls="callout-15" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>How Does DDIM Actually “Jump”? Why Not Jump Directly to <span class="math inline">\(A^0\)</span>?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-15" class="callout-15-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p><strong>The full DDIM update formula</strong> (equation 12 from the paper) has <strong>three components</strong>:</p>
+<p><span class="math display">\[
+A^{k-1} = \underbrace{\sqrt{\bar{\alpha}_{k-1}} \cdot \hat{A}^0}_{\text{(1) predicted clean}} + \underbrace{\sqrt{1-\bar{\alpha}_{k-1} - \sigma_k^2} \cdot \epsilon_\theta}_{\text{(2) direction to } A^k} + \underbrace{\sigma_k \epsilon}_{\text{(3) noise}}
+\]</span></p>
+<p>where <span class="math inline">\(\hat{A}^0 = \frac{A^k - \sqrt{1-\bar{\alpha}_k} \cdot \epsilon_\theta}{\sqrt{\bar{\alpha}_k}}\)</span> is the predicted clean action.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 44%">
+<col style="width: 56%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>(1) Predicted clean</td>
+<td>Where we think the clean data is, scaled to target noise level</td>
+</tr>
+<tr class="even">
+<td>(2) Direction to <span class="math inline">\(A^k\)</span></td>
+<td>Points back toward current noisy sample — preserves consistency</td>
+</tr>
+<tr class="odd">
+<td>(3) Random noise</td>
+<td>Optional stochasticity (σ=0 for deterministic DDIM)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>For deterministic DDIM</strong> (σ=0, what Diffusion Policy uses):</p>
+<p><span class="math display">\[
+A^{k'} = \sqrt{\bar{\alpha}_{k'}} \cdot \hat{A}^0 + \sqrt{1-\bar{\alpha}_{k'}} \cdot \epsilon_\theta
+\]</span></p>
+<p><strong>Step-by-step what happens:</strong></p>
+<ol type="1">
+<li>Start at <span class="math inline">\(A^{100}\)</span> (pure noise)</li>
+<li>Predict noise <span class="math inline">\(\epsilon_\theta(A^{100}, 100)\)</span></li>
+<li>Compute predicted clean: <span class="math inline">\(\hat{A}^0 = \frac{A^{100} - \sqrt{1-\bar{\alpha}_{100}} \cdot \epsilon_\theta}{\sqrt{\bar{\alpha}_{100}}}\)</span></li>
+<li><strong>Jump to intermediate level</strong> <span class="math inline">\(A^{90}\)</span> using the formula above</li>
+<li>From <span class="math inline">\(A^{90}\)</span>, predict noise again → get a <strong>better</strong> <span class="math inline">\(\hat{A}^0\)</span></li>
+<li>Jump to <span class="math inline">\(A^{80}\)</span>, repeat…</li>
+</ol>
+<p><strong>Why can’t we just output <span class="math inline">\(\hat{A}^0\)</span> directly?</strong></p>
+<p>Because the noise prediction <span class="math inline">\(\epsilon_\theta\)</span> is <strong>imperfect</strong>. The network makes errors, and these errors are amplified when we directly invert the formula.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Noise level</th>
+<th>Signal-to-noise</th>
+<th>Prediction quality</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(k=100\)</span> (mostly noise)</td>
+<td>Low</td>
+<td>Poor — hard to see the clean data</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(k=50\)</span> (mixed)</td>
+<td>Medium</td>
+<td>Better — more signal to work with</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(k=10\)</span> (mostly clean)</td>
+<td>High</td>
+<td>Good — easy to predict small noise</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The iterative refinement helps because:</strong></p>
+<ul>
+<li>Each step moves to a <strong>lower noise level</strong> where predictions are more accurate</li>
+<li>Errors from step <span class="math inline">\(k\)</span> get <strong>corrected</strong> at step <span class="math inline">\(k-1\)</span></li>
+<li>It’s like GPS: walk partway, get a new reading (more accurate now), adjust course</li>
+</ul>
+<p><strong>Can we do one-step generation?</strong></p>
+<p>Yes, but it requires special training:</p>
+<ul>
+<li><strong>Consistency Models</strong><span class="math inline">\(^{[9]}\)</span> train the network to map ANY noise level directly to <span class="math inline">\(A^0\)</span></li>
+<li><strong>Progressive Distillation</strong> trains a student network to match a multi-step teacher in fewer steps</li>
+</ul>
+<p>These methods achieve 1-4 step generation but need extra training. Standard DDPM/DDIM networks aren’t optimized for single-step accuracy.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="intuition-gps-vs.-turn-by-turn" class="level3">
+<h3 class="anchored" data-anchor-id="intuition-gps-vs.-turn-by-turn">Intuition: GPS vs.&nbsp;Turn-by-Turn</h3>
+<p>Think of navigation:</p>
+<ul>
+<li><p><strong>DDPM</strong> is like turn-by-turn directions: “In 100 meters, turn left. In 50 meters, turn right…” You must follow every instruction.</p></li>
+<li><p><strong>DDIM</strong> is like having GPS coordinates: you know the destination, so you can take larger steps (highways) while still ending at the same place.</p></li>
+</ul>
+<p>The network’s noise prediction acts as “destination coordinates” — it points toward clean data regardless of the current noise level.</p>
+</section>
+<section id="why-it-works-theoretically" class="level3">
+<h3 class="anchored" data-anchor-id="why-it-works-theoretically">Why It Works Theoretically</h3>
+<p>DDIM defines a <strong>non-Markovian</strong> diffusion process that has the same <strong>marginal distributions</strong> as DDPM at each timestep <span class="math inline">\(t\)</span>, but allows deterministic jumps between any two timesteps.</p>
+<p>The mathematics: DDPM’s forward process is: <span class="math display">\[
+A^k = \sqrt{\bar{\alpha}_k} A^0 + \sqrt{1 - \bar{\alpha}_k} \epsilon
+\]</span></p>
+<p>This is a <strong>closed-form expression</strong> — we can jump directly from <span class="math inline">\(A^0\)</span> to any <span class="math inline">\(A^k\)</span> without intermediate steps. DDIM simply inverts this relationship, using the network’s noise estimate to reconstruct the trajectory.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Practical Trade-off
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Fewer steps = faster but noisier. Diffusion Policy uses 10 inference steps (10× speedup) with minimal quality loss. For robotics, this trade-off is worthwhile: real-time control matters more than perfect trajectory smoothness.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-17-contents" aria-controls="callout-17" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why Not Just Train with 10 Steps Too?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-17" class="callout-17-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>You might ask: if we can infer with 10 steps, why train with 100?</p>
+<p><strong>Key clarification</strong>: Training with “100 noise levels” does NOT mean running 100 sequential steps per training example. Instead:</p>
+<ol type="1">
+<li>Sample a random noise level <span class="math inline">\(k \sim \text{Uniform}(1, 100)\)</span></li>
+<li>Add noise at that level: <span class="math inline">\(A^k = \sqrt{\bar{\alpha}_k} A^0 + \sqrt{1-\bar{\alpha}_k} \epsilon\)</span></li>
+<li>Train the network to predict <span class="math inline">\(\epsilon\)</span></li>
+</ol>
+<p>Each training batch sees a <strong>random mix</strong> of noise levels. The network learns to denoise at ALL corruption levels — from barely noisy (<span class="math inline">\(k=1\)</span>) to pure noise (<span class="math inline">\(k=100\)</span>).</p>
+<p><strong>Can you train with fewer levels?</strong> Yes! Recent work shows this is task-dependent:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 60%">
+<col style="width: 12%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task Type</th>
+<th>Optimal Training Steps</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Refinement (denoising, super-resolution)</td>
+<td><strong>10-100</strong></td>
+<td>Small changes need few corruption levels</td>
+</tr>
+<tr class="even">
+<td>Conditional generation (Diffusion Policy)</td>
+<td><strong>100</strong></td>
+<td>Moderate complexity</td>
+</tr>
+<tr class="odd">
+<td>Unconditional image generation</td>
+<td><strong>1000</strong></td>
+<td>Must learn full data distribution</td>
+</tr>
+</tbody>
+</table>
+<p>Fast-DDPM<span class="math inline">\(^{[8]}\)</span> showed that for medical image-to-image tasks (a form of conditional generation), <strong>10 training steps</strong> can actually outperform more — additional steps hurt quality because the “convergence area” (late timesteps) provides diminishing returns. While robotics differs from medical imaging, the principle applies: conditional generation needs fewer steps than unconditional.</p>
+<p><strong>The key asymmetry</strong>: Training samples noise levels in parallel (cheap), inference runs steps sequentially (expensive). So even if you train with many levels, you want to infer with few.</p>
+<p><strong>For robotics</strong>: Diffusion Policy uses 100 training steps — a reasonable middle ground for conditional action generation. This is much less than the 1000 steps typical for image generation.</p>
+</div>
+</div>
+</div>
+<p>This enables <strong>10Hz real-time control</strong> — fast enough for most manipulation tasks.</p>
+</section>
+</section>
+<section id="sec-results" class="level2">
+<h2 class="anchored" data-anchor-id="sec-results">Results</h2>
+<p>We’ve covered the theory: multimodality problem, diffusion solution, action chunking, architectures, and fast inference. But does it actually work? It was evaluated on 12 tasks across 4 benchmarks:</p>
+<section id="simulation-results" class="level3">
+<h3 class="anchored" data-anchor-id="simulation-results">Simulation Results</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Diffusion Policy</th>
+<th>Best Baseline</th>
+<th>Improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Push-T</td>
+<td><strong>95%</strong></td>
+<td>20% (LSTM-GMM)</td>
+<td>+75%</td>
+</tr>
+<tr class="even">
+<td>Block Push (4 blocks)</td>
+<td><strong>84%</strong></td>
+<td>28% (BET)</td>
+<td>+56%</td>
+</tr>
+<tr class="odd">
+<td>ToolHang</td>
+<td><strong>89%</strong></td>
+<td>73% (LSTM-GMM)</td>
+<td>+16%</td>
+</tr>
+<tr class="even">
+<td>Transport</td>
+<td><strong>94%</strong></td>
+<td>90% (LSTM-GMM)</td>
+<td>+4%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Average improvement: 46.9%</strong> across all tasks.</p>
+</section>
+<section id="real-world-results" class="level3">
+<h3 class="anchored" data-anchor-id="real-world-results">Real-World Results</h3>
+<p>On physical robots (UR5, Franka):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Success Rate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Push-T (UR5)</td>
+<td>95%</td>
+</tr>
+<tr class="even">
+<td>Mug Flipping</td>
+<td>90%</td>
+</tr>
+<tr class="odd">
+<td>Sauce Pouring</td>
+<td>0.74 IoU (vs 0.79 human)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-push-t-visualization" class="level3">
+<h3 class="anchored" data-anchor-id="the-push-t-visualization">The Push-T Visualization</h3>
+<p>The Push-T task beautifully demonstrates multimodal learning. The robot must push a T-shaped block to a target pose — approachable from left or right.</p>
+<div id="fig-pusht-comparison" class="quarto-layout-panel">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pusht-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="quarto-layout-row">
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-pusht-comparison" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-pusht-dp" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-pusht-dp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="pusht-diffusion.png" class="img-fluid figure-img" data-ref-parent="fig-pusht-comparison">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-pusht-dp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(a) Diffusion Policy: Clean, decisive trajectory
+</figcaption>
+</figure>
+</div>
+</div>
+<div class="quarto-layout-cell-subref quarto-layout-cell" data-ref-parent="fig-pusht-comparison" style="flex-basis: 50.0%;justify-content: flex-start;">
+<div id="fig-pusht-baseline" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-subfloat-fig figure">
+<div aria-describedby="fig-pusht-baseline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="pusht-bcrnn.png" class="img-fluid figure-img" data-ref-parent="fig-pusht-comparison">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-subfloat-caption quarto-subfloat-fig" id="fig-pusht-baseline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+(b) LSTM-GMM: Multiple failed attempts (ghosted positions)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pusht-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Real-world Push-T results comparing Diffusion Policy to LSTM-GMM baseline. Figures from Chi et al.<span class="math inline">\(^{[1]}\)</span>
+</figcaption>
+</figure>
+</div>
+<p>The difference is striking (<a href="#fig-pusht-comparison" class="quarto-xref">Figure&nbsp;7</a>):</p>
+<ul>
+<li><strong>LSTM-GMM</strong> (<a href="#fig-pusht-baseline" class="quarto-xref">Figure&nbsp;7 (b)</a>): Biased toward one approach, gets stuck</li>
+<li><strong>IBC</strong>: Fails to commit, produces jittery motion</li>
+<li><strong>BET</strong>: Indecisive, oscillates between modes</li>
+<li><strong>Diffusion Policy</strong> (<a href="#fig-pusht-dp" class="quarto-xref">Figure&nbsp;7 (a)</a>): Learns both modes, commits to one per episode</li>
+</ul>
+</section>
+<section id="robustness-to-perturbations" class="level3">
+<h3 class="anchored" data-anchor-id="robustness-to-perturbations">Robustness to Perturbations</h3>
+<p>The policy also handles unexpected disturbances gracefully — occlusion, perturbation during pushing, and interference during the finish:</p>
+<div class="quarto-video"><video id="video_shortcode_videojs_video2" class="video-js vjs-default-skin vjs-fluid" controls="" preload="auto" data-setup="{}" title=""><source src="pusht-robustness.mp4"></video></div>
+<p><em>Diffusion Policy recovers from hand occlusion (0:05) and physical perturbation (0:11, 0:39). Video from <a href="https://diffusion-policy.cs.columbia.edu/">Chi et al.</a><span class="math inline">\(^{[1]}\)</span></em></p>
+</section>
+</section>
+<section id="sec-misconceptions" class="level2">
+<h2 class="anchored" data-anchor-id="sec-misconceptions">Common Misconceptions</h2>
+<p>Given these strong results, you might wonder what the catch is. Let’s address the most common concerns:</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “Diffusion is too slow for robotics”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>With DDIM, inference takes ~100ms — fast enough for 10Hz control. The <a href="https://consistency-policy.github.io/">Consistency Policy</a> further reduces this to single-step generation via distillation.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “You need thousands of demonstrations”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Diffusion Policy achieves strong results with <strong>50-200 demonstrations</strong>. The action chunking reduces effective horizon, and diffusion’s inductive biases help generalization.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception: “Position control causes compounding errors”
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Counterintuitively, <strong>position control outperforms velocity control</strong> for Diffusion Policy. Why?</p>
+<ol type="1">
+<li><strong>Absolute positions are easier to denoise</strong> than relative velocities — the network learns “where to be” rather than “how fast to move”</li>
+<li><strong>Built-in error correction</strong>: If the robot drifts, the next position target corrects it automatically</li>
+<li><strong>Velocity control compounds errors</strong>: Small prediction errors accumulate over time</li>
+<li><strong>Robustness to latency</strong>: Position targets remain valid even with control delays</li>
+</ol>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-21-contents" aria-controls="callout-21" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>But How Does Position Control Actually Work?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-21" class="callout-21-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>You might wonder: don’t motors need velocity/torque commands to move? How can a policy output just positions?</p>
+<p>The answer is the <strong>control hierarchy</strong>:</p>
+<div id="fig-control-hierarchy" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-control-hierarchy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="control-hierarchy.png" class="img-fluid figure-img" style="width:60.0%">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-control-hierarchy-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: The control hierarchy: Diffusion Policy outputs position targets at 10Hz, the low-level PID controller converts these to velocity/torque at 1000Hz, and motors execute the commands
+</figcaption>
+</figure>
+</div>
+<p>The robot’s <strong>built-in PID controller</strong> handles the position → velocity conversion:</p>
+<p><span class="math display">\[
+\text{velocity} = K_p \cdot (\text{target} - \text{current}) + K_d \cdot \frac{d(\text{error})}{dt}
+\]</span></p>
+<p>This runs at ~1000Hz internally — much faster than the policy’s 10Hz outputs.</p>
+<p><strong>Analogy</strong>: It’s the difference between:</p>
+<ul>
+<li><strong>Velocity control</strong>: “Turn steering wheel 15° left for 2 seconds” — if timing is off, you crash</li>
+<li><strong>Position control</strong>: “Drive to GPS coordinates (37.77, -122.42)” — the car continuously corrects toward target</li>
+</ul>
+<p>The low-level controller is “free” — it’s already on the robot. The policy just says <em>where</em> to go, not <em>how</em>.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-22-contents" aria-controls="callout-22" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Joint Positions vs.&nbsp;End-Effector Positions
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-22" class="callout-22-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>“Position control” can mean two different things:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 36%">
+<col style="width: 43%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Representation</th>
+<th>What it specifies</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Joint positions</strong></td>
+<td>Angle of each motor</td>
+<td><code>[θ₁, θ₂, θ₃, θ₄, θ₅, θ₆, θ₇]</code></td>
+</tr>
+<tr class="even">
+<td><strong>End-effector pose</strong></td>
+<td>Gripper location + orientation</td>
+<td><code>[x, y, z, roll, pitch, yaw]</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Diffusion Policy uses joint positions</strong> — and so do ACT, ALOHA, and π₀.</p>
+<p><strong>Why not end-effector?</strong> If you specify gripper position <code>(x, y, z)</code>, the robot must solve <strong>inverse kinematics (IK)</strong> to find joint angles:</p>
+<div id="fig-joint-vs-effector" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-joint-vs-effector-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="joint-vs-effector.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-joint-vs-effector-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Joint positions go directly to motors, while end-effector poses require an IK solver step that can introduce errors
+</figcaption>
+</figure>
+</div>
+<p>IK is problematic because:</p>
+<ul>
+<li><strong>Non-unique</strong>: Multiple joint configurations reach the same point (elbow up vs down)</li>
+<li><strong>Can fail</strong>: Near singularities or workspace boundaries</li>
+<li><strong>Adds latency</strong>: Extra computation between policy and robot</li>
+</ul>
+<p><strong>Why some papers still use end-effector:</strong></p>
+<ul>
+<li><strong>Cross-robot transfer</strong>: Different arms have different joints, but all have a gripper at <code>(x, y, z)</code></li>
+<li><strong>Easier demonstrations</strong>: Humans think in “move gripper here”, not joint angles</li>
+</ul>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Joint positions</th>
+<th>End-effector pose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Precision</strong></td>
+<td>✅ Direct</td>
+<td>⚠️ IK errors</td>
+</tr>
+<tr class="even">
+<td><strong>Cross-robot</strong></td>
+<td>❌ Robot-specific</td>
+<td>✅ Generalizes</td>
+</tr>
+<tr class="odd">
+<td><strong>Demos</strong></td>
+<td>⚠️ Need joint recording</td>
+<td>✅ Natural teleoperation</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-23-contents" aria-controls="callout-23" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Did Later Papers Adopt Position Control?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-23" class="callout-23-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The field has split into two camps:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 18%">
+<col style="width: 32%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Approach</th>
+<th>Papers</th>
+<th>Control Mode</th>
+<th>Trade-off</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Joint positions</strong></td>
+<td>ACT, ALOHA, π₀, GR00T N1</td>
+<td>Absolute positions</td>
+<td>High precision, single embodiment</td>
+</tr>
+<tr class="even">
+<td><strong>Delta end-effector</strong></td>
+<td>RT-1, RT-2, OpenVLA, Octo</td>
+<td>Relative deltas</td>
+<td>Cross-robot transfer</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key finding</strong>: Papers focused on <strong>precision manipulation</strong> (ACT, ALOHA, π₀) use absolute joint positions — validating Diffusion Policy’s insight. Papers focused on <strong>cross-embodiment transfer</strong> (RT-X, OpenVLA) use delta end-effector because it generalizes across different robot arms.</p>
+<p>Both camps adopted <strong>action chunking</strong> to reduce compounding errors — which provides similar benefits to position control.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="sec-control-theory" class="level2">
+<h2 class="anchored" data-anchor-id="sec-control-theory">Connection to Optimal Control Theory</h2>
+<p>The empirical results are impressive, but why does diffusion work so well? Here’s a surprising theoretical result: for simple systems, diffusion policy <strong>provably recovers the optimal controller</strong>.</p>
+<section id="the-setup" class="level3">
+<h3 class="anchored" data-anchor-id="the-setup">The Setup</h3>
+<p>Consider the simplest possible robotics scenario:</p>
+<ul>
+<li><strong>Linear dynamics</strong>: <span class="math inline">\(s_{t+1} = As_t + Ba_t + w_t\)</span> where <span class="math inline">\(w_t \sim \mathcal{N}(0, \Sigma_w)\)</span></li>
+<li><strong>Expert uses linear feedback</strong>: <span class="math inline">\(a_t = -Ks_t\)</span> (e.g., from solving an LQR problem)</li>
+</ul>
+<p>Here <span class="math inline">\(s_t\)</span> is the state, <span class="math inline">\(a_t\)</span> is the action, and <span class="math inline">\(K\)</span> is the optimal feedback gain matrix.</p>
+</section>
+<section id="the-result" class="level3">
+<h3 class="anchored" data-anchor-id="the-result">The Result</h3>
+<p>When you train a diffusion policy on demonstrations from this expert, the optimal denoiser converges to:</p>
+<p><span class="math display">\[
+\epsilon_\theta(s, a, k) = \frac{1}{\sigma_k}(a + Ks)
+\]</span></p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Why This Matters
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>At inference time, DDIM sampling finds the <strong>global minimum</strong> at <span class="math inline">\(a = -Ks\)</span> — exactly the optimal control law!</p>
+<p>The diffusion policy doesn’t just imitate actions. It <strong>recovers the underlying control structure</strong>.</p>
+</div>
+</div>
+</section>
+<section id="intuition-whats-happening" class="level3">
+<h3 class="anchored" data-anchor-id="intuition-whats-happening">Intuition: What’s Happening?</h3>
+<p>Think about what the denoiser is doing:</p>
+<ol type="1">
+<li><strong>During training</strong>: It sees state-action pairs <span class="math inline">\((s, a)\)</span> where <span class="math inline">\(a = -Ks + \text{noise}\)</span></li>
+<li><strong>It learns</strong>: The “noise” relative to the clean action is <span class="math inline">\((a - (-Ks)) = a + Ks\)</span></li>
+<li><strong>At inference</strong>: Starting from random noise, DDIM iteratively removes this “error”, converging to <span class="math inline">\(a = -Ks\)</span></li>
+</ol>
+<p>The diffusion process is essentially learning: <em>“given this state, what’s the residual between noisy and optimal action?”</em></p>
+</section>
+<section id="multi-step-extension" class="level3">
+<h3 class="anchored" data-anchor-id="multi-step-extension">Multi-Step Extension</h3>
+<p>For trajectory prediction (<span class="math inline">\(T_p &gt; 1\)</span>), diffusion learns to predict:</p>
+<p><span class="math display">\[
+a_{t+t'} = -K(A - BK)^{t'} s_t
+\]</span></p>
+<p>This is exactly what you’d get from rolling out the optimal controller! The policy <strong>implicitly learns the task-relevant dynamics model</strong> <span class="math inline">\((A - BK)\)</span> needed to predict future optimal actions.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Deep Insight
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This analysis shows diffusion isn’t just “memorizing demonstrations” — it’s <strong>learning the structure of optimal control</strong>. For linear systems, this is provable. For nonlinear robotic tasks, empirical results suggest similar structure-learning happens.</p>
+<p>This may explain why diffusion generalizes well: it captures the underlying control law, not just surface-level action patterns.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="whos-using-this" class="level2">
+<h2 class="anchored" data-anchor-id="whos-using-this">Who’s Using This?</h2>
+<p>This theoretical grounding helps explain why Diffusion Policy has become the foundation for robot learning research:</p>
+<ul>
+<li><strong>Physical Intelligence (π₀)</strong>: Their flagship robot policy uses diffusion for action generation</li>
+<li><strong>Google DeepMind</strong>: Incorporated diffusion into several manipulation systems</li>
+<li><strong>Stanford Mobile ALOHA</strong>: Uses diffusion for bimanual mobile manipulation</li>
+<li><strong>NVIDIA Isaac Lab</strong>: Supports diffusion policy training out of the box</li>
+</ul>
+<p>If you hear “diffusion for robotics” in 2024-2025, it almost certainly traces back to this paper.</p>
+</section>
+<section id="practical-implementation" class="level2">
+<h2 class="anchored" data-anchor-id="practical-implementation">Practical Implementation</h2>
+<p>If you want to try Diffusion Policy yourself:</p>
+<ol type="1">
+<li><p><strong>LeRobot</strong>: Hugging Face’s <a href="https://github.com/huggingface/lerobot">LeRobot library</a> includes Diffusion Policy with pretrained weights</p></li>
+<li><p><strong>Official Implementation</strong>: The <a href="https://github.com/real-stanford/diffusion_policy">original codebase</a> includes all benchmarks</p></li>
+<li><p><strong>Simulation First</strong>: Start with Push-T in simulation before moving to real hardware</p></li>
+</ol>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-26-contents" aria-controls="callout-26" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Training Hyperparameters
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-26" class="callout-26-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>From the paper’s recommended settings:</p>
+<ul>
+<li><strong>Observation horizon</strong>: <span class="math inline">\(T_o = 2\)</span></li>
+<li><strong>Prediction horizon</strong>: <span class="math inline">\(T_p = 16\)</span></li>
+<li><strong>Action horizon</strong>: <span class="math inline">\(T_a = 8\)</span></li>
+<li><strong>Training diffusion steps</strong>: 100</li>
+<li><strong>Inference diffusion steps</strong>: 10 (DDIM)</li>
+<li><strong>Batch size</strong>: 256</li>
+<li><strong>Learning rate</strong>: 1e-4 with cosine decay</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<section id="sec-open-questions" class="level2">
+<h2 class="anchored" data-anchor-id="sec-open-questions">Open Questions and Recent Progress</h2>
+<p>If you want to try it yourself, the code is available and well-documented. But the original Diffusion Policy paper left several open questions. Here’s what we know now (as of early 2026):</p>
+<section id="diffusion-is-too-slow-solved" class="level3">
+<h3 class="anchored" data-anchor-id="diffusion-is-too-slow-solved">1. “Diffusion is Too Slow” — Solved ✅</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Year</th>
+<th>Inference Time</th>
+<th>Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Diffusion Policy</td>
+<td>2023</td>
+<td>~1000ms</td>
+<td>1x</td>
+</tr>
+<tr class="even">
+<td><a href="https://arxiv.org/abs/2405.07503">Consistency Policy</a></td>
+<td>2024</td>
+<td>~100ms</td>
+<td>10x</td>
+</tr>
+<tr class="odd">
+<td><a href="https://arxiv.org/abs/2410.21257">OneDP</a></td>
+<td>2024</td>
+<td><strong>16ms (62Hz)</strong></td>
+<td>40x</td>
+</tr>
+<tr class="even">
+<td><a href="https://arxiv.org/abs/2508.00697">LightDP</a></td>
+<td>2025</td>
+<td><strong>2.7ms</strong></td>
+<td>93x</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key techniques</strong>: Consistency distillation, model pruning, streaming approaches. LightDP achieves &lt;10ms on mobile hardware (iPhone 13).</p>
+</section>
+<section id="cant-scale-to-humanoids-solved" class="level3">
+<h3 class="anchored" data-anchor-id="cant-scale-to-humanoids-solved">2. “Can’t Scale to Humanoids” — Solved ✅</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>System</th>
+<th>DoF</th>
+<th>Key Innovation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="https://arxiv.org/abs/2410.10803">iDP3 on Fourier GR1</a></td>
+<td>25</td>
+<td>Egocentric 3D diffusion, no calibration</td>
+</tr>
+<tr class="even">
+<td><a href="https://bostondynamics.com/blog/large-behavior-models-atlas-find-new-footing/">Boston Dynamics Atlas</a></td>
+<td><strong>50</strong></td>
+<td>450M param DiT, flow-matching, 30Hz control</td>
+</tr>
+<tr class="odd">
+<td><a href="https://arxiv.org/abs/2410.07864">RDT-1B</a></td>
+<td>14+</td>
+<td>1.2B params, 46 datasets</td>
+</tr>
+</tbody>
+</table>
+<p>Boston Dynamics + Toyota Research Institute deployed a 450M parameter Diffusion Transformer controlling the full Atlas humanoid for industrial tasks (rope tying, tire manipulation).</p>
+</section>
+<section id="optimal-action-chunk-length-task-dependent" class="level3">
+<h3 class="anchored" data-anchor-id="optimal-action-chunk-length-task-dependent">3. Optimal Action Chunk Length — Task-Dependent ⚠️</h3>
+<p>No universal answer. Research findings:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 35%">
+<col style="width: 48%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task Type</th>
+<th>Optimal Chunk</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Long-horizon manipulation</td>
+<td>8-16 steps</td>
+<td>Balances consistency and replanning</td>
+</tr>
+<tr class="even">
+<td>High-precision contact</td>
+<td>1-4 steps</td>
+<td>Needs fast reactive feedback</td>
+</tr>
+<tr class="odd">
+<td>Bimanual coordination</td>
+<td>50-100 steps</td>
+<td>Requires temporal coherence</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Key insight</strong>: <a href="https://arxiv.org/abs/2507.09061">Control-theoretic analysis</a> shows action chunking provides <strong>stability guarantees</strong> by circumventing exponential error compounding — but longer isn’t always better.</p>
+<p><strong>Adaptive methods</strong> now exist: <a href="https://arxiv.org/abs/2408.17355">BID</a> selects optimal chunks at test-time, <a href="https://www.pi.website/research/real_time_chunking">Real-Time Chunking</a> enables smooth execution for VLAs.</p>
+</section>
+<section id="why-does-diffusion-actually-work-surprising-answer" class="level3">
+<h3 class="anchored" data-anchor-id="why-does-diffusion-actually-work-surprising-answer">4. Why Does Diffusion Actually Work? — Surprising Answer 🤔</h3>
+<p>The most interesting recent finding from <a href="https://arxiv.org/abs/2512.01809">Simchowitz et al.&nbsp;(2025)</a>:</p>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Plot Twist
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Diffusion policies do <strong>NOT</strong> owe their success primarily to capturing multimodality or expressing complex distributions.</p>
+<p>The actual mechanism: <strong>iterative computation with supervised intermediate steps</strong>.</p>
+<p>A simple two-step regression policy (MIP) matches flow-based policy performance on most benchmarks.</p>
+</div>
+</div>
+<p>This suggests the “diffusion” framing may be less important than: - Multiple refinement steps (iterative computation) - Intermediate supervision during training - Appropriate stochasticity for exploration</p>
+</section>
+<section id="nonlinear-control-theory-active-research" class="level3">
+<h3 class="anchored" data-anchor-id="nonlinear-control-theory-active-research">5. Nonlinear Control Theory — Active Research 📚</h3>
+<p>The linear LQR result from the paper has been extended:</p>
+<ul>
+<li><strong><a href="https://arxiv.org/abs/2402.02297">Elamvazhuthi et al.&nbsp;(2024)</a></strong>: For control-affine systems, diffusion can exactly track trajectories when <strong>Lie bracket controllability conditions</strong> hold</li>
+<li><strong><a href="https://arxiv.org/abs/2509.25375">S2Diff (2025)</a></strong>: Lyapunov-guided diffusion provides stability guarantees via the “Almost Lyapunov theorem”</li>
+<li><strong><a href="https://lecar-lab.github.io/dial-mpc/">DIAL-MPC (2024)</a></strong>: MPPI is equivalent to a single-stage diffusion process — connecting sampling-based MPC to score functions</li>
+</ul>
+<p><strong>Open question</strong>: Can we characterize exactly what “structure” diffusion learns for general nonlinear tasks?</p>
+</section>
+</section>
+<section id="sec-insights" class="level2">
+<h2 class="anchored" data-anchor-id="sec-insights">Research Insights</h2>
+<p>Beyond the technical contributions and open problems, this paper offers deeper lessons for researchers:</p>
+<section id="the-real-contribution-isnt-diffusion-for-robotics" class="level3">
+<h3 class="anchored" data-anchor-id="the-real-contribution-isnt-diffusion-for-robotics">The Real Contribution Isn’t “Diffusion for Robotics”</h3>
+<p>The surface-level reading is “we applied diffusion to robot actions.” The actual insight is deeper: <strong>the choice of action distribution representation fundamentally limits what a policy can learn</strong>.</p>
+<p>Before this paper, people tried to fix multimodality with more data, bigger networks, or clever losses. This paper says: <em>the problem is architectural</em> — Gaussian outputs can’t represent multimodal distributions, period. No amount of training fixes that.</p>
+</section>
+<section id="challenging-dogma-leads-to-insight" class="level3">
+<h3 class="anchored" data-anchor-id="challenging-dogma-leads-to-insight">Challenging Dogma Leads to Insight</h3>
+<p>The position control finding is counterintuitive. For years, robotics assumed velocity/delta control was better because it’s “local” and doesn’t compound errors. This paper shows the opposite — <strong>for learned policies with observation noise, position control wins</strong>.</p>
+<p>Why? Because learned policies aren’t perfect. Given imperfect predictions, position control provides free error correction via the low-level controller.</p>
+<p><strong>Broader lesson</strong>: Optimal design for <em>perfect</em> systems differs from optimal design for <em>learned</em> systems with errors. Question assumptions that were derived for classical (non-learned) settings.</p>
+</section>
+<section id="the-right-factorization-depends-on-the-task" class="level3">
+<h3 class="anchored" data-anchor-id="the-right-factorization-depends-on-the-task">The Right Factorization Depends on the Task</h3>
+<p>The choice to model <span class="math inline">\(p(A|O)\)</span> instead of <span class="math inline">\(p(A, O)\)</span> is a statement about <strong>what the robot needs to know</strong>:</p>
+<ul>
+<li><strong>Diffuser</strong> models the joint <span class="math inline">\(p(A, O)\)</span> because it’s doing <em>planning</em> — predicting what will happen</li>
+<li><strong>Diffusion Policy</strong> models the conditional <span class="math inline">\(p(A|O)\)</span> because it’s doing <em>reaction</em> — trusting observations to arrive</li>
+</ul>
+<p><strong>Research direction</strong>: Hybrid approaches might use different factorizations at different horizons — plan long-term (joint), react short-term (conditional).</p>
+</section>
+<section id="action-chunking-connects-to-temporal-abstraction" class="level3">
+<h3 class="anchored" data-anchor-id="action-chunking-connects-to-temporal-abstraction">Action Chunking Connects to Temporal Abstraction</h3>
+<p>Predicting 16 actions instead of 1 isn’t just about smoothness — it’s a form of <strong>temporal abstraction</strong>. This connects to:</p>
+<ul>
+<li><strong>Options framework</strong> in RL (Sutton et al.)</li>
+<li><strong>Motor primitives</strong> in neuroscience</li>
+<li><strong>Hierarchical planning</strong> in classical robotics</li>
+</ul>
+<p><strong>Research direction</strong>: Maybe the right abstraction for robot learning isn’t actions or trajectories, but “motion sketches” — intent without over-specification.</p>
+</section>
+<section id="the-meta-lesson-import-and-adapt" class="level3">
+<h3 class="anchored" data-anchor-id="the-meta-lesson-import-and-adapt">The Meta-Lesson: Import and Adapt</h3>
+<p>The biggest insight is methodological: <strong>import successful techniques from adjacent fields and carefully adapt them</strong>.</p>
+<p>Diffusion worked for images because images are high-dimensional and multimodal. Robot actions share these properties. The adaptation (conditional modeling, action chunks, position control) required domain knowledge, but the core insight transferred.</p>
+<p><strong>Research strategy</strong>: When stuck, ask “what other field solved a structurally similar problem?”</p>
+</section>
+</section>
+<section id="whats-next" class="level2">
+<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
+<p>Diffusion Policy works. But it has a limitation: you need to train a separate policy for every task.</p>
+<p>What if you could tell a robot “pick up the red cup” in natural language — and it just does it? No task-specific training. No reward engineering.</p>
+<p>That’s where <strong>Vision-Language-Action (VLA) models</strong> come in. They combine the language understanding of GPT-4 with the action generation of Diffusion Policy. The result: robots that learn from the internet and follow arbitrary instructions.</p>
+<p>In <a href="../2-vla/">Part 2</a>, we’ll explore how π0, OpenVLA, and other VLAs are creating the first generalist robot policies — and why 2024-2026 is shaping up to be robotics’ “GPT moment.”</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We’ve seen why naive behavioral cloning fails — averaging multimodal actions produces nonsense — and how <strong>Diffusion Policy</strong> solves this by representing actions as a denoising process. The key innovations are:</p>
+<ol type="1">
+<li><strong>Diffusion for actions</strong>: Start from noise, iteratively refine into valid trajectories</li>
+<li><strong>Action chunking</strong>: Predict sequences to reduce compounding errors and capture temporal dependencies</li>
+<li><strong>Receding horizon</strong>: Balance commitment with responsiveness by replanning frequently</li>
+<li><strong>Efficient conditioning</strong>: Extract visual features once, reuse across denoising steps</li>
+</ol>
+<p>The result is a <strong>46.9% average improvement</strong> over prior methods, with strong real-world performance on manipulation tasks.</p>
+<p>The framework is surprisingly simple once you see it: replace the image output of a diffusion model with action sequences, condition on observations instead of text, and apply standard denoising. The elegance lies in how naturally diffusion handles the multimodality that makes robot learning hard.</p>
+</div>
+</div>
+<hr>
+<p><em>Push-T comparison figures (<a href="#fig-pusht-comparison" class="quarto-xref">Figure&nbsp;7</a>) from the <a href="https://diffusion-policy.cs.columbia.edu/">Diffusion Policy project page</a>, used with attribution.</em></p>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] Chi, C., Feng, S., Du, Y., Xu, Z., Cousineau, E., Burchfiel, B., &amp; Song, S. <a href="https://arxiv.org/abs/2303.04137">Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</a>. <em>RSS 2023</em>, <em>IJRR 2024</em>. <a href="https://diffusion-policy.cs.columbia.edu/">Project page</a></p>
+<p>[2] <a href="https://research.google/blog/decisiveness-in-imitation-learning-for-robots/">Decisiveness in Imitation Learning for Robots</a>. <em>Google Research Blog, 2023</em>.</p>
+<p>[3] Florence, P., Lynch, C., Zeng, A., Ramirez, O., Wahid, A., Downs, L., Wong, A., Lee, J., Mordatch, I., &amp; Tompson, J. <a href="https://arxiv.org/abs/2109.00137">Implicit Behavioral Cloning</a>. <em>CoRL 2021</em>.</p>
+<p>[4] Ross, S., Gordon, G., &amp; Bagnell, D. <a href="https://arxiv.org/abs/1011.0686">A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning</a>. <em>AISTATS 2011</em>.</p>
+<p>[5] Zhao, T., Kumar, V., Levine, S., &amp; Finn, C. <a href="https://arxiv.org/abs/2304.13705">Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware</a>. <em>RSS 2023</em>. (ACT paper)</p>
+<p>[6] Song, J., Meng, C., &amp; Ermon, S. <a href="https://arxiv.org/abs/2010.02502">Denoising Diffusion Implicit Models</a>. <em>ICLR 2021</em>.</p>
+<p>[7] Janner, M., Du, Y., Tenenbaum, J., &amp; Levine, S. <a href="https://arxiv.org/abs/2205.09991">Planning with Diffusion for Flexible Behavior Synthesis</a>. <em>ICML 2022</em>. (Diffuser)</p>
+<p>[8] Jiang, Z., et al.&nbsp;<a href="https://arxiv.org/abs/2405.14802">Fast-DDPM: Fast Denoising Diffusion Probabilistic Models for Medical Image-to-Image Generation</a>. <em>arXiv 2024</em>. (Shows 10 training steps can outperform 100 for refinement tasks)</p>
+<p>[9] Song, Y., et al.&nbsp;<a href="https://arxiv.org/abs/2303.01469">Consistency Models</a>. <em>ICML 2023</em>. (One-step generation via distillation)</p>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="https://radekosmulski.com/diving-into-diffusion-policy-with-lerobot/">Diving into Diffusion Policy with LeRobot</a> — Excellent code walkthrough</li>
+<li><a href="https://diffusion-policy.cs.columbia.edu/">Diffusion Policy Project Page</a> — Official demos and code</li>
+<li><a href="https://github.com/mbreuss/diffusion-literature-for-robotics">diffusion-literature-for-robotics</a> — Curated paper list</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, Foundation Models &amp; Robotics</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+<script>videojs(video_shortcode_videojs_video1);</script>
+<script>videojs(video_shortcode_videojs_video2);</script>
+
+
+
+
+</body></html>
