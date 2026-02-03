@@ -1,0 +1,169 @@
+---
+title: "Why Buffett Ignores Wall Street's Favorite Formula"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- Wall Street uses complex formulas (WACC, beta) to adjust for "risk"
+- Buffett thinks this is "mathematical gibberish"
+- His approach: use a simple comparison rate, then only buy with a big safety buffer
+- The lesson: don't try to measure risk precisely — just avoid situations you don't understand
+:::
+
+## The MBA Approach
+
+In business school, they teach you to value companies using something called WACC — "Weighted Average Cost of Capital."
+
+It's a formula that tries to figure out the "right" rate to convert future money into today's money. The formula involves:
+
+- How risky the stock is compared to the overall market (something called "beta")
+- The interest rate on debt
+- A "market risk premium"
+
+If a company seems risky, you use a higher rate. This makes future profits worth less today, so the company looks less valuable.
+
+Sounds logical, right?
+
+Buffett disagrees. Strongly.
+
+## "Mathematical Gibberish"
+
+Here's what Buffett said:
+
+> "If you say I'm going to stick an extra 6 percent in on the interest rate to allow for risk — I tend to think that's kind of nonsense. I mean, it may look mathematical. But it's mathematical gibberish in my view."
+
+And his partner Munger:
+
+> "I've never heard an intelligent cost of capital discussion."
+
+What's their problem with it?
+
+## The False Precision Problem
+
+The WACC formula requires you to estimate several numbers:
+
+1. How "risky" the stock is (beta)
+2. What return investors expect from the whole market
+3. What interest rate the company pays on debt
+
+Each of these is a guess. And small changes in your guesses create huge swings in your final answer.
+
+- Use 10% cost of capital? The company is worth $100.
+- Use 11% instead? Now it's worth $90.
+- Use 9%? Now it's worth $112.
+
+Can you really tell the difference between 9%, 10%, and 11%? Probably not. But your "precise" valuation swings by 20% depending on which you choose.
+
+Buffett's view: this precision is fake. You're just making up numbers and pretending they're scientific.
+
+## The Beta Problem
+
+"Beta" measures how much a stock bounces around compared to the overall market. Wall Street says higher beta = higher risk = you need higher returns.
+
+But think about what this means in practice:
+
+**A stock drops 50% because of a market panic.** Nothing has changed about the business — customers are still buying, profits are still flowing. But because the stock bounced around a lot, beta goes UP.
+
+According to Wall Street math, this stock is now RISKIER and you should demand a higher return. It's now LESS attractive to buy.
+
+But wait — wouldn't a 50% price drop for the same business make it MORE attractive?
+
+Buffett thinks so:
+
+> "The Washington Post example: In 1973, the stock dropped 50% despite the business being fine. Beta said it was now riskier. Buffett said it was cheaper, bought heavily, and made a fortune."
+
+Beta measures price volatility. Buffett doesn't think price volatility is risk. **Real risk is permanent loss of your money** — not temporary price swings.
+
+## Buffett's Simpler Approach
+
+So if Buffett doesn't use WACC, what does he use?
+
+**He uses the government bond rate as his yardstick.**
+
+From a 1997 shareholder meeting:
+
+> "We use the risk-free rate merely to equate one item to another... Obviously, we can always buy government bonds. Therefore, that becomes the yardstick rate."
+
+The logic:
+- You can always put your money in government bonds and earn, say, 4% safely
+- Any other investment should be compared against that
+- If a stock doesn't clearly beat the safe option, why bother?
+
+This gives him a clean comparison without fake precision.
+
+## How He Handles Risk
+
+If Buffett doesn't adjust his rate for risk, how does he handle risky situations?
+
+Two ways:
+
+### 1. He Only Invests in Things He Understands
+
+> "We try to deal with things about which we are quite certain."
+
+If you truly understand a business — its customers, competition, and future — there's less uncertainty. The "risk" is lower because you actually know what's going on.
+
+And if you don't understand it? **Don't invest.** No rate adjustment will save you from being wrong about the fundamentals.
+
+### 2. He Demands a Big Safety Margin
+
+Instead of adjusting the rate, Buffett demands a big gap between price and value.
+
+If he calculates a business is worth $100:
+- He won't buy at $95 (only 5% margin)
+- He might buy at $70 (30% margin)
+- He'd love to buy at $50 (50% margin)
+
+This margin of safety protects against:
+- His estimates being wrong
+- Unexpected problems
+- Things he didn't think of
+
+It's a much simpler approach than trying to precisely measure "risk."
+
+## The 10% Hurdle
+
+Buffett also has a minimum return requirement:
+
+> "10% is the figure we quit on — we don't want to buy equities when the real return we expect is less than 10%, whether interest rates are 6% or 1%."
+
+This isn't a discount rate for calculations. It's an opportunity cost filter.
+
+Buffett knows he can usually find 10%+ returns somewhere. So why accept less? Even if something looks "cheap" at 7% expected return, he'll pass and wait for something better.
+
+## The Bottom Line
+
+Wall Street's approach:
+1. Calculate complex rates adjusted for "risk"
+2. Plug into formulas
+3. Get precise-looking (but fake) answers
+
+Buffett's approach:
+1. Use a simple comparison rate (government bonds)
+2. Only invest in things you truly understand
+3. Demand a big safety margin
+4. Walk away if the return doesn't obviously beat alternatives
+
+**The lesson: don't try to measure risk with precision. Just avoid situations you don't understand and insist on a large margin of error.**
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Wall Street uses complex formulas (WACC, beta) to adjust valuations for "risk." Buffett thinks this creates false precision — the numbers look scientific but they're really just guesses.
+
+His alternative: use a simple baseline rate (government bonds), only invest in things you understand, and demand a big safety margin.
+
+**Next up**: [Part 4 — Circle of Competence](../4-circle-competence/). How do you know if you really understand a business? And why does it matter so much?
+:::
+
+## References
+
+1. Buffett, W. (1997). Berkshire Hathaway Annual Meeting. [25iq](https://25iq.com/2015/11/21/why-and-how-do-munger-and-buffett-discount-the-future-cash-flows-at-the-30-year-u-s-treasury-rate/).
+
+2. Buffett, W. (2003). Berkshire Hathaway Annual Meeting. [Yahoo Finance](https://finance.yahoo.com/news/buffetts-10-hurdle-171902885.html).

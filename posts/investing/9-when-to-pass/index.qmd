@@ -1,0 +1,175 @@
+---
+title: "The Power of Saying No"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- "If it doesn't scream at you, it's too close" — Buffett walks away from marginal opportunities
+- The **20 punch card**: Imagine you only get 20 investments in your lifetime
+- Doing nothing is a valid strategy — sometimes the best move is to wait
+- Most of Buffett's wealth came from a handful of decisions. Quality over quantity.
+:::
+
+## The Most Underrated Skill
+
+Here's something they don't teach in finance class: **most good investing is saying no**.
+
+Buffett confirms this:
+
+> "If [the value of a company] doesn't just scream out at you, it's too close."
+
+He doesn't invest in things that are "probably good" or "might work out." He only invests when the opportunity is so obvious that even rough estimates show a clear bargain.
+
+Everything else? He walks away.
+
+## The 20 Punch Card
+
+Buffett's most powerful mental model:
+
+> "I could improve your ultimate financial welfare by giving you a ticket with only 20 slots in it, so that you had 20 punches — representing all the investments that you got to make in a lifetime. And once you'd punched through the card, you couldn't make any more investments at all. Under those rules, **you'd really have to think carefully about what you did**."
+
+Imagine: 20 investments. Total. For your entire life.
+
+How would your behavior change?
+
+- You'd reject anything that wasn't obviously excellent
+- You'd research deeply before committing
+- You'd make bigger bets on your best ideas
+- You'd stop "trading" and start truly investing
+
+This mental model forces concentration on quality over quantity.
+
+## Inaction Is a Strategy
+
+Most people feel pressure to act:
+- "I have money sitting in cash — I should do something with it"
+- "Everyone's buying this stock — I'm missing out"
+- "I haven't made an investment in months — am I falling behind?"
+
+Buffett rejects this:
+
+> "In allocating capital, activity does not correlate with achievement. Indeed, in the fields of investments and acquisitions, frenetic behavior is often counterproductive."
+
+Sometimes the best decision is no decision. Wait. Let opportunities come to you.
+
+::: {.callout-tip appearance="simple"}
+## The Baseball Analogy
+
+Buffett compares investing to baseball, with one key difference:
+
+In baseball, if you don't swing at three strikes, you're out.
+
+In investing, **there are no called strikes**. You can let pitch after pitch go by. The market keeps throwing. You only swing when you see a fat pitch right down the middle.
+
+Patience is a structural advantage.
+:::
+
+## When to Say No
+
+### Say No If: You Need Calculations to Justify It
+
+Charlie Munger:
+
+> "Some of the worst business decisions I've seen came with detailed analysis. The higher math was false precision."
+
+If you're building elaborate spreadsheets and running sensitivity analyses to prove something is a good deal, it probably isn't.
+
+Real bargains are obvious. The analysis confirms what you already sense, not the other way around.
+
+### Say No If: The Margin Is Small
+
+From [Part 8](../8-margin-safety/):
+
+> "If we calculate the value of a common stock to be only slightly higher than its price, we're not interested in buying."
+
+A 5% or 10% margin isn't worth the effort and risk. If you're not getting at least 25-30% below estimated value, keep looking.
+
+### Say No If: You Don't Understand It
+
+From [Part 4](../4-circle-competence/): No matter how cheap something looks, if it's outside your circle of competence, pass.
+
+You can't value what you don't understand. And no margin of safety protects against fundamental ignorance.
+
+### Say No If: The Moat Is Questionable
+
+From [Part 5](../5-moats/): Even at an attractive price, a business without competitive protection can destroy value.
+
+"Cheap" doesn't help if the business deteriorates faster than you expected.
+
+## Why This Is So Hard
+
+Saying no sounds easy. In practice, it's psychologically brutal.
+
+**Fear of missing out**: "What if this is the next big thing?"
+
+**Action bias**: Doing something feels productive. Doing nothing feels lazy.
+
+**Social pressure**: "What are you invested in?" demands an answer.
+
+**Impatience**: Cash sitting idle feels wasteful.
+
+Buffett structures his life to resist these pressures:
+- No quarterly reviews demanding activity
+- No clients who can pull their money
+- Long-term track record speaks for itself
+
+As an individual investor, you have similar advantages. No one forces you to act. Use that freedom.
+
+## When to Say Yes
+
+The flip side: when everything checks out, **act decisively**.
+
+If a stock:
+- Is in your circle of competence ✓
+- Has a durable moat ✓
+- Has good management ✓
+- Trades at an obvious discount to value ✓
+- Offers returns well above your hurdle ✓
+
+Don't dither. Don't take a small "starter position." The opportunity might not last.
+
+Buffett's largest positions have been 30-40% of his portfolio. When he found something that screamed at him, he bet big.
+
+## The Waiting Game
+
+You might go months or years without finding something that screams.
+
+What to do while waiting:
+
+1. **Keep learning** — Expand your circle of competence
+2. **Build a watchlist** — Track businesses you'd like to own at the right price
+3. **Stay liquid** — Cash isn't lazy; it's optionality
+4. **Ignore daily noise** — Market movements don't require response
+5. **Review what you own** — Sometimes the best "new" investment is adding to a current position
+
+Buffett has gone years without major new investments. That's discipline, not failure.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Knowing when to say no is as important as knowing when to say yes.
+
+Buffett's standard: "If it doesn't scream at you, it's too close."
+
+The 20 punch card mental model forces quality over quantity. Imagine only 20 investments in your lifetime — how many of your current ideas would make the cut?
+
+Doing nothing is a strategy. Cash is optionality. Patience is an advantage.
+
+When the right opportunity appears, act decisively.
+
+**Next up**: [Part 10 — See's Candies](../10-sees-candies/). The 1972 investment that changed how Buffett thinks about value.
+:::
+
+## References
+
+1. Munger, C. (1996). Berkshire Hathaway Annual Meeting. [CNBC Buffett Archive](https://buffett.cnbc.com/).
+
+2. Buffett, W. (2013). Georgetown University Speech. [CNBC](https://www.cnbc.com/2020/05/28/billionaire-warren-buffett-teaches-this-20-slot-rule-to-getting-rich-at-business-schools.html).
+
+3. Buffett, W. (1990). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1990.html). Berkshire Hathaway Inc.

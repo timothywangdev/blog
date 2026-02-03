@@ -1,0 +1,160 @@
+---
+title: "Why Smart Managers Make Dumb Decisions"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- The **Institutional Imperative**: An invisible force that makes good managers act irrationally
+- It explains why companies resist change, waste money, and follow competitors blindly
+- Buffett calls it "my most surprising discovery" about business
+- Good management means resisting these pressures — bad management gives in
+:::
+
+## Buffett's Most Surprising Discovery
+
+In 1989, Buffett shared something unexpected:
+
+> "My most surprising discovery: the overwhelming importance in business of an unseen force that we might call 'the institutional imperative.' In business school, I was given no hint of the imperative's existence... **I thought then that decent, intelligent, and experienced managers would automatically make rational business decisions. But I learned over time that isn't so.**"
+
+This is remarkable. He's not criticizing bad managers. He's saying *good* managers — smart, experienced, well-meaning people — still make irrational decisions because of institutional pressures.
+
+## Four Ways It Shows Up
+
+Buffett identified four symptoms:
+
+### 1. Resistance to Change
+
+Organizations develop momentum. Strategies harden. Cultures calcify. Even when the world changes, the institution keeps doing what it's always done.
+
+**Example: Kodak**
+Kodak invented the digital camera in 1975. Their managers saw the threat. But switching to digital would destroy their profitable film business. So they kept making film — until bankruptcy in 2012.
+
+The managers weren't stupid. They were trapped.
+
+### 2. Available Money Gets Spent
+
+A company earns $1 billion in profit. Does it:
+- Return the money to shareholders, or
+- Find something — anything — to spend it on?
+
+Usually the second option.
+
+**Example: Oil Companies (2005-2008)**
+High oil prices created huge cash flows. Rather than returning the cash, companies made expensive acquisitions at peak prices. When oil crashed, they wrote off billions.
+
+The money was there. It demanded to be spent.
+
+### 3. Employees Justify the Boss's Wishes
+
+The CEO wants to buy a competitor. Suddenly, every analysis confirms it's a brilliant idea.
+
+This isn't conspiracy. It's human nature. People want to please the boss. Analysts who raise objections don't get promoted.
+
+**Example: Almost every acquisition**
+Most big acquisitions come with "strategic rationale" presentations showing great returns. Most big acquisitions destroy value. The presentations were written to justify decisions already made.
+
+### 4. Following the Herd
+
+"Everyone else is doing it" becomes sufficient justification.
+
+Competitors are acquiring? We should too.
+Competitors are entering China? We can't be left out.
+Competitors pay executives $20 million? We need to match.
+
+**Example: The Dot-Com Bubble**
+By 1999, every traditional company was launching an internet strategy. Most had no idea why. "Our competitors are doing it" was enough.
+
+::: {.callout-warning appearance="simple"}
+## Why Rationality Fails
+
+The institutional imperative isn't about individual failure. It's about structural pressure.
+
+Managers who resist it face real consequences:
+- "You're not ambitious enough"
+- "You're letting competitors get ahead"
+- "The market expects growth"
+
+Being rational often requires being willing to look foolish. Most won't take that risk.
+:::
+
+## How to Spot Bad Management
+
+When evaluating a company, look for warning signs:
+
+**🚩 Empire building**
+Acquisitions that grow revenue but not profits. "We're now a $10 billion company!" means nothing if returns didn't improve.
+
+**🚩 Following competitors**
+Major strategy changes that mirror what rivals just announced. Original thinking is rare.
+
+**🚩 Excessive executive pay**
+If the justification is "competitive pay," that's the institutional imperative talking.
+
+**🚩 Spending all the cash**
+Companies that never return money to shareholders despite having no good investment opportunities.
+
+## How to Spot Good Management
+
+Look for the opposite:
+
+**✓ Returning excess cash**
+Dividends and buybacks show discipline. "We couldn't find anything good to buy, so here's your money back."
+
+**✓ Saying no to deals**
+"We passed on that acquisition because it didn't make economic sense." Rare and valuable.
+
+**✓ Going against the crowd**
+Buying when others are scared. Selling when others are greedy. Acting independently.
+
+**✓ Owner mentality**
+Managers who own significant stock behave differently. Their interests align with yours.
+
+## Buffett's Test for Management
+
+From his 1983 letter:
+
+> "We test the wisdom of retaining earnings by assessing whether retention, over time, delivers shareholders at least $1 of market value for each $1 retained."
+
+Simple rule: If management keeps $1, it should create at least $1 of value.
+
+Many companies fail this test. They keep the money, waste it on bad acquisitions or pet projects, and destroy value.
+
+Good management either invests wisely or returns the cash. Bad management hoards and squanders.
+
+## Why This Matters for Valuation
+
+You might calculate that a business is worth $100 per share based on its profits.
+
+But if management:
+- Wastes cash on bad acquisitions
+- Pursues growth for its own sake
+- Copies competitor mistakes
+- Pays themselves excessively
+
+Those profits never reach you. The intrinsic value calculation assumed rational capital allocation. The institutional imperative ensures many managers aren't rational.
+
+**A wonderful business with bad management is not a wonderful investment.**
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+The Institutional Imperative is an invisible force that makes good managers act irrationally — resisting change, spending available cash, justifying the boss's wishes, and following competitors blindly.
+
+When evaluating management, look for discipline: returning excess cash, saying no to deals, and acting independently of the herd.
+
+A business's value depends not just on its profits, but on whether management will actually deliver those profits to shareholders.
+
+**Next up**: [Part 7 — The Yardstick Rate](../7-discount-rate/). How does Buffett compare different investments? It's simpler than you'd think.
+:::
+
+## References
+
+1. Buffett, W. (1989). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1989.html). Berkshire Hathaway Inc.
+
+2. Buffett, W. (1983). [Berkshire Hathaway Owner's Manual](https://www.berkshirehathaway.com/ownman.pdf). Berkshire Hathaway Inc.

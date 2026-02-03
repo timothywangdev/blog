@@ -1,0 +1,316 @@
+---
+title: "Your One-Page Guide to Investing Like Buffett"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- Everything from this series, condensed into one checklist
+- Most opportunities should be rejected — that's the point
+- You don't need many investments. You need a **few great ones.**
+- The math is simple. The hard part is **patience and discipline.**
+:::
+
+## The Complete Checklist
+
+Everything from this series, in one place. Print it. Use it.
+
+### Step 1: Do I Understand This?
+
+*If you can't explain it simply, you don't understand it well enough.*
+
+Ask yourself:
+
+- [ ] Can I explain how this business makes money in one sentence?
+- [ ] Do I know who buys from them and why?
+- [ ] Can I picture what this company looks like in 10 years?
+- [ ] Could I explain this investment to a skeptical friend?
+
+**If any answer is "no" → Don't invest**
+
+You can't value what you don't understand. Doesn't matter how cheap it looks.
+
+### Step 2: Does It Have Staying Power?
+
+*What stops competitors from stealing the customers?*
+
+The key test:
+
+- [ ] **Can they raise prices 10% without losing customers?**
+
+If yes, there's something real protecting this business. If no, there probably isn't.
+
+Also ask:
+
+- [ ] Is this a low-cost leader OR a strong brand? (These are the two real moats)
+- [ ] Will this advantage still exist in 10 years?
+- [ ] Does the advantage depend on specific people who could leave?
+
+**If they can't raise prices → Don't invest**
+
+Most claimed advantages aren't real. Be skeptical.
+
+### Step 3: Is Management Trustworthy?
+
+*Would you want these people managing your money?*
+
+Look for:
+
+- [ ] When they keep profits in the company, does value increase?
+- [ ] Do they admit mistakes and share bad news honestly?
+- [ ] Do they resist doing dumb things just because competitors are doing them?
+- [ ] Do they own significant stock themselves?
+
+**If they waste money → Don't invest**
+
+Even wonderful businesses can be ruined by managers who make bad decisions.
+
+### Step 4: Is the Money Real?
+
+*What could you actually take out each year?*
+
+Remember the formula from [Part 2](../2-owner-earnings/):
+
+> **Real Cash = Reported Profits + Accounting Adjustments − Money Needed to Maintain the Business**
+
+Ask:
+
+- [ ] How much real cash does this business generate?
+- [ ] Has this been stable over time, or does it jump around?
+- [ ] Is the real cash very different from the reported profits?
+
+**If real cash is declining or unpredictable → Be very careful**
+
+### Step 5: What's It Worth?
+
+*Back-of-envelope is fine. If you need a spreadsheet, it's probably not cheap enough.*
+
+Simple approach:
+
+1. How much real cash does it generate today?
+2. How fast is it likely to grow? (Be conservative)
+3. What would someone pay for a business like this in 10 years?
+4. Compare that to what else you could do with the money (government bonds paying ~4-5%)
+
+If the number doesn't scream "this is a good deal," move on.
+
+### Step 6: Is There Enough Safety Cushion?
+
+*How much below your estimated value should you pay?*
+
+| How confident are you? | Pay at least this much below value |
+|------------------------|------------------------------------|
+| Very confident — stable, predictable | 25-30% discount |
+| Somewhat confident — good business, some unknowns | 35-50% discount |
+| Less confident — decent business, real uncertainty | 50%+ discount |
+
+**If the current price is higher than your max → Don't buy. Wait.**
+
+### Step 7: Does It Scream at You?
+
+*The most important test*
+
+- [ ] Would someone else agree this is cheap, even without seeing your analysis?
+- [ ] Is the discount so big that even if you're significantly wrong, you'll be okay?
+- [ ] Can you explain why this is a good deal in 30 seconds?
+
+**If you have to convince yourself → Don't invest**
+
+Buffett: "If it doesn't scream at you, it's too close."
+
+### Step 8: Does the Return Beat Your Alternatives?
+
+*Just because it's cheap doesn't mean it's good enough*
+
+- [ ] What annual return do you expect at this price?
+- [ ] Is it above 10%?
+- [ ] Is it better than your other options?
+
+**If expected return is below 10% → Don't invest**
+
+Even with a safety cushion, don't accept mediocre returns.
+
+## The Simple Flowchart
+
+```
+Do I understand this business?
+  ├─ No → DON'T INVEST
+  │
+  ▼
+Can they raise prices without losing customers?
+  ├─ No → DON'T INVEST
+  │
+  ▼
+Is management trustworthy with money?
+  ├─ No → DON'T INVEST
+  │
+  ▼
+Is the real cash flow predictable?
+  ├─ No → DON'T INVEST
+  │
+  ▼
+Is the price obviously below what it's worth?
+  ├─ No → WAIT (add to watchlist)
+  │
+  ▼
+Does it scream "buy me"?
+  ├─ No → DON'T INVEST
+  │
+  ▼
+Will the return beat 10%?
+  ├─ No → DON'T INVEST
+  │
+  ▼
+INVEST
+```
+
+Notice: **most paths lead to "Don't Invest."** That's the point.
+
+## How Much to Invest
+
+When everything checks out, how big should the position be?
+
+Buffett's view: "Wide diversification is for people who don't know what they're doing."
+
+| How confident? | How much to invest |
+|----------------|-------------------|
+| Extremely confident — deeply understood | 15-25% of portfolio |
+| Very confident | 10-15% |
+| Confident | 5-10% |
+
+If you're not confident enough to put 5% in, you're probably not confident enough to invest at all.
+
+Don't spread tiny amounts across dozens of stocks. Concentrate on your best ideas.
+
+## When to Sell
+
+Most of the time: **don't.**
+
+But sell if:
+
+1. **The advantage is fading** — Competitors are catching up
+2. **Management gets worse** — New leaders waste money
+3. **You were wrong** — Your original thinking was flawed
+4. **Price gets crazy** — It's now way above what it's worth (like Apple going from 10x to 33x profits)
+5. **Something better appears** — Your money could work harder elsewhere
+
+**Don't sell just because:**
+
+- The price went up (that's good!)
+- The price went down (that's temporary, unless something broke)
+- You've held it "a long time"
+- Analysts are negative
+
+Buffett's favorite holding period: **forever**.
+
+## The Hard Part (It's Not the Math)
+
+The framework is simple. Following it is hard.
+
+**What this approach requires:**
+
+1. **Patience** — Most opportunities don't pass the tests. You might wait months or years.
+2. **Courage** — When something screams, you have to actually buy. Significantly.
+3. **Stubbornness** — When prices drop after you buy, you hold. (Unless something actually broke.)
+4. **Humility** — When you're wrong, admit it and move on.
+
+**What will fight against you:**
+
+- **Fear of missing out** — "Everyone's buying this. What if I miss it?"
+- **Need to do something** — "My money is just sitting there. I should invest in *something*."
+- **Following the crowd** — "Smart people are buying this. It must be good."
+- **Wishful thinking** — "I want this to be good, so I'll convince myself it is."
+- **Anchoring** — "It's cheaper than last month, so it must be cheap."
+
+The math is easy. The psychology is the real challenge.
+
+## The Whole Series in One Table
+
+| Part | What It Covers | Key Idea |
+|------|----------------|----------|
+| 1 | What's a business really worth? | The cash you can take out over time |
+| 2 | Owner earnings | Real cash = Profits + Fake expenses − Real expenses |
+| 3 | Why Buffett ignores Wall Street formulas | Simple beats complicated |
+| 4 | Stay in your lane | Only invest in what you understand |
+| 5 | What keeps competitors away | Pricing power is the ultimate test |
+| 6 | Why smart managers make dumb decisions | Resist the herd |
+| 7 | Comparing investments | Beat government bonds + 10% minimum |
+| 8 | Buying a dollar for fifty cents | Always demand a discount |
+| 9 | The power of saying no | If it doesn't scream at you, walk away |
+| 10 | See's Candies | Great business at fair price beats cheap business |
+| 11 | Coca-Cola | The world's best brand was underpriced |
+| 12 | Apple | Same principles work even for "tech" |
+
+## The 20 Punch Card Rule
+
+Imagine you could only make 20 investments in your entire life.
+
+Not 20 per year. 20 total. Ever.
+
+How would that change your behavior?
+
+- You'd say no to almost everything
+- You'd research deeply before committing
+- You'd make bigger bets on your best ideas
+- You'd stop trading and start truly investing
+
+This framework is designed for that world. It filters ruthlessly because you don't need many investments. **You need a few great ones.**
+
+Most of your time will be spent:
+- **Learning** — Expanding what you understand
+- **Waiting** — For prices to become attractive
+- **Holding** — Letting compounding do its work
+
+Very little time actually buying.
+
+::: {.callout-note appearance="simple"}
+## Final Summary
+
+Investing like Buffett isn't about complex math. It's about:
+
+1. **Understanding** — Only invest in what you can explain simply
+2. **Staying power** — Look for advantages that last
+3. **Good management** — People who don't waste money
+4. **Real cash** — Money you could actually take out
+5. **Simple comparisons** — Beat the safe alternative
+6. **Safety cushions** — Always pay less than it's worth
+7. **Saying no** — Most opportunities aren't good enough
+8. **Acting decisively** — When something screams, buy
+
+The math is simple. The discipline is hard. But applied consistently over a lifetime, this approach builds wealth.
+
+> "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price."
+>
+> — Warren Buffett
+:::
+
+## Thank You
+
+This concludes the series on investing like Warren Buffett.
+
+The principles are timeless. They worked in 1972 (See's), 1988 (Coca-Cola), 2016 (Apple), and they'll work for whatever opportunity comes next.
+
+The question is: **when your screaming opportunity arrives, will you be ready?**
+
+---
+
+## Full Series Index
+
+1. [What a Business is Really Worth](../1-intrinsic-value/)
+2. [The Money That Actually Lands in Your Pocket](../2-owner-earnings/)
+3. [Why Buffett Ignores Wall Street's Favorite Formula](../3-wacc-beta/)
+4. [Stay in Your Lane](../4-circle-competence/)
+5. [What Keeps Competitors Away](../5-moats/)
+6. [Why Smart Managers Make Dumb Decisions](../6-institutional-imperative/)
+7. [The Simplest Way to Compare Investments](../7-discount-rate/)
+8. [Buying a Dollar for Fifty Cents](../8-margin-safety/)
+9. [The Power of Saying No](../9-when-to-pass/)
+10. [The $25 Million Lesson That Made Buffett Billions](../10-sees-candies/)
+11. [How Buffett Turned $1 Billion into $27 Billion](../11-coca-cola/)
+12. [Why the 'Tech-Avoider' Bet $31 Billion on Apple](../12-apple/)
+13. [Your One-Page Guide to Investing Like Buffett](../13-framework/) (this post)

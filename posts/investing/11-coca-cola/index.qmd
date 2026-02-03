@@ -1,0 +1,204 @@
+---
+title: "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett, case-study]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- Buffett invested $1 billion in Coca-Cola — now worth **$27+ billion**
+- He thought Coke was worth 3x what the market was charging
+- The math was simple: A legendary brand selling at a normal price? Obviously cheap.
+- He hasn't sold a single share in 36 years. That's the power of owning a great business.
+:::
+
+## Buffett's Biggest Bet (At the Time)
+
+In 1988, Buffett did something surprising: he put over $1 billion into Coca-Cola stock. It was the largest investment Berkshire had ever made.
+
+Why would a famous bargain-hunter pay up for a company everyone already knew was great?
+
+Because Buffett thought the market was wildly wrong about what Coke was worth.
+
+## The Numbers (Keep It Simple)
+
+What Coke looked like in 1988:
+
+- **Total company value**: About $16 billion
+- **Annual profits**: About $1 billion
+- **What Buffett paid**: About $1 billion for a 7% stake
+
+So Buffett paid roughly 15 years of his share of the profits. That's not dirt cheap — average companies trade around 15x profits. But Coca-Cola isn't average.
+
+The question: Was one of the world's greatest brands really worth just an "average" price?
+
+## Buffett's Back-of-Envelope Math
+
+Buffett doesn't use complicated spreadsheets. Here's roughly how he thought about Coke:
+
+**Step 1: What is Coke earning today?**
+About $800 million in real, take-home cash (what we called "owner earnings" in [Part 2](../2-owner-earnings/)).
+
+**Step 2: How fast is it growing?**
+Coke had been growing 15-20% per year. Buffett assumed a conservative 15%.
+
+**Step 3: What's a reasonable comparison?**
+Government bonds were paying 9% at the time. That's Buffett's benchmark for "what else could I do with this money?"
+
+**Step 4: Rough math**
+A business growing at 15% when the alternative only pays 9%? That growth is worth a lot.
+
+Buffett estimated Coca-Cola was worth roughly **$48 billion**.
+
+The market was pricing it at **$16 billion**.
+
+That's about **3x undervalued**.
+
+::: {.callout-important appearance="simple"}
+## When Something Is 3x Undervalued, Details Don't Matter
+
+At 3x undervalued, you don't need precise calculations. Even if Buffett was off by 30%, Coke was still dramatically cheap.
+
+This is the "screaming test" in action: if the opportunity doesn't scream at you, it's too close to call. Coca-Cola screamed.
+:::
+
+## Why Coca-Cola?
+
+Let's check Coke against everything we've learned:
+
+### Did Buffett understand it? ✓
+
+Coca-Cola's business is beautifully simple: make syrup, sell it to bottlers, invest in keeping the brand strong. No complex technology. No unpredictable innovations.
+
+Buffett once noted:
+
+> "75 percent of the people in the world have something in their mind about Coca-Cola. And overwhelmingly it's favorable."
+
+That's 130 years of brand-building. No amount of money can buy that.
+
+### Does it have a moat? ✓
+
+Coca-Cola might have the strongest brand moat in the world:
+
+- **Everyone knows it** — Recognition in virtually every country
+- **Everywhere you look** — Millions of stores, restaurants, vending machines
+- **Emotional connection** — Happiness, nostalgia, good times
+- **Can't be copied** — No competitor can replicate 130 years of trust
+
+### Can they raise prices? ✓
+
+When Buffett invested, Coke had been raising prices 4-5% every year. Customers kept buying. That's pricing power.
+
+### Is the money real? ✓
+
+Remember "owner earnings" from [Part 2](../2-owner-earnings/)? Coca-Cola's were excellent.
+
+The business doesn't need expensive factories or constant upgrades. It makes syrup and spends on marketing. Almost all the profit is real cash that owners can keep.
+
+### Is there a safety cushion? ✓
+
+Buffett thought Coke was worth $48 billion. The market was charging $16 billion. That's a 67% discount — massive margin of safety.
+
+Even if he was significantly wrong, he'd still do fine.
+
+## Why Was Such a Great Company So Cheap?
+
+If Coca-Cola was so obviously wonderful, why wasn't everyone buying it?
+
+**The 1987 crash still haunted people**
+
+The stock market had crashed just a year earlier. Investors were scared of "expensive" stocks, even great ones.
+
+**Pepsi was winning taste tests**
+
+The "Pepsi Challenge" had made headlines. Wall Street worried Coke was losing its edge.
+
+**The New Coke disaster**
+
+In 1985, Coca-Cola changed its formula. Customers revolted. The company retreated. Some investors lost faith in management.
+
+**Recession fears**
+
+People worried that if the economy slowed, soft drink sales would fall.
+
+Buffett saw through all of this. Taste tests and formula changes were noise. The brand that had dominated for 130 years wasn't going anywhere.
+
+Short-term fears created a buying opportunity.
+
+## The Results (36 Years Later)
+
+Coca-Cola became one of the greatest investments in history.
+
+**The first 10 years (1988-1998):**
+- Buffett's cost: ~$2.60 per share
+- Value 10 years later: ~$40 per share
+- Return: About 15x his money
+
+**Today (2024):**
+- Original investment: ~$1.3 billion
+- Current value: **$27+ billion**
+- Annual dividends: **$750+ million** (more than half the original investment — every year)
+
+**Total return: 3,500%+**
+
+The remarkable part: **Buffett has never sold a single share.** Through recessions, financial crises, and market panics — he just kept holding.
+
+## The Lessons
+
+### Great + Growing + Reasonably Priced = Wealth
+
+Coca-Cola wasn't a bargain-bin deal. It traded at a normal price. But for a business this good, "normal" was actually cheap.
+
+### Moats Can Get Stronger
+
+Coca-Cola's advantage hasn't faded — it's grown. Global expansion, new products (Dasani, Vitamin Water, Costa Coffee), and relentless marketing have made the moat wider.
+
+### Time Loves Great Businesses
+
+Buffett bought 36 years ago. He's still holding. The compounding hasn't stopped.
+
+For truly wonderful businesses, the right holding period is forever.
+
+### Dividends Add Up
+
+Berkshire receives $750+ million in Coca-Cola dividends every year. That's more than half the original investment — paid out annually.
+
+Over 36 years, dividends alone have returned many times the purchase price.
+
+## The Checklist
+
+| Question | Coca-Cola |
+|----------|-----------|
+| Do I understand it? | ✓ Simple: make syrup, build brand |
+| Does it have staying power? | ✓ 130-year-old brand, global distribution |
+| Is management good? | ✓ Strong leadership, smart spending |
+| Is the money real? | ✓ ~$1 billion in cash profits |
+| Is it obviously cheap? | ✓ Worth ~$48B, priced at ~$16B |
+| Big enough safety cushion? | ✓ 67% discount |
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Coca-Cola shows Buffett's approach at its clearest:
+
+1. Understand the business (syrup + marketing = profits)
+2. Verify the moat (the world's strongest brand)
+3. Estimate real earnings (~$1 billion)
+4. Compare to alternatives (9% government bonds)
+5. Find massive undervaluation (worth 3x the price)
+6. Buy and hold forever
+
+The result: 3,500%+ returns over 36 years. And he still hasn't sold a single share.
+
+**Next up**: [Part 12 — Apple](../12-apple/). The guy who avoided tech stocks for 60 years made Apple his biggest investment ever. Here's how he saw it differently than everyone else.
+:::
+
+## References
+
+1. Hagstrom, R. (2013). *The Warren Buffett Way*. Wiley. Also: [GuruFocus Analysis](https://www.gurufocus.com/news/215892/cocacolas-valuation-warren-buffetts-1988-purchase).
+
+2. Buffett, W. (2007). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/2007ltr.pdf). Berkshire Hathaway Inc.

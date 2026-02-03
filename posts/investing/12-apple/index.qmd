@@ -1,0 +1,220 @@
+---
+title: "Why the 'Tech-Avoider' Bet $31 Billion on Apple"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett, case-study]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- Buffett avoided tech stocks for 60 years — then made Apple his biggest bet ever
+- His trick: He didn't see Apple as a tech company. He saw it as a **brand** people love.
+- The price was ridiculous: Apple cost 1/3 what similar companies cost
+- Result: $31 billion turned into $170+ billion
+:::
+
+## The Surprise Everyone Saw Coming (Except Nobody Did)
+
+For 60 years, Warren Buffett famously avoided technology stocks. His explanation was always the same:
+
+> "We have no insights into which participants in the tech field possess a truly durable competitive advantage."
+
+Translation: Tech changes too fast. Today's winner is tomorrow's has-been. Nokia. BlackBerry. MySpace. Too risky.
+
+Then in 2016, Buffett started buying Apple. A lot of Apple. By 2018, it was his single largest investment — bigger than Coca-Cola, bigger than everything.
+
+What changed?
+
+## He Didn't See Apple as a Tech Company
+
+This is the key insight: **Buffett wasn't buying a technology company. He was buying a brand.**
+
+Here's how he explained it:
+
+> "I bought Apple because I understood it as a consumer products company with extremely loyal customers."
+
+He wasn't evaluating chip designs or AI capabilities. He was looking at the same things he'd been analyzing his whole career:
+
+- **Brand loyalty** (like Coca-Cola)
+- **Customer lock-in** (like See's Candies in California)
+- **Pricing power** (like American Express)
+- **Emotional connection** (like Gillette razors)
+
+These are all things Buffett understands deeply. He just saw them in a "tech" company for the first time.
+
+## The Price Was Ridiculous
+
+Look at what Apple cost compared to Google in 2016:
+
+| Company | Price (relative to profits) |
+|---------|------------------------------|
+| **Apple** | **10x profits** |
+| Google | 32x profits |
+
+Apple cost **one-third** of what Google cost, relative to their earnings.
+
+Think about that. Apple had:
+- One of the world's most valuable brands
+- An ecosystem customers can't escape
+- 94% customer retention (9 out of 10 iPhone users buy another iPhone)
+
+And it was priced like a company everyone had given up on.
+
+**What Buffett paid:**
+- Total investment: About $31 billion
+- Number of purchases: 14 separate buys over time
+- He kept buying more because it stayed cheap
+
+## Where's the Moat?
+
+### You Can't Escape the Ecosystem
+
+Ted Weschler, the Berkshire analyst who first recommended Apple, put it simply:
+
+> "Once you have your thousands of photographs up in the cloud, you're used to the keystrokes, you know where everything is — you become a sticky consumer."
+
+Think about switching from iPhone to Android:
+- **You lose your apps** — many don't transfer, others work differently
+- **Your photos are stuck** — yes, you can move them, but it's a hassle
+- **iMessage breaks** — your group chats with family become a mess
+- **Your AirPods work worse** — same with your Apple Watch
+
+That's not technology. That's a **trap**. A very comfortable trap that people don't want to leave.
+
+### People Would Give Up Their Cars First
+
+Here's what Buffett noticed:
+
+> "People would give up their cars before they give up their smartphones."
+
+When your product is more essential than a car, you have something special.
+
+94% of iPhone users buy another iPhone. That's not a phone. That's a habit.
+
+### They Could Charge More (But Don't)
+
+Buffett observed something interesting:
+
+> "The iPhone is underpriced given the utility of the product."
+
+People use their phones for hours every day. It's their camera, their wallet, their entertainment, their connection to everyone they know. And it lasts years.
+
+If Apple wanted to charge more, most people would still pay. That's pricing power.
+
+## Why Was Apple So Cheap?
+
+At 10x profits, Apple was priced like a dying business. Why?
+
+**"Smartphones are over"**
+
+Everyone already has one. Where's the growth?
+
+**"iPhones all look the same now"**
+
+The iPhone 7 wasn't much different from the iPhone 6. Would people keep upgrading?
+
+**"China is risky"**
+
+Apple depends on China for both manufacturing and sales. What if that relationship sours?
+
+**"Android is winning"**
+
+More people globally use Android than iPhone. Analysts worried Apple would lose.
+
+**"Tech is risky"**
+
+After the 2000 dot-com crash, many careful investors avoided anything that looked like tech. Apple was guilty by association.
+
+Buffett saw through all of this. The brand, the ecosystem, the customer loyalty — none of that was going away. Short-term worries created a buying opportunity.
+
+Just like Coca-Cola in 1988.
+
+## The Checklist
+
+| Question | Apple |
+|----------|-------|
+| Do I understand it? | ✓ Brand + ecosystem = loyal customers |
+| Does it have staying power? | ✓ Switching costs are enormous |
+| Is management good? | ✓ Tim Cook buys back billions in stock |
+| Is the money real? | ✓ $50+ billion in cash every year |
+| Is it obviously cheap? | ✓ 10x profits vs. 30x for peers |
+
+## The Results
+
+**What $31 billion became:**
+
+- At peak: Over **$170 billion** (more than 50% of Berkshire's stocks)
+- Total gain: About **$167 billion**
+- Return: **407%**
+
+**Then something interesting happened:**
+
+Starting in late 2023, Buffett started selling Apple. Not because he changed his mind about the company — but because the price changed.
+
+Apple went from 10x profits to over 33x profits. At that price, the safety cushion disappeared.
+
+This is the discipline in action: buy when obviously cheap, sell when full priced. The business didn't get worse. The opportunity did.
+
+## What This Teaches
+
+### You Don't Need to Understand Everything
+
+Buffett didn't learn to analyze semiconductor manufacturing. He didn't study iOS architecture.
+
+He reframed Apple as something he already understood: a brand people love.
+
+You don't need to understand every aspect of a business. You need to understand what makes customers stay.
+
+### The Market Gets It Wrong on Quality
+
+In 2016, Apple was the world's most valuable company. And the market was pricing it like a failing business.
+
+Everyone "knew" smartphones were over. Everyone was wrong.
+
+### Buybacks Are Good (When Done Right)
+
+Apple has bought back over 30% of its own shares since 2016. Every remaining share owns more of the company.
+
+Buffett loves this. It's why he likes Tim Cook as a manager.
+
+### Same Company, Different Price = Different Investment
+
+Apple at 10x profits was a screaming buy.
+Apple at 33x profits was time to sell.
+
+The company didn't change. The opportunity did.
+
+::: {.callout-tip appearance="simple"}
+## Buffett on Apple vs. Coca-Cola
+
+At a shareholder meeting, Buffett said something remarkable:
+
+> "We own Coca-Cola, which is a wonderful business. And we own Apple, which is an even better business."
+
+From someone who avoided tech for 60 years, that's extraordinary.
+:::
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Apple proves that "circle of competence" is about understanding business dynamics, not industry expertise.
+
+Buffett saw Apple as something he'd been analyzing his whole life: a brand with loyal customers who don't want to leave.
+
+At 10x profits while similar companies cost 30x, the opportunity screamed. When the price tripled, he started selling.
+
+Same principles. Different industry. Same result.
+
+**Next up**: [Part 13 — The Complete Framework](../13-framework/). Everything from this series, condensed into one checklist you can use.
+:::
+
+## References
+
+1. Buffett, W. (1999). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1999htm.html). Berkshire Hathaway Inc.
+
+2. CNBC (2018). [Warren Buffett on Apple Investment](https://www.cnbc.com/2018/05/07/warren-buffett-believes-this-is-the-most-important-thing-to-find-in-a-business.html).
+
+3. Weschler, T. (2016). Interview. [Carnegie Invest](https://blog.carnegieinvest.com/warren-buffett-and-the-evolution-of-berkshire-hathaways-apple-investment).

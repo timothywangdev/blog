@@ -1,0 +1,216 @@
+---
+title: "The $25 Million Lesson That Made Buffett Billions"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett, case-study]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- Buffett bought a candy company for $25 million — it has earned him over **$2 billion**
+- This one investment changed how he thinks about value forever
+- Key lesson: A great business at a fair price beats a mediocre business at a cheap price
+- The secret? **Pricing power** — See's raised prices almost every year and customers kept buying
+:::
+
+## The Investment That Changed Everything
+
+In 1972, Warren Buffett and Charlie Munger bought a little California candy company called See's Candies for $25 million.
+
+This single purchase transformed how Buffett thinks about investing.
+
+**Before See's**: Buffett hunted for bargains — companies selling for less than their assets were worth. The approach was mathematical: buy cheap stuff, wait for the price to go up, sell.
+
+**After See's**: Buffett started looking for *great* businesses, even if they weren't dirt cheap. He realized something important: a wonderful business at a fair price beats a mediocre business at a bargain price.
+
+## The Deal
+
+Here's what See's looked like when Buffett bought it:
+
+- **Sales**: $30 million per year
+- **Profits**: About $5 million per year (before taxes)
+- **Hard assets** (factories, equipment, inventory): Only $8 million
+- **Purchase price**: $25 million
+
+So Buffett paid 5 years' worth of profits for the whole company. That's not especially cheap by bargain-hunting standards.
+
+But here's what made See's special: those $8 million in assets were generating $5 million in profits *every year*. That's a 60% return on the money tied up in the business.
+
+Where else can you earn 60% on your investment? Almost nowhere.
+
+::: {.callout-tip appearance="simple"}
+## Why "Cheap" Isn't Always What It Seems
+
+Buffett's mentor Benjamin Graham taught him to buy companies for less than their assets were worth — like buying a $100 bill for $50.
+
+But See's didn't have many physical assets. Its real value was the **brand** — something that doesn't show up on a balance sheet.
+
+Buying See's wasn't buying assets cheap. It was buying a money-printing machine.
+:::
+
+## The Negotiation
+
+The See family wanted $30 million. Buffett said $25 million — take it or leave it.
+
+> "Buffett offered $25 million and was willing to walk away if the seller demanded a dollar more."
+
+Fortunately, they agreed. But notice the discipline: Buffett knew exactly what he was willing to pay. Not a dollar more.
+
+## Why Munger Pushed for It
+
+Charlie Munger, Buffett's partner, saw something special that Buffett almost missed:
+
+> "See's has a name that nobody can get near in California… It's impossible to compete with that brand without spending all kinds of money."
+
+Munger's point: Yes, $25 million seems like a lot for a company with only $8 million in physical assets. But the *brand* was worth far more than any factory.
+
+Think about it: If you wanted to compete with See's, how much would you need to spend on advertising, store locations, and decades of trust-building? Probably hundreds of millions — and you still might fail.
+
+The brand was the bargain.
+
+## The Real Question: Can They Raise Prices?
+
+Everything came down to one simple question: **Can See's charge more without losing customers?**
+
+At the time, See's sold chocolates for $1.95 per pound. Buffett explained the insight:
+
+> "If you had taken a box on Valentine's Day to some girl and she kissed you... See's Candies means getting kissed. If we can get that in the minds of people, we can raise prices."
+
+In California, See's wasn't just chocolate — it was **the gift you bring**. When you visit grandma, you bring See's. When you want to impress a date, you bring See's. When you say "thank you," you bring See's.
+
+That emotional connection is priceless. And it means people don't switch to cheaper alternatives when prices go up.
+
+**Simple math**: If See's raised prices by just 30 cents per pound (from $1.95 to $2.25), profits would nearly double. Customers would barely notice. The $25 million purchase would look like a steal.
+
+## The Results (Spoiler: Spectacular)
+
+The results exceeded even the most optimistic projections.
+
+**The pricing power worked exactly as hoped:**
+
+| Year | Price per pound |
+|------|-----------------|
+| 1972 | $1.85 |
+| 1997 | $8.80 |
+| 2007 | ~$12 |
+| Today | ~$26 |
+
+Prices went up almost **14x**. And customers kept buying.
+
+Volume only grew about 2% per year. But it didn't need to grow more. When you can charge 14x higher prices, you don't need to sell more boxes.
+
+**The money generated:**
+
+- 1972 profits: $5 million/year
+- 2007 profits: $82 million/year
+- Total profits since 1972: **Over $2 billion**
+
+All from a $25 million investment. That's an 80x return — just from the profits, not counting what the business itself is worth today.
+
+::: {.callout-tip appearance="simple"}
+## The "Money Machine" Effect
+
+Here's what made See's so remarkable: it didn't need much reinvestment.
+
+Buffett only put an additional $40 million back into the business over 50 years. The rest of those billions in profits? He took them out and invested them elsewhere (like Coca-Cola).
+
+A business that generates cash without needing cash is a money machine.
+:::
+
+## Why This One Investment Changed Everything
+
+Here's what Buffett said at his 1997 shareholder meeting:
+
+> "If we hadn't bought See's... we wouldn't have bought Coca-Cola in 1988. You can give See's a significant part of the credit for the $11 billion-plus profit we've got in Coca-Cola."
+
+Without See's, no Coca-Cola investment. And Coca-Cola made Buffett more than $26 billion.
+
+### Lesson 1: Brands Are Worth More Than Factories
+
+See's had no patents, no secret formula, no cutting-edge technology. Just a name people trusted.
+
+That name turned out to be worth more than any factory ever could be.
+
+### Lesson 2: Some Businesses Print Money
+
+Most businesses need to reinvest their profits to keep growing — new equipment, more employees, bigger offices.
+
+See's didn't. It just kept generating cash that Buffett could invest elsewhere. He calls these "capital-light compounders."
+
+### Lesson 3: Pricing Power Is Everything
+
+If you can raise prices and customers keep buying, you have a real competitive advantage. If you can't, you're in a tough business.
+
+See's proved this year after year, decade after decade.
+
+### Lesson 4: Great Beats Cheap
+
+Buffett's famous summary:
+
+> "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price."
+
+See's wasn't a screaming bargain by traditional measures. But it was wonderful. And wonderful beats cheap over time.
+
+## Checking Against Our Framework
+
+Let's see how See's stacks up against everything we've learned:
+
+**Do I understand this business?** ✓
+Chocolate isn't complicated. Buy ingredients, make candy, sell to customers. Simple.
+
+**Does it have staying power?** ✓
+A brand built over 50 years can't be replicated by throwing money at it. Competitors would need decades to build that trust.
+
+**Is management trustworthy?** ✓
+The See family built the business with integrity. The manager who ran it after Buffett bought it maintained that culture.
+
+**Does it make real money?** ✓
+$5 million in profits from $8 million in assets. Chocolate factories don't need constant expensive upgrades. Almost all the profit was real cash.
+
+**Is there a safety cushion?** ✓
+Paying 5 years of profits for a business earning 60% returns annually. If the pricing power held, Buffett would do great. If it didn't, he'd still probably be okay.
+
+**Is it obviously a good deal?** ✓
+No spreadsheet needed. A business earning 60% returns, selling at 5x profits, with a beloved brand? That screams "buy me."
+
+## Why It All Worked
+
+See's succeeded because of a rare combination:
+
+1. **A brand people love** — Built over 50+ years, can't be copied
+2. **Pricing power** — Customers keep buying even when prices go up
+3. **Doesn't need much money** — Almost all profits are real cash to keep
+4. **Dominates its region** — #1 in California, where it matters most
+5. **Simple to understand** — Chocolate. Not rocket science.
+6. **Fair price** — Not a bargain-bin deal, but not overpriced either
+
+Any single advantage might fade. But all of them together? That's a money machine.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+See's Candies was the investment that transformed how Warren Buffett thinks about value.
+
+The numbers: $25 million invested in 1972 has generated over $2 billion in profits. An 80x return — not from clever trading, but from owning a wonderful business and letting it compound.
+
+The lesson that changed everything: **A wonderful business at a fair price beats a mediocre business at a cheap price.** Quality compounds. Cheapness doesn't.
+
+**Next up**: [Part 11 — Coca-Cola](../11-coca-cola/). Could the same principles that worked for a California candy company apply to a global beverage giant? See's taught Buffett how to find out.
+:::
+
+## References
+
+1. Buffett, W. (2007). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/2007ltr.pdf). Berkshire Hathaway Inc.
+
+2. The Hustle. [How a Small Candy Company Became Warren Buffett's Dream Investment](https://thehustle.co/how-a-small-candy-company-became-warren-buffetts-dream-investment/).
+
+3. Buffett, W. (1998). University of Florida Speech. [Quartr](https://quartr.com/insights/edge/tasting-quality-berkshires-defining-bet-on-sees-candies).
+
+4. Various Berkshire Hathaway Annual Letters.
+
+5. Buffett, W. (1997). Berkshire Hathaway Annual Meeting.
+
+6. Buffett, W. (1989). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1989.html). Berkshire Hathaway Inc.

@@ -1,0 +1,149 @@
+---
+title: "The Simplest Way to Compare Investments"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- Buffett compares everything to **government bonds** — the safest investment available
+- If a stock doesn't obviously beat the "safe" option, why take the risk?
+- He also has a **10% minimum return** rule — won't accept less regardless of interest rates
+- Simple beats complicated: use one yardstick, not different rates for every situation
+:::
+
+## The Government Bond Yardstick
+
+Every investment competes against a simple alternative: government bonds.
+
+You can always put your money in U.S. Treasury bonds and earn a guaranteed return — currently around 4-5%. No stress. No analysis. Just a safe return.
+
+Buffett uses this as his baseline:
+
+> "We can always buy government bonds. Therefore, that becomes the yardstick rate."
+
+The logic is straightforward:
+- Bonds pay 4%? Any stock you consider should clearly beat 4%.
+- If a stock might return 5-6%, is the extra headache worth it?
+- If a stock clearly returns 15%, now you're talking.
+
+This simple comparison cuts through a lot of complexity.
+
+## Why One Rate for Everything
+
+In [Part 3](../3-wacc-beta/), we saw that Wall Street uses different "discount rates" for different investments — higher rates for "riskier" companies.
+
+Buffett disagrees. He uses the same government bond rate for everything. Why?
+
+**Because he handles risk differently.**
+
+Instead of adjusting his rate, he:
+1. Only invests in things he truly understands (less risky by definition)
+2. Demands a big gap between price and value (margin of safety)
+
+If a business is too hard to predict, he doesn't invest at all — no rate adjustment would make it safe.
+
+If a business is predictable and cheap enough, the government bond rate is the right comparison.
+
+## The 10% Minimum Rule
+
+Buffett also has a floor:
+
+> "10% is the figure we quit on — we don't want to buy equities when the real return we expect is less than 10%, whether interest rates are 6% or 1%."
+
+This isn't a mathematical rule. It's an opportunity cost decision.
+
+Buffett knows he can usually find investments returning 10%+ somewhere. So he won't accept less just because interest rates are low.
+
+Think about it:
+- If government bonds pay 2%, a stock returning 6% might look good in comparison
+- But Buffett would still pass — he believes better opportunities exist
+- Why tie up money at 6% when 10%+ is available if you wait?
+
+This discipline has served him well. During low-interest-rate years, many investors stretched for mediocre returns. Buffett sat on cash until truly great opportunities appeared.
+
+## Putting It Together
+
+Here's Buffett's practical approach:
+
+### Step 1: Calculate the "Clean" Value
+
+Using owner earnings (from [Part 2](../2-owner-earnings/)), estimate what the business could return if you bought it today.
+
+A simple version: If a company earns $10 in "owner earnings" per share, and you pay $100, you're getting a 10% return (before any growth).
+
+### Step 2: Compare to the Safe Alternative
+
+Is that return clearly better than government bonds (~4-5%)?
+
+If it's close — say, 5-7% — is the extra risk worth it?
+
+### Step 3: Check Against the 10% Floor
+
+Even if it beats bonds, does it meet the 10% minimum?
+
+If not, keep looking.
+
+### Step 4: Demand a Safety Margin
+
+Even if the numbers work, don't pay full price. Wait until you can buy at 20-50% below your estimated value.
+
+This margin protects you if your estimates are wrong.
+
+## The Low Interest Rate Trap
+
+When interest rates are very low (like 2% in 2020), every stock looks attractive by comparison. Your brain says: "This stock returns 5%! That's 2.5x better than bonds!"
+
+Buffett stays disciplined:
+
+> "We don't want to buy equities when the real return we expect is less than 10%, whether interest rates are 6% or 1%."
+
+Low interest rates don't make mediocre investments good. They just make cash less attractive.
+
+The 10% floor keeps him from accepting poor returns just because the alternative is worse.
+
+::: {.callout-tip appearance="simple"}
+## The Patience Payoff
+
+In 2020, with rates near zero, many investors piled into stocks paying 4-5%.
+
+Buffett sat on $140+ billion in cash.
+
+In 2022, when stocks crashed, he had dry powder to invest at much better prices.
+
+Patience and discipline look boring until they work.
+:::
+
+## The Bottom Line
+
+Buffett's comparison system is simple:
+
+1. **Use government bonds as the yardstick** — Can this investment clearly beat the safe alternative?
+
+2. **Apply the 10% floor** — Don't accept mediocre returns just because rates are low.
+
+3. **Demand a margin of safety** — Even good investments need a buffer for error.
+
+No complex formulas. No different rates for different companies. Just common sense comparisons and patience.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Buffett compares all investments to government bonds — the safest option available. If a stock doesn't clearly beat bonds, why take the risk?
+
+He also maintains a 10% minimum return requirement, regardless of interest rates. This discipline prevents him from reaching for mediocre investments when rates are low.
+
+Simple beats complicated. One yardstick for everything.
+
+**Next up**: [Part 8 — Margin of Safety](../8-margin-safety/). Even when an investment looks good, Buffett demands a big discount. Here's why "buying $1 for 50 cents" is the cornerstone of his approach.
+:::
+
+## References
+
+1. Buffett, W. (1997). Berkshire Hathaway Annual Meeting. [25iq](https://25iq.com/2015/11/21/why-and-how-do-munger-and-buffett-discount-the-future-cash-flows-at-the-30-year-u-s-treasury-rate/).
+
+2. Buffett, W. (2003). Berkshire Hathaway Annual Meeting. [Yahoo Finance](https://finance.yahoo.com/news/buffetts-10-hurdle-171902885.html).

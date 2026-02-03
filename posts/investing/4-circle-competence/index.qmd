@@ -1,0 +1,142 @@
+---
+title: "Stay in Your Lane (The Circle of Competence)"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **Circle of Competence** = the businesses you actually understand
+- The size doesn't matter — knowing where it **ends** is what matters
+- Buffett avoided tech stocks for decades because they were outside his circle
+- Investing in what you don't understand is gambling, no matter how cheap it looks
+:::
+
+## The Boundary That Matters
+
+Here's one of Buffett's most important quotes:
+
+> "You only have to be able to evaluate companies within your circle of competence. The size of that circle is not very important; **knowing its boundaries, however, is vital.**"
+
+Read that again. The size doesn't matter. The boundaries do.
+
+Why? Because disaster happens when you think you understand something you don't.
+
+## Two Investors
+
+Consider two investors:
+
+**Investor A** reads widely. She thinks she understands banks, tech companies, healthcare, and energy. But when she really digs in, her knowledge is an inch deep. She knows the buzzwords but not the business dynamics.
+
+**Investor B** only invests in restaurants. That's it. She worked in the industry for years. She knows which locations work, what margins look like, what kills a restaurant.
+
+Who does better over time?
+
+Usually Investor B. Because she never gets into situations where she's guessing. Every investment is within her true expertise.
+
+Investor A, despite her broader knowledge, will eventually make a big bet in something she doesn't really understand. And one big mistake can wipe out years of gains.
+
+## Why Buffett Skipped Tech
+
+For decades, Buffett refused to invest in technology companies. Even when Microsoft and Intel were dominating, he stayed away.
+
+His explanation:
+
+> "Our problem — which we can't solve by studying up — is that we have no insights into which participants in the tech field possess a truly durable competitive advantage."
+
+He wasn't saying tech was bad. He was saying he couldn't tell which tech companies would win and which would lose. Without that insight, any investment was a guess.
+
+Meanwhile, he understood Coca-Cola. He understood banks. He understood insurance. So that's where he invested.
+
+::: {.callout-tip appearance="simple"}
+## The Apple "Exception"
+
+Wait, didn't Buffett buy Apple in 2016?
+
+Yes — but he didn't think of it as a tech investment. He saw Apple as a consumer products company with extremely loyal customers, similar to Coca-Cola.
+
+He wasn't evaluating Apple's chip design or AI capabilities. He was evaluating brand loyalty, customer lock-in, and pricing power — things he understood.
+
+The business was tech. His analysis was consumer products.
+:::
+
+## Signs You're Outside Your Circle
+
+Ask yourself these questions:
+
+1. **Can you explain the business in one sentence?**
+   "Apple makes phones and computers that customers love." ✓
+   "This company uses blockchain-based tokenization to disrupt the..." ✗
+
+2. **Do you know who the customers are and why they buy?**
+   If you can't picture the person paying, you don't understand the business.
+
+3. **Could you explain it to a friend without notes?**
+   If you'd feel embarrassed or confused, that's a warning sign.
+
+4. **Can you imagine what this business looks like in 10 years?**
+   Coca-Cola will still be selling drinks. Will this AI startup still exist?
+
+5. **Do you really know, or do you just think you know?**
+   Reading a few articles isn't understanding. Using a product isn't understanding.
+
+::: {.callout-warning appearance="simple"}
+## The Dunning-Kruger Trap
+
+We all overestimate our understanding. It's human nature.
+
+You read one book on biotech and feel like an expert. You use an app every day and think you understand the business.
+
+The most dangerous place is just outside your circle — where you know enough to feel confident but not enough to see the risks.
+:::
+
+## Expanding Your Circle
+
+Can you grow your circle of competence? Yes, but slowly.
+
+Buffett's approach:
+
+1. **Read obsessively** — He reads annual reports for hours every day. Not summaries. The actual documents.
+
+2. **Expand from what you know** — He went from newspapers to media broadly. From consumer goods to retail. Gradual steps, not leaps.
+
+3. **Learn from mistakes** — His textile business (Berkshire's original company) taught him about capital-intensive commodity businesses. He never made that mistake again.
+
+4. **Immerse yourself** — Before buying GEICO, young Buffett visited the company on a Saturday and spent hours with the VP learning everything.
+
+What doesn't work: reading a few articles and assuming you understand.
+
+## Why This Comes First
+
+In [Part 3](../3-wacc-beta/), we said Buffett doesn't adjust his discount rate for risk. Instead, he only invests in things he understands.
+
+Circle of Competence is his primary risk management tool.
+
+You can't value what you don't understand. And no amount of "margin of safety" protects you from being fundamentally wrong about how a business works.
+
+First: "Do I actually understand this?"
+Then: "What is it worth?"
+
+The order matters.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Circle of Competence is the range of businesses you truly understand — not just superficially, but deeply enough to predict their future.
+
+The size of your circle doesn't matter. Knowing exactly where it ends does.
+
+Investing outside your circle isn't brave or ambitious. It's gambling.
+
+**Next up**: [Part 5 — Economic Moats](../5-moats/). Once you understand a business, how do you know if it can stay successful? That's where moats come in.
+:::
+
+## References
+
+1. Buffett, W. (1996). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1996.html). Berkshire Hathaway Inc.
+
+2. Buffett, W. (1999). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1999htm.html). Berkshire Hathaway Inc.

@@ -1,0 +1,198 @@
+---
+title: "The Money That Actually Lands in Your Pocket"
+author: "Hujie Wang"
+date: "2026-02-02"
+categories: [investing, valuation, buffett]
+toc: true
+draft: true
+---
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **Accounting profits aren't real money** — they include paper expenses that never leave the company
+- **Owner earnings** = the cash an owner could actually take home without hurting the business
+- This is Buffett's own measure, different from what you'll see on financial statements
+- When in doubt, assume the worst case — it's better to underestimate than overpay
+:::
+
+## The Profit Illusion
+
+Company A reports $10 million in "profit" this year.
+
+Sounds great, right? But what if I told you that $3 million of that "profit" was a paper expense reversal that added no cash? And the company actually had to spend $4 million replacing worn-out equipment just to keep operating?
+
+Suddenly that $10 million "profit" doesn't look so impressive.
+
+This is the problem Buffett identified: **accounting profit and real cash are different things**. And if you want to know what a business is worth, you need to know the real cash — what he calls "owner earnings."
+
+## What Goes in Your Pocket?
+
+Imagine you bought a laundromat for $100,000.
+
+Every month, customers put quarters in the machines. Some of that goes to:
+- Electricity bills
+- Water bills
+- Rent
+- Repairs when machines break
+
+What's left over? **That's what goes in your pocket.** That's the real profit.
+
+Now imagine your accountant says: "Your profit is $2,000 this month." But you look at your bank account and it only went up $1,200. What happened?
+
+The accountant added back "depreciation" — the idea that your machines are slowly wearing out and losing value. But that's a paper expense. No cash left the building. Meanwhile, you spent $800 on actual repairs that did leave the building.
+
+**The accounting profit was $2,000. The cash in your pocket was $1,200.**
+
+Owner earnings tries to capture the second number — what you could actually take home.
+
+## Buffett's Formula
+
+In 1986, Buffett explained his approach:
+
+> "Owner earnings represent (a) reported earnings plus (b) depreciation and other non-cash charges, less (c) the average amount of capital expenditures needed to maintain the business's competitive position."
+
+In plain English:
+
+**Owner Earnings = Accounting Profit + Fake Expenses − Real Expenses**
+
+Where:
+- **Accounting profit** = what the company reports
+- **Fake expenses** = "depreciation" and similar paper charges that don't use cash
+- **Real expenses** = money spent on equipment, buildings, etc. to keep the business running
+
+The key insight: **not all spending is the same**.
+
+## The Two Kinds of Spending
+
+When a company spends money on equipment or buildings (called "capital expenditures" or CapEx), it's doing one of two things:
+
+**1. Maintenance spending** — Replacing a worn-out delivery truck so operations continue normally. This is a real cost. You have to spend this money or the business declines.
+
+**2. Growth spending** — Buying a second truck to expand into new territory. This is optional. If you don't spend it, you don't grow, but you're still fine.
+
+Here's the problem: accountants lump these together. The financial statement just says "capital expenditures: $5 million." It doesn't tell you how much was keeping the business running vs. how much was expansion.
+
+**Owner earnings only subtracts maintenance spending** — the unavoidable cost of keeping the business at its current level.
+
+::: {.callout-tip appearance="simple"}
+## The Pyramid Analogy
+
+Buffett used this example: Imagine buying a business that never needed any maintenance spending. The equipment never wears out. The buildings last forever.
+
+That would be like owning the Pyramids — "forever state-of-the-art, never needing to be replaced, improved or refurbished."
+
+Real businesses aren't pyramids. Things wear out. You have to spend money just to stay in place. Owner earnings accounts for this reality.
+:::
+
+## A Simple Example
+
+Let's compare two businesses:
+
+**Business A (Light on Equipment):**
+
+| Item | Amount |
+|------|--------|
+| Reported profit | $1,000,000 |
+| + Depreciation (non-cash) | $100,000 |
+| − Maintenance spending | $50,000 |
+| **= Owner Earnings** | **$1,050,000** |
+
+**Business B (Heavy on Equipment):**
+
+| Item | Amount |
+|------|--------|
+| Reported profit | $1,000,000 |
+| + Depreciation (non-cash) | $500,000 |
+| − Maintenance spending | $600,000 |
+| **= Owner Earnings** | **$900,000** |
+
+Both report the same accounting profit. But Business A puts $1,050,000 in the owner's pocket, while Business B only puts $900,000.
+
+If you valued them based on accounting profit, you'd think they're equal. They're not.
+
+## The Challenge: Estimating Maintenance
+
+Here's the hard part: companies don't tell you how much of their spending is maintenance vs. growth.
+
+Some approaches:
+
+**1. Use depreciation as a rough guide**
+If a company's equipment wears out and the depreciation number is reasonable, maintenance spending is probably similar.
+
+**2. Look at the business type**
+- A software company? Almost no physical stuff to maintain.
+- A factory or railroad? Lots of equipment that needs constant upkeep.
+
+**3. Be conservative**
+When you can't tell, assume ALL spending is maintenance. This gives you a lower owner earnings estimate, which is safer.
+
+::: {.callout-warning appearance="simple"}
+## When in Doubt, Assume the Worst
+
+Buffett's philosophy: it's better to underestimate owner earnings and miss some opportunities than to overestimate and overpay.
+
+If you assume all spending is unavoidable maintenance, and the business still looks cheap, it's probably a real bargain.
+:::
+
+## Why Wall Street Gets This Wrong
+
+You'll often hear analysts use "EBITDA" — Earnings Before Interest, Taxes, Depreciation, and Amortization. It's supposed to measure cash flow.
+
+Buffett hates this number:
+
+> "People who use EBITDA are either trying to con you or they're conning themselves."
+
+Why? Because EBITDA adds back depreciation but ignores that you actually have to replace the stuff that's depreciating.
+
+Charlie Munger compared it to a rental agent saying a 1,000-square-foot apartment is actually 2,000 square feet. It's not lying exactly, but it's definitely misleading.
+
+EBITDA pretends equipment lasts forever. It doesn't.
+
+## A Real World Example: Coca-Cola
+
+When Buffett bought Coca-Cola in 1988, here's roughly what he saw:
+
+- Reported profit: about $1 billion
+- Depreciation: about $170 million
+- Capital spending: about $387 million
+
+But Coca-Cola's business is mostly brand and marketing — not factories. Most of that capital spending was for expansion, not maintenance.
+
+If maintenance was roughly equal to depreciation (~$170 million):
+
+**Owner Earnings ≈ $1 billion + $170 million − $170 million = $1 billion**
+
+Pretty close to reported profit. That's typical for asset-light businesses with strong brands.
+
+For a railroad or airline, the gap would be much larger.
+
+## The Bottom Line
+
+**Accounting profit ≠ Cash in your pocket**
+
+Owner earnings strips away the accounting tricks to answer a simple question: "How much money could the owner actually take home each year without hurting the business?"
+
+The formula:
+
+**Owner Earnings = Reported Profit + Non-Cash Charges − Maintenance Spending**
+
+When you can't tell how much is maintenance spending, be conservative. Assume the worst.
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+Owner earnings is Buffett's way of measuring what a business actually puts in an owner's pocket — not what the accountants say, but what's real.
+
+The key insight: not all spending is equal. Maintenance spending is a true cost you can't avoid. Growth spending is optional.
+
+When calculating owner earnings, be conservative. Underestimating is safer than overestimating.
+
+**Next up**: [Part 3 — Why Buffett Ignores Wall Street Math](../3-wacc-beta/). Wall Street uses something called "WACC" to value businesses. Buffett thinks it's nonsense. Here's why.
+:::
+
+## References
+
+1. Buffett, W. (1986). [Berkshire Hathaway Shareholder Letter](https://www.berkshirehathaway.com/letters/1986.html). Berkshire Hathaway Inc.
+
+2. Buffett, W. (2000). Berkshire Hathaway Annual Meeting. See: [Wall Street Prep on EBITDA](https://www.wallstreetprep.com/knowledge/warren-buffett-ebitda/).
