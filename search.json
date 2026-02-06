@@ -1071,6 +1071,475 @@
     "text": "有一种很有意思的游戏，就是有物体若干堆，可以是火柴棍或是围棋子等等均可。两个人轮流从堆中取物体若干，规定最后取光物体者取胜。这是我国民间很古老的一个游戏，别看这游戏极其简单，却蕴含着深刻的数学原理。下面我们来分析一下要如何才能够取胜。 （一）巴什博奕（Bash Game）：只有一堆n个物品，两个人轮流从这堆物品中取物，规定每次至少取一个，最多取m个。最后取光者得胜。 显然，如果n=m+1，那么由于一次最多只能取m个，所以，无论先取者拿走多少个，后取者都能够一次拿走剩余的物品，后者取胜。因此我们发现了如何取胜的法则：如果n=（m+1）r+s，（r为任意自然数，s≤m),那么先取者要拿走s个物品，如果后取者拿走k（≤m)个，那么先取者再拿走m+1-k个，结果剩下（m+1）（r-1）个，以后保持这样的取法，那么先取者肯定获胜。总之，要保持给对手留下（m+1）的倍数，就能最后获胜。 这个游戏还可以有一种变相的玩法：两个人轮流报数，每次至少报一个，最多报十个，谁能报到100者胜。 （二）威佐夫博奕（Wythoff Game）：有两堆各若干个物品，两个人轮流从某一堆或同时从两堆中取同样多的物品，规定每次至少取一个，多者不限，最后取光者得胜。 这种情况下是颇为复杂的。我们用（ak，bk）（ak ≤ bk ,k=0，1，2，…,n)表示两堆物品的数量并称其为局势，如果甲面对（0，0），那么甲已经输了，这种局势我们称为奇异局势。前几个奇异局势是：（0，0）、（1，2）、（3，5）、（4，7）、（6，10）、（8，13）、（9，15）、（11，18）、（12，20）。 可以看出,a0=b0=0,ak是未在前面出现过的最小自然数,而 bk= ak + k，奇异局势有 如下三条性质： 1。任何自然数都包含在一个且仅有一个奇异局势中。 由于ak是未在前面出现过的最小自然数，所以有ak &gt; ak-1 ，而 bk= ak + k &gt; ak-1 + k-1 = bk-1 &gt; ak-1 。所以性质1。成立。 2。任意操作都可将奇异局势变为非奇异局势。 事实上，若只改变奇异局势（ak，bk）的某一个分量，那么另一个分量不可能在其他奇异局势中，所以必然是非奇异局势。如果使（ak，bk）的两个分量同时减少，则由于其差不变，且不可能是其他奇异局势的差，因此也是非奇异局势。 3。采用适当的方法，可以将非奇异局势变为奇异局势。 假设面对的局势是（a,b），若 b = a，则同时从两堆中取走 a 个物体，就变为了奇异局势（0，0）；如果a = ak ，b &gt; bk，那么，取走b - bk个物体，即变为奇异局势；如果 a = ak ， b &lt; bk ,则同时从两堆中拿走 ak - ab - ak个物体,变为奇异局势（ ab - ak , ab - ak+ b - ak）；如果a &gt; ak ，b= ak + k,则从第一堆中拿走多余的数量a - ak 即可；如果a &lt; ak ，b= ak + k,分两种情况，第一种，a=aj （j &lt; k）,从第二堆里面拿走 b - bj 即可；第二种，a=bj （j &lt; k）,从第二堆里面拿走 b - aj 即可。 从如上性质可知，两个人如果都采用正确操作，那么面对非奇异局势，先拿者必胜；反之，则后拿者取胜。 那么任给一个局势（a，b），怎样判断它是不是奇异局势呢？我们有如下公式： ak =[k（1+√5）/2]，bk= ak + k （k=0，1，2，…,n 方括号表示取整函数) 奇妙的是其中出现了黄金分割数（1+√5）/2 = 1。618…,因此,由ak，bk组成的矩形近似为黄金矩形，由于2/（1+√5）=（√5-1）/2，可以先求出j=[a（√5-1）/2]，若a=[j（1+√5）/2]，那么a = aj，bj = aj + j，若不等于，那么a = aj+1，bj+1 = aj+1+ j + 1，若都不是，那么就不是奇异局势。然后再按照上述法则进行，一定会遇到奇异局势。 （三）尼姆博奕（Nimm Game）：有三堆各若干个物品，两个人轮流从某一堆取任意多的物品，规定每次至少取一个，多者不限，最后取光者得胜。 这种情况最有意思，它与二进制有密切关系，我们用（a，b，c）表示某种局势，首先（0，0，0）显然是奇异局势，无论谁面对奇异局势，都必然失败。第二种奇异局势是（0，n，n），只要与对手拿走一样多的物品，最后都将导致（0，0，0）。仔细分析一下，（1，2，3）也是奇异局势，无论对手如何拿，接下来都可以变为（0，n，n）的情形。 计算机算法里面有一种叫做按位模2加，也叫做异或的运算，我们用符号（+）表示这种运算。这种运算和一般加法不同的一点是1+1=0。先看（1，2，3）的按位模2加的结果： 1 =二进制01 2 =二进制10 3 =二进制11 （+） ——————— 0 =二进制00 （注意不进位） 对于奇异局势（0，n，n）也一样，结果也是0。 任何奇异局势（a，b，c）都有a（+）b（+）c =0。 如果我们面对的是一个非奇异局势（a，b，c），要如何变为奇异局势呢？假设 a &lt; b&lt; c,我们只要将 c 变为 a（+）b,即可,因为有如下的运算结果: a（+）b（+）(a（+）b)=(a（+）a)（+）(b（+）b)=0（+）0=0。要将c 变为a（+）b，只要从 c中减去 c-（a（+）b）即可。 例1。（14，21，39），14（+）21=27，39-27=12，所以从39中拿走12个物体即可达到奇异局势（14，21，27）。 例2。（55，81，121），55（+）81=102，121-102=19，所以从121中拿走19个物品就形成了奇异局势（55，81，102）。 例3。（29，45，58），29（+）45=48，58-48=10，从58中拿走10个，变为（29，45，48）。 例4。我们来实际进行一盘比赛看看： 甲:(7,8,9)-&gt;(1,8,9)奇异局势 乙:(1,8,9)-&gt;(1,8,4) 甲:(1,8,4)-&gt;(1,5,4)奇异局势 乙:(1,5,4)-&gt;(1,4,4) 甲:(1,4,4)-&gt;(0,4,4)奇异局势 乙:(0,4,4)-&gt;(0,4,2) 甲:(0.4,2)-&gt;(0,2,2)奇异局势 乙:(0,2,2)-&gt;(0,2,1) 甲:(0,2,1)-&gt;(0,1,1)奇异局势 乙:(0,1,1)-&gt;(0,1,0) 甲:(0,1,0)-&gt;(0,0,0)奇异局势 甲胜。"
   },
   {
+    "objectID": "posts/investing/12-apple/index.html",
+    "href": "posts/investing/12-apple/index.html",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nBuffett avoided tech stocks for 60 years — then made Apple his biggest bet ever\nHis trick: He didn’t see Apple as a tech company. He saw it as a brand people love.\nThe price was ridiculous: Apple cost 1/3 what similar companies cost\nResult: $31 billion turned into $170+ billion"
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#the-surprise-everyone-saw-coming-except-nobody-did",
+    "href": "posts/investing/12-apple/index.html#the-surprise-everyone-saw-coming-except-nobody-did",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "The Surprise Everyone Saw Coming (Except Nobody Did)",
+    "text": "The Surprise Everyone Saw Coming (Except Nobody Did)\nFor 60 years, Warren Buffett famously avoided technology stocks. His explanation was always the same:\n\n“We have no insights into which participants in the tech field possess a truly durable competitive advantage.”\n\nTranslation: Tech changes too fast. Today’s winner is tomorrow’s has-been. Nokia. BlackBerry. MySpace. Too risky.\nThen in 2016, Buffett started buying Apple. A lot of Apple. By 2018, it was his single largest investment — bigger than Coca-Cola, bigger than everything.\nWhat changed?"
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#he-didnt-see-apple-as-a-tech-company",
+    "href": "posts/investing/12-apple/index.html#he-didnt-see-apple-as-a-tech-company",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "He Didn’t See Apple as a Tech Company",
+    "text": "He Didn’t See Apple as a Tech Company\nThis is the key insight: Buffett wasn’t buying a technology company. He was buying a brand.\nHere’s how he explained it:\n\n“I bought Apple because I understood it as a consumer products company with extremely loyal customers.”\n\nHe wasn’t evaluating chip designs or AI capabilities. He was looking at the same things he’d been analyzing his whole career:\n\nBrand loyalty (like Coca-Cola)\nCustomer lock-in (like See’s Candies in California)\nPricing power (like American Express)\nEmotional connection (like Gillette razors)\n\nThese are all things Buffett understands deeply. He just saw them in a “tech” company for the first time."
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#the-price-was-ridiculous",
+    "href": "posts/investing/12-apple/index.html#the-price-was-ridiculous",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "The Price Was Ridiculous",
+    "text": "The Price Was Ridiculous\nLook at what Apple cost compared to Google in 2016:\n\n\n\nCompany\nPrice (relative to profits)\n\n\n\n\nApple\n10x profits\n\n\nGoogle\n32x profits\n\n\n\nApple cost one-third of what Google cost, relative to their earnings.\nThink about that. Apple had: - One of the world’s most valuable brands - An ecosystem customers can’t escape - 94% customer retention (9 out of 10 iPhone users buy another iPhone)\nAnd it was priced like a company everyone had given up on.\nWhat Buffett paid: - Total investment: About $31 billion - Number of purchases: 14 separate buys over time - He kept buying more because it stayed cheap"
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#wheres-the-moat",
+    "href": "posts/investing/12-apple/index.html#wheres-the-moat",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "Where’s the Moat?",
+    "text": "Where’s the Moat?\n\nYou Can’t Escape the Ecosystem\nTed Weschler, the Berkshire analyst who first recommended Apple, put it simply:\n\n“Once you have your thousands of photographs up in the cloud, you’re used to the keystrokes, you know where everything is — you become a sticky consumer.”\n\nThink about switching from iPhone to Android: - You lose your apps — many don’t transfer, others work differently - Your photos are stuck — yes, you can move them, but it’s a hassle - iMessage breaks — your group chats with family become a mess - Your AirPods work worse — same with your Apple Watch\nThat’s not technology. That’s a trap. A very comfortable trap that people don’t want to leave.\n\n\nPeople Would Give Up Their Cars First\nHere’s what Buffett noticed:\n\n“People would give up their cars before they give up their smartphones.”\n\nWhen your product is more essential than a car, you have something special.\n94% of iPhone users buy another iPhone. That’s not a phone. That’s a habit.\n\n\nThey Could Charge More (But Don’t)\nBuffett observed something interesting:\n\n“The iPhone is underpriced given the utility of the product.”\n\nPeople use their phones for hours every day. It’s their camera, their wallet, their entertainment, their connection to everyone they know. And it lasts years.\nIf Apple wanted to charge more, most people would still pay. That’s pricing power."
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#why-was-apple-so-cheap",
+    "href": "posts/investing/12-apple/index.html#why-was-apple-so-cheap",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "Why Was Apple So Cheap?",
+    "text": "Why Was Apple So Cheap?\nAt 10x profits, Apple was priced like a dying business. Why?\n“Smartphones are over”\nEveryone already has one. Where’s the growth?\n“iPhones all look the same now”\nThe iPhone 7 wasn’t much different from the iPhone 6. Would people keep upgrading?\n“China is risky”\nApple depends on China for both manufacturing and sales. What if that relationship sours?\n“Android is winning”\nMore people globally use Android than iPhone. Analysts worried Apple would lose.\n“Tech is risky”\nAfter the 2000 dot-com crash, many careful investors avoided anything that looked like tech. Apple was guilty by association.\nBuffett saw through all of this. The brand, the ecosystem, the customer loyalty — none of that was going away. Short-term worries created a buying opportunity.\nJust like Coca-Cola in 1988."
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#the-checklist",
+    "href": "posts/investing/12-apple/index.html#the-checklist",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "The Checklist",
+    "text": "The Checklist\n\n\n\nQuestion\nApple\n\n\n\n\nDo I understand it?\n✓ Brand + ecosystem = loyal customers\n\n\nDoes it have staying power?\n✓ Switching costs are enormous\n\n\nIs management good?\n✓ Tim Cook buys back billions in stock\n\n\nIs the money real?\n✓ $50+ billion in cash every year\n\n\nIs it obviously cheap?\n✓ 10x profits vs. 30x for peers"
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#the-results",
+    "href": "posts/investing/12-apple/index.html#the-results",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "The Results",
+    "text": "The Results\nWhat $31 billion became:\n\nAt peak: Over $170 billion (more than 50% of Berkshire’s stocks)\nTotal gain: About $167 billion\nReturn: 407%\n\nThen something interesting happened:\nStarting in late 2023, Buffett started selling Apple. Not because he changed his mind about the company — but because the price changed.\nApple went from 10x profits to over 33x profits. At that price, the safety cushion disappeared.\nThis is the discipline in action: buy when obviously cheap, sell when full priced. The business didn’t get worse. The opportunity did."
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#what-this-teaches",
+    "href": "posts/investing/12-apple/index.html#what-this-teaches",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "What This Teaches",
+    "text": "What This Teaches\n\nYou Don’t Need to Understand Everything\nBuffett didn’t learn to analyze semiconductor manufacturing. He didn’t study iOS architecture.\nHe reframed Apple as something he already understood: a brand people love.\nYou don’t need to understand every aspect of a business. You need to understand what makes customers stay.\n\n\nThe Market Gets It Wrong on Quality\nIn 2016, Apple was the world’s most valuable company. And the market was pricing it like a failing business.\nEveryone “knew” smartphones were over. Everyone was wrong.\n\n\nBuybacks Are Good (When Done Right)\nApple has bought back over 30% of its own shares since 2016. Every remaining share owns more of the company.\nBuffett loves this. It’s why he likes Tim Cook as a manager.\n\n\nSame Company, Different Price = Different Investment\nApple at 10x profits was a screaming buy. Apple at 33x profits was time to sell.\nThe company didn’t change. The opportunity did.\n\n\n\n\n\n\nTipBuffett on Apple vs. Coca-Cola\n\n\n\nAt a shareholder meeting, Buffett said something remarkable:\n\n“We own Coca-Cola, which is a wonderful business. And we own Apple, which is an even better business.”\n\nFrom someone who avoided tech for 60 years, that’s extraordinary.\n\n\n\n\n\n\n\n\nNoteSummary\n\n\n\nApple proves that “circle of competence” is about understanding business dynamics, not industry expertise.\nBuffett saw Apple as something he’d been analyzing his whole life: a brand with loyal customers who don’t want to leave.\nAt 10x profits while similar companies cost 30x, the opportunity screamed. When the price tripled, he started selling.\nSame principles. Different industry. Same result.\nNext up: Part 13 — The Complete Framework. Everything from this series, condensed into one checklist you can use."
+  },
+  {
+    "objectID": "posts/investing/12-apple/index.html#references",
+    "href": "posts/investing/12-apple/index.html#references",
+    "title": "Why the ‘Tech-Avoider’ Bet $31 Billion on Apple",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1999). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nCNBC (2018). Warren Buffett on Apple Investment.\nWeschler, T. (2016). Interview. Carnegie Invest."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html",
+    "href": "posts/investing/1-intrinsic-value/index.html",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nEvery business has a true worth based on the money it generates — separate from its stock price\nStock prices bounce around with market emotions; the underlying value changes slowly\nWarren Buffett made $100+ billion by buying businesses when prices fell far below true worth\nYou don’t need complex math — if it’s not obviously a bargain, pass"
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#the-100-billion-question",
+    "href": "posts/investing/1-intrinsic-value/index.html#the-100-billion-question",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "The $100+ Billion Question",
+    "text": "The $100+ Billion Question\nMost people buy stocks based on price movements. “It’s going up!” or “It just dropped 20%!”\nWarren Buffett — who turned $10,000 into over $100 billion — does something different. He ignores what the stock price is doing. Instead, he asks one question:\n“What is this business actually worth?”\nIf the price is way below the true worth, he buys. If it’s not obvious, he walks away. That’s it.\nThis simple idea made him the most successful investor in history. This series explains how he does it.\n\n\n\n\n\n\nFigure 1: The gap between price and value is where fortunes are made. Stock prices (red) bounce around wildly. True value (blue) changes gradually. Smart investors buy when red dips far below blue."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#who-this-series-is-for",
+    "href": "posts/investing/1-intrinsic-value/index.html#who-this-series-is-for",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "Who This Series Is For",
+    "text": "Who This Series Is For\nYou don’t need a finance degree. You don’t need to know what a “P/E ratio” is (though we’ll explain it). You just need to be curious about how successful investors actually think.\nMaybe you have a 401(k) and wonder if you’re doing it right. Maybe you’ve heard about “value investing” but the jargon feels like a foreign language. Maybe you’re tired of “hot tips” that go nowhere.\nThis series cuts through the noise. We’ll study Warren Buffett’s actual methods — sourced from his own letters and speeches — in plain language anyone can understand.\n\n\n\n\n\n\nWarningWhat This Series Won’t Do\n\n\n\nThis isn’t a get-rich-quick guide. Buffett spent 60+ years refining his approach. You won’t become an expert overnight. But you will learn to think about investing differently — and that’s the first step."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#the-house-analogy",
+    "href": "posts/investing/1-intrinsic-value/index.html#the-house-analogy",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "The House Analogy",
+    "text": "The House Analogy\nImagine you’re buying a house.\nThe asking price is $500,000. But that’s just what the seller wants. To know if it’s a good deal, you’d ask: “What is this house actually worth?”\nYou might look at:\n\nWhat similar houses sold for nearby\nHow much rent it could generate\nThe condition of the roof, foundation, plumbing\nThe neighborhood’s trajectory\n\nIf you determine the house is worth $600,000 and they’re asking $500,000, that’s a good deal. If it’s worth $400,000, you’d walk away (or negotiate hard).\nStocks work the same way. Behind every stock is a real business — with customers, products, and profits. That business has a true worth, separate from whatever the stock price says today.\nBuffett calls this the “intrinsic value” — the actual worth of the business, based on the money it will generate over time."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#buffetts-definition",
+    "href": "posts/investing/1-intrinsic-value/index.html#buffetts-definition",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "Buffett’s Definition",
+    "text": "Buffett’s Definition\nHere’s how Buffett explains it (from his 1992 letter to shareholders):\n\n“Intrinsic value is the discounted value of the cash that can be taken out of a business during its remaining life.”\n\nLet’s translate that:\n\n“The cash that can be taken out” — Real money the owner could put in their pocket. Not accounting tricks. Actual cash.\n“During its remaining life” — All the future profits, not just this year’s.\n“Discounted” — A dollar next year is worth less than a dollar today (because you could invest today’s dollar and grow it). So future profits are adjusted downward.\n\nThink of it like buying a rental property. The “intrinsic value” is all the rent you’ll collect over the years, minus expenses, adjusted for the fact that money later is worth less than money now.\n\n\n\n\n\n\nTipPrice vs. Value: Buffett’s Famous Line\n\n\n\n“Price is what you pay. Value is what you get.”\nThe stock market gives you a price every second. Your job is to figure out the value — and only buy when price is way below it."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#why-the-stock-price-lies",
+    "href": "posts/investing/1-intrinsic-value/index.html#why-the-stock-price-lies",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "Why the Stock Price Lies",
+    "text": "Why the Stock Price Lies\nIf intrinsic value exists, why doesn’t the stock price just match it?\nBecause markets are emotional. Stock prices reflect what millions of people feel about a company right now — not what it’s actually worth.\nWhen there’s good news, people pile in, pushing prices too high. When there’s bad news, they panic and sell, pushing prices too low. The business itself hasn’t changed much. The emotions changed.\nBuffett’s insight: these emotional swings create opportunities. When fear pushes a stock price far below intrinsic value, that’s when you buy. When greed pushes it far above, you sell (or at least don’t buy)."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#the-obviously-cheap-test",
+    "href": "posts/investing/1-intrinsic-value/index.html#the-obviously-cheap-test",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "The “Obviously Cheap” Test",
+    "text": "The “Obviously Cheap” Test\nHere’s the surprising part: Buffett doesn’t use complex math.\nHis partner Charlie Munger revealed:\n\n“Warren often talks about these discounted cash flows, but I’ve never seen him do one. If it isn’t perfectly obvious that it’s going to work out well, he tends to go on to the next idea.”\n\nAnd Buffett confirmed:\n\n“It’s true. If [the value of a company] doesn’t just scream out at you, it’s too close.”\n\nThink about that. The greatest investor in history doesn’t use spreadsheets. He uses common sense.\nIf you need a calculator to figure out whether something is cheap, it probably isn’t cheap enough. The best bargains are obvious.\n\n\n\n\n\n\nImportantApproximately Right &gt; Precisely Wrong\n\n\n\nMunger on fancy financial models:\n\n“Some of the worst business decisions I’ve seen came with detailed analysis. The higher math was false precision.”\n\nA model that says a stock is worth “$47.32 per share” creates an illusion of certainty. But change one assumption slightly and that number swings to $60 or $35. The precision is fake.\nBetter to know something is “definitely worth more than $40” and buy it at $25. You might be wrong about whether it’s worth $50 or $60, but you’re still making money."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#a-real-example-sees-candies",
+    "href": "posts/investing/1-intrinsic-value/index.html#a-real-example-sees-candies",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "A Real Example: See’s Candies",
+    "text": "A Real Example: See’s Candies\nIn 1972, Buffett bought See’s Candies (a California chocolate company) for $25 million.\nHere’s what he knew:\n\nThe business was earning about $5 million per year\nIt had loyal customers who loved the brand\nIt could probably raise prices over time\n\nHis calculation was basically: “I’m paying 5 times earnings for a business that might grow forever. That sounds good.”\nNo spreadsheets. No 10-year projections. Just common sense about a business he understood.\nThe result? See’s has generated over $2 billion in profits since 1972. From a $25 million investment. An 80x return."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#what-well-cover-in-this-series",
+    "href": "posts/investing/1-intrinsic-value/index.html#what-well-cover-in-this-series",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "What We’ll Cover in This Series",
+    "text": "What We’ll Cover in This Series\nThis series has 13 parts. Here’s the roadmap:\n\n\n\nPart\nTopic\nThe Big Question\n\n\n\n\n1\nWhat is Intrinsic Value? (this post)\nWhat is a business really worth?\n\n\n2\nOwner Earnings\nHow much cash actually goes in your pocket?\n\n\n3\nWhy Buffett Ignores Wall Street Math\nWhat discount rate should you use?\n\n\n4\nCircle of Competence\nHow do you know you understand a business?\n\n\n5\nEconomic Moats\nWhat protects a business from competition?\n\n\n6\nThe Institutional Imperative\nWhy do smart managers make dumb decisions?\n\n\n7\nThe Yardstick Rate\nHow do you compare investments fairly?\n\n\n8\nMargin of Safety\nHow much buffer do you need?\n\n\n9\nWhen to Walk Away\nWhat makes Buffett say “no”?\n\n\n10-12\nCase Studies\nSee’s, Coca-Cola, Apple — real examples\n\n\n13\nThe Complete Checklist\nPutting it all together"
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#the-bottom-line",
+    "href": "posts/investing/1-intrinsic-value/index.html#the-bottom-line",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "The Bottom Line",
+    "text": "The Bottom Line\nEvery business has an intrinsic value — what it’s actually worth based on the cash it will generate.\nStock prices bounce around based on emotions. They’re often wrong.\nWhen price falls far below intrinsic value, that’s a buying opportunity. When it’s not obvious, pass.\nYou don’t need complex math. If you need a spreadsheet to prove something is cheap, it isn’t cheap enough.\n\n\n\n\n\n\nNoteSummary\n\n\n\nIntrinsic value is what a business is actually worth — all the cash it will generate over its lifetime, adjusted to today’s dollars. Stock prices fluctuate with emotions, but true value changes slowly.\nBuffett’s approach: only buy when the price is obviously below intrinsic value. If you need complex calculations to figure it out, move on to something easier.\nNext up: Part 2 — Owner Earnings. Not all “profits” are real. We’ll learn to calculate what actually goes in an owner’s pocket."
+  },
+  {
+    "objectID": "posts/investing/1-intrinsic-value/index.html#references",
+    "href": "posts/investing/1-intrinsic-value/index.html#references",
+    "title": "What a Business is Really Worth (And Why the Stock Price Lies)",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1992). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nMunger, C. (1996). Berkshire Hathaway Annual Meeting. CNBC Buffett Archive.\nBuffett, W. (2007). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html",
+    "href": "posts/investing/11-coca-cola/index.html",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nBuffett invested $1 billion in Coca-Cola — now worth $27+ billion\nHe thought Coke was worth 3x what the market was charging\nThe math was simple: A legendary brand selling at a normal price? Obviously cheap.\nHe hasn’t sold a single share in 36 years. That’s the power of owning a great business."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#buffetts-biggest-bet-at-the-time",
+    "href": "posts/investing/11-coca-cola/index.html#buffetts-biggest-bet-at-the-time",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "Buffett’s Biggest Bet (At the Time)",
+    "text": "Buffett’s Biggest Bet (At the Time)\nIn 1988, Buffett did something surprising: he put over $1 billion into Coca-Cola stock. It was the largest investment Berkshire had ever made.\nWhy would a famous bargain-hunter pay up for a company everyone already knew was great?\nBecause Buffett thought the market was wildly wrong about what Coke was worth."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#the-numbers-keep-it-simple",
+    "href": "posts/investing/11-coca-cola/index.html#the-numbers-keep-it-simple",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "The Numbers (Keep It Simple)",
+    "text": "The Numbers (Keep It Simple)\nWhat Coke looked like in 1988:\n\nTotal company value: About $16 billion\nAnnual profits: About $1 billion\nWhat Buffett paid: About $1 billion for a 7% stake\n\nSo Buffett paid roughly 15 years of his share of the profits. That’s not dirt cheap — average companies trade around 15x profits. But Coca-Cola isn’t average.\nThe question: Was one of the world’s greatest brands really worth just an “average” price?"
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#buffetts-back-of-envelope-math",
+    "href": "posts/investing/11-coca-cola/index.html#buffetts-back-of-envelope-math",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "Buffett’s Back-of-Envelope Math",
+    "text": "Buffett’s Back-of-Envelope Math\nBuffett doesn’t use complicated spreadsheets. Here’s roughly how he thought about Coke:\nStep 1: What is Coke earning today? About $800 million in real, take-home cash (what we called “owner earnings” in Part 2).\nStep 2: How fast is it growing? Coke had been growing 15-20% per year. Buffett assumed a conservative 15%.\nStep 3: What’s a reasonable comparison? Government bonds were paying 9% at the time. That’s Buffett’s benchmark for “what else could I do with this money?”\nStep 4: Rough math A business growing at 15% when the alternative only pays 9%? That growth is worth a lot.\nBuffett estimated Coca-Cola was worth roughly $48 billion.\nThe market was pricing it at $16 billion.\nThat’s about 3x undervalued.\n\n\n\n\n\n\nImportantWhen Something Is 3x Undervalued, Details Don’t Matter\n\n\n\nAt 3x undervalued, you don’t need precise calculations. Even if Buffett was off by 30%, Coke was still dramatically cheap.\nThis is the “screaming test” in action: if the opportunity doesn’t scream at you, it’s too close to call. Coca-Cola screamed."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#why-coca-cola",
+    "href": "posts/investing/11-coca-cola/index.html#why-coca-cola",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "Why Coca-Cola?",
+    "text": "Why Coca-Cola?\nLet’s check Coke against everything we’ve learned:\n\nDid Buffett understand it? ✓\nCoca-Cola’s business is beautifully simple: make syrup, sell it to bottlers, invest in keeping the brand strong. No complex technology. No unpredictable innovations.\nBuffett once noted:\n\n“75 percent of the people in the world have something in their mind about Coca-Cola. And overwhelmingly it’s favorable.”\n\nThat’s 130 years of brand-building. No amount of money can buy that.\n\n\nDoes it have a moat? ✓\nCoca-Cola might have the strongest brand moat in the world:\n\nEveryone knows it — Recognition in virtually every country\nEverywhere you look — Millions of stores, restaurants, vending machines\nEmotional connection — Happiness, nostalgia, good times\nCan’t be copied — No competitor can replicate 130 years of trust\n\n\n\nCan they raise prices? ✓\nWhen Buffett invested, Coke had been raising prices 4-5% every year. Customers kept buying. That’s pricing power.\n\n\nIs the money real? ✓\nRemember “owner earnings” from Part 2? Coca-Cola’s were excellent.\nThe business doesn’t need expensive factories or constant upgrades. It makes syrup and spends on marketing. Almost all the profit is real cash that owners can keep.\n\n\nIs there a safety cushion? ✓\nBuffett thought Coke was worth $48 billion. The market was charging $16 billion. That’s a 67% discount — massive margin of safety.\nEven if he was significantly wrong, he’d still do fine."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#why-was-such-a-great-company-so-cheap",
+    "href": "posts/investing/11-coca-cola/index.html#why-was-such-a-great-company-so-cheap",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "Why Was Such a Great Company So Cheap?",
+    "text": "Why Was Such a Great Company So Cheap?\nIf Coca-Cola was so obviously wonderful, why wasn’t everyone buying it?\nThe 1987 crash still haunted people\nThe stock market had crashed just a year earlier. Investors were scared of “expensive” stocks, even great ones.\nPepsi was winning taste tests\nThe “Pepsi Challenge” had made headlines. Wall Street worried Coke was losing its edge.\nThe New Coke disaster\nIn 1985, Coca-Cola changed its formula. Customers revolted. The company retreated. Some investors lost faith in management.\nRecession fears\nPeople worried that if the economy slowed, soft drink sales would fall.\nBuffett saw through all of this. Taste tests and formula changes were noise. The brand that had dominated for 130 years wasn’t going anywhere.\nShort-term fears created a buying opportunity."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#the-results-36-years-later",
+    "href": "posts/investing/11-coca-cola/index.html#the-results-36-years-later",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "The Results (36 Years Later)",
+    "text": "The Results (36 Years Later)\nCoca-Cola became one of the greatest investments in history.\nThe first 10 years (1988-1998): - Buffett’s cost: ~$2.60 per share - Value 10 years later: ~$40 per share - Return: About 15x his money\nToday (2024): - Original investment: ~$1.3 billion - Current value: $27+ billion - Annual dividends: $750+ million (more than half the original investment — every year)\nTotal return: 3,500%+\nThe remarkable part: Buffett has never sold a single share. Through recessions, financial crises, and market panics — he just kept holding."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#the-lessons",
+    "href": "posts/investing/11-coca-cola/index.html#the-lessons",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "The Lessons",
+    "text": "The Lessons\n\nGreat + Growing + Reasonably Priced = Wealth\nCoca-Cola wasn’t a bargain-bin deal. It traded at a normal price. But for a business this good, “normal” was actually cheap.\n\n\nMoats Can Get Stronger\nCoca-Cola’s advantage hasn’t faded — it’s grown. Global expansion, new products (Dasani, Vitamin Water, Costa Coffee), and relentless marketing have made the moat wider.\n\n\nTime Loves Great Businesses\nBuffett bought 36 years ago. He’s still holding. The compounding hasn’t stopped.\nFor truly wonderful businesses, the right holding period is forever.\n\n\nDividends Add Up\nBerkshire receives $750+ million in Coca-Cola dividends every year. That’s more than half the original investment — paid out annually.\nOver 36 years, dividends alone have returned many times the purchase price."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#the-checklist",
+    "href": "posts/investing/11-coca-cola/index.html#the-checklist",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "The Checklist",
+    "text": "The Checklist\n\n\n\n\n\n\n\nQuestion\nCoca-Cola\n\n\n\n\nDo I understand it?\n✓ Simple: make syrup, build brand\n\n\nDoes it have staying power?\n✓ 130-year-old brand, global distribution\n\n\nIs management good?\n✓ Strong leadership, smart spending\n\n\nIs the money real?\n✓ ~$1 billion in cash profits\n\n\nIs it obviously cheap?\n✓ Worth ~$48B, priced at ~$16B\n\n\nBig enough safety cushion?\n✓ 67% discount\n\n\n\n\n\n\n\n\n\nNoteSummary\n\n\n\nCoca-Cola shows Buffett’s approach at its clearest:\n\nUnderstand the business (syrup + marketing = profits)\nVerify the moat (the world’s strongest brand)\nEstimate real earnings (~$1 billion)\nCompare to alternatives (9% government bonds)\nFind massive undervaluation (worth 3x the price)\nBuy and hold forever\n\nThe result: 3,500%+ returns over 36 years. And he still hasn’t sold a single share.\nNext up: Part 12 — Apple. The guy who avoided tech stocks for 60 years made Apple his biggest investment ever. Here’s how he saw it differently than everyone else."
+  },
+  {
+    "objectID": "posts/investing/11-coca-cola/index.html#references",
+    "href": "posts/investing/11-coca-cola/index.html#references",
+    "title": "How Buffett Turned $1 Billion into $27 Billion (Coca-Cola)",
+    "section": "References",
+    "text": "References\n\nHagstrom, R. (2013). The Warren Buffett Way. Wiley. Also: GuruFocus Analysis.\nBuffett, W. (2007). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html",
+    "href": "posts/investing/9-when-to-pass/index.html",
+    "title": "The Power of Saying No",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\n“If it doesn’t scream at you, it’s too close” — Buffett walks away from marginal opportunities\nThe 20 punch card: Imagine you only get 20 investments in your lifetime\nDoing nothing is a valid strategy — sometimes the best move is to wait\nMost of Buffett’s wealth came from a handful of decisions. Quality over quantity."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#the-most-underrated-skill",
+    "href": "posts/investing/9-when-to-pass/index.html#the-most-underrated-skill",
+    "title": "The Power of Saying No",
+    "section": "The Most Underrated Skill",
+    "text": "The Most Underrated Skill\nHere’s something they don’t teach in finance class: most good investing is saying no.\nBuffett confirms this:\n\n“If [the value of a company] doesn’t just scream out at you, it’s too close.”\n\nHe doesn’t invest in things that are “probably good” or “might work out.” He only invests when the opportunity is so obvious that even rough estimates show a clear bargain.\nEverything else? He walks away."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#the-20-punch-card",
+    "href": "posts/investing/9-when-to-pass/index.html#the-20-punch-card",
+    "title": "The Power of Saying No",
+    "section": "The 20 Punch Card",
+    "text": "The 20 Punch Card\nBuffett’s most powerful mental model:\n\n“I could improve your ultimate financial welfare by giving you a ticket with only 20 slots in it, so that you had 20 punches — representing all the investments that you got to make in a lifetime. And once you’d punched through the card, you couldn’t make any more investments at all. Under those rules, you’d really have to think carefully about what you did.”\n\nImagine: 20 investments. Total. For your entire life.\nHow would your behavior change?\n\nYou’d reject anything that wasn’t obviously excellent\nYou’d research deeply before committing\nYou’d make bigger bets on your best ideas\nYou’d stop “trading” and start truly investing\n\nThis mental model forces concentration on quality over quantity."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#inaction-is-a-strategy",
+    "href": "posts/investing/9-when-to-pass/index.html#inaction-is-a-strategy",
+    "title": "The Power of Saying No",
+    "section": "Inaction Is a Strategy",
+    "text": "Inaction Is a Strategy\nMost people feel pressure to act: - “I have money sitting in cash — I should do something with it” - “Everyone’s buying this stock — I’m missing out” - “I haven’t made an investment in months — am I falling behind?”\nBuffett rejects this:\n\n“In allocating capital, activity does not correlate with achievement. Indeed, in the fields of investments and acquisitions, frenetic behavior is often counterproductive.”\n\nSometimes the best decision is no decision. Wait. Let opportunities come to you.\n\n\n\n\n\n\nTipThe Baseball Analogy\n\n\n\nBuffett compares investing to baseball, with one key difference:\nIn baseball, if you don’t swing at three strikes, you’re out.\nIn investing, there are no called strikes. You can let pitch after pitch go by. The market keeps throwing. You only swing when you see a fat pitch right down the middle.\nPatience is a structural advantage."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#when-to-say-no",
+    "href": "posts/investing/9-when-to-pass/index.html#when-to-say-no",
+    "title": "The Power of Saying No",
+    "section": "When to Say No",
+    "text": "When to Say No\n\nSay No If: You Need Calculations to Justify It\nCharlie Munger:\n\n“Some of the worst business decisions I’ve seen came with detailed analysis. The higher math was false precision.”\n\nIf you’re building elaborate spreadsheets and running sensitivity analyses to prove something is a good deal, it probably isn’t.\nReal bargains are obvious. The analysis confirms what you already sense, not the other way around.\n\n\nSay No If: The Margin Is Small\nFrom Part 8:\n\n“If we calculate the value of a common stock to be only slightly higher than its price, we’re not interested in buying.”\n\nA 5% or 10% margin isn’t worth the effort and risk. If you’re not getting at least 25-30% below estimated value, keep looking.\n\n\nSay No If: You Don’t Understand It\nFrom Part 4: No matter how cheap something looks, if it’s outside your circle of competence, pass.\nYou can’t value what you don’t understand. And no margin of safety protects against fundamental ignorance.\n\n\nSay No If: The Moat Is Questionable\nFrom Part 5: Even at an attractive price, a business without competitive protection can destroy value.\n“Cheap” doesn’t help if the business deteriorates faster than you expected."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#why-this-is-so-hard",
+    "href": "posts/investing/9-when-to-pass/index.html#why-this-is-so-hard",
+    "title": "The Power of Saying No",
+    "section": "Why This Is So Hard",
+    "text": "Why This Is So Hard\nSaying no sounds easy. In practice, it’s psychologically brutal.\nFear of missing out: “What if this is the next big thing?”\nAction bias: Doing something feels productive. Doing nothing feels lazy.\nSocial pressure: “What are you invested in?” demands an answer.\nImpatience: Cash sitting idle feels wasteful.\nBuffett structures his life to resist these pressures: - No quarterly reviews demanding activity - No clients who can pull their money - Long-term track record speaks for itself\nAs an individual investor, you have similar advantages. No one forces you to act. Use that freedom."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#when-to-say-yes",
+    "href": "posts/investing/9-when-to-pass/index.html#when-to-say-yes",
+    "title": "The Power of Saying No",
+    "section": "When to Say Yes",
+    "text": "When to Say Yes\nThe flip side: when everything checks out, act decisively.\nIf a stock: - Is in your circle of competence ✓ - Has a durable moat ✓ - Has good management ✓ - Trades at an obvious discount to value ✓ - Offers returns well above your hurdle ✓\nDon’t dither. Don’t take a small “starter position.” The opportunity might not last.\nBuffett’s largest positions have been 30-40% of his portfolio. When he found something that screamed at him, he bet big."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#the-waiting-game",
+    "href": "posts/investing/9-when-to-pass/index.html#the-waiting-game",
+    "title": "The Power of Saying No",
+    "section": "The Waiting Game",
+    "text": "The Waiting Game\nYou might go months or years without finding something that screams.\nWhat to do while waiting:\n\nKeep learning — Expand your circle of competence\nBuild a watchlist — Track businesses you’d like to own at the right price\nStay liquid — Cash isn’t lazy; it’s optionality\nIgnore daily noise — Market movements don’t require response\nReview what you own — Sometimes the best “new” investment is adding to a current position\n\nBuffett has gone years without major new investments. That’s discipline, not failure.\n\n\n\n\n\n\nNoteSummary\n\n\n\nKnowing when to say no is as important as knowing when to say yes.\nBuffett’s standard: “If it doesn’t scream at you, it’s too close.”\nThe 20 punch card mental model forces quality over quantity. Imagine only 20 investments in your lifetime — how many of your current ideas would make the cut?\nDoing nothing is a strategy. Cash is optionality. Patience is an advantage.\nWhen the right opportunity appears, act decisively.\nNext up: Part 10 — See’s Candies. The 1972 investment that changed how Buffett thinks about value."
+  },
+  {
+    "objectID": "posts/investing/9-when-to-pass/index.html#references",
+    "href": "posts/investing/9-when-to-pass/index.html#references",
+    "title": "The Power of Saying No",
+    "section": "References",
+    "text": "References\n\nMunger, C. (1996). Berkshire Hathaway Annual Meeting. CNBC Buffett Archive.\nBuffett, W. (2013). Georgetown University Speech. CNBC.\nBuffett, W. (1990). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html",
+    "href": "posts/investing/7-discount-rate/index.html",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nBuffett compares everything to government bonds — the safest investment available\nIf a stock doesn’t obviously beat the “safe” option, why take the risk?\nHe also has a 10% minimum return rule — won’t accept less regardless of interest rates\nSimple beats complicated: use one yardstick, not different rates for every situation"
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#the-government-bond-yardstick",
+    "href": "posts/investing/7-discount-rate/index.html#the-government-bond-yardstick",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "The Government Bond Yardstick",
+    "text": "The Government Bond Yardstick\nEvery investment competes against a simple alternative: government bonds.\nYou can always put your money in U.S. Treasury bonds and earn a guaranteed return — currently around 4-5%. No stress. No analysis. Just a safe return.\nBuffett uses this as his baseline:\n\n“We can always buy government bonds. Therefore, that becomes the yardstick rate.”\n\nThe logic is straightforward: - Bonds pay 4%? Any stock you consider should clearly beat 4%. - If a stock might return 5-6%, is the extra headache worth it? - If a stock clearly returns 15%, now you’re talking.\nThis simple comparison cuts through a lot of complexity."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#why-one-rate-for-everything",
+    "href": "posts/investing/7-discount-rate/index.html#why-one-rate-for-everything",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "Why One Rate for Everything",
+    "text": "Why One Rate for Everything\nIn Part 3, we saw that Wall Street uses different “discount rates” for different investments — higher rates for “riskier” companies.\nBuffett disagrees. He uses the same government bond rate for everything. Why?\nBecause he handles risk differently.\nInstead of adjusting his rate, he: 1. Only invests in things he truly understands (less risky by definition) 2. Demands a big gap between price and value (margin of safety)\nIf a business is too hard to predict, he doesn’t invest at all — no rate adjustment would make it safe.\nIf a business is predictable and cheap enough, the government bond rate is the right comparison."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#the-10-minimum-rule",
+    "href": "posts/investing/7-discount-rate/index.html#the-10-minimum-rule",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "The 10% Minimum Rule",
+    "text": "The 10% Minimum Rule\nBuffett also has a floor:\n\n“10% is the figure we quit on — we don’t want to buy equities when the real return we expect is less than 10%, whether interest rates are 6% or 1%.”\n\nThis isn’t a mathematical rule. It’s an opportunity cost decision.\nBuffett knows he can usually find investments returning 10%+ somewhere. So he won’t accept less just because interest rates are low.\nThink about it: - If government bonds pay 2%, a stock returning 6% might look good in comparison - But Buffett would still pass — he believes better opportunities exist - Why tie up money at 6% when 10%+ is available if you wait?\nThis discipline has served him well. During low-interest-rate years, many investors stretched for mediocre returns. Buffett sat on cash until truly great opportunities appeared."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#putting-it-together",
+    "href": "posts/investing/7-discount-rate/index.html#putting-it-together",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "Putting It Together",
+    "text": "Putting It Together\nHere’s Buffett’s practical approach:\n\nStep 1: Calculate the “Clean” Value\nUsing owner earnings (from Part 2), estimate what the business could return if you bought it today.\nA simple version: If a company earns $10 in “owner earnings” per share, and you pay $100, you’re getting a 10% return (before any growth).\n\n\nStep 2: Compare to the Safe Alternative\nIs that return clearly better than government bonds (~4-5%)?\nIf it’s close — say, 5-7% — is the extra risk worth it?\n\n\nStep 3: Check Against the 10% Floor\nEven if it beats bonds, does it meet the 10% minimum?\nIf not, keep looking.\n\n\nStep 4: Demand a Safety Margin\nEven if the numbers work, don’t pay full price. Wait until you can buy at 20-50% below your estimated value.\nThis margin protects you if your estimates are wrong."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#the-low-interest-rate-trap",
+    "href": "posts/investing/7-discount-rate/index.html#the-low-interest-rate-trap",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "The Low Interest Rate Trap",
+    "text": "The Low Interest Rate Trap\nWhen interest rates are very low (like 2% in 2020), every stock looks attractive by comparison. Your brain says: “This stock returns 5%! That’s 2.5x better than bonds!”\nBuffett stays disciplined:\n\n“We don’t want to buy equities when the real return we expect is less than 10%, whether interest rates are 6% or 1%.”\n\nLow interest rates don’t make mediocre investments good. They just make cash less attractive.\nThe 10% floor keeps him from accepting poor returns just because the alternative is worse.\n\n\n\n\n\n\nTipThe Patience Payoff\n\n\n\nIn 2020, with rates near zero, many investors piled into stocks paying 4-5%.\nBuffett sat on $140+ billion in cash.\nIn 2022, when stocks crashed, he had dry powder to invest at much better prices.\nPatience and discipline look boring until they work."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#the-bottom-line",
+    "href": "posts/investing/7-discount-rate/index.html#the-bottom-line",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "The Bottom Line",
+    "text": "The Bottom Line\nBuffett’s comparison system is simple:\n\nUse government bonds as the yardstick — Can this investment clearly beat the safe alternative?\nApply the 10% floor — Don’t accept mediocre returns just because rates are low.\nDemand a margin of safety — Even good investments need a buffer for error.\n\nNo complex formulas. No different rates for different companies. Just common sense comparisons and patience.\n\n\n\n\n\n\nNoteSummary\n\n\n\nBuffett compares all investments to government bonds — the safest option available. If a stock doesn’t clearly beat bonds, why take the risk?\nHe also maintains a 10% minimum return requirement, regardless of interest rates. This discipline prevents him from reaching for mediocre investments when rates are low.\nSimple beats complicated. One yardstick for everything.\nNext up: Part 8 — Margin of Safety. Even when an investment looks good, Buffett demands a big discount. Here’s why “buying $1 for 50 cents” is the cornerstone of his approach."
+  },
+  {
+    "objectID": "posts/investing/7-discount-rate/index.html#references",
+    "href": "posts/investing/7-discount-rate/index.html#references",
+    "title": "The Simplest Way to Compare Investments",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1997). Berkshire Hathaway Annual Meeting. 25iq.\nBuffett, W. (2003). Berkshire Hathaway Annual Meeting. Yahoo Finance."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html",
+    "href": "posts/investing/2-owner-earnings/index.html",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nAccounting profits aren’t real money — they include paper expenses that never leave the company\nOwner earnings = the cash an owner could actually take home without hurting the business\nThis is Buffett’s own measure, different from what you’ll see on financial statements\nWhen in doubt, assume the worst case — it’s better to underestimate than overpay"
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#the-profit-illusion",
+    "href": "posts/investing/2-owner-earnings/index.html#the-profit-illusion",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "The Profit Illusion",
+    "text": "The Profit Illusion\nCompany A reports $10 million in “profit” this year.\nSounds great, right? But what if I told you that $3 million of that “profit” was a paper expense reversal that added no cash? And the company actually had to spend $4 million replacing worn-out equipment just to keep operating?\nSuddenly that $10 million “profit” doesn’t look so impressive.\nThis is the problem Buffett identified: accounting profit and real cash are different things. And if you want to know what a business is worth, you need to know the real cash — what he calls “owner earnings.”"
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#what-goes-in-your-pocket",
+    "href": "posts/investing/2-owner-earnings/index.html#what-goes-in-your-pocket",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "What Goes in Your Pocket?",
+    "text": "What Goes in Your Pocket?\nImagine you bought a laundromat for $100,000.\nEvery month, customers put quarters in the machines. Some of that goes to: - Electricity bills - Water bills - Rent - Repairs when machines break\nWhat’s left over? That’s what goes in your pocket. That’s the real profit.\nNow imagine your accountant says: “Your profit is $2,000 this month.” But you look at your bank account and it only went up $1,200. What happened?\nThe accountant added back “depreciation” — the idea that your machines are slowly wearing out and losing value. But that’s a paper expense. No cash left the building. Meanwhile, you spent $800 on actual repairs that did leave the building.\nThe accounting profit was $2,000. The cash in your pocket was $1,200.\nOwner earnings tries to capture the second number — what you could actually take home."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#buffetts-formula",
+    "href": "posts/investing/2-owner-earnings/index.html#buffetts-formula",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "Buffett’s Formula",
+    "text": "Buffett’s Formula\nIn 1986, Buffett explained his approach:\n\n“Owner earnings represent (a) reported earnings plus (b) depreciation and other non-cash charges, less (c) the average amount of capital expenditures needed to maintain the business’s competitive position.”\n\nIn plain English:\nOwner Earnings = Accounting Profit + Fake Expenses − Real Expenses\nWhere: - Accounting profit = what the company reports - Fake expenses = “depreciation” and similar paper charges that don’t use cash - Real expenses = money spent on equipment, buildings, etc. to keep the business running\nThe key insight: not all spending is the same."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#the-two-kinds-of-spending",
+    "href": "posts/investing/2-owner-earnings/index.html#the-two-kinds-of-spending",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "The Two Kinds of Spending",
+    "text": "The Two Kinds of Spending\nWhen a company spends money on equipment or buildings (called “capital expenditures” or CapEx), it’s doing one of two things:\n1. Maintenance spending — Replacing a worn-out delivery truck so operations continue normally. This is a real cost. You have to spend this money or the business declines.\n2. Growth spending — Buying a second truck to expand into new territory. This is optional. If you don’t spend it, you don’t grow, but you’re still fine.\nHere’s the problem: accountants lump these together. The financial statement just says “capital expenditures: $5 million.” It doesn’t tell you how much was keeping the business running vs. how much was expansion.\nOwner earnings only subtracts maintenance spending — the unavoidable cost of keeping the business at its current level.\n\n\n\n\n\n\nTipThe Pyramid Analogy\n\n\n\nBuffett used this example: Imagine buying a business that never needed any maintenance spending. The equipment never wears out. The buildings last forever.\nThat would be like owning the Pyramids — “forever state-of-the-art, never needing to be replaced, improved or refurbished.”\nReal businesses aren’t pyramids. Things wear out. You have to spend money just to stay in place. Owner earnings accounts for this reality."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#a-simple-example",
+    "href": "posts/investing/2-owner-earnings/index.html#a-simple-example",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "A Simple Example",
+    "text": "A Simple Example\nLet’s compare two businesses:\nBusiness A (Light on Equipment):\n\n\n\nItem\nAmount\n\n\n\n\nReported profit\n$1,000,000\n\n\n+ Depreciation (non-cash)\n$100,000\n\n\n− Maintenance spending\n$50,000\n\n\n= Owner Earnings\n$1,050,000\n\n\n\nBusiness B (Heavy on Equipment):\n\n\n\nItem\nAmount\n\n\n\n\nReported profit\n$1,000,000\n\n\n+ Depreciation (non-cash)\n$500,000\n\n\n− Maintenance spending\n$600,000\n\n\n= Owner Earnings\n$900,000\n\n\n\nBoth report the same accounting profit. But Business A puts $1,050,000 in the owner’s pocket, while Business B only puts $900,000.\nIf you valued them based on accounting profit, you’d think they’re equal. They’re not."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#the-challenge-estimating-maintenance",
+    "href": "posts/investing/2-owner-earnings/index.html#the-challenge-estimating-maintenance",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "The Challenge: Estimating Maintenance",
+    "text": "The Challenge: Estimating Maintenance\nHere’s the hard part: companies don’t tell you how much of their spending is maintenance vs. growth.\nSome approaches:\n1. Use depreciation as a rough guide If a company’s equipment wears out and the depreciation number is reasonable, maintenance spending is probably similar.\n2. Look at the business type - A software company? Almost no physical stuff to maintain. - A factory or railroad? Lots of equipment that needs constant upkeep.\n3. Be conservative When you can’t tell, assume ALL spending is maintenance. This gives you a lower owner earnings estimate, which is safer.\n\n\n\n\n\n\nWarningWhen in Doubt, Assume the Worst\n\n\n\nBuffett’s philosophy: it’s better to underestimate owner earnings and miss some opportunities than to overestimate and overpay.\nIf you assume all spending is unavoidable maintenance, and the business still looks cheap, it’s probably a real bargain."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#why-wall-street-gets-this-wrong",
+    "href": "posts/investing/2-owner-earnings/index.html#why-wall-street-gets-this-wrong",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "Why Wall Street Gets This Wrong",
+    "text": "Why Wall Street Gets This Wrong\nYou’ll often hear analysts use “EBITDA” — Earnings Before Interest, Taxes, Depreciation, and Amortization. It’s supposed to measure cash flow.\nBuffett hates this number:\n\n“People who use EBITDA are either trying to con you or they’re conning themselves.”\n\nWhy? Because EBITDA adds back depreciation but ignores that you actually have to replace the stuff that’s depreciating.\nCharlie Munger compared it to a rental agent saying a 1,000-square-foot apartment is actually 2,000 square feet. It’s not lying exactly, but it’s definitely misleading.\nEBITDA pretends equipment lasts forever. It doesn’t."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#a-real-world-example-coca-cola",
+    "href": "posts/investing/2-owner-earnings/index.html#a-real-world-example-coca-cola",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "A Real World Example: Coca-Cola",
+    "text": "A Real World Example: Coca-Cola\nWhen Buffett bought Coca-Cola in 1988, here’s roughly what he saw:\n\nReported profit: about $1 billion\nDepreciation: about $170 million\nCapital spending: about $387 million\n\nBut Coca-Cola’s business is mostly brand and marketing — not factories. Most of that capital spending was for expansion, not maintenance.\nIf maintenance was roughly equal to depreciation (~$170 million):\nOwner Earnings ≈ $1 billion + $170 million − $170 million = $1 billion\nPretty close to reported profit. That’s typical for asset-light businesses with strong brands.\nFor a railroad or airline, the gap would be much larger."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#the-bottom-line",
+    "href": "posts/investing/2-owner-earnings/index.html#the-bottom-line",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "The Bottom Line",
+    "text": "The Bottom Line\nAccounting profit ≠ Cash in your pocket\nOwner earnings strips away the accounting tricks to answer a simple question: “How much money could the owner actually take home each year without hurting the business?”\nThe formula:\nOwner Earnings = Reported Profit + Non-Cash Charges − Maintenance Spending\nWhen you can’t tell how much is maintenance spending, be conservative. Assume the worst.\n\n\n\n\n\n\nNoteSummary\n\n\n\nOwner earnings is Buffett’s way of measuring what a business actually puts in an owner’s pocket — not what the accountants say, but what’s real.\nThe key insight: not all spending is equal. Maintenance spending is a true cost you can’t avoid. Growth spending is optional.\nWhen calculating owner earnings, be conservative. Underestimating is safer than overestimating.\nNext up: Part 3 — Why Buffett Ignores Wall Street Math. Wall Street uses something called “WACC” to value businesses. Buffett thinks it’s nonsense. Here’s why."
+  },
+  {
+    "objectID": "posts/investing/2-owner-earnings/index.html#references",
+    "href": "posts/investing/2-owner-earnings/index.html#references",
+    "title": "The Money That Actually Lands in Your Pocket",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1986). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nBuffett, W. (2000). Berkshire Hathaway Annual Meeting. See: Wall Street Prep on EBITDA."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html",
+    "href": "posts/investing/4-circle-competence/index.html",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nCircle of Competence = the businesses you actually understand\nThe size doesn’t matter — knowing where it ends is what matters\nBuffett avoided tech stocks for decades because they were outside his circle\nInvesting in what you don’t understand is gambling, no matter how cheap it looks"
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#the-boundary-that-matters",
+    "href": "posts/investing/4-circle-competence/index.html#the-boundary-that-matters",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "The Boundary That Matters",
+    "text": "The Boundary That Matters\nHere’s one of Buffett’s most important quotes:\n\n“You only have to be able to evaluate companies within your circle of competence. The size of that circle is not very important; knowing its boundaries, however, is vital.”\n\nRead that again. The size doesn’t matter. The boundaries do.\nWhy? Because disaster happens when you think you understand something you don’t."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#two-investors",
+    "href": "posts/investing/4-circle-competence/index.html#two-investors",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "Two Investors",
+    "text": "Two Investors\nConsider two investors:\nInvestor A reads widely. She thinks she understands banks, tech companies, healthcare, and energy. But when she really digs in, her knowledge is an inch deep. She knows the buzzwords but not the business dynamics.\nInvestor B only invests in restaurants. That’s it. She worked in the industry for years. She knows which locations work, what margins look like, what kills a restaurant.\nWho does better over time?\nUsually Investor B. Because she never gets into situations where she’s guessing. Every investment is within her true expertise.\nInvestor A, despite her broader knowledge, will eventually make a big bet in something she doesn’t really understand. And one big mistake can wipe out years of gains."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#why-buffett-skipped-tech",
+    "href": "posts/investing/4-circle-competence/index.html#why-buffett-skipped-tech",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "Why Buffett Skipped Tech",
+    "text": "Why Buffett Skipped Tech\nFor decades, Buffett refused to invest in technology companies. Even when Microsoft and Intel were dominating, he stayed away.\nHis explanation:\n\n“Our problem — which we can’t solve by studying up — is that we have no insights into which participants in the tech field possess a truly durable competitive advantage.”\n\nHe wasn’t saying tech was bad. He was saying he couldn’t tell which tech companies would win and which would lose. Without that insight, any investment was a guess.\nMeanwhile, he understood Coca-Cola. He understood banks. He understood insurance. So that’s where he invested.\n\n\n\n\n\n\nTipThe Apple “Exception”\n\n\n\nWait, didn’t Buffett buy Apple in 2016?\nYes — but he didn’t think of it as a tech investment. He saw Apple as a consumer products company with extremely loyal customers, similar to Coca-Cola.\nHe wasn’t evaluating Apple’s chip design or AI capabilities. He was evaluating brand loyalty, customer lock-in, and pricing power — things he understood.\nThe business was tech. His analysis was consumer products."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#signs-youre-outside-your-circle",
+    "href": "posts/investing/4-circle-competence/index.html#signs-youre-outside-your-circle",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "Signs You’re Outside Your Circle",
+    "text": "Signs You’re Outside Your Circle\nAsk yourself these questions:\n\nCan you explain the business in one sentence? “Apple makes phones and computers that customers love.” ✓ “This company uses blockchain-based tokenization to disrupt the…” ✗\nDo you know who the customers are and why they buy? If you can’t picture the person paying, you don’t understand the business.\nCould you explain it to a friend without notes? If you’d feel embarrassed or confused, that’s a warning sign.\nCan you imagine what this business looks like in 10 years? Coca-Cola will still be selling drinks. Will this AI startup still exist?\nDo you really know, or do you just think you know? Reading a few articles isn’t understanding. Using a product isn’t understanding.\n\n\n\n\n\n\n\nWarningThe Dunning-Kruger Trap\n\n\n\nWe all overestimate our understanding. It’s human nature.\nYou read one book on biotech and feel like an expert. You use an app every day and think you understand the business.\nThe most dangerous place is just outside your circle — where you know enough to feel confident but not enough to see the risks."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#expanding-your-circle",
+    "href": "posts/investing/4-circle-competence/index.html#expanding-your-circle",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "Expanding Your Circle",
+    "text": "Expanding Your Circle\nCan you grow your circle of competence? Yes, but slowly.\nBuffett’s approach:\n\nRead obsessively — He reads annual reports for hours every day. Not summaries. The actual documents.\nExpand from what you know — He went from newspapers to media broadly. From consumer goods to retail. Gradual steps, not leaps.\nLearn from mistakes — His textile business (Berkshire’s original company) taught him about capital-intensive commodity businesses. He never made that mistake again.\nImmerse yourself — Before buying GEICO, young Buffett visited the company on a Saturday and spent hours with the VP learning everything.\n\nWhat doesn’t work: reading a few articles and assuming you understand."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#why-this-comes-first",
+    "href": "posts/investing/4-circle-competence/index.html#why-this-comes-first",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "Why This Comes First",
+    "text": "Why This Comes First\nIn Part 3, we said Buffett doesn’t adjust his discount rate for risk. Instead, he only invests in things he understands.\nCircle of Competence is his primary risk management tool.\nYou can’t value what you don’t understand. And no amount of “margin of safety” protects you from being fundamentally wrong about how a business works.\nFirst: “Do I actually understand this?” Then: “What is it worth?”\nThe order matters.\n\n\n\n\n\n\nNoteSummary\n\n\n\nCircle of Competence is the range of businesses you truly understand — not just superficially, but deeply enough to predict their future.\nThe size of your circle doesn’t matter. Knowing exactly where it ends does.\nInvesting outside your circle isn’t brave or ambitious. It’s gambling.\nNext up: Part 5 — Economic Moats. Once you understand a business, how do you know if it can stay successful? That’s where moats come in."
+  },
+  {
+    "objectID": "posts/investing/4-circle-competence/index.html#references",
+    "href": "posts/investing/4-circle-competence/index.html#references",
+    "title": "Stay in Your Lane (The Circle of Competence)",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1996). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nBuffett, W. (1999). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc."
+  },
+  {
     "objectID": "posts/diffusion/9-unet/index.html",
     "href": "posts/diffusion/9-unet/index.html",
     "title": "Diffusion & Flow Matching Part 9: U-Net Architecture",
@@ -1824,7 +2293,7 @@
     "href": "index.html",
     "title": "AI Models Blog",
     "section": "",
-    "text": "Robot Learning Part 7: Neural Manifolds — The Geometry of Skill Representation\n\n\n\n\n\n\nrobotics\n\nneuroscience\n\nmanifolds\n\ndimensionality-reduction\n\nmotor-control\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 25, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 6: The Eigenvalue Sweet Spot — How Brain Dynamics and RNN Training Converged on the Same Answer\n\n\n\n\n\n\nrobotics\n\nneuroscience\n\nRNN\n\nstate-space-models\n\neigenvalues\n\nmotor-control\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 24, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 5: Six Architectural Principles from Motor Neuroscience\n\n\n\n\n\n\nrobotics\n\nneuroscience\n\nmotor-control\n\narchitecture\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 24, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 1.5: Action Chunking with Transformers (ACT)\n\n\n\n\n\n\nrobotics\n\ntransformers\n\nimitation-learning\n\nVAE\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 23, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 3: Vision-Language-Action (VLA) Models\n\n\n\n\n\n\nrobotics\n\nVLA\n\ntransformers\n\nfoundation-models\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 23, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 0: Introduction & Roadmap\n\n\n\n\n\n\nrobotics\n\ndiffusion-policy\n\nVLA\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 1: Background & Current State of the Field\n\n\n\n\n\n\nrobotics\n\nreinforcement-learning\n\nimitation-learning\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhy Robots Keep Crashing Into Walls (And How Diffusion Fixed It)\n\n\n\n\n\n\nrobotics\n\ndiffusion-policy\n\nimitation-learning\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 11: Building an Image Generator\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\ntutorial\n\ncifar-10\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 12: Why Diffusion?\n\n\nThe multimodal problem — why direct regression fails\n\n\n\ndiffusion\n\ngenerative-models\n\ndeep-learning\n\nflow-matching\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 10: Diffusion Transformers\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\ntransformer\n\nvit\n\ndit\n\narchitecture\n\n\n\nFrom Vision Transformers to Diffusion Transformers: how DiT adapts ViT for image generation\n\n\n\n\n\nJan 17, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 9: U-Net Architecture\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nu-net\n\narchitecture\n\n\n\nU-Net architecture for learning vector fields and score functions in diffusion models\n\n\n\n\n\nJan 15, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 8: Guided Generative Models\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nguidance\n\nclassifier-free-guidance\n\n\n\nConditional generation, classifier guidance, and classifier-free guidance for controllable image synthesis\n\n\n\n\n\nDec 20, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 7: Training Targets and Algorithms\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nscore-matching\n\ntraining\n\n\n\nThe complete training algorithms for flow matching and diffusion models, including the DDPM loss and conversion formulas\n\n\n\n\n\nDec 14, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 6: Conditional and Marginal Score Functions\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nscore-function\n\nscore-matching\n\nfokker-planck\n\n\n\nHow score functions connect ODEs to SDEs, and the elegant training trick that avoids intractable integrals\n\n\n\n\n\nDec 2, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 5: Diffusion Models and SDEs\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nsde\n\n\n\n\n\n\n\n\n\nDec 1, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 4: The Flow Matching Loss\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 30, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 3: Probability Paths\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 29, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 2: Understanding Flows\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 28, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 1: Introduction\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to My AI Blog\n\n\n\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
+    "text": "Stay in Your Lane (The Circle of Competence)\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nYour One-Page Guide to Investing Like Buffett\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nThe Money That Actually Lands in Your Pocket\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhy Buffett Ignores Wall Street’s Favorite Formula\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nThe Simplest Way to Compare Investments\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nBuying a Dollar for Fifty Cents\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nThe Power of Saying No\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhy Smart Managers Make Dumb Decisions\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nHow Buffett Turned $1 Billion into $27 Billion (Coca-Cola)\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\ncase-study\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nThe $25 Million Lesson That Made Buffett Billions\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\ncase-study\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhat a Business is Really Worth (And Why the Stock Price Lies)\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhat Keeps Competitors Away (Economic Moats)\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhy the ‘Tech-Avoider’ Bet $31 Billion on Apple\n\n\n\n\n\n\ninvesting\n\nvaluation\n\nbuffett\n\ncase-study\n\n\n\n\n\n\n\n\n\nFeb 2, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 7: Neural Manifolds — The Geometry of Skill Representation\n\n\n\n\n\n\nrobotics\n\nneuroscience\n\nmanifolds\n\ndimensionality-reduction\n\nmotor-control\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 25, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 6: The Eigenvalue Sweet Spot — How Brain Dynamics and RNN Training Converged on the Same Answer\n\n\n\n\n\n\nrobotics\n\nneuroscience\n\nRNN\n\nstate-space-models\n\neigenvalues\n\nmotor-control\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 24, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 5: Six Architectural Principles from Motor Neuroscience\n\n\n\n\n\n\nrobotics\n\nneuroscience\n\nmotor-control\n\narchitecture\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 24, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 1.5: Action Chunking with Transformers (ACT)\n\n\n\n\n\n\nrobotics\n\ntransformers\n\nimitation-learning\n\nVAE\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 23, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 3: Vision-Language-Action (VLA) Models\n\n\n\n\n\n\nrobotics\n\nVLA\n\ntransformers\n\nfoundation-models\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 23, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 0: Introduction & Roadmap\n\n\n\n\n\n\nrobotics\n\ndiffusion-policy\n\nVLA\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nRobot Learning Part 1: Background & Current State of the Field\n\n\n\n\n\n\nrobotics\n\nreinforcement-learning\n\nimitation-learning\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWhy Robots Keep Crashing Into Walls (And How Diffusion Fixed It)\n\n\n\n\n\n\nrobotics\n\ndiffusion-policy\n\nimitation-learning\n\nrobot-learning\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 11: Building an Image Generator\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\ntutorial\n\ncifar-10\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 12: Why Diffusion?\n\n\nThe multimodal problem — why direct regression fails\n\n\n\ndiffusion\n\ngenerative-models\n\ndeep-learning\n\nflow-matching\n\n\n\n\n\n\n\n\n\nJan 20, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 10: Diffusion Transformers\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\ntransformer\n\nvit\n\ndit\n\narchitecture\n\n\n\nFrom Vision Transformers to Diffusion Transformers: how DiT adapts ViT for image generation\n\n\n\n\n\nJan 17, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 9: U-Net Architecture\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nu-net\n\narchitecture\n\n\n\nU-Net architecture for learning vector fields and score functions in diffusion models\n\n\n\n\n\nJan 15, 2026\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 8: Guided Generative Models\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nguidance\n\nclassifier-free-guidance\n\n\n\nConditional generation, classifier guidance, and classifier-free guidance for controllable image synthesis\n\n\n\n\n\nDec 20, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 7: Training Targets and Algorithms\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nscore-matching\n\ntraining\n\n\n\nThe complete training algorithms for flow matching and diffusion models, including the DDPM loss and conversion formulas\n\n\n\n\n\nDec 14, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 6: Conditional and Marginal Score Functions\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nscore-function\n\nscore-matching\n\nfokker-planck\n\n\n\nHow score functions connect ODEs to SDEs, and the elegant training trick that avoids intractable integrals\n\n\n\n\n\nDec 2, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 5: Diffusion Models and SDEs\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\nsde\n\n\n\n\n\n\n\n\n\nDec 1, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 4: The Flow Matching Loss\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 30, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 3: Probability Paths\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 29, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 2: Understanding Flows\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 28, 2025\n\n\nHujie Wang\n\n\n\n\n\n\n\n\n\n\n\n\nDiffusion & Flow Matching Part 1: Introduction\n\n\n\n\n\n\ndiffusion\n\nflow-matching\n\ngenerative-models\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome to My AI Blog\n\n\n\n\n\n\nnews\n\nintroduction\n\n\n\n\n\n\n\n\n\nNov 27, 2025\n\n\nTimothy Wang\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/robotics/6-eigenvalue-dynamics/index.html",
@@ -2364,6 +2833,405 @@
     "title": "Diffusion & Flow Matching Part 4: The Flow Matching Loss",
     "section": "What’s Next?",
     "text": "What’s Next?\nWe’ve now covered the complete flow matching framework — from vector fields to probability paths to the training loss. But remember from Part 1 that diffusion models take a different approach: they add stochasticity to the process.\nIn the next post, we’ll see how diffusion models generalize flow matching by adding a noise term to the ODE, turning it into an SDE. We’ll discover:\n\nHow to derive SDEs using infinitesimal updates instead of derivatives\nWhy the random term \\(\\sigma_t dW_t\\) enables new behaviors\nThe connection between Brownian motion and continuous randomness"
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html",
+    "href": "posts/investing/13-framework/index.html",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nEverything from this series, condensed into one checklist\nMost opportunities should be rejected — that’s the point\nYou don’t need many investments. You need a few great ones.\nThe math is simple. The hard part is patience and discipline."
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#the-complete-checklist",
+    "href": "posts/investing/13-framework/index.html#the-complete-checklist",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "The Complete Checklist",
+    "text": "The Complete Checklist\nEverything from this series, in one place. Print it. Use it.\n\nStep 1: Do I Understand This?\nIf you can’t explain it simply, you don’t understand it well enough.\nAsk yourself:\n\nCan I explain how this business makes money in one sentence?\nDo I know who buys from them and why?\nCan I picture what this company looks like in 10 years?\nCould I explain this investment to a skeptical friend?\n\nIf any answer is “no” → Don’t invest\nYou can’t value what you don’t understand. Doesn’t matter how cheap it looks.\n\n\nStep 2: Does It Have Staying Power?\nWhat stops competitors from stealing the customers?\nThe key test:\n\nCan they raise prices 10% without losing customers?\n\nIf yes, there’s something real protecting this business. If no, there probably isn’t.\nAlso ask:\n\nIs this a low-cost leader OR a strong brand? (These are the two real moats)\nWill this advantage still exist in 10 years?\nDoes the advantage depend on specific people who could leave?\n\nIf they can’t raise prices → Don’t invest\nMost claimed advantages aren’t real. Be skeptical.\n\n\nStep 3: Is Management Trustworthy?\nWould you want these people managing your money?\nLook for:\n\nWhen they keep profits in the company, does value increase?\nDo they admit mistakes and share bad news honestly?\nDo they resist doing dumb things just because competitors are doing them?\nDo they own significant stock themselves?\n\nIf they waste money → Don’t invest\nEven wonderful businesses can be ruined by managers who make bad decisions.\n\n\nStep 4: Is the Money Real?\nWhat could you actually take out each year?\nRemember the formula from Part 2:\n\nReal Cash = Reported Profits + Accounting Adjustments − Money Needed to Maintain the Business\n\nAsk:\n\nHow much real cash does this business generate?\nHas this been stable over time, or does it jump around?\nIs the real cash very different from the reported profits?\n\nIf real cash is declining or unpredictable → Be very careful\n\n\nStep 5: What’s It Worth?\nBack-of-envelope is fine. If you need a spreadsheet, it’s probably not cheap enough.\nSimple approach:\n\nHow much real cash does it generate today?\nHow fast is it likely to grow? (Be conservative)\nWhat would someone pay for a business like this in 10 years?\nCompare that to what else you could do with the money (government bonds paying ~4-5%)\n\nIf the number doesn’t scream “this is a good deal,” move on.\n\n\nStep 6: Is There Enough Safety Cushion?\nHow much below your estimated value should you pay?\n\n\n\nHow confident are you?\nPay at least this much below value\n\n\n\n\nVery confident — stable, predictable\n25-30% discount\n\n\nSomewhat confident — good business, some unknowns\n35-50% discount\n\n\nLess confident — decent business, real uncertainty\n50%+ discount\n\n\n\nIf the current price is higher than your max → Don’t buy. Wait.\n\n\nStep 7: Does It Scream at You?\nThe most important test\n\nWould someone else agree this is cheap, even without seeing your analysis?\nIs the discount so big that even if you’re significantly wrong, you’ll be okay?\nCan you explain why this is a good deal in 30 seconds?\n\nIf you have to convince yourself → Don’t invest\nBuffett: “If it doesn’t scream at you, it’s too close.”\n\n\nStep 8: Does the Return Beat Your Alternatives?\nJust because it’s cheap doesn’t mean it’s good enough\n\nWhat annual return do you expect at this price?\nIs it above 10%?\nIs it better than your other options?\n\nIf expected return is below 10% → Don’t invest\nEven with a safety cushion, don’t accept mediocre returns."
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#the-simple-flowchart",
+    "href": "posts/investing/13-framework/index.html#the-simple-flowchart",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "The Simple Flowchart",
+    "text": "The Simple Flowchart\nDo I understand this business?\n  ├─ No → DON'T INVEST\n  │\n  ▼\nCan they raise prices without losing customers?\n  ├─ No → DON'T INVEST\n  │\n  ▼\nIs management trustworthy with money?\n  ├─ No → DON'T INVEST\n  │\n  ▼\nIs the real cash flow predictable?\n  ├─ No → DON'T INVEST\n  │\n  ▼\nIs the price obviously below what it's worth?\n  ├─ No → WAIT (add to watchlist)\n  │\n  ▼\nDoes it scream \"buy me\"?\n  ├─ No → DON'T INVEST\n  │\n  ▼\nWill the return beat 10%?\n  ├─ No → DON'T INVEST\n  │\n  ▼\nINVEST\nNotice: most paths lead to “Don’t Invest.” That’s the point."
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#how-much-to-invest",
+    "href": "posts/investing/13-framework/index.html#how-much-to-invest",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "How Much to Invest",
+    "text": "How Much to Invest\nWhen everything checks out, how big should the position be?\nBuffett’s view: “Wide diversification is for people who don’t know what they’re doing.”\n\n\n\nHow confident?\nHow much to invest\n\n\n\n\nExtremely confident — deeply understood\n15-25% of portfolio\n\n\nVery confident\n10-15%\n\n\nConfident\n5-10%\n\n\n\nIf you’re not confident enough to put 5% in, you’re probably not confident enough to invest at all.\nDon’t spread tiny amounts across dozens of stocks. Concentrate on your best ideas."
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#when-to-sell",
+    "href": "posts/investing/13-framework/index.html#when-to-sell",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "When to Sell",
+    "text": "When to Sell\nMost of the time: don’t.\nBut sell if:\n\nThe advantage is fading — Competitors are catching up\nManagement gets worse — New leaders waste money\nYou were wrong — Your original thinking was flawed\nPrice gets crazy — It’s now way above what it’s worth (like Apple going from 10x to 33x profits)\nSomething better appears — Your money could work harder elsewhere\n\nDon’t sell just because:\n\nThe price went up (that’s good!)\nThe price went down (that’s temporary, unless something broke)\nYou’ve held it “a long time”\nAnalysts are negative\n\nBuffett’s favorite holding period: forever."
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#the-hard-part-its-not-the-math",
+    "href": "posts/investing/13-framework/index.html#the-hard-part-its-not-the-math",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "The Hard Part (It’s Not the Math)",
+    "text": "The Hard Part (It’s Not the Math)\nThe framework is simple. Following it is hard.\nWhat this approach requires:\n\nPatience — Most opportunities don’t pass the tests. You might wait months or years.\nCourage — When something screams, you have to actually buy. Significantly.\nStubbornness — When prices drop after you buy, you hold. (Unless something actually broke.)\nHumility — When you’re wrong, admit it and move on.\n\nWhat will fight against you:\n\nFear of missing out — “Everyone’s buying this. What if I miss it?”\nNeed to do something — “My money is just sitting there. I should invest in something.”\nFollowing the crowd — “Smart people are buying this. It must be good.”\nWishful thinking — “I want this to be good, so I’ll convince myself it is.”\nAnchoring — “It’s cheaper than last month, so it must be cheap.”\n\nThe math is easy. The psychology is the real challenge."
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#the-whole-series-in-one-table",
+    "href": "posts/investing/13-framework/index.html#the-whole-series-in-one-table",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "The Whole Series in One Table",
+    "text": "The Whole Series in One Table\n\n\n\n\n\n\n\n\nPart\nWhat It Covers\nKey Idea\n\n\n\n\n1\nWhat’s a business really worth?\nThe cash you can take out over time\n\n\n2\nOwner earnings\nReal cash = Profits + Fake expenses − Real expenses\n\n\n3\nWhy Buffett ignores Wall Street formulas\nSimple beats complicated\n\n\n4\nStay in your lane\nOnly invest in what you understand\n\n\n5\nWhat keeps competitors away\nPricing power is the ultimate test\n\n\n6\nWhy smart managers make dumb decisions\nResist the herd\n\n\n7\nComparing investments\nBeat government bonds + 10% minimum\n\n\n8\nBuying a dollar for fifty cents\nAlways demand a discount\n\n\n9\nThe power of saying no\nIf it doesn’t scream at you, walk away\n\n\n10\nSee’s Candies\nGreat business at fair price beats cheap business\n\n\n11\nCoca-Cola\nThe world’s best brand was underpriced\n\n\n12\nApple\nSame principles work even for “tech”"
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#the-20-punch-card-rule",
+    "href": "posts/investing/13-framework/index.html#the-20-punch-card-rule",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "The 20 Punch Card Rule",
+    "text": "The 20 Punch Card Rule\nImagine you could only make 20 investments in your entire life.\nNot 20 per year. 20 total. Ever.\nHow would that change your behavior?\n\nYou’d say no to almost everything\nYou’d research deeply before committing\nYou’d make bigger bets on your best ideas\nYou’d stop trading and start truly investing\n\nThis framework is designed for that world. It filters ruthlessly because you don’t need many investments. You need a few great ones.\nMost of your time will be spent: - Learning — Expanding what you understand - Waiting — For prices to become attractive - Holding — Letting compounding do its work\nVery little time actually buying.\n\n\n\n\n\n\nNoteFinal Summary\n\n\n\nInvesting like Buffett isn’t about complex math. It’s about:\n\nUnderstanding — Only invest in what you can explain simply\nStaying power — Look for advantages that last\nGood management — People who don’t waste money\nReal cash — Money you could actually take out\nSimple comparisons — Beat the safe alternative\nSafety cushions — Always pay less than it’s worth\nSaying no — Most opportunities aren’t good enough\nActing decisively — When something screams, buy\n\nThe math is simple. The discipline is hard. But applied consistently over a lifetime, this approach builds wealth.\n\n“It’s far better to buy a wonderful company at a fair price than a fair company at a wonderful price.”\n— Warren Buffett"
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#thank-you",
+    "href": "posts/investing/13-framework/index.html#thank-you",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "Thank You",
+    "text": "Thank You\nThis concludes the series on investing like Warren Buffett.\nThe principles are timeless. They worked in 1972 (See’s), 1988 (Coca-Cola), 2016 (Apple), and they’ll work for whatever opportunity comes next.\nThe question is: when your screaming opportunity arrives, will you be ready?"
+  },
+  {
+    "objectID": "posts/investing/13-framework/index.html#full-series-index",
+    "href": "posts/investing/13-framework/index.html#full-series-index",
+    "title": "Your One-Page Guide to Investing Like Buffett",
+    "section": "Full Series Index",
+    "text": "Full Series Index\n\nWhat a Business is Really Worth\nThe Money That Actually Lands in Your Pocket\nWhy Buffett Ignores Wall Street’s Favorite Formula\nStay in Your Lane\nWhat Keeps Competitors Away\nWhy Smart Managers Make Dumb Decisions\nThe Simplest Way to Compare Investments\nBuying a Dollar for Fifty Cents\nThe Power of Saying No\nThe $25 Million Lesson That Made Buffett Billions\nHow Buffett Turned $1 Billion into $27 Billion\nWhy the ‘Tech-Avoider’ Bet $31 Billion on Apple\nYour One-Page Guide to Investing Like Buffett (this post)"
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html",
+    "href": "posts/investing/3-wacc-beta/index.html",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nWall Street uses complex formulas (WACC, beta) to adjust for “risk”\nBuffett thinks this is “mathematical gibberish”\nHis approach: use a simple comparison rate, then only buy with a big safety buffer\nThe lesson: don’t try to measure risk precisely — just avoid situations you don’t understand"
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#the-mba-approach",
+    "href": "posts/investing/3-wacc-beta/index.html#the-mba-approach",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "The MBA Approach",
+    "text": "The MBA Approach\nIn business school, they teach you to value companies using something called WACC — “Weighted Average Cost of Capital.”\nIt’s a formula that tries to figure out the “right” rate to convert future money into today’s money. The formula involves:\n\nHow risky the stock is compared to the overall market (something called “beta”)\nThe interest rate on debt\nA “market risk premium”\n\nIf a company seems risky, you use a higher rate. This makes future profits worth less today, so the company looks less valuable.\nSounds logical, right?\nBuffett disagrees. Strongly."
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#mathematical-gibberish",
+    "href": "posts/investing/3-wacc-beta/index.html#mathematical-gibberish",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "“Mathematical Gibberish”",
+    "text": "“Mathematical Gibberish”\nHere’s what Buffett said:\n\n“If you say I’m going to stick an extra 6 percent in on the interest rate to allow for risk — I tend to think that’s kind of nonsense. I mean, it may look mathematical. But it’s mathematical gibberish in my view.”\n\nAnd his partner Munger:\n\n“I’ve never heard an intelligent cost of capital discussion.”\n\nWhat’s their problem with it?"
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#the-false-precision-problem",
+    "href": "posts/investing/3-wacc-beta/index.html#the-false-precision-problem",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "The False Precision Problem",
+    "text": "The False Precision Problem\nThe WACC formula requires you to estimate several numbers:\n\nHow “risky” the stock is (beta)\nWhat return investors expect from the whole market\nWhat interest rate the company pays on debt\n\nEach of these is a guess. And small changes in your guesses create huge swings in your final answer.\n\nUse 10% cost of capital? The company is worth $100.\nUse 11% instead? Now it’s worth $90.\nUse 9%? Now it’s worth $112.\n\nCan you really tell the difference between 9%, 10%, and 11%? Probably not. But your “precise” valuation swings by 20% depending on which you choose.\nBuffett’s view: this precision is fake. You’re just making up numbers and pretending they’re scientific."
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#the-beta-problem",
+    "href": "posts/investing/3-wacc-beta/index.html#the-beta-problem",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "The Beta Problem",
+    "text": "The Beta Problem\n“Beta” measures how much a stock bounces around compared to the overall market. Wall Street says higher beta = higher risk = you need higher returns.\nBut think about what this means in practice:\nA stock drops 50% because of a market panic. Nothing has changed about the business — customers are still buying, profits are still flowing. But because the stock bounced around a lot, beta goes UP.\nAccording to Wall Street math, this stock is now RISKIER and you should demand a higher return. It’s now LESS attractive to buy.\nBut wait — wouldn’t a 50% price drop for the same business make it MORE attractive?\nBuffett thinks so:\n\n“The Washington Post example: In 1973, the stock dropped 50% despite the business being fine. Beta said it was now riskier. Buffett said it was cheaper, bought heavily, and made a fortune.”\n\nBeta measures price volatility. Buffett doesn’t think price volatility is risk. Real risk is permanent loss of your money — not temporary price swings."
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#buffetts-simpler-approach",
+    "href": "posts/investing/3-wacc-beta/index.html#buffetts-simpler-approach",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "Buffett’s Simpler Approach",
+    "text": "Buffett’s Simpler Approach\nSo if Buffett doesn’t use WACC, what does he use?\nHe uses the government bond rate as his yardstick.\nFrom a 1997 shareholder meeting:\n\n“We use the risk-free rate merely to equate one item to another… Obviously, we can always buy government bonds. Therefore, that becomes the yardstick rate.”\n\nThe logic: - You can always put your money in government bonds and earn, say, 4% safely - Any other investment should be compared against that - If a stock doesn’t clearly beat the safe option, why bother?\nThis gives him a clean comparison without fake precision."
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#how-he-handles-risk",
+    "href": "posts/investing/3-wacc-beta/index.html#how-he-handles-risk",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "How He Handles Risk",
+    "text": "How He Handles Risk\nIf Buffett doesn’t adjust his rate for risk, how does he handle risky situations?\nTwo ways:\n\n1. He Only Invests in Things He Understands\n\n“We try to deal with things about which we are quite certain.”\n\nIf you truly understand a business — its customers, competition, and future — there’s less uncertainty. The “risk” is lower because you actually know what’s going on.\nAnd if you don’t understand it? Don’t invest. No rate adjustment will save you from being wrong about the fundamentals.\n\n\n2. He Demands a Big Safety Margin\nInstead of adjusting the rate, Buffett demands a big gap between price and value.\nIf he calculates a business is worth $100: - He won’t buy at $95 (only 5% margin) - He might buy at $70 (30% margin) - He’d love to buy at $50 (50% margin)\nThis margin of safety protects against: - His estimates being wrong - Unexpected problems - Things he didn’t think of\nIt’s a much simpler approach than trying to precisely measure “risk.”"
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#the-10-hurdle",
+    "href": "posts/investing/3-wacc-beta/index.html#the-10-hurdle",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "The 10% Hurdle",
+    "text": "The 10% Hurdle\nBuffett also has a minimum return requirement:\n\n“10% is the figure we quit on — we don’t want to buy equities when the real return we expect is less than 10%, whether interest rates are 6% or 1%.”\n\nThis isn’t a discount rate for calculations. It’s an opportunity cost filter.\nBuffett knows he can usually find 10%+ returns somewhere. So why accept less? Even if something looks “cheap” at 7% expected return, he’ll pass and wait for something better."
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#the-bottom-line",
+    "href": "posts/investing/3-wacc-beta/index.html#the-bottom-line",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "The Bottom Line",
+    "text": "The Bottom Line\nWall Street’s approach: 1. Calculate complex rates adjusted for “risk” 2. Plug into formulas 3. Get precise-looking (but fake) answers\nBuffett’s approach: 1. Use a simple comparison rate (government bonds) 2. Only invest in things you truly understand 3. Demand a big safety margin 4. Walk away if the return doesn’t obviously beat alternatives\nThe lesson: don’t try to measure risk with precision. Just avoid situations you don’t understand and insist on a large margin of error.\n\n\n\n\n\n\nNoteSummary\n\n\n\nWall Street uses complex formulas (WACC, beta) to adjust valuations for “risk.” Buffett thinks this creates false precision — the numbers look scientific but they’re really just guesses.\nHis alternative: use a simple baseline rate (government bonds), only invest in things you understand, and demand a big safety margin.\nNext up: Part 4 — Circle of Competence. How do you know if you really understand a business? And why does it matter so much?"
+  },
+  {
+    "objectID": "posts/investing/3-wacc-beta/index.html#references",
+    "href": "posts/investing/3-wacc-beta/index.html#references",
+    "title": "Why Buffett Ignores Wall Street’s Favorite Formula",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1997). Berkshire Hathaway Annual Meeting. 25iq.\nBuffett, W. (2003). Berkshire Hathaway Annual Meeting. Yahoo Finance."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html",
+    "href": "posts/investing/8-margin-safety/index.html",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nMargin of safety = buying things for less than they’re worth\nBuffett: “We defined value investing as buying dollars for fifty cents”\nThis buffer protects against mistakes, bad luck, and surprises\nIf you’re right about the value, you make money. If you’re wrong, the margin might save you."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#the-bridge-analogy",
+    "href": "posts/investing/8-margin-safety/index.html#the-bridge-analogy",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "The Bridge Analogy",
+    "text": "The Bridge Analogy\nImagine you’re an engineer building a bridge.\nYou calculate that the bridge needs to hold 10,000 pounds. Do you: - A) Build it to hold exactly 10,000 pounds, or - B) Build it to hold 30,000 pounds?\nObviously B. Because your calculations might be wrong. Because weather, wear, and unexpected heavy loads happen. Because margins save lives.\nBuffett applies the same logic to investing:\n\n“When you build a bridge, you insist it can carry 30,000 pounds, but you only drive 10,000 pound trucks across it. And that same principle works in investing.”\n\nIf you think a stock is worth $100, you don’t buy it at $95. You buy it at $60 or $70 — leaving a big buffer for error.\n\n\n\n\n\n\nFigure 1: The margin of safety is your buffer zone. If you think something is worth $100, you buy at $60-70. This 30-40% gap protects against estimation errors and bad luck."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#the-cornerstone-principle",
+    "href": "posts/investing/8-margin-safety/index.html#the-cornerstone-principle",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "The Cornerstone Principle",
+    "text": "The Cornerstone Principle\nIn his 1992 letter, Buffett was explicit:\n\n“We insist on a margin of safety in our purchase price. If we calculate the value of a common stock to be only slightly higher than its price, we’re not interested in buying. We believe this margin-of-safety principle… to be the cornerstone of investment success.”\n\n“Cornerstone.” The foundation everything else rests on.\nThis idea came from his mentor Benjamin Graham, who summarized value investing in three words: margin of safety.\nBuffett later put it simply: value investing means “buying dollars for fifty cents.”"
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#what-the-margin-protects-against",
+    "href": "posts/investing/8-margin-safety/index.html#what-the-margin-protects-against",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "What the Margin Protects Against",
+    "text": "What the Margin Protects Against\n\n1. Your Mistakes\nYou estimated the business is worth $100 per share. But what if you’re wrong?\nMaybe you overestimated future growth. Maybe you missed a competitive threat. Maybe the industry is changing faster than you thought.\nIf you paid $95, you’re underwater with any error. If you paid $60, you can be wrong by 30% and still break even.\n\n\n2. Bad Luck\nEven perfect analysis can’t predict everything: - Economic recessions happen - Key executives leave unexpectedly - New competitors emerge from nowhere - Regulations change\nThe margin of safety absorbs these shocks.\n\n\n3. Things You Don’t Know\nThe most dangerous risks are the ones you haven’t thought of.\nBy paying well below estimated value, you’re implicitly protected against unknown unknowns. You don’t need to list every possible disaster — the buffer covers them all."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#how-much-margin-do-you-need",
+    "href": "posts/investing/8-margin-safety/index.html#how-much-margin-do-you-need",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "How Much Margin Do You Need?",
+    "text": "How Much Margin Do You Need?\nIt depends on how confident you are.\n\n\n\nSituation\nMargin Needed\n\n\n\n\nBusiness you deeply understand, stable and predictable\n25-30%\n\n\nGood business with some uncertainty\n35-50%\n\n\nMore uncertain or cyclical\n50%+\n\n\n\nThe less certain you are about the value, the more margin you need.\n\n\n\n\n\n\nTipThe Washington Post Example\n\n\n\nIn 1973, Buffett bought Washington Post stock when: - Market value: $80 million - Estimated true value: $400-500 million\nThat’s a 75-80% margin of safety.\nEven if Buffett’s estimate was off by 50%, he still got a huge bargain. That’s what a screaming margin looks like."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#buffetts-evolution-moats-as-margin",
+    "href": "posts/investing/8-margin-safety/index.html#buffetts-evolution-moats-as-margin",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "Buffett’s Evolution: Moats as Margin",
+    "text": "Buffett’s Evolution: Moats as Margin\nHere’s a subtle but important point.\nGraham, Buffett’s mentor, focused on price as the margin of safety. Buy cheap enough and you’re protected.\nBuffett evolved the concept:\n\n“If you understood a business perfectly — the future of a business — you would need very little in the way of a margin of safety.”\n\nIn other words: if a business has a strong moat (see Part 5) and you really understand it, the predictability itself provides protection.\nThis is why Buffett pays more for great businesses. See’s Candies, Coca-Cola, and Apple weren’t “cheap” by Graham’s standards. But their durability provided its own margin of safety.\nTwo sources of margin: 1. Price discount — Paying far less than estimated value 2. Business quality — Owning something so durable that surprises are unlikely\nThe best investments have both."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#putting-it-into-practice",
+    "href": "posts/investing/8-margin-safety/index.html#putting-it-into-practice",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "Putting It Into Practice",
+    "text": "Putting It Into Practice\n\nStep 1: Estimate the Value\nUsing the techniques from earlier posts, figure out what you think the business is worth.\n\n\nStep 2: Determine Your Required Margin\nHow confident are you? How stable is the business? Pick a margin that matches your uncertainty.\n\n\nStep 3: Calculate Your Maximum Price\nIf you estimate value at $100 and require 30% margin:\nMax Price = $100 × (1 - 0.30) = $70\nDon’t pay more than $70.\n\n\nStep 4: Wait\nThe stock might never reach your target. That’s okay. Move on to other opportunities.\nThe margin of safety isn’t just math. It’s discipline."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#common-mistakes",
+    "href": "posts/investing/8-margin-safety/index.html#common-mistakes",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "Common Mistakes",
+    "text": "Common Mistakes\n\n\n\n\n\n\nWarningMistake #1: “It’s Cheap Because the Stock Dropped”\n\n\n\nA stock falling 40% isn’t automatically a margin of safety.\nMaybe it dropped because the business is genuinely worse. Maybe the original price was too high.\nMargin of safety means: price is below intrinsic value. Not just below yesterday’s price.\n\n\n\n\n\n\n\n\nWarningMistake #2: Using Too Small a Margin\n\n\n\nA 5% discount isn’t a margin of safety. It’s noise.\nSmall estimation errors could wipe it out. If you’re not getting at least 25-30% off, the buffer probably isn’t real.\n\n\n\n\n\n\n\n\nWarningMistake #3: Forgetting the Margin Over Time\n\n\n\nYou bought at a 40% margin. The stock rises to your estimated value. Now there’s no margin left.\nConsider: Is this still a wonderful business that will keep compounding? Or should you take profits and wait for the next opportunity?"
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#the-bottom-line",
+    "href": "posts/investing/8-margin-safety/index.html#the-bottom-line",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "The Bottom Line",
+    "text": "The Bottom Line\nMargin of safety means buying things for less than they’re worth — “buying dollars for fifty cents.”\nThis buffer protects against your mistakes, bad luck, and things you haven’t thought of.\nThe required margin depends on your confidence. More uncertainty = larger margin needed.\nThe best investments combine price margin (paying far below value) with quality margin (owning something durable and predictable).\n\n\n\n\n\n\nNoteSummary\n\n\n\nMargin of safety is the cornerstone of successful investing. It means paying significantly less than your estimate of intrinsic value.\nLike an engineer building a bridge stronger than needed, you build in a buffer for error.\nThe margin protects against your own mistakes, unexpected events, and unknown unknowns.\nNext up: Part 9 — When to Walk Away. Sometimes the best investment decision is to do nothing. Here’s why patience is Buffett’s secret weapon."
+  },
+  {
+    "objectID": "posts/investing/8-margin-safety/index.html#references",
+    "href": "posts/investing/8-margin-safety/index.html#references",
+    "title": "Buying a Dollar for Fifty Cents",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1992). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nGraham, B. (1949). The Intelligent Investor. Harper & Brothers.\nBuffett, W. (1984). “The Superinvestors of Graham-and-Doddsville.” Columbia Business School Magazine."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html",
+    "href": "posts/investing/6-institutional-imperative/index.html",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nThe Institutional Imperative: An invisible force that makes good managers act irrationally\nIt explains why companies resist change, waste money, and follow competitors blindly\nBuffett calls it “my most surprising discovery” about business\nGood management means resisting these pressures — bad management gives in"
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#buffetts-most-surprising-discovery",
+    "href": "posts/investing/6-institutional-imperative/index.html#buffetts-most-surprising-discovery",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "Buffett’s Most Surprising Discovery",
+    "text": "Buffett’s Most Surprising Discovery\nIn 1989, Buffett shared something unexpected:\n\n“My most surprising discovery: the overwhelming importance in business of an unseen force that we might call ‘the institutional imperative.’ In business school, I was given no hint of the imperative’s existence… I thought then that decent, intelligent, and experienced managers would automatically make rational business decisions. But I learned over time that isn’t so.”\n\nThis is remarkable. He’s not criticizing bad managers. He’s saying good managers — smart, experienced, well-meaning people — still make irrational decisions because of institutional pressures."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#four-ways-it-shows-up",
+    "href": "posts/investing/6-institutional-imperative/index.html#four-ways-it-shows-up",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "Four Ways It Shows Up",
+    "text": "Four Ways It Shows Up\nBuffett identified four symptoms:\n\n1. Resistance to Change\nOrganizations develop momentum. Strategies harden. Cultures calcify. Even when the world changes, the institution keeps doing what it’s always done.\nExample: Kodak Kodak invented the digital camera in 1975. Their managers saw the threat. But switching to digital would destroy their profitable film business. So they kept making film — until bankruptcy in 2012.\nThe managers weren’t stupid. They were trapped.\n\n\n2. Available Money Gets Spent\nA company earns $1 billion in profit. Does it: - Return the money to shareholders, or - Find something — anything — to spend it on?\nUsually the second option.\nExample: Oil Companies (2005-2008) High oil prices created huge cash flows. Rather than returning the cash, companies made expensive acquisitions at peak prices. When oil crashed, they wrote off billions.\nThe money was there. It demanded to be spent.\n\n\n3. Employees Justify the Boss’s Wishes\nThe CEO wants to buy a competitor. Suddenly, every analysis confirms it’s a brilliant idea.\nThis isn’t conspiracy. It’s human nature. People want to please the boss. Analysts who raise objections don’t get promoted.\nExample: Almost every acquisition Most big acquisitions come with “strategic rationale” presentations showing great returns. Most big acquisitions destroy value. The presentations were written to justify decisions already made.\n\n\n4. Following the Herd\n“Everyone else is doing it” becomes sufficient justification.\nCompetitors are acquiring? We should too. Competitors are entering China? We can’t be left out. Competitors pay executives $20 million? We need to match.\nExample: The Dot-Com Bubble By 1999, every traditional company was launching an internet strategy. Most had no idea why. “Our competitors are doing it” was enough.\n\n\n\n\n\n\nWarningWhy Rationality Fails\n\n\n\nThe institutional imperative isn’t about individual failure. It’s about structural pressure.\nManagers who resist it face real consequences: - “You’re not ambitious enough” - “You’re letting competitors get ahead” - “The market expects growth”\nBeing rational often requires being willing to look foolish. Most won’t take that risk."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#how-to-spot-bad-management",
+    "href": "posts/investing/6-institutional-imperative/index.html#how-to-spot-bad-management",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "How to Spot Bad Management",
+    "text": "How to Spot Bad Management\nWhen evaluating a company, look for warning signs:\n🚩 Empire building Acquisitions that grow revenue but not profits. “We’re now a $10 billion company!” means nothing if returns didn’t improve.\n🚩 Following competitors Major strategy changes that mirror what rivals just announced. Original thinking is rare.\n🚩 Excessive executive pay If the justification is “competitive pay,” that’s the institutional imperative talking.\n🚩 Spending all the cash Companies that never return money to shareholders despite having no good investment opportunities."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#how-to-spot-good-management",
+    "href": "posts/investing/6-institutional-imperative/index.html#how-to-spot-good-management",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "How to Spot Good Management",
+    "text": "How to Spot Good Management\nLook for the opposite:\n✓ Returning excess cash Dividends and buybacks show discipline. “We couldn’t find anything good to buy, so here’s your money back.”\n✓ Saying no to deals “We passed on that acquisition because it didn’t make economic sense.” Rare and valuable.\n✓ Going against the crowd Buying when others are scared. Selling when others are greedy. Acting independently.\n✓ Owner mentality Managers who own significant stock behave differently. Their interests align with yours."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#buffetts-test-for-management",
+    "href": "posts/investing/6-institutional-imperative/index.html#buffetts-test-for-management",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "Buffett’s Test for Management",
+    "text": "Buffett’s Test for Management\nFrom his 1983 letter:\n\n“We test the wisdom of retaining earnings by assessing whether retention, over time, delivers shareholders at least $1 of market value for each $1 retained.”\n\nSimple rule: If management keeps $1, it should create at least $1 of value.\nMany companies fail this test. They keep the money, waste it on bad acquisitions or pet projects, and destroy value.\nGood management either invests wisely or returns the cash. Bad management hoards and squanders."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#why-this-matters-for-valuation",
+    "href": "posts/investing/6-institutional-imperative/index.html#why-this-matters-for-valuation",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "Why This Matters for Valuation",
+    "text": "Why This Matters for Valuation\nYou might calculate that a business is worth $100 per share based on its profits.\nBut if management: - Wastes cash on bad acquisitions - Pursues growth for its own sake - Copies competitor mistakes - Pays themselves excessively\nThose profits never reach you. The intrinsic value calculation assumed rational capital allocation. The institutional imperative ensures many managers aren’t rational.\nA wonderful business with bad management is not a wonderful investment.\n\n\n\n\n\n\nNoteSummary\n\n\n\nThe Institutional Imperative is an invisible force that makes good managers act irrationally — resisting change, spending available cash, justifying the boss’s wishes, and following competitors blindly.\nWhen evaluating management, look for discipline: returning excess cash, saying no to deals, and acting independently of the herd.\nA business’s value depends not just on its profits, but on whether management will actually deliver those profits to shareholders.\nNext up: Part 7 — The Yardstick Rate. How does Buffett compare different investments? It’s simpler than you’d think."
+  },
+  {
+    "objectID": "posts/investing/6-institutional-imperative/index.html#references",
+    "href": "posts/investing/6-institutional-imperative/index.html#references",
+    "title": "Why Smart Managers Make Dumb Decisions",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1989). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nBuffett, W. (1983). Berkshire Hathaway Owner’s Manual. Berkshire Hathaway Inc."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html",
+    "href": "posts/investing/10-sees-candies/index.html",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nBuffett bought a candy company for $25 million — it has earned him over $2 billion\nThis one investment changed how he thinks about value forever\nKey lesson: A great business at a fair price beats a mediocre business at a cheap price\nThe secret? Pricing power — See’s raised prices almost every year and customers kept buying"
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#the-investment-that-changed-everything",
+    "href": "posts/investing/10-sees-candies/index.html#the-investment-that-changed-everything",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "The Investment That Changed Everything",
+    "text": "The Investment That Changed Everything\nIn 1972, Warren Buffett and Charlie Munger bought a little California candy company called See’s Candies for $25 million.\nThis single purchase transformed how Buffett thinks about investing.\nBefore See’s: Buffett hunted for bargains — companies selling for less than their assets were worth. The approach was mathematical: buy cheap stuff, wait for the price to go up, sell.\nAfter See’s: Buffett started looking for great businesses, even if they weren’t dirt cheap. He realized something important: a wonderful business at a fair price beats a mediocre business at a bargain price."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#the-deal",
+    "href": "posts/investing/10-sees-candies/index.html#the-deal",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "The Deal",
+    "text": "The Deal\nHere’s what See’s looked like when Buffett bought it:\n\nSales: $30 million per year\nProfits: About $5 million per year (before taxes)\nHard assets (factories, equipment, inventory): Only $8 million\nPurchase price: $25 million\n\nSo Buffett paid 5 years’ worth of profits for the whole company. That’s not especially cheap by bargain-hunting standards.\nBut here’s what made See’s special: those $8 million in assets were generating $5 million in profits every year. That’s a 60% return on the money tied up in the business.\nWhere else can you earn 60% on your investment? Almost nowhere.\n\n\n\n\n\n\nTipWhy “Cheap” Isn’t Always What It Seems\n\n\n\nBuffett’s mentor Benjamin Graham taught him to buy companies for less than their assets were worth — like buying a $100 bill for $50.\nBut See’s didn’t have many physical assets. Its real value was the brand — something that doesn’t show up on a balance sheet.\nBuying See’s wasn’t buying assets cheap. It was buying a money-printing machine."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#the-negotiation",
+    "href": "posts/investing/10-sees-candies/index.html#the-negotiation",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "The Negotiation",
+    "text": "The Negotiation\nThe See family wanted $30 million. Buffett said $25 million — take it or leave it.\n\n“Buffett offered $25 million and was willing to walk away if the seller demanded a dollar more.”\n\nFortunately, they agreed. But notice the discipline: Buffett knew exactly what he was willing to pay. Not a dollar more."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#why-munger-pushed-for-it",
+    "href": "posts/investing/10-sees-candies/index.html#why-munger-pushed-for-it",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "Why Munger Pushed for It",
+    "text": "Why Munger Pushed for It\nCharlie Munger, Buffett’s partner, saw something special that Buffett almost missed:\n\n“See’s has a name that nobody can get near in California… It’s impossible to compete with that brand without spending all kinds of money.”\n\nMunger’s point: Yes, $25 million seems like a lot for a company with only $8 million in physical assets. But the brand was worth far more than any factory.\nThink about it: If you wanted to compete with See’s, how much would you need to spend on advertising, store locations, and decades of trust-building? Probably hundreds of millions — and you still might fail.\nThe brand was the bargain."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#the-real-question-can-they-raise-prices",
+    "href": "posts/investing/10-sees-candies/index.html#the-real-question-can-they-raise-prices",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "The Real Question: Can They Raise Prices?",
+    "text": "The Real Question: Can They Raise Prices?\nEverything came down to one simple question: Can See’s charge more without losing customers?\nAt the time, See’s sold chocolates for $1.95 per pound. Buffett explained the insight:\n\n“If you had taken a box on Valentine’s Day to some girl and she kissed you… See’s Candies means getting kissed. If we can get that in the minds of people, we can raise prices.”\n\nIn California, See’s wasn’t just chocolate — it was the gift you bring. When you visit grandma, you bring See’s. When you want to impress a date, you bring See’s. When you say “thank you,” you bring See’s.\nThat emotional connection is priceless. And it means people don’t switch to cheaper alternatives when prices go up.\nSimple math: If See’s raised prices by just 30 cents per pound (from $1.95 to $2.25), profits would nearly double. Customers would barely notice. The $25 million purchase would look like a steal."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#the-results-spoiler-spectacular",
+    "href": "posts/investing/10-sees-candies/index.html#the-results-spoiler-spectacular",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "The Results (Spoiler: Spectacular)",
+    "text": "The Results (Spoiler: Spectacular)\nThe results exceeded even the most optimistic projections.\nThe pricing power worked exactly as hoped:\n\n\n\nYear\nPrice per pound\n\n\n\n\n1972\n$1.85\n\n\n1997\n$8.80\n\n\n2007\n~$12\n\n\nToday\n~$26\n\n\n\nPrices went up almost 14x. And customers kept buying.\nVolume only grew about 2% per year. But it didn’t need to grow more. When you can charge 14x higher prices, you don’t need to sell more boxes.\nThe money generated:\n\n1972 profits: $5 million/year\n2007 profits: $82 million/year\nTotal profits since 1972: Over $2 billion\n\nAll from a $25 million investment. That’s an 80x return — just from the profits, not counting what the business itself is worth today.\n\n\n\n\n\n\nTipThe “Money Machine” Effect\n\n\n\nHere’s what made See’s so remarkable: it didn’t need much reinvestment.\nBuffett only put an additional $40 million back into the business over 50 years. The rest of those billions in profits? He took them out and invested them elsewhere (like Coca-Cola).\nA business that generates cash without needing cash is a money machine."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#why-this-one-investment-changed-everything",
+    "href": "posts/investing/10-sees-candies/index.html#why-this-one-investment-changed-everything",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "Why This One Investment Changed Everything",
+    "text": "Why This One Investment Changed Everything\nHere’s what Buffett said at his 1997 shareholder meeting:\n\n“If we hadn’t bought See’s… we wouldn’t have bought Coca-Cola in 1988. You can give See’s a significant part of the credit for the $11 billion-plus profit we’ve got in Coca-Cola.”\n\nWithout See’s, no Coca-Cola investment. And Coca-Cola made Buffett more than $26 billion.\n\nLesson 1: Brands Are Worth More Than Factories\nSee’s had no patents, no secret formula, no cutting-edge technology. Just a name people trusted.\nThat name turned out to be worth more than any factory ever could be.\n\n\nLesson 2: Some Businesses Print Money\nMost businesses need to reinvest their profits to keep growing — new equipment, more employees, bigger offices.\nSee’s didn’t. It just kept generating cash that Buffett could invest elsewhere. He calls these “capital-light compounders.”\n\n\nLesson 3: Pricing Power Is Everything\nIf you can raise prices and customers keep buying, you have a real competitive advantage. If you can’t, you’re in a tough business.\nSee’s proved this year after year, decade after decade.\n\n\nLesson 4: Great Beats Cheap\nBuffett’s famous summary:\n\n“It’s far better to buy a wonderful company at a fair price than a fair company at a wonderful price.”\n\nSee’s wasn’t a screaming bargain by traditional measures. But it was wonderful. And wonderful beats cheap over time."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#checking-against-our-framework",
+    "href": "posts/investing/10-sees-candies/index.html#checking-against-our-framework",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "Checking Against Our Framework",
+    "text": "Checking Against Our Framework\nLet’s see how See’s stacks up against everything we’ve learned:\nDo I understand this business? ✓ Chocolate isn’t complicated. Buy ingredients, make candy, sell to customers. Simple.\nDoes it have staying power? ✓ A brand built over 50 years can’t be replicated by throwing money at it. Competitors would need decades to build that trust.\nIs management trustworthy? ✓ The See family built the business with integrity. The manager who ran it after Buffett bought it maintained that culture.\nDoes it make real money? ✓ $5 million in profits from $8 million in assets. Chocolate factories don’t need constant expensive upgrades. Almost all the profit was real cash.\nIs there a safety cushion? ✓ Paying 5 years of profits for a business earning 60% returns annually. If the pricing power held, Buffett would do great. If it didn’t, he’d still probably be okay.\nIs it obviously a good deal? ✓ No spreadsheet needed. A business earning 60% returns, selling at 5x profits, with a beloved brand? That screams “buy me.”"
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#why-it-all-worked",
+    "href": "posts/investing/10-sees-candies/index.html#why-it-all-worked",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "Why It All Worked",
+    "text": "Why It All Worked\nSee’s succeeded because of a rare combination:\n\nA brand people love — Built over 50+ years, can’t be copied\nPricing power — Customers keep buying even when prices go up\nDoesn’t need much money — Almost all profits are real cash to keep\nDominates its region — #1 in California, where it matters most\nSimple to understand — Chocolate. Not rocket science.\nFair price — Not a bargain-bin deal, but not overpriced either\n\nAny single advantage might fade. But all of them together? That’s a money machine.\n\n\n\n\n\n\nNoteSummary\n\n\n\nSee’s Candies was the investment that transformed how Warren Buffett thinks about value.\nThe numbers: $25 million invested in 1972 has generated over $2 billion in profits. An 80x return — not from clever trading, but from owning a wonderful business and letting it compound.\nThe lesson that changed everything: A wonderful business at a fair price beats a mediocre business at a cheap price. Quality compounds. Cheapness doesn’t.\nNext up: Part 11 — Coca-Cola. Could the same principles that worked for a California candy company apply to a global beverage giant? See’s taught Buffett how to find out."
+  },
+  {
+    "objectID": "posts/investing/10-sees-candies/index.html#references",
+    "href": "posts/investing/10-sees-candies/index.html#references",
+    "title": "The $25 Million Lesson That Made Buffett Billions",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (2007). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nThe Hustle. How a Small Candy Company Became Warren Buffett’s Dream Investment.\nBuffett, W. (1998). University of Florida Speech. Quartr.\nVarious Berkshire Hathaway Annual Letters.\nBuffett, W. (1997). Berkshire Hathaway Annual Meeting.\nBuffett, W. (1989). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc."
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html",
+    "href": "posts/investing/5-moats/index.html",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "",
+    "text": "NoteTL;DR\n\n\n\n\nAn economic moat is what protects a business from competitors — like a castle’s moat\nBuffett looks for two types: lowest cost or strongest brand\nThe ultimate test: can the company raise prices without losing customers?\nWarning: “Most moats aren’t worth a damn” — be skeptical of claimed advantages"
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#the-castle-metaphor",
+    "href": "posts/investing/5-moats/index.html#the-castle-metaphor",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "The Castle Metaphor",
+    "text": "The Castle Metaphor\nImagine a medieval castle. What keeps invaders out?\nThe moat — that deep trench of water surrounding the walls. The wider and deeper the moat, the harder for attackers to get across.\nBuffett uses this image for businesses:\n\n“What we’re trying to find is a business with a wide and long-lasting moat around it — protecting a terrific economic castle with an honest lord in charge.”\n\nThe castle is the business and its profits. The moat is whatever stops competitors from taking those profits.\n\n\n\n\n\n\nFigure 1: A wide moat protects the business castle from competitive attacks. The wider the moat, the longer the business can maintain high profits."
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#two-types-of-moats",
+    "href": "posts/investing/5-moats/index.html#two-types-of-moats",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "Two Types of Moats",
+    "text": "Two Types of Moats\nAfter decades of investing, Buffett identified two main sources of competitive protection:\n\n1. Being the Cheapest\nIf you can make something for less than anyone else, you win. Competitors either match your prices (and earn less) or charge more (and lose customers).\nExample: Costco Costco keeps a limited selection, negotiates hard with suppliers, and passes savings to customers. Competitors can’t match both their prices and their quality without losing money.\nExample: GEICO GEICO sells car insurance directly to customers — no local agents taking commissions. This means lower costs, which means lower prices, which means more customers, which means even lower costs. The advantage reinforces itself.\n\n\n2. Having the Strongest Brand\nWhen customers pay more for your product even though cheaper alternatives exist, you have a brand moat. This is about psychology, not just product features.\nExample: Coca-Cola Plenty of cheaper colas exist. People still buy Coke. Why? 130+ years of brand building created emotional associations that no marketing budget can replicate.\nExample: See’s Candies In California, See’s means “the gift you bring when visiting someone.” That emotional connection lets them charge premium prices for chocolate that objectively isn’t that different from competitors."
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#the-ultimate-test-pricing-power",
+    "href": "posts/investing/5-moats/index.html#the-ultimate-test-pricing-power",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "The Ultimate Test: Pricing Power",
+    "text": "The Ultimate Test: Pricing Power\nHow do you know if a moat is real? Buffett gave the definitive test:\n\n“The single-most important decision in evaluating a business is pricing power. If you’ve got the power to raise prices without losing business to a competitor, you’ve got a very good business. And if you have to have a prayer session before raising the price by a tenth of a cent, then you’ve got a terrible business.”\n\nThis is the moat test. Forget market share data and profit margins. Ask one question:\nCan this business raise prices 10% without losing significant customers?\nIf yes → There’s a moat. If no → There isn’t.\nSee’s Candies raised prices nearly every year for decades. Volume barely budged. That’s a moat.\nAirlines have “price wars” constantly. That’s no moat.\n\n\n\n\n\n\nImportantPricing Power &gt; Good Management\n\n\n\nFrom the same interview:\n\n“The single most important decision in evaluating a business is pricing power.”\n\nNot management quality. Not growth rate. Not market size. Pricing power.\nA mediocre manager running a business with pricing power will do fine. A brilliant manager running a commodity business will struggle."
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#moats-that-last",
+    "href": "posts/investing/5-moats/index.html#moats-that-last",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "Moats That Last",
+    "text": "Moats That Last\nFinding a moat isn’t enough. You need one that persists.\nBuffett:\n\n“A moat that must be continuously rebuilt will eventually be no moat at all.”\n\nThis is why he’s cautious about technology. Today’s tech moat can evaporate with the next innovation cycle: - Microsoft’s Windows dominance → disrupted by smartphones - Nokia’s phone leadership → destroyed by the iPhone - Blockbuster’s video rental network → wiped out by streaming\nCompare to Coca-Cola’s brand, which has lasted 130+ years. Or GEICO’s cost advantage, which has persisted for 90+ years.\nQuestions to ask:\n\nHas this advantage lasted at least 10 years?\nCan it be copied if a competitor spends enough money?\nDoes technology threaten to make it obsolete?\nDoes it depend on specific people who could leave?"
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#most-moats-arent-worth-a-damn",
+    "href": "posts/investing/5-moats/index.html#most-moats-arent-worth-a-damn",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "“Most Moats Aren’t Worth a Damn”",
+    "text": "“Most Moats Aren’t Worth a Damn”\nBuffett’s warning:\n\n“Most moats aren’t worth a damn.”\n\nMany companies claim competitive advantages. Few actually have them. Watch for:\n“We have 60% market share” — Market share isn’t a moat. It’s a current state that can change. Blockbuster had huge market share too.\n“We have patents” — Patents expire. And competitors often design around them.\n“Our CEO is brilliant” — If the advantage walks out the door every night, it’s not a real moat.\n“Regulations protect us” — Regulations can change with the next election."
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#case-study-sees-candies",
+    "href": "posts/investing/5-moats/index.html#case-study-sees-candies",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "Case Study: See’s Candies",
+    "text": "Case Study: See’s Candies\nLet’s see a real moat in action.\nWhen Buffett bought See’s in 1972: - Price: $1.85 per pound\nBy 1997: - Price: $8.80 per pound\nThat’s nearly 5x higher prices with only 2% annual volume growth.\nCustomers didn’t leave. They kept paying more. Because See’s had an emotional monopoly in California — it meant something to give someone See’s chocolates.\nThat’s pricing power. That’s a moat.\n\n\n\n\n\n\nNoteSummary\n\n\n\nAn economic moat is whatever stops competitors from stealing a company’s profits — like a castle’s moat stops invaders.\nBuffett looks for two types: lowest cost producer (like GEICO) or strongest brand (like Coca-Cola).\nThe ultimate test is pricing power: can the company raise prices without losing customers? If yes, there’s a moat. If not, there isn’t.\nBe skeptical. Most claimed advantages aren’t real. And moats that require constant rebuilding aren’t really moats.\nNext up: Part 6 — The Institutional Imperative. Even great businesses can be ruined by management. Here’s why smart people make dumb decisions."
+  },
+  {
+    "objectID": "posts/investing/5-moats/index.html#references",
+    "href": "posts/investing/5-moats/index.html#references",
+    "title": "What Keeps Competitors Away (Economic Moats)",
+    "section": "References",
+    "text": "References\n\nBuffett, W. (1986). Berkshire Hathaway Shareholder Letter. Berkshire Hathaway Inc.\nBuffett, W. (2011). Financial Crisis Inquiry Commission Testimony. Bloomberg.\nBuffett, W. (1995). Berkshire Hathaway Annual Meeting. CNBC Buffett Archive."
   },
   {
     "objectID": "posts/welcome/index.html",
