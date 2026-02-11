@@ -10,7 +10,860 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.27</generator>
-<lastBuildDate>Mon, 02 Feb 2026 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 10 Feb 2026 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>The State of Robotics 2026: Progress, Problems, and Predictions</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/robotics/state-of-robotics-2026/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Now that we’re a few weeks into 2026, I want to look back at the most important developments in robot learning from last year, reflect on the limitations and open problems that remain, and share a few thoughts on what might come next.</p>
+<div id="fig-hero" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-hero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/figure02-bmw-official.jpg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-hero-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Figure 02 at BMW’s Spartanburg plant — the first humanoid robot to complete an extended factory deployment, working 10-hour shifts alongside human workers. Photo: BMW Group Press.
+</figcaption>
+</figure>
+</div>
+<p>If 2023 was the year ChatGPT changed how we think about language AI, <strong>2025 was the year robots got their foundation models</strong>. For decades, robots excelled at repetitive factory tasks but struggled with everyday manipulation — folding laundry, cooking meals, clearing tables. That changed this year.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>The big shift</strong>: Vision-Language-Action (VLA) models went from research curiosity to production systems</li>
+<li><strong>The breakthrough method</strong>: Diffusion Policy and its variants became the dominant approach for robot learning</li>
+<li><strong>The bottleneck</strong>: It’s not algorithms anymore — it’s data. The 120,000x gap between robot and LLM datasets is the defining challenge</li>
+<li><strong>The prediction</strong>: 2026 will see robots-as-a-service go mainstream, but true general-purpose humanoids remain 2-3 years away</li>
+</ul>
+</div>
+</div>
+<section id="the-year-of-foundation-models-for-robotics" class="level2">
+<h2 class="anchored" data-anchor-id="the-year-of-foundation-models-for-robotics">1. The Year of Foundation Models for Robotics</h2>
+<p>There are many interesting topics I want to cover, but let’s start chronologically in early 2025.</p>
+<p>Before this year, training a robot for a new task meant starting from scratch: collect demonstrations, train a policy, deploy, repeat. Each task was isolated. What made 2025 different was the emergence of <strong>Vision-Language-Action (VLA) models</strong> — foundation models that understand language, perceive the world, and output robot actions.</p>
+<section id="the-deepmind-moment" class="level3">
+<h3 class="anchored" data-anchor-id="the-deepmind-moment">1.1 The DeepMind Moment</h3>
+<p>In March 2025, Google DeepMind released <strong>Gemini Robotics</strong> — their first foundation model specifically designed for robot control. This wasn’t just another research paper. It was a production-ready system with a key capability: <strong>zero-shot cross-embodiment transfer</strong>.</p>
+<p>Train on an ALOHA2 dual-arm robot. Deploy directly on:</p>
+<ul>
+<li>Franka bi-arm robot</li>
+<li>Apptronik’s Apollo humanoid</li>
+<li>No retraining required</li>
+</ul>
+<p>By September, they released <strong>Gemini Robotics 1.5</strong>, which added “embodied reasoning” — the ability to use digital tools (web search, calculators) while planning physical tasks. A robot could look up a recipe, then execute it.</p>
+</section>
+<section id="physical-intelligence-and-π0" class="level3">
+<h3 class="anchored" data-anchor-id="physical-intelligence-and-π0">1.2 Physical Intelligence and π0</h3>
+<p>While DeepMind focused on integration with their ecosystem, <strong>Physical Intelligence (π)</strong> emerged as the dedicated robotics foundation model company. Their π0 model, open-sourced in February 2025, became the research community’s go-to baseline.</p>
+<div id="fig-pi0-arch" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pi0-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/pi0-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pi0-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Overview of the π0 framework showing how a pre-trained VLM backbone (PaliGemma) is combined with an action expert using flow matching. The model is trained on a mixture of dexterous datasets and Open X-Embodiment data, then deployed across multiple robot embodiments. Figure from Black et al.&nbsp;2024.
+</figcaption>
+</figure>
+</div>
+<p>What made π0 notable:</p>
+<ul>
+<li>Trained on <strong>7 robotic platforms</strong> and <strong>68 unique tasks</strong></li>
+<li>Uses <strong>flow matching</strong> instead of DDPM for faster inference (50Hz continuous actions)</li>
+<li>Released open weights, enabling academic research at scale</li>
+</ul>
+<div id="fig-pi0-robots" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-pi0-robots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/pi0-robots.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pi0-robots-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: The seven robot platforms used in π0 experiments, from single-arm UR5e to mobile bi-manual systems. This cross-embodiment training is key to π0’s generalization. Figure from Black et al.&nbsp;2024.
+</figcaption>
+</figure>
+</div>
+<p>By late 2025, they released π0.5 with improved open-world generalization, and π0.6 with RL fine-tuning for better success rates. Their $600M Series B (total funding now exceeding $1B) signals investor confidence that foundation models for robotics are the path forward.</p>
+</section>
+<section id="openvla-democratizing-robot-intelligence" class="level3">
+<h3 class="anchored" data-anchor-id="openvla-democratizing-robot-intelligence">1.3 OpenVLA: Democratizing Robot Intelligence</h3>
+<p>The biggest shift for the open-source community was <strong>OpenVLA</strong> — a 7B parameter model that outperformed Google’s RT-2-X (55B parameters) by 16.5% with <strong>7x fewer parameters</strong>.</p>
+<div id="fig-openvla-arch" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-openvla-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/openvla-architecture-arxiv.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-openvla-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: OpenVLA architecture: a fused DINOv2 + SigLIP vision encoder feeds into a projector, which maps visual features to the Llama 2 7B backbone. The model outputs 7-DoF robot actions directly from images and language instructions. Figure from Kim et al.&nbsp;2024.
+</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Parameters</th>
+<th>Performance</th>
+<th>Open Weights</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>RT-2-X</td>
+<td>55B</td>
+<td>Baseline</td>
+<td>No</td>
+</tr>
+<tr class="even">
+<td>OpenVLA</td>
+<td>7B</td>
+<td>+16.5%</td>
+<td>Yes</td>
+</tr>
+<tr class="odd">
+<td>SmolVLA</td>
+<td>450M</td>
+<td>~85% of OpenVLA</td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
+<p>The 2025 updates made it practical:</p>
+<ul>
+<li><strong>March</strong>: OFT (Optimized Fine-Tuning) recipe for 25-50x faster training</li>
+<li><strong>January</strong>: FAST tokenizer enabling 15x inference speedup</li>
+</ul>
+<p>For the first time, startups and academic labs could train competitive robot policies without billion-dollar compute budgets.</p>
+</section>
+<section id="the-efficiency-revolution-smolvla-and-gr00t-n1" class="level3">
+<h3 class="anchored" data-anchor-id="the-efficiency-revolution-smolvla-and-gr00t-n1">1.4 The Efficiency Revolution: SmolVLA and GR00T N1</h3>
+<p>Two releases in 2025 pushed VLAs in opposite directions — smaller and larger — both successfully.</p>
+<p><strong>SmolVLA</strong> (Hugging Face) proved you don’t need billions of parameters:</p>
+<div id="fig-smolvla" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-smolvla-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/smolvla-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-smolvla-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: SmolVLA architecture: A 450M parameter model that runs on consumer hardware while matching larger models on standard benchmarks. The key insight is efficient vision-language fusion with a lightweight action expert. Figure from Hugging Face 2025.
+</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>450M parameters</strong> — runs on MacBook CPUs</li>
+<li>Trained entirely on <strong>LeRobot community datasets</strong> (10M frames, 487 datasets)</li>
+<li>Matches OpenVLA performance on LIBERO and MetaWorld benchmarks</li>
+<li>Enables hobbyists and students to experiment with VLAs</li>
+</ul>
+<p><strong>GR00T N1</strong> (NVIDIA) became the first open foundation model for humanoids:</p>
+<div id="fig-groot-arch" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-groot-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/groot-n1-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-groot-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: GR00T N1 dual-system architecture: A VLM backbone (Eagle-2) handles scene understanding while a Diffusion Transformer generates 120Hz motor commands. This separation enables both reasoning and real-time control. Figure from NVIDIA 2025.
+</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>2.2B parameters</strong> with Eagle-2 VLM backbone</li>
+<li><strong>120Hz action generation</strong> — fast enough for dynamic balance</li>
+<li>Trained on 780,000 synthetic trajectories (equivalent to 9 months of human demos)</li>
+<li>Open-sourced via Isaac GR00T, adopted by Boston Dynamics, Agility, and others</li>
+</ul>
+<p><strong>Figure AI’s Helix</strong> represents the proprietary frontier:</p>
+<div id="fig-helix-scaling" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-helix-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/helix-scaling.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-helix-scaling-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Helix scaling curves showing how different approaches to acquiring robot skills compare. Foundation model fine-tuning (Helix) achieves higher performance with less data than training from scratch or using classical methods. Figure from Figure AI 2025.
+</figcaption>
+</figure>
+</div>
+<ul>
+<li>First VLA controlling a <strong>full humanoid upper body</strong> (35 DoF including individual fingers)</li>
+<li>Dual system: 7B VLA at 7-9Hz (planning) + reactive policy at <strong>200Hz</strong> (motor control)</li>
+<li>Runs entirely onboard on embedded GPUs — no cloud dependency</li>
+<li>First VLA enabling coordinated two-robot manipulation</li>
+</ul>
+</section>
+<section id="focus-points-by-year" class="level3">
+<h3 class="anchored" data-anchor-id="focus-points-by-year">1.5 Focus Points by Year</h3>
+<p>If I were to summarize the robot learning focus points for each year, my list would look like this:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 23%">
+<col style="width: 56%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Year</th>
+<th>Focus</th>
+<th>Key Development</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>2020</td>
+<td>Sim-to-Real</td>
+<td>Domain randomization, Isaac Gym</td>
+</tr>
+<tr class="even">
+<td>2021</td>
+<td>Imitation Learning</td>
+<td>Behavior cloning at scale</td>
+</tr>
+<tr class="odd">
+<td>2022</td>
+<td>Transformers for Robotics</td>
+<td>RT-1, Decision Transformer</td>
+</tr>
+<tr class="even">
+<td>2023</td>
+<td>Diffusion Policy</td>
+<td>Action diffusion, multimodal distributions</td>
+</tr>
+<tr class="odd">
+<td>2024</td>
+<td>VLA Models</td>
+<td>RT-2, OpenVLA, π0</td>
+</tr>
+<tr class="even">
+<td>2025</td>
+<td><strong>Cross-Embodiment Transfer</strong></td>
+<td>Zero-shot transfer, foundation models</td>
+</tr>
+</tbody>
+</table>
+<p>Note that this is cumulative — diffusion policy is still the dominant approach, but it’s now combined with VLA backbones. The field didn’t abandon what worked; it built on it.</p>
+</section>
+</section>
+<section id="diffusion-policy-the-research-darling-still" class="level2">
+<h2 class="anchored" data-anchor-id="diffusion-policy-the-research-darling-still">2. Diffusion Policy: The Research Darling (Still)</h2>
+<p>In 2023, <a href="../1-diffusion-policy/">Diffusion Policy</a> showed that the same technique generating Stable Diffusion images could teach robots to move — and outperformed everything before it by 46.9%. Two years later, it’s still the foundation of nearly every state-of-the-art system.</p>
+<section id="why-diffusion-won" class="level3">
+<h3 class="anchored" data-anchor-id="why-diffusion-won">2.1 Why Diffusion Won</h3>
+<p>The core insight remains powerful: robot actions are <strong>multimodal</strong>. When approaching an obstacle, both “go left” and “go right” are valid. Traditional behavioral cloning averages these into “go straight” — directly into the wall.</p>
+<div id="fig-diffusion-multimodal" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-diffusion-multimodal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/diffusion-policy-multimodal.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-diffusion-multimodal-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: Multimodal behavior in the Push-T task. At a given state, the end-effector can go left or right to push the block. Diffusion Policy learns both modes and commits to one per rollout, while baselines (LSTM-GMM, IBC, BET) exhibit mode bias or collapse. Figure from Chi et al.&nbsp;2023.
+</figcaption>
+</figure>
+</div>
+<p>Diffusion solves this by starting from noise and iteratively denoising into a coherent action sequence. Different random initializations converge to different modes. The robot “commits” to one valid strategy per episode.</p>
+<div id="fig-diffusion-representations" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-diffusion-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/diffusion-policy-representations.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-diffusion-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: Three policy representations compared: (a) Explicit policies with different action heads, (b) Implicit policies that learn an energy function, (c) Diffusion policies that refine noise into actions via a learned gradient field. Figure from Chi et al.&nbsp;2023.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="algorithmic-improvements-in-2025" class="level3">
+<h3 class="anchored" data-anchor-id="algorithmic-improvements-in-2025">2.2 Algorithmic Improvements in 2025</h3>
+<p>This year saw substantial refinements to the core diffusion approach:</p>
+<div id="fig-diffusion-arch" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-diffusion-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/diffusion-policy-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-diffusion-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: Diffusion Policy architecture overview: (a) General formulation taking T_o observation steps to output T_a action steps, (b) CNN-based variant with FiLM conditioning, (c) Transformer-based variant with cross-attention conditioning. Figure from Chi et al.&nbsp;2023.
+</figcaption>
+</figure>
+</div>
+<p><strong>Speed improvements:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 38%">
+<col style="width: 23%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Inference Time</th>
+<th>Speedup</th>
+<th>Venue</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Original Diffusion Policy (2023)</td>
+<td>~1000ms</td>
+<td>1x</td>
+<td>RSS 2023</td>
+</tr>
+<tr class="even">
+<td>Consistency Policy (2024)</td>
+<td>~100ms</td>
+<td>10x</td>
+<td>RSS 2024</td>
+</tr>
+<tr class="odd">
+<td>OneDP (2024)</td>
+<td>16ms (62Hz)</td>
+<td>41x</td>
+<td>ICLR 2025</td>
+</tr>
+<tr class="even">
+<td>LightDP (2025)</td>
+<td>2.7ms</td>
+<td>93x</td>
+<td>ICCV 2025</td>
+</tr>
+<tr class="odd">
+<td><strong>DiffuserLite (2024)</strong></td>
+<td><strong>8.2ms (122Hz)</strong></td>
+<td><strong>112x</strong></td>
+<td>NeurIPS 2024</td>
+</tr>
+</tbody>
+</table>
+<p>DiffuserLite achieves <strong>122Hz</strong> decision-making through coarse-to-fine planning refinement — fast enough for highly dynamic tasks. LightDP achieves &lt;10ms on <em>mobile hardware</em> (iPhone 13). Real-time control is no longer a concern.</p>
+<p><strong>Scaling to humanoids:</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>System</th>
+<th>DoF</th>
+<th>Organization</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>iDP3 on Fourier GR1</td>
+<td>25</td>
+<td>Academic</td>
+</tr>
+<tr class="even">
+<td>Boston Dynamics Atlas</td>
+<td>50</td>
+<td>Industry</td>
+</tr>
+<tr class="odd">
+<td>RDT-1B</td>
+<td>14+</td>
+<td>Research</td>
+</tr>
+</tbody>
+</table>
+<p>Boston Dynamics + Toyota Research Institute deployed a <strong>450M parameter Diffusion Transformer</strong> controlling the full Atlas humanoid. The same architecture that generates images now controls a 50-DoF robot doing industrial tasks.</p>
+</section>
+<section id="the-surprising-finding" class="level3">
+<h3 class="anchored" data-anchor-id="the-surprising-finding">2.3 The Surprising Finding</h3>
+<p>The most interesting research finding this year came from Simchowitz et al.: diffusion policies do <strong>NOT</strong> owe their success primarily to capturing multimodality.</p>
+<p>The actual mechanism is <strong>iterative computation with supervised intermediate steps</strong>. A simple two-step regression policy matches flow-based policy performance on most benchmarks.</p>
+<p>This suggests the “diffusion” framing may be less important than:</p>
+<ul>
+<li>Multiple refinement steps</li>
+<li>Intermediate supervision during training</li>
+<li>Appropriate stochasticity for exploration</li>
+</ul>
+<p>The field is still unpacking what this means. But it’s a reminder that our explanations for <em>why</em> things work often lag behind the empirical results.</p>
+</section>
+</section>
+<section id="the-industry-whos-building-what" class="level2">
+<h2 class="anchored" data-anchor-id="the-industry-whos-building-what">3. The Industry: Who’s Building What?</h2>
+<p>Beyond research papers, 2025 saw real deployments at scale.</p>
+<section id="agility-digit-first-commercial-raas-humanoid" class="level3">
+<h3 class="anchored" data-anchor-id="agility-digit-first-commercial-raas-humanoid">3.1 Agility Digit: First Commercial RaaS Humanoid</h3>
+<p>Before discussing the flashier humanoids, credit where due: <strong>Agility Robotics’ Digit</strong> became the first humanoid to complete a commercial Robots-as-a-Service (RaaS) deployment.</p>
+<div id="fig-digit-gxo" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-digit-gxo-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/digit-gxo-official.jpg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-digit-gxo-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: Digit working at GXO Logistics’ warehouse in Flowery Branch, Georgia — the first revenue-generating humanoid robot deployment. Note the human worker in the background: robots and humans sharing the same space. Photo: Agility Robotics.
+</figcaption>
+</figure>
+</div>
+<p>At GXO Logistics’ Flowery Branch facility, Digit moved over <strong>100,000 totes</strong> in actual warehouse operations. This isn’t a demo — it’s a first revenue-generating humanoid deployment, with robots working alongside human workers.</p>
+</section>
+<section id="figure-ai-from-demo-to-production" class="level3">
+<h3 class="anchored" data-anchor-id="figure-ai-from-demo-to-production">3.2 Figure AI: From Demo to Production</h3>
+<p>Figure AI’s Figure 02 robots completed an <strong>11-month deployment at BMW’s Spartanburg plant</strong> — working 10-hour shifts alongside human workers. They contributed to the production of over <strong>30,000 X3 vehicles</strong>. This is a first for humanoid robots outside of carefully controlled demos.</p>
+<p>Their Figure 03, unveiled in October 2025, demonstrated:</p>
+<ul>
+<li>Laundry folding</li>
+<li>Dishwasher loading</li>
+<li>Trash removal</li>
+<li>Verbal task understanding</li>
+</ul>
+<p>Price point for early partners: ~$80,000. Expected production capacity: 100,000 units within four years via their BotQ factory.</p>
+</section>
+<section id="boston-dynamics-the-comeback" class="level3">
+<h3 class="anchored" data-anchor-id="boston-dynamics-the-comeback">3.3 Boston Dynamics: The Comeback</h3>
+<div id="fig-atlas" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-atlas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/atlas-electric-official.jpg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-atlas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: The new electric Atlas — Boston Dynamics’ production-ready humanoid with 56 DoF, designed for commercial industrial deployment. The warm yellow ring indicates operational status. Photo: Boston Dynamics.
+</figcaption>
+</figure>
+</div>
+<p>Boston Dynamics, now backed by Hyundai, announced a production-ready Atlas at CES 2026 — designed for commercial deployment with a partnership with Google DeepMind to integrate Gemini Robotics foundation models.</p>
+<p>Key metrics:</p>
+<ul>
+<li><strong>56 DoF</strong> — highest of any commercial humanoid</li>
+<li><strong>4-hour battery life</strong> with hot-swappable packs</li>
+<li>New factory capable of producing <strong>30,000 Atlas units/year</strong></li>
+<li>All 2026 production committed to Hyundai and DeepMind partners</li>
+</ul>
+<p>Their “Large Behavior Model” demo in August 2025 showed continuous complex task sequences — combining manipulation and locomotion in ways not possible with traditional planning.</p>
+</section>
+<section id="tesla-optimus-the-reality-check" class="level3">
+<h3 class="anchored" data-anchor-id="tesla-optimus-the-reality-check">3.4 Tesla Optimus: The Reality Check</h3>
+<p>Tesla aimed for 5,000 Optimus units in 2025. They didn’t meet it.</p>
+<p>In Q4 2025, Elon Musk admitted no Optimus robots are doing “useful work” at Tesla facilities — despite earlier claims. The V3 generation is now targeted for Q1 2026.</p>
+<p>Meanwhile, <strong>China controls 90% of the global humanoid robot market</strong>. Unitree and Agibot have outsold Tesla’s entire output. The gap isn’t algorithmic — it’s manufacturing and supply chain.</p>
+</section>
+<section id="the-chinese-surge" class="level3">
+<h3 class="anchored" data-anchor-id="the-chinese-surge">3.5 The Chinese Surge</h3>
+<p>The numbers tell the story:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 38%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Company</th>
+<th>2025 Shipments</th>
+<th>Key Achievement</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>AgiBot</strong></td>
+<td>~5,168 units</td>
+<td>#1 globally by volume, largest robot dataset (1M+ trajectories)</td>
+</tr>
+<tr class="even">
+<td><strong>Unitree</strong></td>
+<td>~5,500 units</td>
+<td>Most affordable humanoids ($21K-$128K), planning $7B IPO</td>
+</tr>
+<tr class="odd">
+<td><strong>Fourier</strong></td>
+<td>1,000+ units</td>
+<td>GR-2 deployed at SAIC-GM automotive</td>
+</tr>
+<tr class="even">
+<td><strong>ByteDance</strong></td>
+<td>R&amp;D stage</td>
+<td>GR-3 model achieves 77% on abstract instructions</td>
+</tr>
+</tbody>
+</table>
+<p>Chinese companies now account for roughly <strong>two-thirds of global humanoid shipments</strong>. If 2024 was the year of “DeepSeek moment” for LLMs, 2025 saw a similar dynamic in robotics. Western labs have the flashiest demos. Chinese companies have the manufacturing scale and are closing the AI gap fast.</p>
+<p>AgiBot’s GO-1 model claims 78% success rate — a <strong>32% improvement</strong> over prior SOTA — using their ViLLA (Vision-Language-Latent-Action) architecture trained on 1M+ real robot demonstrations.</p>
+</section>
+</section>
+<section id="the-data-wall" class="level2">
+<h2 class="anchored" data-anchor-id="the-data-wall">4. The Data Wall</h2>
+<p>The biggest constraint in robot learning isn’t algorithms. It’s data.</p>
+<section id="the-scale-gap" class="level3">
+<h3 class="anchored" data-anchor-id="the-scale-gap">4.1 The Scale Gap</h3>
+<p>Consider the numbers:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Domain</th>
+<th>Training Data</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GPT-4</td>
+<td>~10 trillion tokens</td>
+</tr>
+<tr class="even">
+<td>Stable Diffusion</td>
+<td>~5 billion images</td>
+</tr>
+<tr class="odd">
+<td>Open X-Embodiment (largest robot dataset)</td>
+<td>~1 million episodes</td>
+</tr>
+</tbody>
+</table>
+<p>The gap between robot foundation models and LLMs is approximately <strong>120,000x</strong> in data scale. High-quality text data on the internet will be exhausted by 2026-2028. Robot data is even more scarce because every episode requires physical execution.</p>
+<div id="fig-open-x-overview" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-open-x-overview-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/open-x-embodiment-overview.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-open-x-overview-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;13: The Open X-Embodiment dataset: 1M+ trajectories across 22 robot embodiments from 34 research labs. Even the largest robot dataset is orders of magnitude smaller than LLM training data. Figure from the Open X-Embodiment Collaboration 2023.
+</figcaption>
+</figure>
+</div>
+<div id="fig-open-x-analysis" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-open-x-analysis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/open-x-embodiment-analysis.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-open-x-analysis-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;14: Dataset composition breakdown showing the relative contribution of different robot platforms and data sources to Open X-Embodiment. Figure from the Open X-Embodiment Collaboration 2023.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="why-robot-data-is-different" class="level3">
+<h3 class="anchored" data-anchor-id="why-robot-data-is-different">4.2 Why Robot Data Is Different</h3>
+<p>Unlike text (which exists passively on the internet), robot data requires:</p>
+<ol type="1">
+<li><strong>Physical hardware</strong> to execute actions</li>
+<li><strong>Skilled teleoperators</strong> to demonstrate tasks</li>
+<li><strong>Safety protocols</strong> to prevent damage</li>
+<li><strong>Environment setup</strong> for each new task</li>
+</ol>
+<p>Scale AI’s Physical AI Data Engine has collected 100,000+ hours of real-world robotics data in 2025. But that’s still orders of magnitude less than what LLMs train on.</p>
+</section>
+<section id="solutions-being-explored" class="level3">
+<h3 class="anchored" data-anchor-id="solutions-being-explored">4.3 Solutions Being Explored</h3>
+<p><strong>Simulation at scale:</strong></p>
+<ul>
+<li>NVIDIA Isaac Lab enables parallel training across 1000s of environments</li>
+<li>Domain randomization helps sim-to-real transfer</li>
+<li>But the sim-to-real gap remains significant for contact-rich tasks</li>
+</ul>
+<p><strong>Real-world fleet data:</strong></p>
+<ul>
+<li>Ambi Robotics collects warehouse data during operations</li>
+<li>Physical Intelligence uses fleet deployment for continuous improvement</li>
+<li>The Waymo model: let deployed robots generate training data</li>
+</ul>
+<p><strong>Synthetic demonstration generation:</strong></p>
+<ul>
+<li>LLMs generating robot plans</li>
+<li>Video prediction models for motion synthesis</li>
+<li>But verification remains challenging</li>
+</ul>
+</section>
+</section>
+<section id="how-we-evaluate-simplerenv-and-the-benchmark-problem" class="level2">
+<h2 class="anchored" data-anchor-id="how-we-evaluate-simplerenv-and-the-benchmark-problem">5. How We Evaluate: SimplerEnv and the Benchmark Problem</h2>
+<p>Before discussing sim-to-real, we need to address how we know these models work at all.</p>
+<section id="simplerenv-the-new-gold-standard" class="level3">
+<h3 class="anchored" data-anchor-id="simplerenv-the-new-gold-standard">5.1 SimplerEnv: The New Gold Standard</h3>
+<p><strong>SimplerEnv</strong> (CoRL 2024) has become the de facto standard for VLA evaluation. It provides simulated versions of real robot setups (Google Robot, WidowX) with validated correlation to real-world performance.</p>
+<div id="fig-simpler-correlation" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-simpler-correlation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/state-of-robotics-2026/simpler-env-correlation.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-simpler-correlation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;15: SimplerEnv sim-to-real correlation: Performance in SimplerEnv simulation strongly predicts real-world performance across RT-1, RT-2-X, Octo, and OpenVLA models. This enables rapid iteration without physical robot access. Figure from Li et al.&nbsp;2024.
+</figcaption>
+</figure>
+</div>
+<p>Why it matters:</p>
+<ul>
+<li><strong>Validated sim-to-real correlation</strong> via Pearson coefficient and Mean Maximum Rank Violation (MMRV)</li>
+<li>Tests across <strong>visual, semantic, motion, and physical</strong> generalization axes</li>
+<li>Reproducible evaluation for RT-1, RT-1-X, RT-2-X, Octo, and OpenVLA</li>
+</ul>
+</section>
+<section id="the-libero-warning" class="level3">
+<h3 class="anchored" data-anchor-id="the-libero-warning">5.2 The LIBERO Warning</h3>
+<p>A sobering finding from 2025: <strong>LIBERO-PRO</strong> revealed that models scoring &gt;95% on standard LIBERO benchmarks achieve <strong>0% success</strong> under realistic perturbations.</p>
+<p>This isn’t a minor gap — it’s complete failure. Standard benchmarks let models memorize task-specific patterns rather than learning generalizable skills. The research community is now moving toward:</p>
+<ul>
+<li><strong>Real-to-sim validated benchmarks</strong> (REALM, SimplerEnv)</li>
+<li><strong>Perturbation testing</strong> as default evaluation</li>
+<li><strong>Long-horizon task suites</strong> (VLABench, RoboCerebra)</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Benchmark Inflation
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When a paper reports 98% on LIBERO, ask: which LIBERO? Standard LIBERO metrics are now considered unreliable indicators of real-world performance.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="the-sim-to-real-gap-still" class="level2">
+<h2 class="anchored" data-anchor-id="the-sim-to-real-gap-still">6. The Sim-to-Real Gap (Still)</h2>
+<p>Training in simulation is cheap. Deploying in reality is hard. The gap persists.</p>
+<section id="current-limitations" class="level3">
+<h3 class="anchored" data-anchor-id="current-limitations">6.1 Current Limitations</h3>
+<p><strong>Perception issues:</strong></p>
+<ul>
+<li>Lack of HDR backgrounds creates unrealistic lighting</li>
+<li>Difficulty distinguishing static vs.&nbsp;dynamic objects</li>
+<li>Fine-grained recognition tasks fail</li>
+</ul>
+<p><strong>Physics modeling gaps:</strong></p>
+<ul>
+<li>Manufacturing tolerances, material wear, mechanical backlash rarely modeled</li>
+<li>Discrete time-step evaluations limit accuracy</li>
+<li>Contact simulation uses simplified approximations</li>
+</ul>
+</section>
+<section id="progress-in-2025" class="level3">
+<h3 class="anchored" data-anchor-id="progress-in-2025">6.2 Progress in 2025</h3>
+<p>The most promising approach this year: <strong>dynamic digital twins</strong>.</p>
+<p>“Real-is-Sim” (Toyota Research) keeps a correctable simulator always-in-the-loop during deployment. The simulation synchronizes with the physical world using real-time sensor data. When reality diverges from simulation, the sim updates.</p>
+<p>NVIDIA’s AutoMate framework achieved <strong>84.5% success rate</strong> on real-world part assembly with zero-shot sim-to-real transfer. For industrial tasks with well-defined geometry, the gap is closing.</p>
+</section>
+</section>
+<section id="hardware-vs.-software-wheres-the-bottleneck" class="level2">
+<h2 class="anchored" data-anchor-id="hardware-vs.-software-wheres-the-bottleneck">7. Hardware vs.&nbsp;Software: Where’s the Bottleneck?</h2>
+<p>This year shifted my thinking on what actually limits robot deployment.</p>
+<section id="the-manufacturing-constraint" class="level3">
+<h3 class="anchored" data-anchor-id="the-manufacturing-constraint">7.1 The Manufacturing Constraint</h3>
+<p>Multiple experts now argue the defining constraint is <strong>manufacturing capacity</strong>, not AI/software.</p>
+<p>Specific bottlenecks:</p>
+<ul>
+<li><strong>High-precision planetary roller screws</strong>: Require specialized grinding machines in extremely limited global supply</li>
+<li><strong>Magnets, gearheads, batteries</strong>: Will remain constrained for years</li>
+<li><strong>Production scale</strong>: Low volume of precision components slows humanoid scaling</li>
+</ul>
+</section>
+<section id="the-cost-challenge" class="level3">
+<h3 class="anchored" data-anchor-id="the-cost-challenge">7.2 The Cost Challenge</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Robot</th>
+<th>Estimated Price</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Tesla Optimus (target)</td>
+<td>$20,000-$30,000</td>
+</tr>
+<tr class="even">
+<td>Figure 03</td>
+<td>$80,000+</td>
+</tr>
+<tr class="odd">
+<td>Boston Dynamics Atlas</td>
+<td>$140,000-$150,000</td>
+</tr>
+</tbody>
+</table>
+<p>For robots to replace human labor economically, they need to cost less than ~$50,000 and work reliably for 3+ years. We’re not there yet.</p>
+</section>
+<section id="safety-and-reliability" class="level3">
+<h3 class="anchored" data-anchor-id="safety-and-reliability">7.3 Safety and Reliability</h3>
+<p>Industrial customers expect <strong>99.99% uptime reliability</strong>. Production line downtime costs tens of thousands of dollars per minute.</p>
+<p>Current gaps:</p>
+<ul>
+<li>No standardized regulations for humanoid robots</li>
+<li>Fall dynamics introduce unique safety challenges</li>
+<li>Cybersecurity for AI-controlled robots is immature</li>
+</ul>
+</section>
+</section>
+<section id="predictions-for-2026" class="level2">
+<h2 class="anchored" data-anchor-id="predictions-for-2026">8. Predictions for 2026</h2>
+<p>Based on the trends I’ve observed, here’s where I think we’re heading:</p>
+<section id="what-will-happen" class="level3">
+<h3 class="anchored" data-anchor-id="what-will-happen">8.1 What Will Happen</h3>
+<p><strong>Robots-as-a-Service (RaaS) goes mainstream:</strong></p>
+<p>The shift from large upfront purchases to monthly fees will lower adoption barriers. Expect more “warehouse automation subscriptions” than one-time robot purchases.</p>
+<p><strong>Foundation models become the default:</strong></p>
+<p>Training task-specific policies from scratch will become rare. Fine-tuning VLA models on domain data will be the standard workflow — just like fine-tuning LLMs.</p>
+<p><strong>Diffusion gets faster, not replaced:</strong></p>
+<p>Despite the theoretical findings questioning why diffusion works, no alternative has emerged that’s clearly better. Expect 1-4 step inference with consistency distillation to become standard.</p>
+<p><strong>Data collection scales:</strong></p>
+<p>Fleet deployment for data collection will accelerate. Physical Intelligence, Figure, and others will use deployed robots to continuously improve their models.</p>
+</section>
+<section id="what-wont-happen-yet" class="level3">
+<h3 class="anchored" data-anchor-id="what-wont-happen-yet">8.2 What Won’t Happen (Yet)</h3>
+<p><strong>General-purpose household humanoids:</strong></p>
+<p>The reliability, cost, and safety requirements aren’t met. We’ll see continued factory/warehouse deployments, not robots folding your laundry at home.</p>
+<p><strong>Full autonomy in unstructured environments:</strong></p>
+<p>Even with foundation models, robots struggle with truly novel situations. The long tail of edge cases remains unsolved.</p>
+<p><strong>Data problem “solved”:</strong></p>
+<p>The 120,000x data gap won’t close in one year. Simulation, synthetic data, and clever augmentation will help, but the fundamental scarcity persists.</p>
+</section>
+<section id="my-2027-prediction" class="level3">
+<h3 class="anchored" data-anchor-id="my-2027-prediction">8.3 My 2027 Prediction</h3>
+<p>If 2025 was the year of foundation models for robotics, I think <strong>2027 will be the year of robotic continual learning</strong>.</p>
+<p>Just as LLM research is moving toward models that learn without forgetting, robot learning will need systems that:</p>
+<ul>
+<li>Learn from deployment without catastrophic forgetting</li>
+<li>Incorporate new objects and tasks without full retraining</li>
+<li>Maintain safety guarantees while adapting</li>
+</ul>
+<p>The algorithmic foundations exist (experience replay, regularization, etc.), but nobody has made it work reliably for embodied systems. That’s the next frontier.</p>
+</section>
+</section>
+<section id="surprises-and-reflections" class="level2">
+<h2 class="anchored" data-anchor-id="surprises-and-reflections">9. Surprises and Reflections</h2>
+<section id="what-surprised-me-this-year" class="level3">
+<h3 class="anchored" data-anchor-id="what-surprised-me-this-year">9.1 What Surprised Me This Year</h3>
+<p><strong>Boston Dynamics pivoting to foundation models:</strong></p>
+<p>For years, they focused on classical control and optimization. Seeing them partner with DeepMind and train 450M parameter transformers signals a genuine paradigm shift.</p>
+<p><strong>Chinese companies leading in manufacturing:</strong></p>
+<p>I expected the algorithmic leaders (DeepMind, OpenAI) to translate research into products. Instead, companies with manufacturing expertise are shipping more robots.</p>
+<p><strong>The speed of VLA adoption:</strong></p>
+<p>In January 2025, VLA was still niche. By December, every major robotics lab either uses or is developing VLA-based systems. The shift was faster than I anticipated.</p>
+<p><strong>How much “diffusion” matters (or doesn’t):</strong></p>
+<p>The Simchowitz et al.&nbsp;finding that iterative refinement — not diffusion specifically — drives performance changes how I think about the field. We may have been telling ourselves the wrong story about why these methods work.</p>
+</section>
+<section id="what-i-got-wrong" class="level3">
+<h3 class="anchored" data-anchor-id="what-i-got-wrong">9.2 What I Got Wrong</h3>
+<p>In early 2025, I thought:</p>
+<ul>
+<li>Humanoid robots would remain primarily research platforms. <strong>Wrong</strong> — Figure 02 did real factory work.</li>
+<li>Sim-to-real would remain the biggest bottleneck. <strong>Partially wrong</strong> — data and manufacturing matter more.</li>
+<li>OpenVLA would be outpaced by proprietary models. <strong>Wrong</strong> — open models remain competitive.</li>
+</ul>
+</section>
+<section id="what-im-still-uncertain-about" class="level3">
+<h3 class="anchored" data-anchor-id="what-im-still-uncertain-about">9.3 What I’m Still Uncertain About</h3>
+<p><strong>Will foundation models truly generalize?</strong></p>
+<p>Current results show impressive few-shot learning on seen task categories. But will a model trained on kitchen tasks generalize to construction? The jury is out.</p>
+<p><strong>Is the humanoid form factor right?</strong></p>
+<p>Humanoids are intuitive (designed for human environments) but complex. Purpose-built robots (like Boston Dynamics’ Stretch for warehouses) may be more practical for specific deployments.</p>
+<p><strong>When will reliability reach industrial standards?</strong></p>
+<p>99.99% uptime seems years away. But the pace of improvement in 2025 exceeded my expectations. Maybe 2027-2028?</p>
+</section>
+</section>
+<section id="looking-forward" class="level2">
+<h2 class="anchored" data-anchor-id="looking-forward">10. Looking Forward</h2>
+<p>If there’s one meta-lesson from 2025, it’s that progress in robot learning is accelerating on multiple fronts simultaneously:</p>
+<ul>
+<li><strong>Algorithms</strong>: Diffusion policy refinements, consistency models, flow matching</li>
+<li><strong>Models</strong>: VLAs combining language understanding with motor control</li>
+<li><strong>Data</strong>: Fleet deployment, simulation at scale, synthetic augmentation</li>
+<li><strong>Hardware</strong>: Cheaper actuators, better sensors, manufacturing scale-up</li>
+<li><strong>Deployment</strong>: Real factory work, not just demos</li>
+</ul>
+<p>The field feels different than it did a year ago. In 2024, “foundation models for robotics” was aspirational. In 2025, it’s the default approach for new research.</p>
+<p>My hope for 2026 is that we continue to see improvements while being honest about what remains hard. The data gap is real. The sim-to-real gap persists. Safety and reliability aren’t solved. But the trajectory is unmistakably upward.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>2025 was the year robot learning got its foundation models. The key developments:</p>
+<ol type="1">
+<li><strong>VLA models matured</strong>: Gemini Robotics, π0, OpenVLA moved from papers to production</li>
+<li><strong>Diffusion policy dominated</strong>: Still the core method, now 93x faster with LightDP</li>
+<li><strong>Real deployments happened</strong>: Figure 02 at BMW, Atlas for commercial work</li>
+<li><strong>Data became the bottleneck</strong>: The 120,000x gap with LLMs defines the challenge</li>
+<li><strong>Manufacturing matters</strong>: China leads in production; algorithms alone aren’t enough</li>
+</ol>
+<p>For 2026, expect RaaS to go mainstream, foundation models to become the default, and the data collection race to intensify. General-purpose household humanoids remain 2-3 years away.</p>
+<p>The field is moving fast. Staying current requires following not just papers but deployments, manufacturing developments, and the evolving data landscape. That’s what I’ll continue documenting in this series.</p>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<section id="key-papers-2025" class="level3">
+<h3 class="anchored" data-anchor-id="key-papers-2025">Key Papers (2025)</h3>
+<ul>
+<li><a href="https://deepmind.google/blog/gemini-robotics-15-brings-ai-agents-into-the-physical-world/">Gemini Robotics 1.5</a> — DeepMind’s embodied reasoning model</li>
+<li><a href="https://openvla.github.io/">OpenVLA</a> — Open-source 7B VLA model</li>
+<li><a href="https://arxiv.org/abs/2410.24164">π0</a> — Physical Intelligence’s flow matching VLA</li>
+<li><a href="https://arxiv.org/abs/2503.14734">GR00T N1</a> — NVIDIA’s open humanoid foundation model</li>
+<li><a href="https://huggingface.co/blog/smolvla">SmolVLA</a> — 450M parameter VLA for consumer hardware</li>
+<li><a href="https://www.figure.ai/news/helix">Helix</a> — Figure AI’s full-body humanoid VLA</li>
+</ul>
+</section>
+<section id="diffusion-policy-papers" class="level3">
+<h3 class="anchored" data-anchor-id="diffusion-policy-papers">Diffusion Policy Papers</h3>
+<ul>
+<li><a href="https://arxiv.org/abs/2508.00697">LightDP</a> — 2.7ms inference (ICCV 2025)</li>
+<li><a href="https://arxiv.org/abs/2401.15443">DiffuserLite</a> — 122Hz planning (NeurIPS 2024)</li>
+<li><a href="https://arxiv.org/abs/2410.21257">OneDP</a> — One-step distillation (ICLR 2025)</li>
+<li><a href="https://github.com/YanjieZe/Improved-3D-Diffusion-Policy">iDP3</a> — 3D diffusion for humanoids</li>
+<li><a href="https://arxiv.org/abs/2410.07864">RDT-1B</a> — 1.2B robotics diffusion transformer</li>
+<li><a href="https://arxiv.org/abs/2503.09722">Simchowitz et al.</a> — Why diffusion policies work (COLT 2025)</li>
+</ul>
+</section>
+<section id="benchmarks" class="level3">
+<h3 class="anchored" data-anchor-id="benchmarks">Benchmarks</h3>
+<ul>
+<li><a href="https://simpler-env.github.io/">SimplerEnv</a> — Sim-to-real validated VLA benchmark (CoRL 2024)</li>
+<li><a href="https://arxiv.org/abs/2510.03827">LIBERO-PRO</a> — Robust evaluation revealing benchmark inflation</li>
+<li><a href="https://robotics-transformer-x.github.io/">Open X-Embodiment</a> — 1M+ episode cross-embodiment dataset</li>
+</ul>
+</section>
+<section id="industry-sources" class="level3">
+<h3 class="anchored" data-anchor-id="industry-sources">Industry Sources</h3>
+<ul>
+<li><a href="https://www.figure.ai/news/production-at-bmw">Figure AI at BMW</a> — 30,000+ vehicles produced</li>
+<li><a href="https://www.agilityrobotics.com/content/digit-moves-over-100k-totes">Agility Digit at GXO</a> — 100K+ totes moved</li>
+<li><a href="https://bostondynamics.com/products/atlas/">Boston Dynamics Atlas</a> — CES 2026 commercial launch</li>
+<li><a href="https://www.globenewswire.com/news-release/2025/03/11/3040608/0/en/AgiBot-GO-1-The-Evolution-of-Generalist-Embodied-Foundation-Model-from-VLA-to-ViLLA.html">AgiBot GO-1</a> — ViLLA architecture</li>
+</ul>
+</section>
+<section id="surveys" class="level3">
+<h3 class="anchored" data-anchor-id="surveys">Surveys</h3>
+<ul>
+<li><a href="https://arxiv.org/html/2510.07077v1">Vision-Language-Action Models Survey</a> — Comprehensive VLA review</li>
+<li><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2025.1606247/full">Diffusion Models for Robotic Manipulation</a> — 2025 survey with taxonomy</li>
+<li><a href="https://arxiv.org/abs/2510.16732">World Models for Embodied AI</a> — Planning and prediction</li>
+</ul>
+</section>
+<section id="background-reading" class="level3">
+<h3 class="anchored" data-anchor-id="background-reading">Background Reading</h3>
+<ul>
+<li><a href="../1-diffusion-policy/">My Diffusion Policy Deep Dive</a> — Technical explanation</li>
+<li><a href="../../diffusion/1-intro/">Diffusion Series</a> — Mathematical foundations</li>
+</ul>
+
+
+</section>
+</section>
+
+ ]]></description>
+  <category>robotics</category>
+  <category>VLA</category>
+  <category>diffusion-policy</category>
+  <category>foundation-models</category>
+  <category>year-in-review</category>
+  <guid>https://layernorm.dev/posts/robotics/state-of-robotics-2026/</guid>
+  <pubDate>Tue, 10 Feb 2026 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Stay in Your Lane (The Circle of Competence)</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -13461,531 +14314,6 @@ Figure&nbsp;1: VLA model architecture: visual observations and language instruct
   <category>VLA</category>
   <category>robot-learning</category>
   <guid>https://layernorm.dev/posts/robotics/0-intro/</guid>
-  <pubDate>Tue, 20 Jan 2026 00:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Robot Learning Part 1: Background &amp; Current State of the Field</title>
-  <dc:creator>Hujie Wang</dc:creator>
-  <link>https://layernorm.dev/posts/robotics/1-background/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>TL;DR
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ul>
-<li><strong>Classical robotics</strong> relies on hand-crafted dynamics models — works for factories, fails for kitchens</li>
-<li><strong>Reinforcement Learning (RL)</strong> learns from rewards but needs millions of trials — impractical for real robots</li>
-<li><strong>Behavioral Cloning (BC)</strong> learns from demonstrations via supervised learning — the foundation of modern robot learning</li>
-<li><strong>Multimodality</strong> (multiple valid solutions) breaks naive BC; expressive models like diffusion handle it well</li>
-<li>This post builds the conceptual foundation for understanding Diffusion Policy in <a href="../1-diffusion-policy/">Part 2</a></li>
-</ul>
-</div>
-</div>
-<section id="sec-why" class="level2">
-<h2 class="anchored" data-anchor-id="sec-why">Why This Post?</h2>
-<p>In <a href="../0-intro/">Part 0</a>, we surveyed the robot learning landscape and saw how diffusion models are revolutionizing robotic manipulation. But to truly understand <em>why</em> Diffusion Policy works so well, we need to step back and examine the evolution of robot learning approaches.</p>
-<p>This post builds the conceptual foundation by answering three essential questions:</p>
-<ol type="1">
-<li><strong>Why learning?</strong> What fundamental limitations make classical robotics struggle with everyday tasks?</li>
-<li><strong>Why not RL?</strong> What makes reinforcement learning impractical for real-world robot manipulation?</li>
-<li><strong>Why diffusion?</strong> What specific problem does it solve that simpler imitation learning approaches cannot handle?</li>
-</ol>
-<p>By the end, you’ll understand why generating actions like generating images is such a powerful idea — and why it took the field decades to arrive at this solution.</p>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>For Readers in a Hurry
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>If you’re already familiar with RL/imitation learning basics, you can skip to Section&nbsp;5 to see the core problem that diffusion models solve. The key insight: naive behavioral cloning averages over valid strategies, producing invalid actions. Diffusion models represent the full action distribution, naturally handling multimodality.</p>
-</div>
-</div>
-<p><strong>This post follows the structure of</strong> <a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> <strong>by Capuano et al., which provides hands-on LeRobot code for these concepts.</strong></p>
-</section>
-<section id="sec-classical" class="level2">
-<h2 class="anchored" data-anchor-id="sec-classical">Classical Robotics: Why We Need Learning</h2>
-<section id="the-traditional-approach" class="level3">
-<h3 class="anchored" data-anchor-id="the-traditional-approach">The Traditional Approach</h3>
-<p>For decades, robotics has relied on <strong>explicit dynamics models</strong>. The idea: if we know how the robot and environment behave, we can compute the right actions analytically.</p>
-<p>Mathematically, we model the system as a differential equation. The state <img src="https://latex.codecogs.com/png.latex?x"> (robot joint positions, object locations, etc.) evolves according to:</p>
-<p><span id="eq-dynamics"><img src="https://latex.codecogs.com/png.latex?%0A%5Cdot%7Bx%7D%20=%20f(x,%20u)%0A%5Ctag%7B1%7D"></span></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?u"> is the control input (motor torques, joint velocities) and <img src="https://latex.codecogs.com/png.latex?f"> is a <em>known</em> function describing the physics. Given this model, we have powerful tools:</p>
-<ul>
-<li><strong>Motion planning</strong> — find collision-free paths to the goal</li>
-<li><strong>Trajectory optimization</strong> — compute optimal control sequences</li>
-<li><strong>Feedback control</strong> — stabilize using PID, LQR, or MPC</li>
-</ul>
-<p>This works beautifully for <strong>structured environments</strong>: industrial arms on assembly lines (known geometry), drones following GPS waypoints (simple dynamics), or self-driving on HD-mapped highways.</p>
-</section>
-<section id="sec-classical-limits" class="level3">
-<h3 class="anchored" data-anchor-id="sec-classical-limits">Where Classical Methods Fail</h3>
-<p>But consider these tasks:</p>
-<ul>
-<li><strong>Folding laundry</strong> — deformable objects with infinite configurations</li>
-<li><strong>Cooking in a home kitchen</strong> — unstructured layouts, variable ingredients</li>
-<li><strong>Manipulating novel objects</strong> — no pre-built model exists</li>
-</ul>
-<p>The problem is <strong>modeling complexity</strong>. Writing down <img src="https://latex.codecogs.com/png.latex?f(x,%20u)"> in Equation&nbsp;1 for cloth dynamics involves partial differential equations with unknown material properties. Contact-rich manipulation requires modeling friction, deformation, and object geometry — which vary across objects. Even if we could write these models, they wouldn’t generalize.</p>
-<div class="callout callout-style-default callout-important callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Important</span>The Core Insight
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Instead of hand-engineering dynamics models that won’t generalize, <strong>learn the mapping from observations to actions directly from data</strong>.</p>
-<p>This is the paradigm shift that enables robots to operate in unstructured, real-world environments.</p>
-</div>
-</div>
-</section>
-</section>
-<section id="sec-rl" class="level2">
-<h2 class="anchored" data-anchor-id="sec-rl">Reinforcement Learning: The Theory</h2>
-<p>If we’re going to learn, how? The natural framework is <strong>Reinforcement Learning (RL)</strong> — learning from trial and error.</p>
-<section id="sec-mdp" class="level3">
-<h3 class="anchored" data-anchor-id="sec-mdp">The MDP Framework</h3>
-<p>Robot learning is formalized as a <strong>Markov Decision Process (MDP)</strong>, which captures the essential structure of sequential decision-making:</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Definition: Markov Decision Process
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>An MDP is defined by the tuple <img src="https://latex.codecogs.com/png.latex?(%5Cmathcal%7BS%7D,%20%5Cmathcal%7BA%7D,%20p,%20r,%20%5Cgamma)">:</p>
-<ul>
-<li><strong>State</strong> <img src="https://latex.codecogs.com/png.latex?s_t%20%5Cin%20%5Cmathcal%7BS%7D"> — everything relevant about the robot and environment</li>
-<li><strong>Action</strong> <img src="https://latex.codecogs.com/png.latex?a_t%20%5Cin%20%5Cmathcal%7BA%7D"> — motor commands, joint velocities, gripper controls</li>
-<li><strong>Transition</strong> <img src="https://latex.codecogs.com/png.latex?p(s_%7Bt+1%7D%20%7C%20s_t,%20a_t)"> — probability of next state given current state and action</li>
-<li><strong>Reward</strong> <img src="https://latex.codecogs.com/png.latex?r(s_t,%20a_t)%20%5Cin%20%5Cmathbb%7BR%7D"> — scalar feedback signal for task success</li>
-<li><strong>Discount</strong> <img src="https://latex.codecogs.com/png.latex?%5Cgamma%20%5Cin%20%5B0,%201%5D"> — how much to value future vs.&nbsp;immediate rewards</li>
-</ul>
-</div>
-</div>
-<p>A <strong>policy</strong> <img src="https://latex.codecogs.com/png.latex?%5Cpi(a_t%20%7C%20s_t)"> maps states to actions (possibly stochastically). The RL objective is to find the policy that maximizes expected cumulative discounted reward:</p>
-<p><span id="eq-rl-objective"><img src="https://latex.codecogs.com/png.latex?%0A%5Cpi%5E*%20=%20%5Carg%5Cmax_%5Cpi%20%5Cmathbb%7BE%7D_%7B%5Cpi%7D%5Cleft%5B%20%5Csum_%7Bt=0%7D%5E%7BT%7D%20%5Cgamma%5Et%20r(s_t,%20a_t)%20%5Cright%5D%0A%5Ctag%7B2%7D"></span></p>
-<p>In words: find the action-selection strategy that collects the most reward over time.</p>
-</section>
-<section id="sec-rl-challenges" class="level3">
-<h3 class="anchored" data-anchor-id="sec-rl-challenges">Why RL is Hard for Real Robots</h3>
-<p>RL has achieved remarkable results — mastering Atari games<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D">, defeating world champions at Go<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D">, and training simulated humanoids to walk. But these successes share a common thread: <strong>cheap, fast simulation</strong>. For real robots, RL faces fundamental challenges:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 42%">
-<col style="width: 57%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Challenge</th>
-<th>Why It’s Hard</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Sample inefficiency</strong></td>
-<td>RL algorithms often need millions of environment interactions. Real robots can’t run 24/7 for months.</td>
-</tr>
-<tr class="even">
-<td><strong>Reward specification</strong></td>
-<td>What’s the reward for “fold the shirt nicely”? Designing rewards that capture human intent is notoriously difficult.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B4%5D%7D"></td>
-</tr>
-<tr class="odd">
-<td><strong>Safety</strong></td>
-<td>Random exploration can damage the robot, break objects, or harm humans nearby.</td>
-</tr>
-<tr class="even">
-<td><strong>Sim-to-real gap</strong></td>
-<td>Policies trained in simulation often fail on real hardware due to modeling errors.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B5%5D%7D"></td>
-</tr>
-</tbody>
-</table>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>Intuition: The Scale Problem
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Consider these stark comparisons:</p>
-<ul>
-<li><strong>Atari games</strong>: Rainbow DQN needs ~18 million frames (<strong>83 hours</strong> of gameplay) to match human performance. Most humans master these games in <strong>minutes</strong>.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B11%5D%7D"></li>
-<li><strong>Simulated walking</strong>: Training a humanoid to walk requires ~10 billion environment steps.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B6%5D%7D"> At real-time, that’s <strong>3,000 years</strong> of continuous operation. Even with 100 robots in parallel: 30 years.</li>
-<li><strong>Comparison to humans</strong>: A baby learns to grasp objects after seeing just a few examples. RL systems need millions of attempts.</li>
-</ul>
-<p>The gap between human sample efficiency and RL is not merely quantitative — it’s fundamental. Natural intelligence extracts far more signal from far less data.</p>
-</div>
-</div>
-<p>Research has made progress on each challenge — sample-efficient algorithms (SAC, TD3), offline RL, sim-to-real transfer with domain randomization — but contact-rich manipulation remains difficult. This motivates a different approach.</p>
-</section>
-</section>
-<section id="sec-imitation" class="level2">
-<h2 class="anchored" data-anchor-id="sec-imitation">Imitation Learning: Learning from Demonstrations</h2>
-<p>What if we skip the reward function entirely and learn directly from expert demonstrations?</p>
-<section id="sec-bc" class="level3">
-<h3 class="anchored" data-anchor-id="sec-bc">Behavioral Cloning</h3>
-<p><strong>Behavioral Cloning (BC)</strong> is the simplest form of imitation learning: treat it as supervised learning.</p>
-<p>Given a dataset of expert demonstrations — state-action pairs collected from a human teleoperating the robot:</p>
-<p><span id="eq-demo-dataset"><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BD%7D%20=%20%5C%7B(s_1,%20a_1),%20(s_2,%20a_2),%20%5Cldots,%20(s_N,%20a_N)%5C%7D%0A%5Ctag%7B3%7D"></span></p>
-<p>We train a neural network policy <img src="https://latex.codecogs.com/png.latex?%5Cpi_%5Ctheta"> to predict the expert’s action given the state. The loss is simply mean squared error:</p>
-<p><span id="eq-bc-loss"><img src="https://latex.codecogs.com/png.latex?%0A%5Cmathcal%7BL%7D(%5Ctheta)%20=%20%5Cmathbb%7BE%7D_%7B(s,a)%20%5Csim%20%5Cmathcal%7BD%7D%7D%20%5Cleft%5B%20%5C%7C%20%5Cpi_%5Ctheta(s)%20-%20a%20%5C%7C%5E2%20%5Cright%5D%0A%5Ctag%7B4%7D"></span></p>
-<p>That’s it. Standard supervised learning — no reward function, no environment interaction during training, no exploration.</p>
-</section>
-<section id="sec-bc-advantages" class="level3">
-<h3 class="anchored" data-anchor-id="sec-bc-advantages">Why BC Works for Robotics</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 45%">
-<col style="width: 54%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Advantage</th>
-<th>Explanation</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Data efficient</strong></td>
-<td>Hundreds of demonstrations, not millions of trials</td>
-</tr>
-<tr class="even">
-<td><strong>No reward design</strong></td>
-<td>Demonstrations <em>implicitly</em> encode the task objective</td>
-</tr>
-<tr class="odd">
-<td><strong>Safe data collection</strong></td>
-<td>Human teleoperates; robot never explores randomly</td>
-</tr>
-<tr class="even">
-<td><strong>Works with real hardware</strong></td>
-<td>Collect demos on the real robot, train offline</td>
-</tr>
-</tbody>
-</table>
-<p>This explains BC’s popularity: it lets us leverage human expertise directly, avoiding RL’s sample efficiency and reward design problems.</p>
-</section>
-<section id="sec-distribution-shift" class="level3">
-<h3 class="anchored" data-anchor-id="sec-distribution-shift">The Distribution Shift Problem</h3>
-<p>BC has a fundamental issue that limited its effectiveness for years: <strong>compounding errors</strong> due to distribution shift.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"></p>
-<p>Here’s the problem. During training, the policy sees states from the expert’s trajectory — the states a skilled human visits while performing the task. During deployment, the robot executes its <em>own</em> policy, which makes small mistakes. These mistakes push the robot into states the expert never visited. The policy was never trained on these states, so it makes worse predictions, leading to worse states, and so on:</p>
-<div id="fig-distribution-shift" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-distribution-shift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/robotics/1-background/distribution-shift.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-distribution-shift-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: Distribution shift: during training the policy sees expert states (green region), but at deployment small errors push the robot into unfamiliar states where predictions get progressively worse.
-</figcaption>
-</figure>
-</div>
-<div class="callout callout-style-default callout-warning callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>The Quadratic Error Bound
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Ross et al.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"> proved that BC’s error grows <strong>quadratically</strong> with the task horizon <img src="https://latex.codecogs.com/png.latex?T">. If the policy makes error <img src="https://latex.codecogs.com/png.latex?%5Cvarepsilon"> per step, the total error scales as <img src="https://latex.codecogs.com/png.latex?O(T%5E2%20%5Cvarepsilon)">, not <img src="https://latex.codecogs.com/png.latex?O(T%5Cvarepsilon)"> as you might hope. For long-horizon tasks, this is catastrophic.</p>
-</div>
-</div>
-<p><strong>Solutions</strong> to distribution shift include:</p>
-<ol type="1">
-<li><strong>DAgger</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B7%5D%7D"> — iteratively collect more demonstrations in states the learned policy visits</li>
-<li><strong>Action chunking</strong> — predict sequences of actions, reducing the number of decision points</li>
-<li><strong>Expressive policy classes</strong> — handle multimodal action distributions (more on this next)</li>
-</ol>
-</section>
-</section>
-<section id="sec-multimodality" class="level2">
-<h2 class="anchored" data-anchor-id="sec-multimodality">The Multimodality Problem</h2>
-<p>Distribution shift isn’t the only issue. Even with perfect training data coverage, naive BC fails on a surprisingly common class of problems.</p>
-<section id="sec-averaging" class="level3">
-<h3 class="anchored" data-anchor-id="sec-averaging">Why Averaging Fails</h3>
-<p>The multimodality problem is best understood through concrete examples:</p>
-<p><strong>Example 1: Obstacle Avoidance</strong></p>
-<p>A mobile robot approaches a box blocking its path. The demonstrations show two valid strategies: go left around the obstacle OR go right around it. What does naive behavioral cloning learn?</p>
-<div id="fig-obstacle-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-obstacle-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/robotics/1-background/obstacle-avoidance-multimodality.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-obstacle-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Obstacle avoidance multimodality: both “go left” and “go right” are valid strategies, but their average produces “go straight” — directly into the obstacle.
-</figcaption>
-</figure>
-</div>
-<p>As Figure&nbsp;2 illustrates, it averages: “go left” + “go right” = “go straight” — directly into the obstacle! While both modes are acceptable, their mean is catastrophic.</p>
-<p><strong>Example 2: Grasping a Mug</strong></p>
-<p>Consider picking up a coffee mug. A human might:</p>
-<ul>
-<li>Grasp the handle from the left</li>
-<li>Grasp the handle from the right</li>
-<li>Grab the body with a power grip</li>
-<li>Pinch the rim with a precision grip</li>
-</ul>
-<p>All are valid. If your demonstration dataset contains examples of all these strategies, what happens when you train with MSE loss (mean squared error)?</p>
-<p>The network learns to predict the <strong>average</strong> action — reaching for somewhere <em>between</em> all the options, which corresponds to <strong>none of them</strong>. The robot reaches toward the center of the mug and grasps nothing.</p>
-<p><strong>Example 3: Intersection Navigation</strong></p>
-<p>From autonomous driving research:<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B12%5D%7D"> At an intersection, demonstrations show turning left, going straight, and turning right (depending on destination). Standard behavioral cloning “primarily follows a single trajectory” — it collapses to one mode and fails to generalize. The robot gets stuck, unable to make different decisions at the same location.</p>
-<div id="fig-multimodality" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/robotics/1-background/multimodality-problem.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-multimodality-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;3: The multimodality problem: three valid grasping strategies (blue, green, orange arrows) and the invalid “average” prediction (red dotted) that results from MSE training.
-</figcaption>
-</figure>
-</div>
-<div class="callout callout-style-default callout-warning callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>Common Misconception: “Just Collect Consistent Data”
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>A natural reaction is: “Just have demonstrators use the same strategy every time.” But multimodality is <strong>fundamentally unavoidable</strong> in real-world manipulation:</p>
-<ol type="1">
-<li><strong>Inherent task ambiguity</strong>: Many tasks have multiple equally valid solutions (push object left vs.&nbsp;right, approach from front vs.&nbsp;side)</li>
-<li><strong>Human variation</strong>: Even the same person performing the same task varies their approach based on subtle factors — arm configuration, starting pose, comfort, or unconscious habit</li>
-<li><strong>Environmental differences</strong>: Small changes in object placement, lighting, or scene clutter naturally lead to different valid strategies</li>
-</ol>
-<p>Attempting to eliminate multimodality would require: - Rigidly controlling demonstrator behavior (often impossible) - Restricting tasks to those with single solutions (defeats the purpose of learning-based approaches) - Collecting unrealistically large datasets where one mode dominates by sheer numbers</p>
-<p>The right solution isn’t to eliminate multimodality — it’s to use policy representations that can handle it.</p>
-</div>
-</div>
-</section>
-<section id="sec-policy-representations" class="level3">
-<h3 class="anchored" data-anchor-id="sec-policy-representations">From Deterministic to Probabilistic Policies</h3>
-<p>The solution is to represent the policy as a <strong>probability distribution</strong> over actions, not a single prediction. Different architectures handle multimodality with varying success:</p>
-<div id="fig-policy-representations" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-policy-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/robotics/1-background/policy-representations-comparison.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-policy-representations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;4: Comparison of policy representations: Gaussian policies capture one mode, mixture models need fixed K components, while diffusion models naturally sample from arbitrary multimodal distributions.
-</figcaption>
-</figure>
-</div>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 34%">
-<col style="width: 51%">
-<col style="width: 14%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Representation</th>
-<th>Handles Multimodality?</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>MLP + MSE loss</strong></td>
-<td>No</td>
-<td>Averages modes together</td>
-</tr>
-<tr class="even">
-<td><strong>Gaussian policy</strong></td>
-<td>Poorly</td>
-<td>Can only model one “bump”</td>
-</tr>
-<tr class="odd">
-<td><strong>Mixture of Gaussians</strong></td>
-<td>Somewhat</td>
-<td>Fixed number of modes, must choose in advance</td>
-</tr>
-<tr class="even">
-<td><strong>VAE</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B8%5D%7D"></td>
-<td>Better</td>
-<td>Latent space can capture structure</td>
-</tr>
-<tr class="odd">
-<td><strong>Diffusion models</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"></td>
-<td>Excellent</td>
-<td>Learns arbitrary distributions</td>
-</tr>
-</tbody>
-</table>
-<p>As illustrated in Figure&nbsp;4, diffusion models are fundamentally different. Unlike Gaussian policies (single mode) or mixture models (fixed K modes), diffusion generates diverse samples by starting each inference from different random noise. The denoising process naturally explores multiple modes without averaging them away.</p>
-<p>This is why Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> works so well — diffusion models are <em>designed</em> to learn complex, multimodal distributions. They represent the entire action distribution, not just its mean.</p>
-</section>
-</section>
-<section id="sec-generative" class="level2">
-<h2 class="anchored" data-anchor-id="sec-generative">Generative Models: A Preview</h2>
-<p>Before diving into Diffusion Policy in <a href="../1-diffusion-policy/">Part 2</a>, let’s preview the generative modeling approaches used in robot learning.</p>
-<section id="variational-autoencoders-vae" class="level3">
-<h3 class="anchored" data-anchor-id="variational-autoencoders-vae">Variational Autoencoders (VAE)</h3>
-<p>VAEs learn a compressed <strong>latent space</strong> that captures the structure of the data:</p>
-<ul>
-<li><strong>Encoder</strong> <img src="https://latex.codecogs.com/png.latex?q_%5Cphi(z%20%7C%20x)">: compress observation <img src="https://latex.codecogs.com/png.latex?x"> to latent code <img src="https://latex.codecogs.com/png.latex?z"></li>
-<li><strong>Decoder</strong> <img src="https://latex.codecogs.com/png.latex?p_%5Ctheta(x%20%7C%20z)">: reconstruct observation from latent</li>
-<li><strong>Sampling</strong>: draw <img src="https://latex.codecogs.com/png.latex?z%20%5Csim%20%5Cmathcal%7BN%7D(0,%20I)">, then decode to generate new data</li>
-</ul>
-<p><strong>In robotics</strong>: ACT (Action Chunking with Transformers)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B8%5D%7D"> uses a conditional VAE to generate action sequences. The latent variable captures <em>which</em> strategy to use (left grasp vs.&nbsp;right grasp), while the decoder generates the full action trajectory for that strategy.</p>
-</section>
-<section id="diffusion-models" class="level3">
-<h3 class="anchored" data-anchor-id="diffusion-models">Diffusion Models</h3>
-<p>Diffusion models learn to reverse a noise-adding process. Think of it like a painter creating a portrait:</p>
-<div class="callout callout-style-simple callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>The Painter Analogy
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>A skilled painter doesn’t create pixel-perfect details immediately. They start with rough outlines and gradually refine through many small adjustments — adding shadows here, highlighting there — until the final image emerges. Diffusion works similarly: starting from pure noise, the model iteratively removes noise through learned denoising steps until coherent data appears.</p>
-</div>
-</div>
-<p><strong>The technical process:</strong></p>
-<ol type="1">
-<li><strong>Forward process</strong>: Gradually add Gaussian noise to data until it becomes pure random noise</li>
-<li><strong>Reverse process</strong>: Train a neural network <img src="https://latex.codecogs.com/png.latex?%5Cepsilon_%5Ctheta"> to predict and remove noise step-by-step</li>
-<li><strong>Sampling</strong>: Start from random noise, iteratively denoise to generate a sample</li>
-</ol>
-<p><strong>Why this handles multimodality:</strong> Each sampling run starts from different random noise, naturally exploring different modes of the distribution. The denoising process acts like gradient descent on a learned energy landscape — different initializations converge to different modes without averaging them together.</p>
-<p><strong>In robotics</strong>: Diffusion Policy<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B9%5D%7D"> generates action trajectories by denoising. Given an observation (camera image + robot state), it samples from the conditional distribution <img src="https://latex.codecogs.com/png.latex?p(%5Ctext%7Bactions%7D%20%7C%20%5Ctext%7Bobservation%7D)"> by starting with random noise and iteratively refining it into a plausible action sequence.</p>
-</section>
-<section id="flow-matching" class="level3">
-<h3 class="anchored" data-anchor-id="flow-matching">Flow Matching</h3>
-<p>Flow matching learns a direct, continuous transformation from noise to data:</p>
-<p><span id="eq-flow-ode"><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bdx%7D%7Bdt%7D%20=%20v_%5Ctheta(x,%20t)%0A%5Ctag%7B5%7D"></span></p>
-<p>where <img src="https://latex.codecogs.com/png.latex?v_%5Ctheta"> is a learned velocity field. Simpler training than diffusion, often faster inference.</p>
-<p><strong>In robotics</strong>: π₀<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B10%5D%7D"> uses flow matching to achieve 50Hz real-time control, enabling continuous, smooth actions rather than discrete action chunks.</p>
-</section>
-</section>
-<section id="sec-prerequisites" class="level2">
-<h2 class="anchored" data-anchor-id="sec-prerequisites">Prerequisites Summary</h2>
-<p>Before proceeding to <a href="../1-diffusion-policy/">Part 2: Diffusion Policy</a>, ensure you’re comfortable with:</p>
-<section id="mathematical-background" class="level3">
-<h3 class="anchored" data-anchor-id="mathematical-background">Mathematical Background</h3>
-<ul>
-<li><strong>Probability</strong>: expectations, conditional distributions, Bayes’ rule, sampling</li>
-<li><strong>Neural networks</strong>: loss functions, gradient descent, basic architectures (MLP, CNN, Transformer)</li>
-<li><strong>Control vocabulary</strong>: state, action, policy, trajectory (the MDP formalism from Section&nbsp;3.1)</li>
-</ul>
-</section>
-<section id="conceptual-understanding" class="level3">
-<h3 class="anchored" data-anchor-id="conceptual-understanding">Conceptual Understanding</h3>
-<ul>
-<li>Why classical robotics struggles with unstructured tasks (Section&nbsp;2.2)</li>
-<li>The trade-offs between RL and imitation learning (Section&nbsp;3.2 vs. Section&nbsp;4.2)</li>
-<li>Why multimodal action distributions break naive BC (Section&nbsp;5)</li>
-<li>The basic idea behind generative models (Section&nbsp;6)</li>
-</ul>
-</section>
-<section id="recommended-resources" class="level3">
-<h3 class="anchored" data-anchor-id="recommended-resources">Recommended Resources</h3>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Resource</th>
-<th>Focus</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial</a><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></td>
-<td>Comprehensive coverage with LeRobot code</td>
-</tr>
-<tr class="even">
-<td><a href="https://underactuated.mit.edu/imitation.html">MIT Underactuated Robotics Ch. 21</a></td>
-<td>Imitation learning theory</td>
-</tr>
-<tr class="odd">
-<td><a href="https://lilianweng.github.io/posts/2018-04-08-policy-gradient/">Lilian Weng’s Policy Gradient Post</a></td>
-<td>RL foundations</td>
-</tr>
-<tr class="even">
-<td><a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/">What are Diffusion Models?</a></td>
-<td>Diffusion intuition</td>
-</tr>
-<tr class="odd">
-<td><a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">LeRobot Tutorial</a></td>
-<td>Hands-on practice</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="sec-next" class="level2">
-<h2 class="anchored" data-anchor-id="sec-next">What’s Next?</h2>
-<p>With this foundation, we’re ready for <a href="../1-diffusion-policy/">Part 2: Diffusion Policy</a>. We’ll see how diffusion models elegantly solve the multimodality problem and why “generating actions like generating images” is such a powerful idea.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Summary
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Classical robotics works when we can write down the dynamics — factory floors, not kitchens. RL learns without explicit models but demands millions of trials and carefully designed rewards, making it impractical for real robots learning contact-rich manipulation.</p>
-<p>Imitation learning sidesteps these issues by learning directly from demonstrations, but faces two challenges: <strong>distribution shift</strong> (errors compound as the robot visits unfamiliar states) and <strong>multimodality</strong> (averaging over multiple valid strategies produces invalid actions).</p>
-<p>The key insight: we need policy representations expressive enough to capture <em>distributions</em> over actions, not just point predictions. Diffusion models provide exactly this — which is why Diffusion Policy has become the foundation of modern robot learning. In Part 2, we’ll see precisely how.</p>
-</div>
-</div>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p>[1] <a href="https://arxiv.org/abs/2510.12403">Capuano, F., Pascal, C., Zouitine, A., Wolf, T., &amp; Aractingi, M. “Robot Learning: A Tutorial.”</a> <em>arXiv:2510.12403</em>, 2025.</p>
-<p>[2] <a href="https://www.nature.com/articles/nature14236">Mnih, V., et al.&nbsp;“Human-level control through deep reinforcement learning.”</a> <em>Nature</em>, 2015.</p>
-<p>[3] <a href="https://www.nature.com/articles/nature16961">Silver, D., et al.&nbsp;“Mastering the game of Go with deep neural networks and tree search.”</a> <em>Nature</em>, 2016.</p>
-<p>[4] <a href="https://arxiv.org/abs/1611.08219">Hadfield-Menell, D., et al.&nbsp;“The Off-Switch Game.”</a> <em>IJCAI</em>, 2017. (On reward misspecification)</p>
-<p>[5] <a href="https://arxiv.org/abs/2009.13303">Zhao, W., et al.&nbsp;“Sim-to-Real Transfer in Deep Reinforcement Learning for Robotics: A Survey.”</a> <em>arXiv</em>, 2020.</p>
-<p>[6] <a href="https://arxiv.org/abs/1707.06347">Schulman, J., et al.&nbsp;“Proximal Policy Optimization Algorithms.”</a> <em>arXiv</em>, 2017.</p>
-<p>[7] <a href="https://arxiv.org/abs/1011.0686">Ross, S., Gordon, G., &amp; Bagnell, J. A. “A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning.”</a> <em>AISTATS</em>, 2011. (DAgger paper)</p>
-<p>[8] <a href="https://arxiv.org/abs/2304.13705">Zhao, T., et al.&nbsp;“Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware.”</a> <em>RSS</em>, 2023. (ACT paper)</p>
-<p>[9] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
-<p>[10] <a href="https://arxiv.org/abs/2410.24164">Black, K., et al.&nbsp;“π₀: A Vision-Language-Action Flow Model for General Robot Control.”</a> <em>arXiv</em>, 2024.</p>
-<p>[11] <a href="https://www.alexirpan.com/2018/02/14/rl-hard.html">Irpan, A. “Deep Reinforcement Learning Doesn’t Work Yet.”</a> Blog post, 2018.</p>
-<p>[12] <a href="https://openaccess.thecvf.com/content_ICCV_2019/papers/Codevilla_Exploring_the_Limitations_of_Behavior_Cloning_for_Autonomous_Driving_ICCV_2019_paper.pdf">Codevilla, F., et al.&nbsp;“Exploring the Limitations of Behavior Cloning for Autonomous Driving.”</a> <em>ICCV</em>, 2019.</p>
-
-
-</section>
-
- ]]></description>
-  <category>robotics</category>
-  <category>reinforcement-learning</category>
-  <category>imitation-learning</category>
-  <category>robot-learning</category>
-  <guid>https://layernorm.dev/posts/robotics/1-background/</guid>
   <pubDate>Tue, 20 Jan 2026 00:00:00 GMT</pubDate>
 </item>
 </channel>
