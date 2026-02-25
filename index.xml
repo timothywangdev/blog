@@ -10,7 +10,410 @@
 <atom:link href="https://layernorm.dev/index.xml" rel="self" type="application/rss+xml"/>
 <description>Exploring state-of-the-art AI models</description>
 <generator>quarto-1.8.27</generator>
-<lastBuildDate>Tue, 10 Feb 2026 00:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 24 Feb 2026 00:00:00 GMT</lastBuildDate>
+<item>
+  <title>LIBERO Explained: Why 95% Accuracy Means Your Robot Learned Nothing</title>
+  <dc:creator>Hujie Wang</dc:creator>
+  <link>https://layernorm.dev/posts/robotics/libero-benchmark/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>State-of-the-art robot policies score 95%+ on LIBERO. Impressive, right?</p>
+<p>Move the target object 2 centimeters. Success drops to <strong>0%</strong>.</p>
+<p>This isn’t cherry-picked. It’s the systematic finding from two papers that exposed what “95%+ accuracy” actually means: your model memorized the training trajectories. It learned nothing about manipulation.</p>
+<div id="fig-overview" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-overview-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/libero-benchmark/libero-overview.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-overview-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: LIBERO benchmark overview: 130 manipulation tasks testing lifelong learning and knowledge transfer. Tasks are organized into four suites testing different types of distribution shifts.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>LIBERO</strong> (NeurIPS 2023)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> is a benchmark for lifelong robot learning with 130 tasks. Two follow-up papers exposed critical flaws:</p>
+<ul>
+<li><strong>LIBERO-PRO</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D">: Models scoring 95%+ drop to <strong>0%</strong> under tiny perturbations</li>
+<li><strong>LIBERO-Plus</strong><img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D">: Systematic testing across 7 robustness dimensions reveals models ignore language instructions entirely</li>
+<li><strong>The problem</strong>: Current VLA models memorize trajectories, they don’t understand tasks</li>
+</ul>
+</div>
+</div>
+<section id="sec-why-libero" class="level2">
+<h2 class="anchored" data-anchor-id="sec-why-libero">Why LIBERO Matters</h2>
+<p>Before LIBERO, robot learning benchmarks like Meta-World focused on <strong>multi-task learning</strong> — can one policy solve 50 different tasks? But real robots face a harder problem: <strong>lifelong learning</strong>. They need to learn new tasks without forgetting old ones, and transfer knowledge across tasks.</p>
+<p>LIBERO (Liu et al., NeurIPS 2023)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"> was designed specifically to study this. The key insight: robot manipulation requires transferring two types of knowledge:</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Two Types of Knowledge Transfer
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li><strong>Declarative knowledge</strong>: <em>What</em> things are — object identities, spatial relationships, scene layouts</li>
+<li><strong>Procedural knowledge</strong>: <em>How</em> to do things — grasping motions, pushing behaviors, manipulation primitives</li>
+</ul>
+<p>Traditional lifelong learning in vision/NLP mainly tests declarative transfer. Robots need both.</p>
+</div>
+</div>
+</section>
+<section id="sec-benchmark" class="level2">
+<h2 class="anchored" data-anchor-id="sec-benchmark">The LIBERO Benchmark</h2>
+<p>LIBERO contains <strong>130 language-conditioned manipulation tasks</strong> using a Franka Panda arm in MuJoCo simulation. Each task comes with 50 human-teleoperated demonstrations. The tasks are organized into four suites that isolate different types of distribution shift:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 40%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Suite</th>
+<th>Tasks</th>
+<th>What Changes</th>
+<th>Tests</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>LIBERO-Spatial</strong></td>
+<td>10</td>
+<td>Object positions</td>
+<td>Spatial declarative knowledge</td>
+</tr>
+<tr class="even">
+<td><strong>LIBERO-Object</strong></td>
+<td>10</td>
+<td>Object types</td>
+<td>Object declarative knowledge</td>
+</tr>
+<tr class="odd">
+<td><strong>LIBERO-Goal</strong></td>
+<td>10</td>
+<td>Task objectives</td>
+<td>Procedural knowledge</td>
+</tr>
+<tr class="even">
+<td><strong>LIBERO-100</strong></td>
+<td>100</td>
+<td>Everything</td>
+<td>Entangled transfer</td>
+</tr>
+</tbody>
+</table>
+<p>This decomposition is LIBERO’s main contribution. Instead of lumping all variations together, you can diagnose <em>which type</em> of knowledge transfer is failing.</p>
+<section id="example-tasks" class="level3">
+<h3 class="anchored" data-anchor-id="example-tasks">Example Tasks</h3>
+<p>Consider LIBERO-Spatial: all 10 tasks might involve “pick up the red cube and place it in the bowl.” But the cube starts in different positions — left corner, center, right edge. A policy that truly understands spatial relationships should generalize. One that memorized specific trajectories will fail.</p>
+</section>
+<section id="the-lifelong-learning-protocol" class="level3">
+<h3 class="anchored" data-anchor-id="the-lifelong-learning-protocol">The Lifelong Learning Protocol</h3>
+<p>LIBERO tests agents on <strong>sequential task learning</strong>:</p>
+<ol type="1">
+<li>Train on Task 1</li>
+<li>Train on Task 2 (without access to Task 1 data)</li>
+<li>… continue for N tasks</li>
+<li>Evaluate on all tasks</li>
+</ol>
+<p>Key metrics:</p>
+<ul>
+<li><strong>Forward Transfer (FWT)</strong>: Does learning Task 1 help with Task 2?</li>
+<li><strong>Negative Backward Transfer (NBT)</strong>: Does learning Task 2 hurt Task 1 performance?</li>
+</ul>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Surprising Finding
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>In the original LIBERO paper, <strong>naive sequential finetuning outperformed specialized lifelong learning methods</strong> (EWC, PackNet, Experience Replay) on forward transfer. Methods designed to prevent forgetting often hurt learning quality.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-illusion" class="level2">
+<h2 class="anchored" data-anchor-id="sec-illusion">The 95% Illusion</h2>
+<p>Fast forward to 2024. Vision-Language-Action (VLA) models like OpenVLA and Pi0 report <strong>95%+ success rates</strong> on LIBERO. Problem solved?</p>
+<p>Not quite. Two papers — LIBERO-PRO<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D"> and LIBERO-Plus<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D"> — independently discovered the same disturbing pattern: these scores are meaningless.</p>
+<section id="libero-pro-the-memorization-exposé" class="level3">
+<h3 class="anchored" data-anchor-id="libero-pro-the-memorization-exposé">LIBERO-PRO: The Memorization Exposé</h3>
+<p>LIBERO-PRO (Zhou et al., 2024)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B2%5D%7D"> tested what happens under minimal perturbations:</p>
+<div id="fig-collapse" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-collapse-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/libero-benchmark/performance-collapse.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-collapse-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Performance collapse under perturbations: Models achieving 90%+ on standard LIBERO (blue bars) drop to near-zero when objects are repositioned (green) or task context changes (orange). Figure from Zhou et al.&nbsp;2024.
+</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Standard LIBERO</th>
+<th>With Perturbations</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>OpenVLA</td>
+<td>98%</td>
+<td><strong>0%</strong></td>
+</tr>
+<tr class="even">
+<td>Pi0</td>
+<td>92%</td>
+<td><strong>0%</strong></td>
+</tr>
+<tr class="odd">
+<td>UniVLA</td>
+<td>89%</td>
+<td><strong>0%</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The perturbations weren’t extreme — just repositioning objects slightly or rephrasing instructions. The complete collapse reveals that models <strong>memorized action sequences</strong> rather than learning task structure.</p>
+</section>
+<section id="three-damning-experiments" class="level3">
+<h3 class="anchored" data-anchor-id="three-damning-experiments">Three Damning Experiments</h3>
+<div id="fig-trajectories" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/libero-benchmark/trajectory-consistency.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-trajectories-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Model trajectories remain identical across perturbations. Each row shows the same model executing nearly the same trajectory whether the target object is present, replaced, or repositioned. The models aren’t responding to the scene — they’re playing back memorized sequences. Figure from Zhou et al.&nbsp;2024.
+</figcaption>
+</figure>
+</div>
+<p><strong>Experiment 1: Object Replacement</strong></p>
+<p>Replace the target object (e.g., red cube) with an irrelevant object (e.g., banana). The model should recognize “there’s no red cube” and fail gracefully. Instead, models <strong>executed identical grasping trajectories</strong> — reaching for empty space where the cube used to be (Figure&nbsp;3).</p>
+<p><strong>Experiment 2: Instruction Corruption</strong></p>
+<p>Feed the model corrupted language instructions — random tokens, gibberish, or completely different task descriptions. Performance was <strong>unchanged</strong>. Models ignore the language channel entirely.</p>
+<p><strong>Experiment 3: Position Displacement</strong></p>
+<p>Move the target object by 0.2 units (a few centimeters). Performance collapsed from 98% to near 0%. Models memorized <em>positions</em>, not object identities.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The Core Problem
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>VLA models function as <strong>Vision-Action models</strong>, not Vision-Language-Action models. The “Language” component is decorative. They’re executing memorized trajectories conditioned on visual patterns, not understanding task semantics.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-plus" class="level2">
+<h2 class="anchored" data-anchor-id="sec-plus">LIBERO-Plus: Systematic Robustness Testing</h2>
+<p>LIBERO-Plus (OpenMOSS, 2024)<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B3%5D%7D"> went further, creating a comprehensive robustness framework with <strong>10,030 tasks</strong> testing <strong>7 dimensions</strong> and <strong>21 sub-dimensions</strong> of perturbation:</p>
+<div id="fig-plus-arch" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-plus-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="https://layernorm.dev/posts/robotics/libero-benchmark/libero-plus-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plus-arch-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: LIBERO-Plus tests robustness across 7 dimensions: Layout, Camera, Background, Language, Light, Robot state, and Sensor noise. Each dimension contains multiple sub-dimensions for fine-grained analysis. Figure from OpenMOSS 2024.
+</figcaption>
+</figure>
+</div>
+<section id="the-seven-dimensions" class="level3">
+<h3 class="anchored" data-anchor-id="the-seven-dimensions">The Seven Dimensions</h3>
+<ol type="1">
+<li><strong>Object Layout</strong> (2 sub-dims): Distractor objects, target pose changes</li>
+<li><strong>Camera Viewpoints</strong> (3 sub-dims): Distance, angle, orientation</li>
+<li><strong>Robot Initial States</strong> (1 sub-dim): Joint angle perturbations</li>
+<li><strong>Language Instructions</strong> (3 sub-dims): Rephrasing, reasoning chains, distractors</li>
+<li><strong>Lighting</strong> (4 sub-dims): Color, direction, specular, shadows</li>
+<li><strong>Background</strong> (2 sub-dims): Textures, scene themes</li>
+<li><strong>Sensor Noise</strong> (5 sub-dims): Motion blur, Gaussian blur, fog, etc.</li>
+</ol>
+</section>
+<section id="difficulty-levels-l1-l5" class="level3">
+<h3 class="anchored" data-anchor-id="difficulty-levels-l1-l5">Difficulty Levels (L1-L5)</h3>
+<p>Tasks are stratified by how many baseline models succeed:</p>
+<ul>
+<li><strong>L1</strong>: All 4 reference models succeed (easiest)</li>
+<li><strong>L5</strong>: No models succeed (hardest)</li>
+</ul>
+<p>This lets you pinpoint exactly where models fail — not just “it doesn’t work” but “it fails specifically on camera viewpoint changes of &gt;30 degrees.”</p>
+</section>
+<section id="key-findings" class="level3">
+<h3 class="anchored" data-anchor-id="key-findings">Key Findings</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Perturbation Type</th>
+<th>Baseline</th>
+<th>After Perturbation</th>
+<th>Drop</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Camera viewpoint</td>
+<td>~95%</td>
+<td>0.3% - 16.8%</td>
+<td>-78 to -95%</td>
+</tr>
+<tr class="even">
+<td>Robot initial state</td>
+<td>~95%</td>
+<td>4.1% - 30%</td>
+<td>-65 to -96%</td>
+</tr>
+<tr class="odd">
+<td>Language variations</td>
+<td>~95%</td>
+<td>~73%</td>
+<td>-22%</td>
+</tr>
+<tr class="even">
+<td>Lighting changes</td>
+<td>~95%</td>
+<td>30-60%</td>
+<td>-30 to -60%</td>
+</tr>
+</tbody>
+</table>
+<p>Notice that <strong>language variations cause the smallest drop</strong>. This confirms the LIBERO-PRO finding: models barely use language anyway, so corrupting it doesn’t matter much.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>One Bright Spot
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Models with <strong>wrist-mounted cameras</strong> showed significantly better robustness (+37 percentage points on viewpoint changes). First-person views provide more stable reference frames than third-person observations alone.</p>
+</div>
+</div>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconceptions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ol type="1">
+<li><p><strong>“High LIBERO scores = ready for real robots”</strong> — No.&nbsp;LIBERO is simulation-only. Even robust LIBERO performance doesn’t guarantee sim-to-real transfer.</p></li>
+<li><p><strong>“LIBERO-PRO/Plus made LIBERO obsolete”</strong> — No.&nbsp;Standard LIBERO is still useful for comparing methods under controlled conditions. PRO/Plus add robustness testing, they don’t replace the original.</p></li>
+<li><p><strong>“The memorization problem is unique to VLAs”</strong> — No.&nbsp;Smaller policies (Diffusion Policy, ACT) can also memorize. VLAs just made it more visible because they’re evaluated more broadly.</p></li>
+</ol>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-implications" class="level2">
+<h2 class="anchored" data-anchor-id="sec-implications">What This Means for Your Research</h2>
+<section id="if-youre-evaluating-models" class="level3">
+<h3 class="anchored" data-anchor-id="if-youre-evaluating-models">If You’re Evaluating Models</h3>
+<p><strong>Don’t trust standard benchmark numbers.</strong> A model scoring 95% on LIBERO tells you almost nothing about real-world capability. At minimum:</p>
+<ul>
+<li>Test with object repositioning (even small displacements)</li>
+<li>Test with instruction paraphrasing</li>
+<li>Test with camera viewpoint variations</li>
+</ul>
+<p>LIBERO-PRO and LIBERO-Plus provide ready-made evaluation suites for this.</p>
+</section>
+<section id="if-youre-building-models" class="level3">
+<h3 class="anchored" data-anchor-id="if-youre-building-models">If You’re Building Models</h3>
+<p>The failure modes point to architectural gaps:</p>
+<ol type="1">
+<li><strong>No geometric understanding</strong>: Models fail on viewpoint/position changes because they lack 3D scene representations</li>
+<li><strong>No language grounding</strong>: The vision-language fusion is broken — language features aren’t actually conditioning behavior</li>
+<li><strong>No compositional generalization</strong>: Combined perturbations cause worse-than-additive failures, suggesting entangled representations</li>
+</ol>
+</section>
+<section id="if-youre-writing-papers" class="level3">
+<h3 class="anchored" data-anchor-id="if-youre-writing-papers">If You’re Writing Papers</h3>
+<p>Be honest about limitations. Report performance under perturbations, not just standard test sets. The field needs to stop celebrating memorization as intelligence.</p>
+</section>
+</section>
+<section id="sec-forward" class="level2">
+<h2 class="anchored" data-anchor-id="sec-forward">The Path Forward</h2>
+<p>The LIBERO suite (original + PRO + Plus) provides a template for rigorous evaluation:</p>
+<ol type="1">
+<li><strong>Isolate failure modes</strong>: Test each type of generalization separately before mixing them</li>
+<li><strong>Use controlled perturbations</strong>: Systematic variation beats random noise</li>
+<li><strong>Report robustness alongside accuracy</strong>: A model that’s 80% accurate but robust beats one that’s 95% accurate but brittle</li>
+</ol>
+<p>Current VLA models are impressive demonstrations of scaling. They’re not yet intelligent manipulation systems. LIBERO-PRO and LIBERO-Plus give us the tools to measure the gap.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>LIBERO exposed that lifelong robot learning is harder than expected. LIBERO-PRO and LIBERO-Plus exposed that our “solutions” were mostly memorization. The 95% accuracy numbers were an illusion — shift anything slightly, and models fail completely.</p>
+<p>This is actually good news. We now have precise diagnostics for what’s broken: geometric reasoning, language grounding, compositional generalization. The next generation of robot policies needs to address these specifically, not just scale up on benchmark-matched data.</p>
+</div>
+</div>
+</section>
+<section id="sec-references" class="level2">
+<h2 class="anchored" data-anchor-id="sec-references">References</h2>
+<ol type="1">
+<li><p>Liu, B., Zhu, Y., Gao, C., Feng, Y., Liu, Q., Zhu, Y., &amp; Stone, P. (2023). <a href="https://arxiv.org/abs/2306.03310">LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning</a>. NeurIPS 2023.</p></li>
+<li><p>Zhou, X., Xu, Y., Tie, G., Chen, Y., Zhang, G., Chu, D., Zhou, P., &amp; Sun, L. (2024). <a href="https://arxiv.org/abs/2510.03827">LIBERO-PRO: Towards Robust and Fair Evaluation of Vision-Language-Action Models Beyond Memorization</a>. arXiv preprint.</p></li>
+<li><p>OpenMOSS. (2024). <a href="https://arxiv.org/abs/2510.13626">LIBERO-Plus: In-depth Robustness Analysis of Vision-Language-Action Models</a>. arXiv preprint.</p></li>
+<li><p>Yu, T., Quillen, D., He, Z., Julian, R., Hausman, K., Finn, C., &amp; Levine, S. (2020). <a href="https://arxiv.org/abs/1910.10897">Meta-World: A Benchmark and Evaluation for Multi-Task and Meta Reinforcement Learning</a>. CoRL 2020.</p></li>
+</ol>
+<p><strong>Code &amp; Resources:</strong></p>
+<ul>
+<li><a href="https://github.com/Lifelong-Robot-Learning/LIBERO">LIBERO GitHub</a></li>
+<li><a href="https://github.com/Zxy-MLlab/LIBERO-PRO">LIBERO-PRO GitHub</a></li>
+<li><a href="https://github.com/sylvestf/LIBERO-plus">LIBERO-Plus GitHub</a></li>
+<li><a href="https://huggingface.co/docs/lerobot/en/libero">LIBERO on HuggingFace LeRobot</a></li>
+</ul>
+
+
+</section>
+
+ ]]></description>
+  <category>robotics</category>
+  <category>benchmarks</category>
+  <category>vla</category>
+  <category>robot-learning</category>
+  <category>evaluation</category>
+  <guid>https://layernorm.dev/posts/robotics/libero-benchmark/</guid>
+  <pubDate>Tue, 24 Feb 2026 00:00:00 GMT</pubDate>
+</item>
 <item>
   <title>The State of Robotics 2026: Progress, Problems, and Predictions</title>
   <dc:creator>Hujie Wang</dc:creator>
@@ -13815,506 +14218,6 @@ font-style: inherit;"># Task 3</span></span></code></pre></div></div>
   <category>robot-learning</category>
   <guid>https://layernorm.dev/posts/robotics/3-vla-models/</guid>
   <pubDate>Fri, 23 Jan 2026 00:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Robot Learning Part 0: Introduction &amp; Roadmap</title>
-  <dc:creator>Hujie Wang</dc:creator>
-  <link>https://layernorm.dev/posts/robotics/0-intro/</link>
-  <description><![CDATA[ 
-
-
-
-
-
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>TL;DR
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<ul>
-<li><strong>Robot learning</strong> is rapidly evolving with diffusion models and foundation models</li>
-<li><strong>Vision-Language-Action (VLA)</strong> models unify perception, language, and control</li>
-<li><strong>Diffusion Policy</strong> brings the power of diffusion models to robot action generation</li>
-<li>This series documents my journey from diffusion models into robotics research</li>
-</ul>
-</div>
-</div>
-<section id="why-robot-learning-matters-now" class="level2">
-<h2 class="anchored" data-anchor-id="why-robot-learning-matters-now">Why Robot Learning Matters Now</h2>
-<p>After spending time understanding <a href="../../diffusion/1-intro/">diffusion models and flow matching</a>, I realized these same techniques are revolutionizing robotics. The same principles that generate photorealistic images from noise can generate precise robot actions from observations — and the field is moving remarkably fast.</p>
-<p>What makes this moment particularly exciting? For decades, robots excelled at repetitive factory tasks but struggled with everyday manipulation — folding laundry, cooking meals, clearing tables. That’s changing. Recent breakthroughs in Vision-Language-Action (VLA) models are enabling robots to understand natural language instructions, perceive complex scenes, and execute dexterous manipulation tasks that seemed impossible just a few years ago.</p>
-<p>This series documents my journey into robot learning, starting from the foundations and working toward understanding these cutting-edge VLA models.</p>
-</section>
-<section id="series-overview-planned" class="level2">
-<h2 class="anchored" data-anchor-id="series-overview-planned">Series Overview (Planned)</h2>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Part</th>
-<th>Topic</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Part 0</strong></td>
-<td>Introduction &amp; Roadmap (this post)</td>
-<td>Published</td>
-</tr>
-<tr class="even">
-<td><strong>Part 1</strong></td>
-<td><a href="../1-background/">Background &amp; Current State of the Field</a></td>
-<td>Published</td>
-</tr>
-<tr class="odd">
-<td><strong>Part 1.5</strong></td>
-<td><a href="../1.5-action-chunking/">Action Chunking with Transformers (ACT)</a></td>
-<td>Published</td>
-</tr>
-<tr class="even">
-<td><strong>Part 2</strong></td>
-<td><a href="../1-diffusion-policy/">Diffusion Policy: From Images to Actions</a></td>
-<td>Draft</td>
-</tr>
-<tr class="odd">
-<td><strong>Part 3</strong></td>
-<td>Vision-Language-Action Models</td>
-<td>Planned</td>
-</tr>
-<tr class="even">
-<td><strong>Part 4</strong></td>
-<td>Simulation Environments (MuJoCo, Isaac)</td>
-<td>Planned</td>
-</tr>
-<tr class="odd">
-<td><strong>Part 5</strong></td>
-<td>Training with LeRobot</td>
-<td>Planned</td>
-</tr>
-<tr class="even">
-<td><strong>Part 6</strong></td>
-<td>Real-World Deployment</td>
-<td>Planned</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="the-big-picture-from-images-to-actions" class="level2">
-<h2 class="anchored" data-anchor-id="the-big-picture-from-images-to-actions">The Big Picture: From Images to Actions</h2>
-<p>Here’s the core idea that connects image generation to robot control: <strong>the same denoising process that creates images can generate robot actions</strong>.</p>
-<section id="how-vla-models-work" class="level3">
-<h3 class="anchored" data-anchor-id="how-vla-models-work">How VLA Models Work</h3>
-<p>Vision-Language-Action models integrate three capabilities into a unified system:</p>
-<div id="fig-vla-pipeline" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-vla-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="https://layernorm.dev/posts/robotics/0-intro/vla-pipeline.png" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-vla-pipeline-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: VLA model architecture: visual observations and language instructions are processed through a vision encoder and language model backbone to generate robot actions.
-</figcaption>
-</figure>
-</div>
-<p>As shown in Figure&nbsp;1, the pipeline flows as follows:</p>
-<ol type="1">
-<li><strong>Vision Encoder</strong>: Processes camera images into visual embeddings (using models like SigLIP or DINOv2)</li>
-<li><strong>Language Model Backbone</strong>: Combines visual embeddings with natural language instructions (e.g., Llama 7B)</li>
-<li><strong>Action Decoder</strong>: Translates the model’s output into executable robot commands</li>
-</ol>
-<p>This architecture enables robots to understand both <em>what they see</em> and <em>what they’re asked to do</em>, then generate appropriate actions — all in one end-to-end system.</p>
-</section>
-<section id="the-diffusion-analogy" class="level3">
-<h3 class="anchored" data-anchor-id="the-diffusion-analogy">The Diffusion Analogy</h3>
-<p>Think of a painter creating a portrait. They don’t paint pixel-perfect details immediately — they start with rough outlines, gradually refining through many small adjustments until the final image emerges. Diffusion models work similarly: starting from pure noise, they iteratively remove noise through learned denoising steps until a coherent image appears.</p>
-<p><strong>Diffusion Policy</strong> applies this exact principle to robotics:</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 48%">
-<col style="width: 51%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Image Diffusion</th>
-<th>Action Diffusion</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Random pixels → Photorealistic image</td>
-<td>Random actions → Precise trajectory</td>
-</tr>
-<tr class="even">
-<td>Conditioned on text prompt</td>
-<td>Conditioned on visual observation</td>
-</tr>
-<tr class="odd">
-<td>Iterative denoising</td>
-<td>Iterative action refinement</td>
-</tr>
-<tr class="even">
-<td>Handles multiple valid images</td>
-<td>Handles multiple valid action sequences</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="why-this-matters-the-multimodality-problem" class="level3">
-<h3 class="anchored" data-anchor-id="why-this-matters-the-multimodality-problem">Why This Matters: The Multimodality Problem</h3>
-<p>Consider a robot picking up a mug. A human might grasp the handle from the left, from the right, or grab the body directly — all equally valid. Traditional methods (like simple supervised learning) average these strategies together, producing an invalid “middle” action where the robot reaches between all options and grasps nothing.</p>
-<p>Diffusion models elegantly solve this. Just as they can generate many different images from the same text prompt, they can generate different action strategies from the same observation. Each denoising process starts from random noise, naturally exploring different modes of the action distribution without collapsing to a useless average.</p>
-<p><strong>The result</strong>: Diffusion Policy achieves an average <strong>46.9% improvement</strong> over prior methods across manipulation benchmarks.<img src="https://latex.codecogs.com/png.latex?%5E%7B%5B1%5D%7D"></p>
-</section>
-</section>
-<section id="learning-roadmap" class="level2">
-<h2 class="anchored" data-anchor-id="learning-roadmap">Learning Roadmap</h2>
-<section id="phase-1-foundational-papers" class="level3">
-<h3 class="anchored" data-anchor-id="phase-1-foundational-papers">Phase 1: Foundational Papers</h3>
-<p>Start with these to build core understanding:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Paper</th>
-<th>Why Read It</th>
-<th>Link</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>Diffusion Policy</strong> (Chi et al., 2023)</td>
-<td>THE foundational paper connecting diffusion to robot control</td>
-<td><a href="https://diffusion-policy.cs.columbia.edu/">Project Page</a> / <a href="https://arxiv.org/abs/2303.04137">arXiv</a></td>
-</tr>
-<tr class="even">
-<td><strong>Octo</strong> (2024)</td>
-<td>Open-source 93M param generalist policy, good baseline</td>
-<td><a href="https://arxiv.org/abs/2405.12213">arXiv</a></td>
-</tr>
-<tr class="odd">
-<td><strong>OpenVLA</strong> (2024)</td>
-<td>Open-source 7B VLA, outperforms RT-2-X with 7x fewer params</td>
-<td><a href="https://arxiv.org/abs/2406.09246">arXiv</a></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="phase-2-core-vla-models" class="level3">
-<h3 class="anchored" data-anchor-id="phase-2-core-vla-models">Phase 2: Core VLA Models</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 28%">
-<col style="width: 72%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Paper</th>
-<th>Key Contribution</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>RT-2</strong> (Google DeepMind, 2023)</td>
-<td>First major VLA — co-trained VLM on robot trajectories</td>
-</tr>
-<tr class="even">
-<td><strong>π0 (Pi-Zero)</strong> (Physical Intelligence, 2024)</td>
-<td>Flow-matching for 50Hz continuous actions, 8 embodiments</td>
-</tr>
-<tr class="odd">
-<td><strong>3D Diffusion Policy</strong> (RSS 2024)</td>
-<td>Extends diffusion policy to 3D representations</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="phase-3-cutting-edge-2025" class="level3">
-<h3 class="anchored" data-anchor-id="phase-3-cutting-edge-2025">Phase 3: Cutting Edge (2025)</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Paper</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>GR00T N1</strong> (NVIDIA, March 2025)</td>
-<td>Dual-system VLA for humanoids</td>
-</tr>
-<tr class="even">
-<td><strong>Helix</strong> (Figure AI, Feb 2025)</td>
-<td>First VLA controlling full humanoid upper body</td>
-</tr>
-<tr class="odd">
-<td><strong>SmolVLA</strong> (Hugging Face, 2025)</td>
-<td>450M param compact VLA, trained on LeRobot</td>
-</tr>
-<tr class="even">
-<td><strong>FLOWER</strong> (CoRL 2025)</td>
-<td>Efficient VLA with diffusion head, 950M params</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="survey-papers" class="level3">
-<h3 class="anchored" data-anchor-id="survey-papers">Survey Papers</h3>
-<p>For comprehensive overviews:</p>
-<ul>
-<li><a href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2025.1606247/full">Diffusion Models for Robotic Manipulation: A Survey</a> (Frontiers, July 2025)</li>
-<li><a href="https://journals.sagepub.com/doi/full/10.1177/02783649241281508">Foundation Models in Robotics</a> (IJRR 2024/2025)</li>
-<li><a href="https://vla-survey.github.io/">VLA Survey</a> — comprehensive VLA review</li>
-</ul>
-</section>
-<section id="curated-paper-lists" class="level3">
-<h3 class="anchored" data-anchor-id="curated-paper-lists">Curated Paper Lists</h3>
-<ul>
-<li><a href="https://github.com/mbreuss/diffusion-literature-for-robotics">mbreuss/diffusion-literature-for-robotics</a> — categorized diffusion + robotics papers</li>
-<li><a href="https://github.com/robotics-survey/Awesome-Robotics-Foundation-Models">Awesome-Robotics-Foundation-Models</a></li>
-<li><a href="https://github.com/HITSZ-Robotics/DiffusionPolicy-Robotics">HITSZ-Robotics/DiffusionPolicy-Robotics</a></li>
-</ul>
-</section>
-</section>
-<section id="tools-frameworks" class="level2">
-<h2 class="anchored" data-anchor-id="tools-frameworks">Tools &amp; Frameworks</h2>
-<section id="simulation-environments" class="level3">
-<h3 class="anchored" data-anchor-id="simulation-environments">Simulation Environments</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 22%">
-<col style="width: 37%">
-<col style="width: 40%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Tool</th>
-<th>Best For</th>
-<th>Tradeoffs</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>MuJoCo</strong></td>
-<td>RL research, fast iteration</td>
-<td>Most popular (3800+ citations), steep learning curve</td>
-</tr>
-<tr class="even">
-<td><strong>Isaac Lab/Sim</strong> (NVIDIA)</td>
-<td>Massive parallel training (1000s of envs)</td>
-<td>Requires GPU, slower single-instance</td>
-</tr>
-<tr class="odd">
-<td><strong>PyBullet</strong></td>
-<td>Beginners, prototyping</td>
-<td>Easy to start, less accurate</td>
-</tr>
-<tr class="even">
-<td><strong>Gazebo</strong></td>
-<td>Real-world transfer + ROS</td>
-<td>Best ROS integration</td>
-</tr>
-</tbody>
-</table>
-<p><strong>Recommendation</strong>: Start with <strong>MuJoCo</strong> for algorithm development. Use <strong>Isaac Lab</strong> when you need scale.</p>
-</section>
-<section id="training-frameworks" class="level3">
-<h3 class="anchored" data-anchor-id="training-frameworks">Training Frameworks</h3>
-<section id="lerobot-hugging-face-start-here" class="level4">
-<h4 class="anchored" data-anchor-id="lerobot-hugging-face-start-here">LeRobot (Hugging Face) — Start Here</h4>
-<p>The most accessible entry point for robot learning research:</p>
-<ul>
-<li><strong>GitHub</strong>: <a href="https://github.com/huggingface/lerobot">huggingface/lerobot</a></li>
-<li><strong>Free Course</strong>: <a href="https://huggingface.co/learn/robotics-course/unit0/1">Hugging Face Robotics Course</a></li>
-<li><strong>Tutorial</strong>: <a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">Robot Learning Tutorial</a></li>
-</ul>
-<p>LeRobot v0.4.0 includes π0, π0.5, GR00T N1.5 policies, and LIBERO/Meta-World simulation support.</p>
-</section>
-<section id="other-tools" class="level4">
-<h4 class="anchored" data-anchor-id="other-tools">Other Tools</h4>
-<ul>
-<li><strong>robomimic</strong> — imitation learning library</li>
-<li><strong>RLlib / Stable-Baselines3</strong> — RL algorithms</li>
-<li><strong>RLDS</strong> — Google’s robot learning dataset format</li>
-</ul>
-</section>
-</section>
-<section id="benchmarks" class="level3">
-<h3 class="anchored" data-anchor-id="benchmarks">Benchmarks</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 44%">
-<col style="width: 28%">
-<col style="width: 28%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Benchmark</th>
-<th>Tasks</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>CALVIN</strong></td>
-<td>34 (language-conditioned)</td>
-<td>Long-horizon, 24hrs play data</td>
-</tr>
-<tr class="even">
-<td><strong>LIBERO</strong></td>
-<td>130+</td>
-<td>Lifelong learning focus</td>
-</tr>
-<tr class="odd">
-<td><strong>RLBench</strong></td>
-<td>100</td>
-<td>Largest variety, motion planning demos</td>
-</tr>
-<tr class="even">
-<td><strong>SimplerEnv</strong></td>
-<td>Google RT tasks</td>
-<td>Simulated version of real robot tasks</td>
-</tr>
-</tbody>
-</table>
-<div class="callout callout-style-default callout-warning callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>Benchmark Caveat
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p><a href="https://arxiv.org/abs/2510.03827">LIBERO-PRO</a> (2025) showed that many SOTA models with 90%+ accuracy largely rely on task memorization rather than genuine understanding. Keep this in mind when evaluating results.</p>
-</div>
-</div>
-</section>
-</section>
-<section id="hardware-options" class="level2">
-<h2 class="anchored" data-anchor-id="hardware-options">Hardware Options</h2>
-<p>For real-world experiments (optional but valuable):</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Hardware</th>
-<th>Cost</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><strong>SO-101</strong></td>
-<td>~$660</td>
-<td><a href="https://github.com/TheRobotStudio/SO-ARM100">GitHub</a>, LeRobot compatible</td>
-</tr>
-<tr class="even">
-<td><strong>Koch v1.1</strong></td>
-<td>~$500</td>
-<td>Good for education</td>
-</tr>
-<tr class="odd">
-<td><strong>AhaRobot</strong></td>
-<td>~$1,000</td>
-<td>Dual-arm mobile, open-source</td>
-</tr>
-<tr class="even">
-<td><strong>ALOHA 2</strong></td>
-<td>~$20k</td>
-<td>Bimanual teleoperation, <a href="https://aloha-2.github.io/">project page</a></td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="my-learning-plan" class="level2">
-<h2 class="anchored" data-anchor-id="my-learning-plan">My Learning Plan</h2>
-<p>Here’s my personal roadmap:</p>
-<ol type="1">
-<li><strong>Week 1-2</strong>: Read Diffusion Policy paper thoroughly, run their code</li>
-<li><strong>Week 2-4</strong>: Complete <a href="https://huggingface.co/spaces/lerobot/robot-learning-tutorial">LeRobot tutorial</a> and <a href="https://huggingface.co/learn/robotics-course/unit0/1">HF Robotics Course</a></li>
-<li><strong>Month 2</strong>: Train policies on LIBERO/CALVIN in simulation</li>
-<li><strong>Month 3+</strong>: Pick a research direction (3D representations, efficiency, real-world transfer)</li>
-<li><strong>Optional</strong>: Build an SO-101 arm (~$660) for real-world experiments</li>
-</ol>
-</section>
-<section id="key-concepts-preview" class="level2">
-<h2 class="anchored" data-anchor-id="key-concepts-preview">Key Concepts Preview</h2>
-<p>Before diving into papers, here are the core concepts you’ll encounter:</p>
-<section id="behavioral-cloning-bc" class="level3">
-<h3 class="anchored" data-anchor-id="behavioral-cloning-bc">Behavioral Cloning (BC)</h3>
-<p>Learning actions directly from expert demonstrations via supervised learning. Simple but struggles with distribution shift.</p>
-</section>
-<section id="diffusion-policy" class="level3">
-<h3 class="anchored" data-anchor-id="diffusion-policy">Diffusion Policy</h3>
-<p>Represents robot policy as a conditional denoising diffusion process. Handles multimodal action distributions gracefully.</p>
-</section>
-<section id="vision-language-action-vla-models" class="level3">
-<h3 class="anchored" data-anchor-id="vision-language-action-vla-models">Vision-Language-Action (VLA) Models</h3>
-<p>End-to-end models that take images + language instructions and output robot actions. Built on pretrained VLMs.</p>
-</section>
-<section id="flow-matching-in-robotics" class="level3">
-<h3 class="anchored" data-anchor-id="flow-matching-in-robotics">Flow Matching in Robotics</h3>
-<p>π0 uses flow matching instead of diffusion for faster inference (50Hz continuous actions).</p>
-</section>
-<section id="sim-to-real-transfer" class="level3">
-<h3 class="anchored" data-anchor-id="sim-to-real-transfer">Sim-to-Real Transfer</h3>
-<p>Training in simulation and deploying on real robots. Domain randomization and system identification are key techniques.</p>
-</section>
-</section>
-<section id="whats-next" class="level2">
-<h2 class="anchored" data-anchor-id="whats-next">What’s Next?</h2>
-<p>In Part 1, we’ll dive deep into <strong>Diffusion Policy</strong> — understanding exactly how diffusion models are adapted for robot control, the key design choices (action chunking, receding horizon), and why it outperforms prior methods.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Summary
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Robot learning is at an exciting inflection point. The convergence of three trends makes this the right time to dive in:</p>
-<ol type="1">
-<li><strong>Algorithmic breakthroughs</strong>: Diffusion models and flow matching provide expressive policies that handle real-world complexity</li>
-<li><strong>Foundation models</strong>: Vision-Language-Action models leverage pretrained VLMs, dramatically reducing training data requirements</li>
-<li><strong>Accessible tools</strong>: Open frameworks (LeRobot), simulation (MuJoCo, Isaac), and affordable hardware (SO-101) lower the barrier to entry</li>
-</ol>
-<p>The field has matured from laboratory demos to practical systems. Physical Intelligence’s π0 controls 8 different robot embodiments. Figure AI’s humanoids perform household tasks. OpenVLA provides an open-source 7B parameter model anyone can fine-tune.</p>
-<p>This series will take you from the fundamentals (why learning-based approaches? why diffusion?) through the mathematics and implementation details, eventually reaching cutting-edge VLA models. Whether you’re an ML engineer wanting practical insights, a researcher seeking intuition, or a curious developer exploring the field — there’s a path for you here.</p>
-<p><strong>Next up</strong>: In <a href="../1-background/">Part 1</a>, we’ll build the conceptual foundation by understanding why classical robotics struggles, what makes reinforcement learning impractical for real robots, and why multimodal action distributions require expressive generative models.</p>
-</div>
-</div>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p>[1] <a href="https://arxiv.org/abs/2303.04137">Chi, C., et al.&nbsp;“Diffusion Policy: Visuomotor Policy Learning via Action Diffusion.”</a> <em>RSS</em>, 2023.</p>
-<section id="recommended-starting-points" class="level3">
-<h3 class="anchored" data-anchor-id="recommended-starting-points">Recommended Starting Points</h3>
-<ul>
-<li><a href="https://github.com/huggingface/lerobot">LeRobot Documentation</a> — Open-source robot learning framework</li>
-<li><a href="https://huggingface.co/learn/robotics-course/">Hugging Face Robotics Course</a> — Free, hands-on tutorials</li>
-<li><a href="https://arxiv.org/abs/2510.12403">Robot Learning: A Tutorial (Capuano et al.)</a> — Comprehensive survey with code</li>
-</ul>
-
-
-</section>
-</section>
-
- ]]></description>
-  <category>robotics</category>
-  <category>diffusion-policy</category>
-  <category>VLA</category>
-  <category>robot-learning</category>
-  <guid>https://layernorm.dev/posts/robotics/0-intro/</guid>
-  <pubDate>Tue, 20 Jan 2026 00:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
