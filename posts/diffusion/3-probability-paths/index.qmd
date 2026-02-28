@@ -97,8 +97,10 @@ The abstract definition is nice, but what does a probability path actually *look
 The conditional Gaussian probability path is defined as:
 
 $$
-\mathbf{p}_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)
+\textcolor{blue}{\mathbf{p}_t(\cdot | z)} = \mathcal{N}(\textcolor{green}{\alpha_t z}, \textcolor{orange}{\beta_t^2} I_d)
 $$
+
+where $\textcolor{blue}{\text{conditional distribution}}$ has mean $\textcolor{green}{\text{interpolated toward data}}$ and variance $\textcolor{orange}{\text{noise level}}$.
 
 where $\alpha_t$ and $\beta_t$ are noise schedulers, and they are continously, **monotonically** differentiable functions with the following conditions:
 
@@ -134,9 +136,11 @@ Let us construct the conditional vector field (where $\dot{\alpha}_t = \frac{\pa
 
 $$
 \begin{aligned}
-u_t^{\text{target}}(x | z) &= (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x \\
+\textcolor{blue}{u_t^{\text{target}}(x | z)} &= \textcolor{green}{(\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z} + \textcolor{orange}{\frac{\dot{\beta}_t}{\beta_t} x} \\
 \end{aligned}
 $$
+
+where the $\textcolor{blue}{\text{target velocity}}$ has a $\textcolor{green}{\text{term pointing toward data } z}$ and an $\textcolor{orange}{\text{adjustment based on current position } x}$.
 
 We can show that this conditional vector field is valid in the sense that its ODE trajectories $X_t$ satisfies
 $$
@@ -209,7 +213,7 @@ We constructed **probability paths** that interpolate from noise to data. The ke
 
 For Gaussian paths $p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I)$, we derived the conditional vector field:
 $$
-u_t^{target}(x|z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+\textcolor{blue}{u_t^{target}(x|z)} = \textcolor{green}{(\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z} + \textcolor{orange}{\frac{\dot{\beta}_t}{\beta_t} x}
 $$
 
 This is our training target — but there's a catch: it depends on $z$, which we don't know at generation time. The next post resolves this with the marginalization trick.

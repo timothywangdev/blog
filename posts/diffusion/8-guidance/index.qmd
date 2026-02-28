@@ -227,7 +227,12 @@ $$
 \end{aligned}
 $$
 
-This is the **CFG formula**: the scaled guided vector field is a linear combination of the unguided and guided vector fields. When $w > 1$, we extrapolate *beyond* the conditional direction, amplifying the effect of conditioning.
+This is the **CFG formula**: the scaled guided vector field is a linear combination of the unguided and guided vector fields:
+$$
+\textcolor{blue}{\tilde{u}_t^{target}(x | y)} = (1-w) \cdot \textcolor{green}{u_t^{target}(x)} + w \cdot \textcolor{orange}{u_t^{target}(x | y)}
+$$
+
+where $\textcolor{blue}{\text{CFG output}}$ interpolates between $\textcolor{green}{\text{unconditional}}$ and $\textcolor{orange}{\text{conditional}}$ velocities. When $w > 1$, we extrapolate *beyond* the conditional direction, amplifying the effect of conditioning.
 
 #### Training {#cfg-training}
 
@@ -262,8 +267,10 @@ The training loss is identical to standard guided CFM. The only change is random
 At inference time, we use the trained model to compute both outputs and combine them:
 
 $$
-\tilde{u}_t^\theta(x | y) = \underbrace{u_t^\theta(x | \emptyset)}_{\text{unconditional}} + w \cdot (\underbrace{u_t^\theta(x | y)}_{\text{conditional}} - \underbrace{u_t^\theta(x | \emptyset)}_{\text{unconditional}})
+\textcolor{blue}{\tilde{u}_t^\theta(x | y)} = \textcolor{green}{u_t^\theta(x | \emptyset)} + \textcolor{purple}{w} \cdot (\textcolor{orange}{u_t^\theta(x | y)} - \textcolor{green}{u_t^\theta(x | \emptyset)})
 $$
+
+where $\textcolor{blue}{\text{CFG output}}$ = $\textcolor{green}{\text{unconditional}}$ + $\textcolor{purple}{\text{guidance scale}}$ × ($\textcolor{orange}{\text{conditional}}$ − $\textcolor{green}{\text{unconditional}}$).
 
 Equivalently: $\tilde{u}_t^\theta = (1-w) \cdot u_t^\theta(x|\emptyset) + w \cdot u_t^\theta(x|y)$
 

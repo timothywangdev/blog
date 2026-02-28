@@ -22,3 +22,10 @@ data/
 
 # Generated Substack HTML files
 posts/**/*_substack.html
+
+# Downloaded arXiv papers (for reference)
+posts/**/paper_*.html
+posts/**/*_paper.html
+posts/**/source_*/
+posts/**/source_*.tar.gz
+.env

@@ -113,8 +113,10 @@ Here:
 As $h \to 0$, we write this compactly as the **stochastic differential equation (SDE)**:
 
 $$
-dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+dX_t = \textcolor{green}{u_t(X_t)} \, dt + \textcolor{orange}{\sigma_t} \, \textcolor{red}{dW_t}
 $$ {#eq-sde}
+
+where $\textcolor{green}{\text{drift}}$ is the deterministic direction (same as flow matching), $\textcolor{orange}{\text{diffusion coefficient}}$ controls noise strength, and $\textcolor{red}{\text{Brownian increment}}$ adds randomness.
 
 ::: {.callout-important appearance="simple"}
 ## Key Point

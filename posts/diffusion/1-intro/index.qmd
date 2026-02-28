@@ -1,6 +1,6 @@
 ---
 title: "Diffusion & Flow Matching Part 1: Introduction"
-author: "Timothy Wang"
+author: "Hujie Wang"
 date: "2025-11-27"
 categories: [diffusion, flow-matching, generative-models]
 toc: true
@@ -9,9 +9,10 @@ toc: true
 ::: {.callout-note appearance="simple"}
 ## TL;DR
 
-- **Diffusion models** gradually add noise to data, then learn to reverse the process
-- **Flow matching** learns a velocity field that directly transports noise to data
-- Both achieve state-of-the-art results; flow matching is often simpler to train
+- Both **diffusion** and **flow matching** learn to transform noise into data
+- **Flow matching**: deterministic ODE trajectories (smooth, predictable paths)
+- **Diffusion**: stochastic SDE trajectories (paths with random perturbations)
+- They're deeply connected — this series develops a unified framework for both
 :::
 
 ## Series Overview
@@ -47,52 +48,62 @@ You might wonder: why all this complexity? Can't we just train a network to map 
 
 If we can do this, we can generate new images, audio, video, or any data type by starting with random noise and "flowing" toward realistic samples.
 
-![Diffusion gradually adds noise then learns to reverse it; flow matching learns a direct velocity field from noise to data](diffusion-vs-flow.png)
+![Both approaches transform noise (t=0) into data (t=1). The key difference: flow matching follows deterministic ODE trajectories; diffusion follows stochastic SDE trajectories with random perturbations.](diffusion-vs-flow.png)
 
-## Diffusion Models: The Noisy Path
+## Diffusion Models: Adding Stochasticity
 
-The key idea behind diffusion models is surprisingly simple:
+Diffusion models work just like flow matching — they learn to transport noise into data — but with one key addition: **random perturbations** during sampling.
 
-1. **Forward process**: Take real data and gradually corrupt it with noise until it becomes pure random noise
-2. **Reverse process**: Train a neural network to undo this corruption step by step
+Think of it this way: flow matching follows a smooth, deterministic path from noise to data. Diffusion adds small random "jitters" at each step, like a leaf floating downstream while also being buffeted by turbulence. Both end up at the same destination (the data distribution), but diffusion takes a noisier route.
 
-Think of it like this: if you slowly blur a photograph until it's unrecognizable static, the neural network learns to "unblur" it. At generation time, you start with pure static and apply the learned unblurring process to create a new image.
+::: {.callout-note appearance="simple"}
+## A Note on Conventions
 
-The forward process is fixed (just adding noise), so the only thing we need to learn is how to reverse it. The network is trained to predict how much noise was added at each step.
+If you read early diffusion papers (DDPM, 2020), you'll see a different framing: "add noise to data, then learn to reverse." This describes the same math with **flipped time**:
 
-## Flow Matching: The Direct Path
+| Convention | t=0 | t=1 | Generation direction |
+|------------|-----|-----|---------------------|
+| **DDPM (2020)** | Data | Noise | Reverse: t=1 → t=0 |
+| **Flow matching (2022+)** | Noise | Data | Forward: t=0 → t=1 |
 
-Flow matching takes a more direct approach:
+These are **mathematically equivalent** — just substitute τ = 1−t to convert. This series uses the flow matching convention (t=0 = noise, t=1 = data) because it's more intuitive: generation "flows forward" from noise to data. Modern systems like Stable Diffusion 3 and FLUX also use this convention.
+:::
+
+## Flow Matching: The Deterministic Path
+
+Flow matching learns a [vector field](../2-flows/) that tells each point which direction to move:
 
 1. **Define a path**: Specify how to smoothly interpolate between noise and data
 2. **Learn the velocity**: Train a neural network to predict the direction of motion along this path
 
-Imagine dropping a leaf into a river. The current ([vector field](../2-flows/)) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the "noise region" will flow toward the "data region."
+Imagine dropping a leaf into a river. The current tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the "noise region" will flow toward the "data region."
 
-The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.
+The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories. At generation time, we start from random noise and follow the learned flow — a deterministic ODE that produces the same output every time for a given starting point.
 
 ## How Do They Compare?
 
-| Aspect | Diffusion | Flow Matching |
-|--------|-----------|---------------|
-| Corruption process | Gradual noise addition | Direct interpolation |
-| What the network learns | How much noise to remove | Which direction to move |
-| Sampling method | Iterative denoising | Following the learned flow |
-| Underlying theory | Score matching | Optimal transport |
-| Path type | Stochastic (random) | Deterministic (fixed) |
+| Aspect | Flow Matching | Diffusion |
+|--------|---------------|-----------|
+| **Dynamics** | ODE (deterministic) | SDE (stochastic) |
+| **Trajectories** | Smooth, predictable paths | Paths with random perturbations |
+| **What it learns** | Velocity field | Velocity field + score function |
+| **Sampling** | Integrate ODE forward | Simulate SDE forward |
+| **Key advantage** | Simpler, often faster | Better sample diversity |
 
 ## The Deep Connection
 
-Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent "probability flow" formulation that looks like flow matching. The [score function](../6-score-functions/) (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.
+Diffusion and flow matching aren't just related — they're two views of the same underlying mathematics. Every diffusion model has an equivalent deterministic ODE formulation (the "probability flow ODE"), and every flow matching model can be extended with stochasticity.
 
-This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.
+The [score function](../6-score-functions/) ∇ log p_t(x) in diffusion and the velocity field u_t(x) in flow matching are directly related through a conversion formula (derived in [Part 7](../7-training/)). Train one, and you can compute the other.
+
+This deep connection means you can mix and match: train with the simpler flow matching loss, then sample with the SDE for better diversity. Modern systems like Stable Diffusion 3 do exactly this.
 
 ::: {.callout-note appearance="simple"}
 ## Summary
 
-We've seen two paradigms for generative modeling: **diffusion** (add noise, learn to denoise) and **flow matching** (learn a velocity field that transports noise to data). Despite their different motivations, they share deep mathematical structure — every diffusion model has an equivalent ODE formulation.
+We've seen two approaches to generative modeling that are more alike than different. Both **flow matching** and **diffusion** learn to transform noise (t=0) into data (t=1). The key difference: flow matching follows deterministic ODE paths, while diffusion adds stochasticity via SDEs.
 
-This series will make these connections precise. We'll build up the theory piece by piece: first understanding what flows are (Part 2), then constructing probability paths (Part 3), deriving training losses (Part 4), adding stochasticity (Part 5), and finally connecting everything through score functions (Parts 6-7).
+This series develops a unified framework for both. We'll build up the theory piece by piece: first understanding what flows are (Part 2), then constructing probability paths (Part 3), deriving training losses (Part 4), adding stochasticity (Part 5), and finally connecting everything through score functions (Parts 6-7).
 :::
 
 ## What's Next?

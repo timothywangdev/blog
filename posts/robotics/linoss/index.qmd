@@ -1,0 +1,505 @@
+---
+title: "Why Mamba Fails on 50k Sequences (And How Springs Fixed It)"
+author: "Hujie Wang"
+date: "2026-02-28"
+categories: [robotics, state-space-models, neuroscience, oscillations, architecture, robot-learning]
+toc: true
+draft: true
+---
+
+State Space Models were supposed to handle long sequences. Mamba processes 1M tokens. S4 has mathematical elegance. LRU is fast.
+
+But run them on 50,000-step cardiac monitoring data, and Mamba's prediction error is **2x worse** than a model based on 17th-century physics.
+
+![**LinOSS architecture** from the paper. Input (left) flows through stacked LinOSS layers, each containing oscillators at different frequencies (spirals). Orange = position $\mathbf{y}$, blue dashed = velocity $\mathbf{z}$. The oscillatory dynamics create a rich temporal basis for sequence modeling.](linoss-overview.png){#fig-overview}
+
+**LinOSS**$^{[1]}$ (ICLR 2025 Oral, **Top 1%** of submissions) doesn't engineer eigenvalue constraints like S4. It doesn't use input-dependent gating like Mamba. Instead, it starts from a 400-year-old equation: the forced harmonic oscillator.
+
+The same physics that governs a guitar string. A playground swing. And — remarkably — the rotational dynamics of motor cortex during movement.
+
+::: {.callout-note appearance="simple"}
+## TL;DR
+
+- **The problem**: State Space Models (S4, Mamba, LRU) struggle on ultra-long sequences (50k+) — numerical instability accumulates
+- **The solution**: LinOSS uses forced harmonic oscillators with one constraint ($\mathbf{A}$ diagonal, nonnegative) to guarantee stability
+- **The results**: **~2x better** than Mamba on 50k sequences; **95% vs 85%** on EigenWorms
+- **Why robotics**: Oscillatory dynamics match motor cortex rotations — LinOSS may be the most biologically-aligned SSM
+:::
+
+## Why SSMs Struggle on Ultra-Long Sequences {#sec-intro}
+
+In [Part 6: Eigenvalue Dynamics](../6-eigenvalue-dynamics/), we explored a surprising convergence: motor cortex exhibits rotational dynamics because eigenvalues near the unit circle with imaginary components produce stable oscillations. Independently, ML researchers discovered the same constraint prevents vanishing/exploding gradients in RNNs.
+
+State Space Models (S4, Mamba, LRU) exploit this insight by parameterizing eigenvalues directly. But they still require careful initialization and constraints to maintain stability. On very long sequences, small numerical errors compound over thousands of steps.
+
+**LinOSS** takes a different approach: instead of engineering eigenvalue constraints, they start from **physics**. Forced harmonic oscillators — the equations governing springs, pendulums, and countless physical systems — naturally produce the oscillatory dynamics we need.
+
+The result is an architecture that:
+
+1. **Achieves stability by construction** — no careful tuning required
+2. **Outperforms Mamba** on very long sequences (50k+ tokens)
+3. **Proves universal approximation** — can learn any causal operator
+4. **Mirrors biological neural dynamics** more closely than prior SSMs
+
+::: {.callout-tip appearance="simple"}
+## Why This Paper Matters for Robotics
+
+LinOSS connects three worlds:
+
+| Domain | Key Concept | LinOSS Connection |
+|--------|-------------|-------------------|
+| **Physics** | Forced harmonic oscillator | The core dynamical system |
+| **Neuroscience** | Motor cortex rotations | Same oscillatory dynamics |
+| **ML** | Stable SSMs | Efficient sequence modeling |
+
+For robot learning, this suggests architectures that are simultaneously **principled** (grounded in physics), **biologically plausible** (matching brain dynamics), and **practical** (fast, stable, SOTA performance).
+:::
+
+## The Forced Harmonic Oscillator {#sec-physics}
+
+Before getting to the architecture, we need to understand its physical foundation. Don't worry — the physics is high school level, and the payoff is understanding why LinOSS works.
+
+### The Simple Harmonic Oscillator
+
+A mass on a spring follows Newton's second law:
+
+$$m\frac{d^2y}{dt^2} = -ky$$ {#eq-simple-harmonic}
+
+where $y$ is position, $m$ is mass, and $k$ is the spring constant. Dividing by mass:
+
+$$\frac{d^2y}{dt^2} = -\omega^2 y$$ {#eq-normalized-harmonic}
+
+where $\omega = \sqrt{k/m}$ is the natural frequency.
+
+**Solution**: $y(t) = A\cos(\omega t + \phi)$ — pure oscillation at frequency $\omega$.
+
+### Adding External Forcing
+
+Real systems have inputs — forces that drive them. A **forced** harmonic oscillator adds an external force $u(t)$:
+
+$$\frac{d^2y}{dt^2} = -\omega^2 y + u(t)$$ {#eq-forced-harmonic}
+
+Now the system responds to inputs while maintaining its oscillatory nature. This is the foundation of LinOSS.
+
+::: {.callout-note appearance="simple"}
+## Physical Intuition
+
+Think of pushing a child on a swing:
+
+- The swing naturally oscillates (harmonic oscillator)
+- Your pushes are the forcing function $u(t)$
+- The swing's motion combines its natural rhythm with your input timing
+- If you push at the right frequency (resonance), amplitude grows
+- Otherwise, the system filters your input through its natural dynamics
+
+LinOSS uses this same principle: sequential data is the "forcing," and the network's dynamics process it through oscillatory modes.
+:::
+
+### Why Oscillators for Sequence Modeling?
+
+The connection to eigenvalues becomes clear when we rewrite @eq-forced-harmonic as a first-order system. Let $z = \frac{dy}{dt}$ (velocity):
+
+$$\frac{d}{dt}\begin{bmatrix} y \\ z \end{bmatrix} = \begin{bmatrix} 0 & 1 \\ -\omega^2 & 0 \end{bmatrix} \begin{bmatrix} y \\ z \end{bmatrix} + \begin{bmatrix} 0 \\ 1 \end{bmatrix} u(t)$$ {#eq-state-space}
+
+The dynamics matrix has eigenvalues $\lambda = \pm i\omega$ — **purely imaginary**, exactly on the stability boundary. This is the "sweet spot" from [Part 6](../6-eigenvalue-dynamics/): sustained oscillations without growth or decay.
+
+## The LinOSS Architecture {#sec-architecture}
+
+Now let's see how Rusch & Rus turn this physics into a neural network.
+
+### The Continuous-Time Model
+
+LinOSS models $N$ **uncoupled** forced harmonic oscillators:
+
+$$\frac{d^2 \mathbf{y}}{dt^2} = -\mathbf{A}\mathbf{y}(t) + \mathbf{B}\mathbf{u}(t)$$ {#eq-linoss-continuous}
+
+with linear readout:
+
+$$\mathbf{o}(t) = \mathbf{C}\mathbf{y}(t)$$ {#eq-linoss-readout}
+
+where:
+
+| Symbol | Dimension | Description |
+|--------|-----------|-------------|
+| $\mathbf{y}(t)$ | $N \times 1$ | Hidden state (oscillator positions) |
+| $\mathbf{u}(t)$ | $D_{in} \times 1$ | Input at time $t$ |
+| $\mathbf{A}$ | $N \times N$ | **Diagonal** frequency matrix |
+| $\mathbf{B}$ | $N \times D_{in}$ | Input projection |
+| $\mathbf{C}$ | $D_{out} \times N$ | Output projection |
+
+::: {.callout-important appearance="default"}
+## The Key Constraint: Diagonal A with Nonnegative Entries
+
+The critical design choice is that $\mathbf{A}$ is **diagonal** with **nonnegative entries**:
+
+$$\mathbf{A} = \text{diag}(a_1, a_2, ..., a_N), \quad a_k \geq 0$$
+
+This single constraint provides:
+
+1. **Oscillatory dynamics**: When $a_k > 0$, the $k$-th mode oscillates at frequency $\sqrt{a_k}$
+2. **Stability guarantee**: Eigenvalues stay on or inside the unit circle
+3. **Efficient computation**: Diagonal matrices enable parallel scans
+4. **No restrictive parameterizations**: Unlike S4/Mamba, no need for complex eigenvalue engineering
+
+Compare this to prior SSMs:
+
+| Model | State Matrix Constraint | Complexity |
+|-------|------------------------|------------|
+| S4 | HiPPO initialization + specific structure | High |
+| S4D | Diagonal, complex eigenvalues | Medium |
+| Mamba | Diagonal, input-dependent | Medium |
+| LRU | Eigenvalues on annulus | Medium |
+| **LinOSS** | Diagonal, $a_k \geq 0$ | **Low** |
+:::
+
+### First-Order Form
+
+To implement LinOSS, we rewrite the second-order ODE as a first-order system. Let $\mathbf{z} = \frac{d\mathbf{y}}{dt}$:
+
+$$\frac{d}{dt}\begin{bmatrix} \mathbf{y} \\ \mathbf{z} \end{bmatrix} = \begin{bmatrix} 0 & I \\ -\mathbf{A} & 0 \end{bmatrix} \begin{bmatrix} \mathbf{y} \\ \mathbf{z} \end{bmatrix} + \begin{bmatrix} 0 \\ \mathbf{B} \end{bmatrix} \mathbf{u}(t)$$ {#eq-linoss-first-order}
+
+The combined state $[\mathbf{y}, \mathbf{z}]^\top$ has dimension $2N$, doubling the hidden size compared to first-order SSMs. But the diagonal structure means computation scales linearly.
+
+## Discretization: Two Flavors {#sec-discretization}
+
+Continuous ODEs must be discretized for computation. LinOSS proposes two schemes with different properties.
+
+![**Symplectic vs implicit discretization** on a harmonic oscillator test. LinOSS-IMEX (blue) preserves energy perfectly — error stays bounded. LinOSS-IM (orange) has slight dissipation — error grows over very long horizons. For most tasks, the slight forgetting actually helps generalization.](harmonic-oscillator.png){#fig-discretization}
+
+### LinOSS-IM: Implicit (Dissipative)
+
+The **implicit** discretization treats both position and velocity at the current timestep:
+
+$$\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_n + \mathbf{B}\mathbf{u}_n)$$
+$$\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_n$$
+
+Solving for $\mathbf{y}_n$ and $\mathbf{z}_n$:
+
+$$\mathbf{y}_n = \mathbf{S}(\mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}) + \Delta t^2 \mathbf{S}\mathbf{B}\mathbf{u}_n$$
+$$\mathbf{z}_n = -\Delta t \mathbf{A}\mathbf{S}(\mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}) + \Delta t \mathbf{S}\mathbf{B}\mathbf{u}_n + \mathbf{z}_{n-1}$$
+
+where $\mathbf{S} = (\mathbf{I} + \Delta t^2 \mathbf{A})^{-1}$.
+
+::: {.callout-note appearance="simple"}
+## Why "Implicit" is Fast
+
+Computing $\mathbf{S}^{-1}$ normally requires $O(N^3)$ operations. But since $\mathbf{A}$ is **diagonal**:
+
+$$\mathbf{S} = \text{diag}\left(\frac{1}{1 + \Delta t^2 a_1}, \frac{1}{1 + \Delta t^2 a_2}, ..., \frac{1}{1 + \Delta t^2 a_N}\right)$$
+
+Just $O(N)$ elementwise operations!
+:::
+
+**Stability guarantee**: All eigenvalues of the transition matrix satisfy $|\lambda_k| \leq 1$ when $a_k \geq 0$. The system is **asymptotically stable** — information decays over time, acting as a "forgetting mechanism."
+
+### LinOSS-IMEX: Symplectic (Conservative)
+
+The **implicit-explicit** discretization treats forcing implicitly but position explicitly:
+
+$$\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_{n-1} + \mathbf{B}\mathbf{u}_n)$$
+$$\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_n$$
+
+This is a **symplectic integrator** — it preserves the Hamiltonian structure of the oscillator.
+
+**Key property**: All eigenvalues satisfy $|\lambda_k| = 1$ exactly. No dissipation — information is preserved indefinitely.
+
+::: {.callout-tip appearance="simple"}
+## When to Use Which?
+
+| Variant | Eigenvalues | Behavior | Best For |
+|---------|-------------|----------|----------|
+| **LinOSS-IM** | $\|\lambda\| \leq 1$ | Gradual forgetting | Most tasks, stability-critical |
+| **LinOSS-IMEX** | $\|\lambda\| = 1$ | Perfect memory | Very long sequences, reversible dynamics |
+
+In practice, LinOSS-IM performs slightly better on most benchmarks, likely because some forgetting helps generalization.
+:::
+
+### Parallel Scan for Efficiency
+
+Both variants can be computed via **associative parallel scans** in $O(\log_2 L)$ parallel time for sequence length $L$. This matches the efficiency of S4/Mamba.
+
+The recurrence:
+
+$$\begin{bmatrix} \mathbf{y}_n \\ \mathbf{z}_n \end{bmatrix} = \mathbf{M} \begin{bmatrix} \mathbf{y}_{n-1} \\ \mathbf{z}_{n-1} \end{bmatrix} + \mathbf{N}\mathbf{u}_n$$
+
+where $\mathbf{M}$ is the transition matrix. Since matrix multiplication is associative, we can compute all timesteps in parallel using a scan.
+
+## Universal Approximation {#sec-theory}
+
+Beyond empirical performance, LinOSS has theoretical guarantees.
+
+::: {.callout-tip appearance="default"}
+## Theorem: Universal Approximation of Causal Operators
+
+LinOSS can approximate any **continuous, causal operator** $\mathcal{G}: C([0,T]; \mathbb{R}^{D_{in}}) \to C([0,T]; \mathbb{R}^{D_{out}})$ to arbitrary precision.
+
+That is, for any $\epsilon > 0$, there exists a LinOSS model such that:
+
+$$\sup_{t \in [0,T]} \|\mathcal{G}[\mathbf{u}](t) - \mathbf{o}(t)\| < \epsilon$$
+
+for all inputs $\mathbf{u}$ in a compact set.
+:::
+
+**What this means**: LinOSS isn't just expressive — it's **universally expressive** for the class of operators relevant to sequence modeling. Any continuous mapping from input sequences to output sequences can be learned.
+
+This is stronger than function approximation (which maps vectors to vectors). **Operator approximation** maps entire functions to functions — exactly what sequence models do.
+
+## Results: Outperforming Mamba {#sec-results}
+
+Theory is nice, but does it work? LinOSS demonstrates strong empirical results across diverse benchmarks.
+
+### Ultra-Long Sequences (50k+ tokens)
+
+On the **PPG-DaLiA** dataset (cardiac monitoring, ~50,000 timesteps):
+
+| Model | Mean Absolute Error |
+|-------|---------------------|
+| Mamba | 9.2 |
+| LRU | 8.5 |
+| **LinOSS-IM** | **4.2** |
+
+**LinOSS reduces error by ~50%** compared to Mamba on this very long sequence task.
+
+### Time Series Classification
+
+On the **UEA Multivariate Time Series Classification Archive** (30 datasets):
+
+| Model | Average Accuracy |
+|-------|-----------------|
+| Log-NCDE | 64.4% |
+| S5 | 63.1% |
+| **LinOSS-IM** | **67.8%** |
+
+### Very Long Classification (EigenWorms)
+
+The **EigenWorms** dataset has sequences of length 17,984:
+
+| Model | Accuracy |
+|-------|----------|
+| Previous SOTA | 85% |
+| **LinOSS-IM** | **95%** |
+
+A **10 percentage point improvement** on this challenging long-sequence task.
+
+### Weather Forecasting
+
+LinOSS outperforms both Transformer-based and SSM baselines on long-horizon weather prediction, demonstrating practical utility for real-world forecasting.
+
+::: {.callout-note appearance="simple"}
+## Pattern Across Benchmarks
+
+LinOSS's advantages are most pronounced on:
+
+1. **Very long sequences** (10k-100k tokens)
+2. **Tasks requiring stable long-range memory**
+3. **Continuous/smooth temporal dynamics**
+
+These are exactly the characteristics of robot control tasks — long trajectories, stable execution, smooth movements.
+:::
+
+## Connection to Motor Cortex {#sec-neuroscience}
+
+LinOSS isn't just inspired by physics — it's also **biologically plausible**.
+
+### Cortical Oscillations
+
+In [Part 4](../4-brain-motor-control/) and [Part 6](../6-eigenvalue-dynamics/), we discussed how motor cortex exhibits **rotational dynamics**. Neural population activity during reaching shows spiral trajectories through state space — exactly what you'd expect from coupled oscillators.
+
+The jPCA analysis of Churchland et al.$^{[2]}$ fits motor cortex dynamics with a **skew-symmetric** matrix, which has purely imaginary eigenvalues. LinOSS's symplectic variant (LinOSS-IMEX) produces the same eigenvalue structure.
+
+### Central Pattern Generators
+
+Locomotion is controlled by **Central Pattern Generators (CPGs)** — neural circuits that produce rhythmic motor patterns. CPGs are literally coupled oscillators in the spinal cord.
+
+LinOSS's uncoupled oscillators can be seen as a simplified CPG model. Extensions coupling the oscillators could model more complex rhythmic behaviors.
+
+### The Forced Oscillator as Neural Computation
+
+The "forcing" in LinOSS ($\mathbf{B}\mathbf{u}(t)$) corresponds to **external input** driving neural activity. The intrinsic oscillatory dynamics ($-\mathbf{A}\mathbf{y}$) correspond to the **recurrent connectivity** that shapes the response.
+
+This matches how motor cortex works:
+
+| LinOSS Component | Neural Analog |
+|------------------|---------------|
+| Input $\mathbf{u}(t)$ | Sensory/goal input from other brain areas |
+| Oscillator dynamics | Recurrent connectivity in motor cortex |
+| Output $\mathbf{C}\mathbf{y}$ | Projections to spinal motor neurons |
+
+## Implications for Robot Learning {#sec-robotics}
+
+LinOSS suggests several directions for robot learning architectures.
+
+### 1. Oscillatory Policy Networks
+
+Current robot policies (Diffusion Policy, ACT) use Transformers or U-Nets for action prediction. LinOSS could replace these backbones:
+
+```python
+class LinOSSPolicy(nn.Module):
+    def __init__(self, obs_dim, action_dim, hidden_dim=256):
+        # Observation encoder
+        self.encoder = nn.Linear(obs_dim, hidden_dim)
+
+        # LinOSS sequence model
+        self.linoss = LinOSSLayer(
+            input_dim=hidden_dim,
+            hidden_dim=hidden_dim,
+            variant='IM'  # or 'IMEX' for perfect memory
+        )
+
+        # Action decoder
+        self.decoder = nn.Linear(hidden_dim, action_dim)
+
+    def forward(self, obs_sequence):
+        # Encode observations
+        h = self.encoder(obs_sequence)
+
+        # Process through oscillatory dynamics
+        y, z = self.linoss(h)  # Returns both position and velocity
+
+        # Decode to actions
+        actions = self.decoder(y)
+        return actions
+```
+
+**Potential benefits**:
+
+- **Smooth outputs**: Oscillatory dynamics naturally produce smooth trajectories
+- **Stable long-horizon**: Eigenvalues on unit circle prevent gradient vanishing for long action sequences
+- **Fast inference**: Parallel scan is $O(L \log L)$, competitive with Transformers
+
+### 2. Hybrid VLA Architectures
+
+For Vision-Language-Action models, LinOSS could serve as the "motor cortex" — a fast, oscillatory layer that converts high-level plans into smooth actions:
+
+```
+Vision + Language Encoder (Transformer)
+         ↓
+   Goal/Task Embedding
+         ↓
+   LinOSS Action Generator  ← Oscillatory dynamics for smooth control
+         ↓
+    Action Sequence
+```
+
+This mirrors the brain's organization: slow, deliberative processing in cortex, fast oscillatory execution in motor areas.
+
+### 3. CPG-RL with LinOSS
+
+For locomotion, LinOSS could implement a **learnable CPG**:
+
+1. Initialize oscillator frequencies $\sqrt{a_k}$ to match natural gait frequencies
+2. Learn coupling and input weights through RL
+3. The oscillatory structure provides a strong inductive bias for rhythmic motion
+
+This extends CPG-RL$^{[3]}$ with a more principled oscillatory substrate.
+
+## Common Misconceptions {#sec-misconceptions}
+
+::: {.callout-warning appearance="default"}
+## Misconception: "Second-order ODEs are more expensive than first-order"
+
+LinOSS uses a second-order ODE, which requires tracking both position $\mathbf{y}$ and velocity $\mathbf{z}$ — doubling the state size compared to first-order SSMs like Mamba.
+
+**Reality**: The diagonal structure means computation is still $O(N)$ per step, just with a factor of 2. The parallel scan remains $O(\log L)$. In practice, LinOSS matches Mamba's wall-clock time on the benchmarks.
+:::
+
+::: {.callout-warning appearance="default"}
+## Misconception: "Linear models can't capture complex dynamics"
+
+LinOSS is linear in the state evolution. How can it compete with nonlinear models?
+
+**Reality**: The expressiveness comes from:
+
+1. **Multiple oscillators** at different frequencies act like a Fourier basis
+2. **Learned input/output projections** ($\mathbf{B}$, $\mathbf{C}$) are full dense matrices
+3. **Stacking layers** creates deep nonlinear networks overall
+
+The universal approximation theorem guarantees LinOSS can represent any continuous causal operator — linearity in the dynamics is not a limitation.
+:::
+
+::: {.callout-warning appearance="default"}
+## Misconception: "Oscillators are only good for periodic data"
+
+The word "oscillatory" suggests LinOSS only works on rhythmic signals.
+
+**Reality**: LinOSS excels on non-periodic data too (text, weather, cardiac monitoring). The oscillators provide a **rich temporal basis** — different frequencies combine to represent arbitrary smooth functions. It's like Fourier analysis: any signal can be decomposed into oscillatory components.
+:::
+
+## Open Questions {#sec-open-questions}
+
+LinOSS opens several research directions:
+
+### 1. Coupling the Oscillators
+
+LinOSS uses **uncoupled** oscillators for computational efficiency. But real CPGs have coupling that produces phase relationships (e.g., alternating leg movements).
+
+**Question**: Can we add learnable coupling while maintaining parallel efficiency?
+
+### 2. Nonlinear Extensions
+
+LinOSS is linear for stability and efficiency. But motor cortex has nonlinearities.
+
+**Question**: Can we add controlled nonlinearities (e.g., in the readout) without breaking stability guarantees?
+
+### 3. Multi-Timescale Dynamics
+
+Different tasks need different frequencies. Reaching is slow (~1 Hz), grasping faster (~10 Hz), contact control very fast (~100 Hz).
+
+**Question**: How should we initialize oscillator frequencies for robot control? Task-specific or learned?
+
+### 4. Direct Robotics Benchmarks
+
+LinOSS has been tested on generic sequence benchmarks but not robot control tasks.
+
+**Question**: How does LinOSS compare to Transformer/Mamba backbones on LIBERO, Meta-World, or real-world manipulation?
+
+## Conclusion {#sec-conclusion}
+
+::: {.callout-note appearance="simple"}
+## Summary
+
+**LinOSS** demonstrates that classical physics — the forced harmonic oscillator — provides an excellent foundation for sequence modeling:
+
+1. **Simplicity**: Just require $\mathbf{A}$ diagonal with nonnegative entries
+2. **Stability**: Eigenvalues automatically bounded by unit circle
+3. **Expressiveness**: Universal approximation of causal operators
+4. **Performance**: ~2x better than Mamba on ultra-long sequences
+5. **Biological plausibility**: Matches motor cortex oscillatory dynamics
+
+For robotics, LinOSS offers a principled architecture that's simultaneously grounded in physics, aligned with neuroscience, and competitive with modern deep learning.
+
+The convergence is striking: evolution optimized motor cortex for oscillatory dynamics; physicists understood these dynamics centuries ago; and now ML is rediscovering them for sequence modeling. LinOSS makes this connection explicit.
+:::
+
+::: {.callout-note appearance="simple"}
+## Series Context
+
+This post connects to the Robot Learning series:
+
+- [Part 4: Brain Motor Control](../4-brain-motor-control/) — Neuroscience foundations
+- [Part 5: Neuro-Inspired Architectures](../5-neuro-inspired-architectures/) — Engineering principles
+- [Part 6: Eigenvalue Dynamics](../6-eigenvalue-dynamics/) — Mathematical bridge (mentions LinOSS)
+- [Part 7: Neural Manifolds](../7-neural-manifolds/) — Geometry of skill representation
+
+LinOSS is the most explicit implementation of the eigenvalue insights from Part 6.
+:::
+
+## References {#sec-references}
+
+[1] [Rusch, T. K., & Rus, D. (2025). Oscillatory State-Space Models. *ICLR 2025* (Oral, Top 1%).](https://arxiv.org/abs/2410.03943)
+
+[2] [Churchland, M. M., et al. (2012). Neural Population Dynamics During Reaching. *Nature*.](https://www.nature.com/articles/nature11129)
+
+[3] [Bellegarda, G., et al. (2022). CPG-RL: Learning Central Pattern Generators for Quadruped Locomotion.](https://arxiv.org/abs/2211.00458)
+
+[4] [Gu, A., et al. (2022). Efficiently Modeling Long Sequences with Structured State Spaces. *ICLR*.](https://arxiv.org/abs/2111.00396) (S4)
+
+[5] [Gu, A., & Dao, T. (2024). Mamba: Linear-Time Sequence Modeling with Selective State Spaces. *COLM*.](https://arxiv.org/abs/2312.00752)
+
+[6] [Orvieto, A., et al. (2023). Resurrecting Recurrent Neural Networks for Long Sequences. *ICML*.](https://arxiv.org/abs/2303.06349) (LRU)
+
+[7] [MIT News: Novel AI Model Inspired by Neural Dynamics from the Brain. May 2025.](https://news.mit.edu/2025/novel-ai-model-inspired-neural-dynamics-from-brain-0502)
+
+---
+
+*This post explores LinOSS, a state-space model based on forced harmonic oscillators. For the mathematical foundation connecting eigenvalues to motor cortex dynamics, see [Part 6](../6-eigenvalue-dynamics/). For broader architectural principles from neuroscience, see [Part 5](../5-neuro-inspired-architectures/).*

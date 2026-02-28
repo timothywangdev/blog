@@ -59,14 +59,18 @@ Let's try it.
 When you train a neural network with MSE loss:
 
 $$
-\mathcal{L} = \mathbb{E}\left[\|f_\theta(x) - y\|^2\right]
+\textcolor{blue}{\mathcal{L}} = \mathbb{E}\left[\|\textcolor{purple}{f_\theta(x)} - \textcolor{green}{y}\|^2\right]
 $$
+
+where $\textcolor{blue}{\text{loss}}$ measures error between $\textcolor{purple}{\text{prediction}}$ and $\textcolor{green}{\text{target}}$.
 
 The optimal solution is provably the **conditional mean**:
 
 $$
-f^*(x) = \mathbb{E}[y \mid x]
+\textcolor{purple}{f^*(x)} = \textcolor{red}{\mathbb{E}[y \mid x]}
 $$
+
+where the $\textcolor{purple}{\text{optimal prediction}}$ equals the $\textcolor{red}{\text{average of all valid outputs}}$.
 
 ::: {.callout-tip appearance="simple"}
 ## Intuition: Why Mean Minimizes MSE
@@ -288,8 +292,10 @@ Then we **integrate** this vector field to generate samples:
 Even when the data distribution is multimodal, the **conditional expected velocity** is well-defined and unique. For the [Gaussian CondOT path](../11-practical-flow-matching/#sec-gaussian-condot) where $x_t = (1-t)x_0 + tx_1$:
 
 $$
-u_t^\theta(x_t) \approx \mathbb{E}[x_1 - x_0 \mid x_t]
+\textcolor{blue}{u_t^\theta(x_t)} \approx \mathbb{E}[\textcolor{green}{x_1} - \textcolor{orange}{x_0} \mid x_t]
 $$ {#eq-velocity-target}
+
+where $\textcolor{blue}{\text{learned velocity}}$ approximates the expected direction from $\textcolor{orange}{\text{noise}}$ to $\textcolor{green}{\text{data}}$.
 
 ::: {.callout-note appearance="simple"}
 This formula is for the **linear (OT) path**. For general [Gaussian probability paths](../3-probability-paths/) with $x_t = \alpha_t z + \beta_t \epsilon$ (where $z$ is data and $\epsilon$ is noise), the target velocity is $u_t(x_t|z) = \dot{\alpha}_t z + \dot{\beta}_t \epsilon$. The key insight — that the velocity is well-posed — holds for **all** path choices.
@@ -377,10 +383,10 @@ Diffusion achieves the best of both worlds: it covers the full distribution (div
 Traditional imitation learning uses regression:
 
 $$
-\pi_\theta(s) = \arg\min_\theta \mathbb{E}\left[\|\pi_\theta(s) - a_{\text{demo}}\|^2\right]
+\textcolor{purple}{\pi_\theta(s)} = \arg\min_\theta \mathbb{E}\left[\|\textcolor{purple}{\pi_\theta(s)} - \textcolor{green}{a_{\text{demo}}}\|^2\right]
 $$
 
-When demonstrations contain multiple valid strategies, the policy learns their **average**.
+where $\textcolor{purple}{\text{learned policy}}$ is trained to match $\textcolor{green}{\text{demonstration actions}}$. When demonstrations contain multiple valid strategies, the policy learns their **average**.
 
 ### Concrete Example: Push-T Task
 
@@ -467,10 +473,10 @@ For readers who've followed the [flow matching derivations](../4-flow-matching-l
 The **Conditional Flow Matching** loss is (from [Part 4](../4-flow-matching-loss/)):
 
 $$
-\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, x}\left[\|u_t^\theta(x) - u_t^{\text{target}}(x|z)\|^2\right]
+\textcolor{blue}{\mathcal{L}_{\text{CFM}}} = \mathbb{E}_{t, z, x}\left[\|\textcolor{purple}{u_t^\theta(x)} - \textcolor{green}{u_t^{\text{target}}(x|z)}\|^2\right]
 $$
 
-where $z \sim p_{\text{data}}$ is a data sample and $x$ is drawn from the conditional path $p_t(x|z)$.
+where $\textcolor{blue}{\text{loss}}$ measures error between $\textcolor{purple}{\text{predicted velocity}}$ and $\textcolor{green}{\text{target velocity}}$, with $z \sim p_{\text{data}}$ as a data sample.
 
 For the **Gaussian CondOT path** we use throughout this series ([Part 7](../7-training/)):
 

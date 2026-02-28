@@ -157,8 +157,10 @@ We proved the **marginalization trick**: training on conditional targets $u_t^{t
 
 This gives us the **Conditional Flow Matching (CFM) loss**:
 $$
-\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x}[\|u_t^\theta(x) - u_t^{target}(x|z)\|^2]
+\textcolor{blue}{\mathcal{L}_{CFM}(\theta)} = \mathbb{E}_{t,z,x}[\|\textcolor{purple}{u_t^\theta(x)} - \textcolor{green}{u_t^{target}(x|z)}\|^2]
 $$
+
+where $\textcolor{blue}{\text{loss}}$ measures the error between our $\textcolor{purple}{\text{learned velocity}}$ and the $\textcolor{green}{\text{target velocity}}$ (which points toward data point $z$).
 
 The flow matching framework is now complete for deterministic sampling. Next, we'll add stochasticity to get diffusion models.
 :::

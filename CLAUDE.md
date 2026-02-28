@@ -23,6 +23,20 @@
 
 ## Tech Stack
 
-- **Quarto** for blog generation
+- **Quarto** for blog generation (v1.6.42)
 - **GitHub Pages** for hosting
 - Preview with: `quarto preview <file> --no-browser --no-watch-inputs`
+
+## Known Issues
+
+### Quarto `draft: true` Bug
+
+**Problem**: `draft: true` in frontmatter causes Quarto to output empty HTML (90 bytes) when rendering within a project context. The file renders correctly outside the project.
+
+**Workaround**: Comment out `draft: true` while previewing/editing:
+
+```yaml
+# draft: true  # Uncomment when ready to hide from site
+```
+
+Or remove `draft: true` entirely and use `.gitignore` or branch strategy for unpublished posts.

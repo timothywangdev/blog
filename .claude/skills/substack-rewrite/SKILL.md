@@ -7,6 +7,34 @@ description: Rewrite a Quarto blog post for Substack by eliminating inline LaTeX
 
 Rewrite a Quarto blog post to eliminate inline LaTeX while preserving mathematical meaning. Outputs a Substack-compatible `_substack.qmd` file.
 
+## Quick Start — Automated Rewrite
+
+Use the Python script for automatic fixes:
+
+```bash
+# Dry run (see what would change)
+python .claude/skills/substack-rewrite/rewrite_for_substack.py input.qmd --dry-run
+
+# Apply fixes
+python .claude/skills/substack-rewrite/rewrite_for_substack.py input.qmd -o _substack.qmd
+```
+
+**What the script fixes automatically:**
+
+1. **Callout titles** — Adds emoji + type prefix
+   - `## TL;DR` → `## 📝 Note — TL;DR`
+   - `## The Averaging Disaster` → `## ⚠️ Warning: The Averaging Disaster`
+
+2. **Punctuation before images** — Adds continuation text
+   - `learn?` + image → `learn? The answer is shown below.` + image
+   - `denoise:` + image → `denoise, as shown below.` + image
+
+**What still needs manual review:**
+
+- Inline LaTeX → Unicode/prose conversion
+- Table → bullet list conversion
+- Complex equation placement
+
 ## The Problem
 
 Substack only supports **block LaTeX** (centered equations). Inline math like `$x^2$` either:
@@ -74,7 +102,114 @@ If a paragraph has many inline math expressions, consider:
 **After:**
 > where the dots denote time derivatives (e.g., α̇ₜ = ∂αₜ/∂t)
 
-### 6. Convert Tables to Bullet Lists
+### 6. Avoid Punctuation Before Images (CRITICAL)
+
+**Substack's paste handling orphans punctuation.** When a paragraph ends with `?`, `:`, or `.` immediately before an image, Substack may separate that punctuation and display it after the image as a standalone paragraph.
+
+**Bad — paragraph ends with `?` before image:**
+
+```markdown
+What does MSE loss learn?
+
+![The averaging problem](image.png)
+```
+
+On Substack, this can render as:
+
+```text
+What does MSE loss learn
+[image]
+?
+```
+
+The `?` gets orphaned as its own paragraph after the image.
+
+**Good — add continuation text after punctuation:**
+
+```markdown
+What does MSE loss learn? The answer reveals a fundamental flaw.
+
+![The averaging problem](image.png)
+
+As the figure shows...
+```
+
+**Bad — paragraph ends with `:` before image:**
+
+```markdown
+At test time, we start from pure noise and iteratively denoise:
+
+![Denoising process](image.png)
+```
+
+**Good — restructure to avoid trailing colon:**
+
+```markdown
+At test time, we start from pure noise and iteratively denoise, as shown below.
+
+![Denoising process](image.png)
+
+The denoising process works by...
+```
+
+**Rules:**
+
+1. **Never end a paragraph with `?` or `:` immediately before an image**
+2. **Add continuation text** after the punctuation (at least a few words)
+3. **Restructure colons** — change "X does Y:" to "X does Y, as shown below." or "X does Y. The figure illustrates this."
+4. **Reference images after** — "As the figure shows..." rather than introducing with ":"
+
+### 7. Format Callouts with Explicit Separators (CRITICAL)
+
+**Callout type and title run together on Substack.** A callout like:
+
+```markdown
+::: {.callout-note}
+## What is Langevin Dynamics?
+Content here
+:::
+```
+
+Renders on Substack as: `NoteWhat is Langevin Dynamics?` (no separator!)
+
+**Fix: Add explicit type prefix with separator in the title:**
+
+```markdown
+::: {.callout-note}
+## 📝 Note: What is Langevin Dynamics?
+Content here
+:::
+```
+
+**Callout title formats:**
+
+| Type      | Format                       |
+|-----------|------------------------------|
+| Note      | `## 📝 Note: [Title]`        |
+| Tip       | `## 💡 Tip: [Title]`         |
+| Warning   | `## ⚠️ Warning: [Title]`     |
+| Important | `## ❗ Important: [Title]`   |
+| Caution   | `## 🔥 Caution: [Title]`     |
+
+**For callouts without a title, use the type as the title:**
+
+```markdown
+::: {.callout-tip}
+## 💡 Tip
+Always normalize your inputs before training.
+:::
+```
+
+**Short callouts (TL;DR, etc.):**
+
+```markdown
+::: {.callout-note}
+## 📝 Note — TL;DR
+Brief summary here.
+:::
+```
+
+### 8. Convert Tables to Bullet Lists
 
 **Substack doesn't support tables.** Copy-pasting HTML tables results in jumbled, unreadable text. Convert all markdown tables to bullet lists.
 
@@ -143,7 +278,9 @@ If a paragraph has many inline math expressions, consider:
 
 1. Read the input QMD file
 2. Rewrite the content following these rules
-3. **Add `substack_url: ""` to frontmatter** (placeholder for after publishing)
+3. **Add frontmatter fields:**
+   - `subtitle: "..."` — A compelling 1-line hook (REQUIRED for good engagement)
+   - `substack_url: ""` — Placeholder for after publishing
 4. Save to `_substack.qmd` in the same directory as the input file
 5. Report statistics:
    - Original inline math count

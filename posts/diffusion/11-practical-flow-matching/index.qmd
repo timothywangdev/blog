@@ -107,17 +107,17 @@ Think of flow matching like GPS navigation. You want to get from point A (noise)
 
 We use the **Gaussian CondOT path** — the same formulation from [Part 7](../7-training/):
 
-$$x_t = \alpha_t \cdot z + \beta_t \cdot \epsilon$$ {#eq-gaussian-path}
+$$\textcolor{blue}{x_t} = \textcolor{purple}{\alpha_t} \cdot \textcolor{green}{z} + \textcolor{purple}{\beta_t} \cdot \textcolor{orange}{\epsilon}$$ {#eq-gaussian-path}
 
-where:
+where $\textcolor{blue}{\text{interpolated sample}}$ blends $\textcolor{green}{\text{data}}$ and $\textcolor{orange}{\text{noise}}$ via $\textcolor{purple}{\text{schedule}}$:
 
-- $z \sim p_{\text{data}}$ is a real image
-- $\epsilon \sim \mathcal{N}(0, I)$ is noise
-- $\alpha_t = t$ and $\beta_t = 1 - t$ (linear schedule)
+- $\textcolor{green}{z} \sim p_{\text{data}}$ is a real image
+- $\textcolor{orange}{\epsilon} \sim \mathcal{N}(0, I)$ is noise
+- $\textcolor{purple}{\alpha_t = t}$ and $\textcolor{purple}{\beta_t = 1 - t}$ (linear schedule)
 
 This gives us the **linear interpolation**:
 
-$$x_t = t \cdot z + (1-t) \cdot \epsilon$$ {#eq-linear-path}
+$$\textcolor{blue}{x_t} = t \cdot \textcolor{green}{z} + (1-t) \cdot \textcolor{orange}{\epsilon}$$ {#eq-linear-path}
 
 ![The linear path interpolates from noise to data. At t=0, we have pure noise $\epsilon$; at t=1, the clean image $z$ emerges.](linear-path-diagram.png){#fig-linear-path}
 
@@ -144,13 +144,15 @@ This is the **optimal transport** path — the straight line from noise to data.
 
 **The conditional vector field** is remarkably simple. Taking the derivative of $x_t = t \cdot z + (1-t) \cdot \epsilon$:
 
-$$u_t(x_t | z) = \frac{d x_t}{dt} = z - \epsilon$$ {#eq-cond-velocity}
+$$\textcolor{blue}{u_t(x_t | z)} = \frac{d x_t}{dt} = \textcolor{green}{z} - \textcolor{orange}{\epsilon}$$ {#eq-cond-velocity}
 
-This is **constant in time**! The direction from noise to image is simply their difference.
+where the $\textcolor{blue}{\text{target velocity}}$ points from $\textcolor{orange}{\text{noise}}$ toward $\textcolor{green}{\text{data}}$. This is **constant in time**!
 
 **The CFM loss** (from [Part 4](../4-flow-matching-loss/)) trains the network to predict this vector field:
 
-$$\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right]$$ {#eq-cfm-loss}
+$$\textcolor{blue}{\mathcal{L}_{\text{CFM}}} = \mathbb{E}_{t, z, \epsilon} \left[ \| \textcolor{purple}{u_t^\theta(x_t)} - (\textcolor{green}{z} - \textcolor{orange}{\epsilon}) \|^2 \right]$$ {#eq-cfm-loss}
+
+where $\textcolor{blue}{\text{loss}}$ measures error between $\textcolor{purple}{\text{predicted velocity}}$ and target $(\textcolor{green}{\text{data}} - \textcolor{orange}{\text{noise}})$.
 
 The implementation is straightforward — sample $t$, compute $x_t$, and minimize MSE between predicted and target vector field:
 
@@ -208,9 +210,9 @@ During training, we **randomly drop class labels** with probability $\eta$ (typi
 
 At inference, we **blend** both predictions:
 
-$$\tilde{u}_t = u_t^\theta(x_t | \emptyset) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \emptyset)\bigr)$$ {#eq-cfg}
+$$\textcolor{blue}{\tilde{u}_t} = \textcolor{green}{u_t^\theta(x_t | \emptyset)} + \textcolor{purple}{w} \cdot \bigl(\textcolor{orange}{u_t^\theta(x_t | y)} - \textcolor{green}{u_t^\theta(x_t | \emptyset)}\bigr)$$ {#eq-cfg}
 
-Rearranging: $\tilde{u}_t = (1-w) \cdot u_t^\theta(x_t | \emptyset) + w \cdot u_t^\theta(x_t | y)$
+where $\textcolor{blue}{\text{guided velocity}}$ = $\textcolor{green}{\text{unconditional}}$ + $\textcolor{purple}{\text{scale}}$ × ($\textcolor{orange}{\text{conditional}}$ − $\textcolor{green}{\text{unconditional}}$).
 
 The **guidance scale** $w$ controls conditioning strength:
 

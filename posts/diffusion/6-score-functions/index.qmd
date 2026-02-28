@@ -215,10 +215,10 @@ $$
 
 Therefore, if we set
 $$
-u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
+\textcolor{blue}{u_t^{sde}} = \textcolor{green}{u_t^{target}} + \textcolor{red}{\frac{\sigma_t^2}{2} \nabla \log p_t}
 $$
 
-then it satisfies the Fokker-Planck equation.
+where $\textcolor{blue}{\text{SDE drift}}$ = $\textcolor{green}{\text{ODE drift}}$ + $\textcolor{red}{\text{score correction}}$, then it satisfies the Fokker-Planck equation.
 
 $$
 \partial_t p_t(x) = -\nabla \cdot (p_t u_t^{sde})(x) + \frac{\sigma_t^2}{2} \Delta p_t(x)
@@ -227,9 +227,11 @@ $$
 To understand this intuitively, the SDE can be seen as follows:
 $$
 \begin{aligned}
-dX_t = [\underbrace{u_t^{target}(X_t)}_{\text{ODE drift}} + \underbrace{\frac{\sigma_t^2}{2} \nabla \log p_t(X_t)}_{\text{score correction}}] dt + \underbrace{\sigma_t dW_t}_{\text{noise}}
+dX_t = [\textcolor{green}{u_t^{target}(X_t)} + \textcolor{red}{\frac{\sigma_t^2}{2} \nabla \log p_t(X_t)}] \, dt + \textcolor{orange}{\sigma_t dW_t}
 \end{aligned}
 $$
+
+The $\textcolor{green}{\text{ODE drift}}$ provides direction, the $\textcolor{red}{\text{score correction}}$ counteracts diffusion to maintain the probability path, and $\textcolor{orange}{\text{noise}}$ adds stochasticity.
 
 ### Intuition: The Drunken Marching Band
 

@@ -9,7 +9,7 @@ draft: false
 
 Now that we're a few weeks into 2026, I want to look back at the most important developments in robot learning from last year, reflect on the limitations and open problems that remain, and share a few thoughts on what might come next.
 
-![Figure 02 at BMW's Spartanburg plant — the first humanoid robot to complete an extended factory deployment, working 10-hour shifts alongside human workers. Photo: BMW Group Press.](figure02-bmw-official.jpg){#fig-hero}
+![Figure 02 — the humanoid robot that worked 10-hour shifts at BMW's Spartanburg plant, contributing to the production of 30,000 vehicles. Photo: Figure AI.](figure02-bmw-official.jpg){#fig-hero}
 
 If 2023 was the year ChatGPT changed how we think about language AI, **2025 was the year robots got their foundation models**. For decades, robots excelled at repetitive factory tasks but struggled with everyday manipulation — folding laundry, cooking meals, clearing tables. That changed this year.
 

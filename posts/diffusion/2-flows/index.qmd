@@ -38,10 +38,12 @@ Every ODE is defined by a vector field $u_t(x)$. A solution $X_t$ starting from 
 
 $$
 \begin{aligned}
-\frac{dX_t}{dt} &= u_t(X_t) \\
+\textcolor{blue}{\frac{dX_t}{dt}} &= \textcolor{green}{u_t}(\textcolor{orange}{X_t}) \\
 X_0 &= x_0 \quad (\text{initial condition})
 \end{aligned}
 $$ {#eq-vector-field}
+
+where $\textcolor{blue}{\text{velocity}}$ equals the $\textcolor{green}{\text{vector field}}$ evaluated at your $\textcolor{orange}{\text{current position}}$.
 
 In words: "your velocity equals whatever the vector field says at your current location."
 
@@ -65,8 +67,8 @@ Since the flow satisfies the ODE, we can substitute $X_t = \phi_t(x_0)$:
 
 $$
 \begin{aligned}
-\frac{dX_t}{dt} &= u_t(X_t) \implies \frac{d \phi_t(x_0)}{dt} = u_t(\phi_t(x_0)) \\
-X_0 &= x_0 \implies \phi_0(x_0) = x_0
+\textcolor{blue}{\frac{dX_t}{dt}} = \textcolor{green}{u_t}(\textcolor{orange}{X_t}) \implies \textcolor{blue}{\frac{d \phi_t(x_0)}{dt}} = \textcolor{green}{u_t}(\textcolor{orange}{\phi_t(x_0)}) \\
+X_0 = x_0 \implies \phi_0(x_0) = x_0
 \end{aligned}
 $$ {#eq-flow-ode}
 

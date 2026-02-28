@@ -327,8 +327,10 @@ Note: the $\frac{1}{\beta_t^2}$ weighting is still there! Reparameterization onl
 **2. Drop the weighting (empirical choice).** Ho et al. found that simply removing $\frac{1}{\beta_t^2}$ works better in practice:
 
 $$
-\mathcal{L}_{\text{DDPM}}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+\textcolor{blue}{\mathcal{L}_{\text{DDPM}}(\theta)} = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \textcolor{purple}{\epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t)} - \textcolor{green}{\epsilon} \right\|^2 \right]
 $$
+
+where $\textcolor{blue}{\text{loss}}$ measures the error between $\textcolor{purple}{\text{predicted noise}}$ and $\textcolor{green}{\text{actual noise}}$ added during training.
 
 **Why does dropping the weighting work?** Both losses share the same global minimum (zero when $\epsilon_t^\theta = \epsilon$ for all $t$). What differs is the optimization landscape:
 
@@ -460,8 +462,10 @@ We derived the complete training algorithms for generative models with Gaussian 
 
 **Conversion formula**: For Gaussian paths, vector field and score are interconvertible:
 $$
-u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
+\textcolor{blue}{u_t^\theta(x)} = \textcolor{orange}{\frac{\dot{\alpha}_t}{\alpha_t}} x + \textcolor{purple}{\left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right)} \textcolor{green}{s_t^\theta(x)}
 $$
+
+where $\textcolor{blue}{\text{velocity}}$ = $\textcolor{orange}{\text{scaling}}$ · position + $\textcolor{purple}{\text{coefficient}}$ · $\textcolor{green}{\text{score}}$.
 
 Train one network, get both — then sample via ODE (deterministic) or SDE (stochastic) as needed.
 :::

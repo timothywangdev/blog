@@ -332,8 +332,8 @@ You can't just compare generated images to training images pixel-by-pixel (that 
 1. **Extract features**: Use Inception v3's 2048-dimensional penultimate layer activations
 2. **Assume Gaussian**: Model both real and generated feature distributions as multivariate Gaussians
 3. **Compute distance**: Calculate the Fréchet distance between the two Gaussians:
-   $$\text{FID} = \|\mu_r - \mu_g\|^2 + \text{Tr}(\Sigma_r + \Sigma_g - 2(\Sigma_r \Sigma_g)^{1/2})$$
-   where $(\mu_r, \Sigma_r)$ and $(\mu_g, \Sigma_g)$ are the mean/covariance of real and generated features
+   $$\textcolor{blue}{\text{FID}} = \|\textcolor{green}{\mu_r} - \textcolor{orange}{\mu_g}\|^2 + \text{Tr}(\textcolor{green}{\Sigma_r} + \textcolor{orange}{\Sigma_g} - 2(\textcolor{green}{\Sigma_r} \textcolor{orange}{\Sigma_g})^{1/2})$$
+   where $(\textcolor{green}{\mu_r}, \textcolor{green}{\Sigma_r})$ and $(\textcolor{orange}{\mu_g}, \textcolor{orange}{\Sigma_g})$ are the mean/covariance of $\textcolor{green}{\text{real}}$ and $\textcolor{orange}{\text{generated}}$ features
 
 **Interpreting FID scores**:
 - **Lower is better** — FID = 0 means identical distributions

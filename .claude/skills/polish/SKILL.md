@@ -1,327 +1,183 @@
 ---
 name: polish
-description: Polish Documentation
+description: Polish Documentation (core workflow)
 ---
 
 # Polish Documentation
 
-Polish the current document to make it accessible and engaging for our target audiences.
+Polish the current document for clarity, mathematical rigor, and accessibility.
+
+**Includes:** Hooks (engagement, titles) and Visuals (images, diagrams) as mandatory passes.
 
 ## Critical Requirements
 
-- **Author name**: Always use `author: "Hujie Wang"` in frontmatter. Never use any other name.
-- **Parallel research**: When researching topics, always use multiple Task agents in parallel to gather information efficiently. Don't research sequentially — launch 3-4 agents simultaneously for different aspects of the topic.
+- **Author name**: Always use `author: "Hujie Wang"` in frontmatter
+- **Parallel research**: Launch 3-4 Task agents simultaneously, not sequentially
 
-## Target Audiences (in priority order)
+## Target Audiences
 
-1. **ML Engineers & Applied Researchers** - Need practical insights without reading full papers
-2. **PhD Students & Academic Researchers** - Want intuition behind derivations, not just formulas
-3. **AI-Curious Software Engineers** - Intimidated by math, want accessible explanations
-4. **Founders & Product Managers** - Need high-level "what does this mean" insights
-5. **Hobbyists & Fine-tuners** - Want to understand why techniques work
+1. **ML Engineers** — Practical insights without reading full papers
+2. **PhD Students** — Intuition behind derivations
+3. **Software Engineers** — Accessible explanations
+4. **Founders/PMs** — High-level insights
+5. **Hobbyists** — Why techniques work
 
-## Polishing Guidelines
+## Mathematical Content
 
-### Mathematical Content
+- Intuition BEFORE math ("here's what we're trying to show...")
+- **Define ALL variables immediately after equations** (e.g., "Here $s$ is the **state**, $a$ is the **action**")
+- Add inline comments in derivations: `&& \text{(reason)}`
+- For complex proofs, add "Proof sketch" first
+- Use analogies liberally
 
-- Every equation should have intuition BEFORE the math ("here's what we're trying to show...")
-- Add inline comments explaining each step in derivations using `&& \text{(reason)}`
-- When introducing new notation, immediately give a one-sentence plain English meaning
-- For complex proofs, add a "Proof sketch" or "Key idea" before diving into details
-- Use analogies liberally (e.g., "think of it like...")
+### Notation Consistency
 
-### Mathematical Rigor & Notation Consistency
+- Same concept = same symbol throughout
+- Consistent subscript/superscript placement
+- Verify parentheses, signs, indices
+- Check boundary conditions are consistent
 
-- **Check notation consistency**: Ensure the same concept uses the same symbol throughout (e.g., don't mix $v_\theta$ and $u_\theta$ for the same thing)
-- **Subscript/superscript conventions**: Be consistent with placement (e.g., $u_t^\theta$ vs $u_\theta^t$)
-- **Verify parentheses**: Check for missing/mismatched parentheses in equations (e.g., `p_t{x}` should be `p_t(x)`)
-- **Function arguments**: Be consistent about whether time is a subscript or argument (e.g., $u_t(x)$ vs $u(x, t)$)
-- **Check equation correctness**: Verify signs, indices, and mathematical operations are correct
-- **Boundary conditions**: Ensure stated conditions (e.g., $t=0$, $t=1$) are consistent throughout
-- **Cross-reference accuracy**: Verify theorem/equation references point to the correct items
+### Equation Colors (key equations only)
 
-### Research Credibility
+| Color | Role | Example |
+|-------|------|---------|
+| Blue | Output/loss | $\textcolor{blue}{\mathcal{L}}$ |
+| Green | Target/data | $\textcolor{green}{y}$ |
+| Purple | Learned/predicted | $\textcolor{purple}{f_\theta}$ |
+| Orange | Input/noise | $\textcolor{orange}{\epsilon}$ |
+| Red | Penalty/constraint | $\textcolor{red}{R(\theta)}$ |
 
-- **Only cite papers that are explicitly referenced in the text** using superscript notation (e.g., `$^{[1]}$` or `$^{[Ho2020]}$`)
-- Add a **References** section at the end ONLY if there are superscript citations in the document
-- **Verify references**: Use web search to find correct paper titles, authors, venues, and years. Confirm citations actually exist and are accurate before adding them.
-- **Include links**: Every reference should be a clickable link (arXiv, conference proceedings, or official paper page). Format as: `[1] [Paper Title](url). *Venue Year*.`
-- Acknowledge limitations and open questions honestly
-- Add "Common Misconceptions" callouts to show deep expertise
-- Distinguish between established results vs. author's interpretation/intuition
+Color 2-4 terms max. Always add prose explanation after.
 
-### Structure & Flow
+## Structure & Flow
 
-- Each section should answer: "Why do I care about this?"
-- Add transition sentences between sections explaining the logical flow
-- Use **bold** for key terms when first introduced
-- Break long derivations into digestible chunks with explanatory text between
+- Each section answers: "Why do I care?"
+- Add transitions between sections
+- **Bold** key terms when first introduced
+- Break long derivations with explanatory text
 
-### Cross-References & Links
-
-Use Quarto cross-references to connect concepts within and across posts:
-
-**Within a post:**
-
-- **Equations**: Add labels `{#eq-name}` and reference with `[-@eq-name]` or `@eq-name`
-- **Figures**: Add labels `{#fig-name}` and reference with `@fig-name`
-- **Sections**: Add labels `{#sec-name}` and reference with `@sec-name`
-- **Callouts with IDs**: Reference theorems/propositions with `[-@unique-id]`
-
-**Across posts (within the series):**
-
-- Link to previous posts when referencing prior concepts: `[Part 3](../3-probability-paths/)`
-- Use descriptive link text: `as we derived in [Flow Matching Loss](../4-flow-matching-loss/)`
-- When saying "recall that...", always link to where it was introduced
-
-**Best practices:**
-
-- Prefer clickable references over "see above" or "as shown earlier"
-- When introducing notation defined elsewhere, link to its definition
-- Cross-link related sections that readers might want to jump between
-
-**Syntax examples:**
+### Cross-References (Quarto)
 
 ```markdown
-$$ p_t(x) = \int p_t(x|z) p_{data}(z) dz $$ {#eq-marginal}
-
-As shown in [-@eq-marginal], the marginal is...
-Recall from [Part 3](../3-probability-paths/) that...
-Using the result from [@conversion-formula]...
+$$ equation $$ {#eq-name}     →  [-@eq-name]
+![caption](img){#fig-name}    →  @fig-name
+## Section {#sec-name}        →  @sec-name
 ```
 
-### Callout Style Guide
+Link to prior posts: `[Part 3](../3-probability-paths/)`
 
-Use Quarto callouts consistently across all posts:
+### Callouts
 
-**Callout Types (by semantic meaning):**
+| Type | Use For |
+|------|---------|
+| `callout-note` | TL;DR, Definitions, Collapsible derivations |
+| `callout-tip` | Theorems, Intuitions, Examples |
+| `callout-warning` | Pitfalls, Caveats |
+| `callout-important` | Critical insights |
 
-| Type | Color | Use For | Example Header |
-|------|-------|---------|----------------|
-| `callout-note` | Blue | TL;DR, Definitions, Context, Collapsible derivations | `## TL;DR`, `## Definition: X` |
-| `callout-tip` | Green | Theorems, Propositions, Lemmas, Key intuitions | `## Theorem: X`, `## Intuition: X` |
-| `callout-warning` | Orange | Pitfalls, Caveats, "Watch out" moments | `## Common Pitfall`, `## Caution` |
-| `callout-important` | Red | Critical insights, Must-not-miss points | `## Key Point`, `## Critical Insight` |
-
-**Appearance Options:**
-
-- `appearance="simple"` — Minimal styling, blends with text. Use for shorter notes, inline context.
-- `appearance="default"` — Full border/styling. Use for major theorems/propositions that deserve emphasis.
-- `collapse="true"` — Collapsible (click to expand). Use for optional derivations, lengthy proofs, or supplementary details.
-
-**Best Practices:**
-
-- **TL;DR**: Always use `{.callout-note appearance="simple"}` with `## TL;DR` header at the top of each post
-  - Purpose: **Preview** — help readers decide if they want to read
-  - Style: 2-4 bullet points summarizing *what you'll learn*
-  - Tone: "Here's what this post covers..."
-
-- **Summary**: Always use `{.callout-note appearance="simple"}` with `## Summary` header at the end of each post
-  - Purpose: **Consolidation** — recap what was covered and connect to next steps
-  - Style: Prose paragraphs (not just bullets), include key equations/formulas derived
-  - Content: Reference specific results from the post, highlight the "aha" moments, preview what's next
-  - Tone: "We proved X, which means Y. The key insight was Z. Next, we'll tackle..."
-  - **IMPORTANT**: Summary should NOT look like TL;DR — it should feel like a "what we accomplished" reflection, not a preview
-- **Theorems/Propositions**: Use `{#unique-id .callout-tip appearance="default"}` with an ID for cross-referencing
-- **Definitions**: Use `{.callout-note appearance="simple"}` with `## Definition: X` header
-- **Intuitions**: Use `{.callout-tip appearance="simple"}` with `## Intuition: X` header
-- **Collapsible proofs**: Use `{.callout-note collapse="true"}` with `## Derivation of X` or `## Proof` header
-- **Examples**: Use `{.callout-tip appearance="simple"}` with `## Example: X` header
-
-**Syntax Example:**
-
+**TL;DR (top of post):** Preview — help readers decide to read
 ```markdown
-::: {#my-theorem .callout-tip appearance="default"}
-## Theorem: Important Result
-Content here...
+::: {.callout-note appearance="simple"}
+## TL;DR
+- **The problem**: [One line]
+- **The solution**: [One line]
+- **The result**: [Numbers]
 :::
 ```
 
-### Accessibility
-
-::: {.callout-tip appearance="simple"}
-
-## Guiding Mindset
-
-Write as if explaining to a brilliant but exhausted PhD student at 2am. They can handle rigorous math — but don't make them work to follow your logic. No skipped "obvious" steps. No implicit context. If they have to re-read a sentence, you've failed.
+**Summary (end of post):** Consolidation — what we accomplished, what's next
+```markdown
+::: {.callout-note appearance="simple"}
+## Summary
+We showed X, which means Y. The key insight was Z. Next: [link to Part N].
 :::
+```
+
+## Practical Value
+
+Every post must answer: "What can I DO with this?"
+
+- Connect to real systems (Stable Diffusion, Sora, LeRobot)
+- Include "When to use this" and "When NOT to use this"
+- Link to implementations/code when available
+
+## Research Credibility
+
+- Cite with superscripts: `$^{[1]}$`
+- **Verify references** via web search before adding
+- Every reference = clickable link (arXiv, proceedings)
+- Add "Common Misconceptions" callouts
+- Acknowledge limitations honestly
+
+## Accessibility
+
+Write for a brilliant but exhausted PhD student at 2am. No skipped steps. No implicit context.
 
 - Define jargon on first use
-- Avoid assuming knowledge beyond basic calculus and probability
-- When referencing prior concepts, add brief reminders (e.g., "Recall that X means...")
-- Add "Intuition:" callouts for abstract concepts
+- Add "Recall that X means..." for prior concepts
+- Use second person: "Notice that...", "You might wonder..."
 
-### Engagement
+## Avoiding AI Language
 
-- Use second person occasionally ("Notice that...", "You might wonder...")
-- Pose and answer natural questions readers might have
-- Highlight practical implications and connections to real systems (Stable Diffusion, Sora, etc.)
+**Avoid**: delve, utilize, harness, pivotal, seamless, groundbreaking, leverage, crucial
+**Avoid phrases**: "Let's dive in", "It's worth noting", "Furthermore", "In conclusion"
+**Do**: Use contractions inconsistently, vary paragraph length, include fragments, be specific
 
-### Avoiding AI-Typical Language
-
-AI-generated text has recognizable patterns. Avoid these to sound authentic:
-
-**Words to avoid** (flagged by AI detectors):
-
-- **Always avoid**: delve, utilize, harness, foster, underscore, illuminate, embark, unleash, pivotal, seamless, groundbreaking, multifaceted, holistic, tapestry, realm, beacon, meticulously, profoundly, remarkably, undeniably
-- **Use "use" instead of**: leverage, utilize, harness
-- **Use "important" instead of**: crucial, pivotal, vital
-- **Metaphors to avoid**: landscape, journey, tapestry, beacon, realm (when used abstractly)
-
-**Technical terms that are OK in proper context**:
-
-- "robust" — fine when technical (e.g., "robust to noise," "robust optimization")
-- "optimize" — core ML term, always OK
-- "comprehensive" — OK for surveys/reviews
-- "facilitate" — OK sparingly when accurate
-- "paradigm" — OK in genuine paradigm shift discussions
-- "transformative" — OK if describing actual architectural changes
-- "innovative" — OK if genuinely novel, not as generic praise
-
-**Phrases to avoid**:
-
-- "In today's [fast-paced/digital/ever-evolving] world/age/landscape"
-- "It's important/worth noting that..." (just state the point)
-- "Let's dive in" / "Let's unpack this"
-- "At its core" / "From a broader perspective"
-- "Whether you're looking for X, Y, or Z, [topic] has something for everyone"
-- "Furthermore," "Moreover," "Additionally" (overused transitions)
-- "In conclusion," "In summary," "All things considered"
-- "Harness the power of..." / "Unlock the potential of..."
-- "Pave the way for..." / "At the forefront of..."
-
-**Punctuation patterns to avoid**:
-
-- **Excessive em-dashes** (the "ChatGPT dash"): Use commas, colons, periods, or parentheses instead. Limit to 1-2 per paragraph max.
-
-**Sentence structure to avoid**:
-
-- **Uniform sentence length**: Mix short punchy sentences with longer flowing ones
-- **Excessive parallelism**: "X does Y, Z does A, and Q does B" repeated throughout
-- **Rule of three everywhere**: Not every list needs exactly three items
-- **Predictable paragraph structure**: Intro sentence → 2-3 supporting sentences → summary sentence
-
-**What to do instead**:
-
-- **Use contractions inconsistently**: "You'll" sometimes, "you will" other times
-- **Vary paragraph lengths**: Some paragraphs can be one sentence. Others can be longer.
-- **Include sentence fragments for emphasis**: Like this one.
-- **Add parenthetical asides**: (They add personality and voice.)
-- **Use simple connectors**: "but," "and," "so" instead of "Furthermore," "Moreover"
-- **Be specific**: "Stripe grew 300%" instead of "Many companies have found success"
-- **Take stances**: "I find this approach limiting" instead of "This approach has certain limitations"
-- **Use colloquialisms when appropriate**: "the thing is," "here's the deal"
-
-**The read-aloud test**: If a sentence makes you stumble when reading aloud, rewrite it.
-
-### TL;DR & Practical Value
-
-- Add a TL;DR callout at the top summarizing key takeaways in 2-3 bullets
-- Answer "What can I DO with this?" — connect to real systems (Stable Diffusion, Flux, Sora)
-- Mention "When to use this" and "When NOT to use this" where applicable
-- Link to companion coding posts if they exist
-
-### Visual Aids
-
-**When to add images** (proactively identify these, don't wait for placeholders):
-
-- Abstract mathematical concepts that benefit from visualization (vector fields, probability flows, transformations)
-- Comparisons between two approaches (e.g., ODE vs SDE sampling)
-- Process diagrams showing sequential steps (e.g., forward/reverse diffusion)
-- Geometric intuitions that are hard to convey in text alone
-- Any place where a reader might think "I wish I could see this"
-
-**How to generate:**
-
-- Use the `gemini-image` MCP tool to generate illustrations
-- Save images in the same directory as the post (e.g., `posts/diffusion/1-intro/diagram.png`)
-- Use descriptive filenames (e.g., `score-function-vector-field.png`, not `fig1.png`)
-
-**Professional diagram requirements** (critical - images must look like academic paper figures):
-
-- **Style**: Clean vector-style technical illustrations, NOT photorealistic AI art
-- **Aesthetic**: Simple geometric shapes, flat colors, thin black outlines, clear sans-serif labels
-- **No AI look**: Avoid gradients, 3D effects, glossy rendering, overly polished/rendered appearance
-- **Academic standard**: Should look like figures from IEEE/ACM/NeurIPS papers - professional, minimal, clear
-- **Technical detail**: Include sufficient detail for clarity:
-  - Proper labels on all components
-  - Clear arrows showing data/information flow
-  - Annotations explaining key elements
-  - Legend if needed for clarity
-- **Block diagram style**: For architecture diagrams, use simple rectangular boxes with rounded corners
-- **Process flow style**: For sequential processes, use clear horizontal/vertical flow with connecting arrows
-- **Comparison style**: For before/after or A vs B, use side-by-side layouts with clear delineation
-
-**Bad examples** (what to avoid):
-
-- Overly artistic/stylized renders that look AI-generated
-- Photorealistic 3D graphics
-- Busy backgrounds or decorative elements
-- Unclear or missing labels
-- Gradients and shadows that distract from content
-
-**Good examples** (aim for):
-
-- Clean block diagrams with flat colors
-- Simple flowcharts with clear arrows
-- Minimal line drawings with precise labels
-- Vector-style illustrations like hand-drawn technical diagrams
-
-**Quality control:**
-
-- **Inspect after generation**: Read/view the generated image to verify:
-  - Correct labels and clear visualization
-  - **Mathematical correctness**: Arrow directions, signs, relationships must be accurate (e.g., positive divergence = arrows pointing outward, not inward)
-  - **Professional appearance**: Looks like a research paper figure, not AI art
-  - **Sufficient technical detail**: All components are properly labeled and explained
-  - Matches the concept being explained
-- **If the image looks AI-generated or unprofessional**: Regenerate with a prompt emphasizing "clean vector-style technical illustration", "academic paper figure aesthetic", "simple flat design", "no 3D effects", "no gradients"
-- If not satisfactory after 2 attempts, consider describing a simpler diagram or using text explanation instead
-- Repeat until the image meets professional standards
-
-### Discoverability
-
-- Ensure title is specific and searchable (e.g., "Flow Matching Explained" not "Part 3")
-- Write a compelling first paragraph — it may appear in search snippets
-- Use descriptive H2/H3 headers for skimmability and SEO
-- Add relevant categories/tags in frontmatter
-
-## Task
-
-Read the current file and apply these guidelines. Complete in order:
+## Task Passes
 
 ### Pass 0: Research
+- [ ] Search how others explain the same concept
+- [ ] Note good analogies, visualizations, framings
 
-- [ ] Before modifying each major section, search online to see how others explain the same concept (blog posts, tutorials, lecture notes)
-- [ ] Learn from effective explanations — note good analogies, visualizations, or framings you can adapt
-- [ ] This ensures you're building on the best available pedagogy, not reinventing the wheel
+### Pass 1: Content Scope
+- [ ] Is the post trying to cover too much? (> 3000 words often signals this)
+- [ ] Are there self-contained sections that could be standalone posts?
+- [ ] Would extracting content improve focus and depth?
+- [ ] Flag candidates: background/prerequisites, tangential deep-dives, appendix-like sections
 
-### Pass 1: Structure & Clarity
+**Extract when:** A section is self-contained, has its own "why do I care?", and removing it improves focus.
+**Keep when:** The section is essential context or the payoff comes from seeing it alongside other content.
 
-- [ ] Add TL;DR callout at the top
+### Pass 2: Structure
+
+- [ ] Add TL;DR callout at top
 - [ ] Ensure each section answers "Why do I care?"
 - [ ] Add transitions between sections
-- [ ] Add cross-references: link to prior posts, label key equations/theorems, replace "see above" with clickable refs
+- [ ] Add cross-references
 
-### Pass 2: Mathematical Polish
+### Pass 3: Math Polish
 
-- [ ] Add intuition BEFORE each major equation
-- [ ] Check notation consistency throughout
-- [ ] Verify parentheses, signs, and cross-references
+- [ ] Intuition BEFORE each equation
+- [ ] Define all variables after equations
+- [ ] Check notation consistency
+- [ ] Verify parentheses, signs
 
-### Pass 3: Credibility & Value
+### Pass 4: Credibility
+- [ ] Add References section (verify via web search)
+- [ ] Include "Common Misconceptions"
+- [ ] Connect to real systems
+- [ ] Verify all dates/timestamps against current date (check env: `Today's date`)
 
-- [ ] Add References section with paper citations (use web search to verify each citation is accurate)
-- [ ] Ensure every reference is a clickable link (arXiv, proceedings, or official page)
-- [ ] Include "Common Misconceptions" where relevant
-- [ ] Connect to real systems and practical implications
+### Pass 5: Hooks (from `/polish-hooks`)
 
-### Pass 4: Visual & Discoverability
+- [ ] Opening uses PAS framework (Problem → Agitate → Solution)
+- [ ] Title follows working patterns ("Why X Fails", "How Y Fixed Z")
+- [ ] Social proof early (citations, who's using it)
+- [ ] TL;DR is scannable (10 seconds)
+- [ ] Read opening aloud — rewrite if you stumble
 
-- [ ] Proactively identify where images would help (abstract concepts, comparisons, processes, geometric intuitions)
-- [ ] Generate illustrations using `gemini-image` MCP tool
-- [ ] Inspect each generated image for visual quality AND mathematical correctness
-- [ ] Regenerate any images that have incorrect directions, signs, or relationships
-- [ ] Verify title and headers are descriptive/searchable
+### Pass 6: Visuals (from `/polish-visuals`)
 
-Do NOT change the mathematical content itself — only improve exposition.
+- [ ] Visual density audit (target: 1 image per 100-200 lines)
+- [ ] Hero visual in first screen (before scroll)
+- [ ] Check official paper assets before generating (project pages, arXiv HTML, GitHub)
+- [ ] Equation-heavy sections have diagrams
+- [ ] All generated images verified for quality
+
+**Red flags:**
+
+- ❌ 200+ lines without a visual
+- ❌ "Imagine..." without an actual picture
+- ❌ Key equation without preceding intuition diagram
+
+Do NOT change mathematical content — only improve exposition.
