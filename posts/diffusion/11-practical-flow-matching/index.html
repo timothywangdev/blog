@@ -80,9 +80,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -581,15 +581,15 @@ Number of classes: 10</code></pre>
 <section id="sec-gaussian-condot" class="level3">
 <h3 class="anchored" data-anchor-id="sec-gaussian-condot">The Gaussian CondOT Path</h3>
 <p>We use the <strong>Gaussian CondOT path</strong> — the same formulation from <a href="../7-training/">Part 7</a>:</p>
-<p><span id="eq-gaussian-path"><span class="math display">\[x_t = \alpha_t \cdot z + \beta_t \cdot \epsilon \tag{1}\]</span></span></p>
-<p>where:</p>
+<p><span id="eq-gaussian-path"><span class="math display">\[\textcolor{blue}{x_t} = \textcolor{purple}{\alpha_t} \cdot \textcolor{green}{z} + \textcolor{purple}{\beta_t} \cdot \textcolor{orange}{\epsilon} \tag{1}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{interpolated sample}}\)</span> blends <span class="math inline">\(\textcolor{green}{\text{data}}\)</span> and <span class="math inline">\(\textcolor{orange}{\text{noise}}\)</span> via <span class="math inline">\(\textcolor{purple}{\text{schedule}}\)</span>:</p>
 <ul>
-<li><span class="math inline">\(z \sim p_{\text{data}}\)</span> is a real image</li>
-<li><span class="math inline">\(\epsilon \sim \mathcal{N}(0, I)\)</span> is noise</li>
-<li><span class="math inline">\(\alpha_t = t\)</span> and <span class="math inline">\(\beta_t = 1 - t\)</span> (linear schedule)</li>
+<li><span class="math inline">\(\textcolor{green}{z} \sim p_{\text{data}}\)</span> is a real image</li>
+<li><span class="math inline">\(\textcolor{orange}{\epsilon} \sim \mathcal{N}(0, I)\)</span> is noise</li>
+<li><span class="math inline">\(\textcolor{purple}{\alpha_t = t}\)</span> and <span class="math inline">\(\textcolor{purple}{\beta_t = 1 - t}\)</span> (linear schedule)</li>
 </ul>
 <p>This gives us the <strong>linear interpolation</strong>:</p>
-<p><span id="eq-linear-path"><span class="math display">\[x_t = t \cdot z + (1-t) \cdot \epsilon \tag{2}\]</span></span></p>
+<p><span id="eq-linear-path"><span class="math display">\[\textcolor{blue}{x_t} = t \cdot \textcolor{green}{z} + (1-t) \cdot \textcolor{orange}{\epsilon} \tag{2}\]</span></span></p>
 <div id="fig-linear-path" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-linear-path-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -656,10 +656,11 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 </div>
 </div>
 <p><strong>The conditional vector field</strong> is remarkably simple. Taking the derivative of <span class="math inline">\(x_t = t \cdot z + (1-t) \cdot \epsilon\)</span>:</p>
-<p><span id="eq-cond-velocity"><span class="math display">\[u_t(x_t | z) = \frac{d x_t}{dt} = z - \epsilon \tag{3}\]</span></span></p>
-<p>This is <strong>constant in time</strong>! The direction from noise to image is simply their difference.</p>
+<p><span id="eq-cond-velocity"><span class="math display">\[\textcolor{blue}{u_t(x_t | z)} = \frac{d x_t}{dt} = \textcolor{green}{z} - \textcolor{orange}{\epsilon} \tag{3}\]</span></span></p>
+<p>where the <span class="math inline">\(\textcolor{blue}{\text{target velocity}}\)</span> points from <span class="math inline">\(\textcolor{orange}{\text{noise}}\)</span> toward <span class="math inline">\(\textcolor{green}{\text{data}}\)</span>. This is <strong>constant in time</strong>!</p>
 <p><strong>The CFM loss</strong> (from <a href="../4-flow-matching-loss/">Part 4</a>) trains the network to predict this vector field:</p>
-<p><span id="eq-cfm-loss"><span class="math display">\[\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, \epsilon} \left[ \| u_t^\theta(x_t) - (z - \epsilon) \|^2 \right] \tag{4}\]</span></span></p>
+<p><span id="eq-cfm-loss"><span class="math display">\[\textcolor{blue}{\mathcal{L}_{\text{CFM}}} = \mathbb{E}_{t, z, \epsilon} \left[ \| \textcolor{purple}{u_t^\theta(x_t)} - (\textcolor{green}{z} - \textcolor{orange}{\epsilon}) \|^2 \right] \tag{4}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures error between <span class="math inline">\(\textcolor{purple}{\text{predicted velocity}}\)</span> and target <span class="math inline">\((\textcolor{green}{\text{data}} - \textcolor{orange}{\text{noise}})\)</span>.</p>
 <p>The implementation is straightforward — sample <span class="math inline">\(t\)</span>, compute <span class="math inline">\(x_t\)</span>, and minimize MSE between predicted and target vector field:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> flow_matching_loss(model, z, class_label, label_dropout<span class="op">=</span><span class="fl">0.1</span>):</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Compute the Conditional Flow Matching loss."""</span></span>
@@ -727,8 +728,8 @@ Figure&nbsp;1: The linear path interpolates from noise to data. At t=0, we have 
 <section id="sampling-guided-velocity" class="level3">
 <h3 class="anchored" data-anchor-id="sampling-guided-velocity">Sampling: Guided Velocity</h3>
 <p>At inference, we <strong>blend</strong> both predictions:</p>
-<p><span id="eq-cfg"><span class="math display">\[\tilde{u}_t = u_t^\theta(x_t | \emptyset) + w \cdot \bigl(u_t^\theta(x_t | y) - u_t^\theta(x_t | \emptyset)\bigr) \tag{5}\]</span></span></p>
-<p>Rearranging: <span class="math inline">\(\tilde{u}_t = (1-w) \cdot u_t^\theta(x_t | \emptyset) + w \cdot u_t^\theta(x_t | y)\)</span></p>
+<p><span id="eq-cfg"><span class="math display">\[\textcolor{blue}{\tilde{u}_t} = \textcolor{green}{u_t^\theta(x_t | \emptyset)} + \textcolor{purple}{w} \cdot \bigl(\textcolor{orange}{u_t^\theta(x_t | y)} - \textcolor{green}{u_t^\theta(x_t | \emptyset)}\bigr) \tag{5}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{guided velocity}}\)</span> = <span class="math inline">\(\textcolor{green}{\text{unconditional}}\)</span> + <span class="math inline">\(\textcolor{purple}{\text{scale}}\)</span> × (<span class="math inline">\(\textcolor{orange}{\text{conditional}}\)</span> − <span class="math inline">\(\textcolor{green}{\text{unconditional}}\)</span>).</p>
 <p>The <strong>guidance scale</strong> <span class="math inline">\(w\)</span> controls conditioning strength:</p>
 <table class="caption-top table">
 <thead>

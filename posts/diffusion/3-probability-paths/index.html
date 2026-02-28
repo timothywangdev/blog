@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -471,8 +471,9 @@ p_1(x) &amp;= \int p_1(x | z) p_{data}(z) dz \\
 </div>
 <p>The conditional Gaussian probability path is defined as:</p>
 <p><span class="math display">\[
-\mathbf{p}_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d)
+\textcolor{blue}{\mathbf{p}_t(\cdot | z)} = \mathcal{N}(\textcolor{green}{\alpha_t z}, \textcolor{orange}{\beta_t^2} I_d)
 \]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{conditional distribution}}\)</span> has mean <span class="math inline">\(\textcolor{green}{\text{interpolated toward data}}\)</span> and variance <span class="math inline">\(\textcolor{orange}{\text{noise level}}\)</span>.</p>
 <p>where <span class="math inline">\(\alpha_t\)</span> and <span class="math inline">\(\beta_t\)</span> are noise schedulers, and they are continously, <strong>monotonically</strong> differentiable functions with the following conditions:</p>
 <p><span class="math display">\[
 \begin{aligned}
@@ -498,9 +499,10 @@ p_1(x) &amp;= \int p_1(x | z) p_{data}(z) dz \\
 <p>Let us construct the conditional vector field (where <span class="math inline">\(\dot{\alpha}_t = \frac{\partial \alpha_t}{\partial t}\)</span> and <span class="math inline">\(\dot{\beta}_t = \frac{\partial \beta_t}{\partial t}\)</span> denote time derivatives):</p>
 <p><span class="math display">\[
 \begin{aligned}
-u_t^{\text{target}}(x | z) &amp;= (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x \\
+\textcolor{blue}{u_t^{\text{target}}(x | z)} &amp;= \textcolor{green}{(\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z} + \textcolor{orange}{\frac{\dot{\beta}_t}{\beta_t} x} \\
 \end{aligned}
 \]</span></p>
+<p>where the <span class="math inline">\(\textcolor{blue}{\text{target velocity}}\)</span> has a <span class="math inline">\(\textcolor{green}{\text{term pointing toward data } z}\)</span> and an <span class="math inline">\(\textcolor{orange}{\text{adjustment based on current position } x}\)</span>.</p>
 <p>We can show that this conditional vector field is valid in the sense that its ODE trajectories <span class="math inline">\(X_t\)</span> satisfies <span class="math display">\[
 \begin{aligned}
 X_t &amp;\sim p_t(\cdot | z) = \mathcal{N}(\alpha_t z, \beta_t^2 I_d) \\
@@ -559,7 +561,7 @@ u_t(x | z)
 <div class="callout-body-container callout-body">
 <p>We constructed <strong>probability paths</strong> that interpolate from noise to data. The key insight: build the marginal path <span class="math inline">\(p_t(x)\)</span> from simpler <strong>conditional paths</strong> <span class="math inline">\(p_t(x|z)\)</span>, each targeting a specific data point.</p>
 <p>For Gaussian paths <span class="math inline">\(p_t(x|z) = \mathcal{N}(\alpha_t z, \beta_t^2 I)\)</span>, we derived the conditional vector field: <span class="math display">\[
-u_t^{target}(x|z) = (\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z + \frac{\dot{\beta}_t}{\beta_t} x
+\textcolor{blue}{u_t^{target}(x|z)} = \textcolor{green}{(\dot{\alpha}_t - \frac{\dot{\beta}_t}{\beta_t} \alpha_t) z} + \textcolor{orange}{\frac{\dot{\beta}_t}{\beta_t} x}
 \]</span></p>
 <p>This is our training target — but there’s a catch: it depends on <span class="math inline">\(z\)</span>, which we don’t know at generation time. The next post resolves this with the marginalization trick.</p>
 </div>

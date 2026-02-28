@@ -46,9 +46,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -616,7 +616,10 @@ u_t^{target}(x | y) &amp;= a_t x + b_t \nabla \log p_t(x | y) \\
 &amp;= (1-w) \cdot u_t^{target}(x) + w \cdot u_t^{target}(x | y)
 \end{aligned}
 \]</span></p>
-<p>This is the <strong>CFG formula</strong>: the scaled guided vector field is a linear combination of the unguided and guided vector fields. When <span class="math inline">\(w &gt; 1\)</span>, we extrapolate <em>beyond</em> the conditional direction, amplifying the effect of conditioning.</p>
+<p>This is the <strong>CFG formula</strong>: the scaled guided vector field is a linear combination of the unguided and guided vector fields: <span class="math display">\[
+\textcolor{blue}{\tilde{u}_t^{target}(x | y)} = (1-w) \cdot \textcolor{green}{u_t^{target}(x)} + w \cdot \textcolor{orange}{u_t^{target}(x | y)}
+\]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{CFG output}}\)</span> interpolates between <span class="math inline">\(\textcolor{green}{\text{unconditional}}\)</span> and <span class="math inline">\(\textcolor{orange}{\text{conditional}}\)</span> velocities. When <span class="math inline">\(w &gt; 1\)</span>, we extrapolate <em>beyond</em> the conditional direction, amplifying the effect of conditioning.</p>
 </section>
 <section id="cfg-training" class="level4">
 <h4 class="anchored" data-anchor-id="cfg-training">Training</h4>
@@ -664,8 +667,9 @@ Figure&nbsp;2: <strong>CFG training workflow.</strong> The key idea is label dro
 <h4 class="anchored" data-anchor-id="cfg-sampling">Sampling</h4>
 <p>At inference time, we use the trained model to compute both outputs and combine them:</p>
 <p><span class="math display">\[
-\tilde{u}_t^\theta(x | y) = \underbrace{u_t^\theta(x | \emptyset)}_{\text{unconditional}} + w \cdot (\underbrace{u_t^\theta(x | y)}_{\text{conditional}} - \underbrace{u_t^\theta(x | \emptyset)}_{\text{unconditional}})
+\textcolor{blue}{\tilde{u}_t^\theta(x | y)} = \textcolor{green}{u_t^\theta(x | \emptyset)} + \textcolor{purple}{w} \cdot (\textcolor{orange}{u_t^\theta(x | y)} - \textcolor{green}{u_t^\theta(x | \emptyset)})
 \]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{CFG output}}\)</span> = <span class="math inline">\(\textcolor{green}{\text{unconditional}}\)</span> + <span class="math inline">\(\textcolor{purple}{\text{guidance scale}}\)</span> × (<span class="math inline">\(\textcolor{orange}{\text{conditional}}\)</span> − <span class="math inline">\(\textcolor{green}{\text{unconditional}}\)</span>).</p>
 <p>Equivalently: <span class="math inline">\(\tilde{u}_t^\theta = (1-w) \cdot u_t^\theta(x|\emptyset) + w \cdot u_t^\theta(x|y)\)</span></p>
 <p><strong>Sampling procedure:</strong></p>
 <ol type="1">

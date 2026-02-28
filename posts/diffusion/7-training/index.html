@@ -46,9 +46,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -664,8 +664,9 @@ dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma
 <p>Note: the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting is still there! Reparameterization only changes what the network outputs (score → noise), not the weighting.</p>
 <p><strong>2. Drop the weighting (empirical choice).</strong> Ho et al.&nbsp;found that simply removing <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> works better in practice:</p>
 <p><span class="math display">\[
-\mathcal{L}_{\text{DDPM}}(\theta) = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t) - \epsilon \right\|^2 \right]
+\textcolor{blue}{\mathcal{L}_{\text{DDPM}}(\theta)} = \mathbb{E}_{t,z,\epsilon} \left[ \left\| \textcolor{purple}{\epsilon_t^\theta(\alpha_t z + \beta_t \epsilon, t)} - \textcolor{green}{\epsilon} \right\|^2 \right]
 \]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures the error between <span class="math inline">\(\textcolor{purple}{\text{predicted noise}}\)</span> and <span class="math inline">\(\textcolor{green}{\text{actual noise}}\)</span> added during training.</p>
 <p><strong>Why does dropping the weighting work?</strong> Both losses share the same global minimum (zero when <span class="math inline">\(\epsilon_t^\theta = \epsilon\)</span> for all <span class="math inline">\(t\)</span>). What differs is the optimization landscape:</p>
 <ul>
 <li><strong>Weighted loss</strong>: Heavily penalizes errors at small <span class="math inline">\(\beta_t\)</span> (nearly clean images) → unstable gradients, network focuses on easy samples</li>
@@ -778,8 +779,9 @@ dX_t &amp;= [u_t^\theta(X_t) + \frac{\sigma_t^2}{2} s_t^\theta(X_t)] dt + \sigma
 <p><strong>Flow Matching (CFM)</strong>: Regress <span class="math inline">\(u_t^\theta(x)\)</span> against <span class="math inline">\(\dot{\alpha}_t z + \dot{\beta}_t \epsilon\)</span> where <span class="math inline">\(x = \alpha_t z + \beta_t \epsilon\)</span>. For optimal transport paths (<span class="math inline">\(\alpha_t = t\)</span>, <span class="math inline">\(\beta_t = 1-t\)</span>), the target simplifies to <span class="math inline">\(z - \epsilon\)</span>.</p>
 <p><strong>Score Matching (CSM → DDPM)</strong>: Regress against the conditional score <span class="math inline">\(-\frac{\epsilon}{\beta_t}\)</span>. DDPM reparameterizes to predict <span class="math inline">\(\epsilon\)</span> directly and drops the <span class="math inline">\(\frac{1}{\beta_t^2}\)</span> weighting for stability.</p>
 <p><strong>Conversion formula</strong>: For Gaussian paths, vector field and score are interconvertible: <span class="math display">\[
-u_t^\theta(x) = \frac{\dot{\alpha}_t}{\alpha_t} x + \left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right) s_t^\theta(x)
+\textcolor{blue}{u_t^\theta(x)} = \textcolor{orange}{\frac{\dot{\alpha}_t}{\alpha_t}} x + \textcolor{purple}{\left(\frac{\dot{\alpha}_t \beta_t^2}{\alpha_t} - \dot{\beta}_t \beta_t\right)} \textcolor{green}{s_t^\theta(x)}
 \]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{velocity}}\)</span> = <span class="math inline">\(\textcolor{orange}{\text{scaling}}\)</span> · position + <span class="math inline">\(\textcolor{purple}{\text{coefficient}}\)</span> · <span class="math inline">\(\textcolor{green}{\text{score}}\)</span>.</p>
 <p>Train one network, get both — then sample via ODE (deterministic) or SDE (stochastic) as needed.</p>
 </div>
 </div>

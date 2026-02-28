@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -503,8 +503,9 @@ X_{t+h} = X_t + \underbrace{h \cdot u_t(X_t)}_{\text{deterministic drift}} + \un
 </ul>
 <p>As <span class="math inline">\(h \to 0\)</span>, we write this compactly as the <strong>stochastic differential equation (SDE)</strong>:</p>
 <p><span id="eq-sde"><span class="math display">\[
-dX_t = u_t(X_t) \, dt + \sigma_t \, dW_t
+dX_t = \textcolor{green}{u_t(X_t)} \, dt + \textcolor{orange}{\sigma_t} \, \textcolor{red}{dW_t}
 \tag{1}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{green}{\text{drift}}\)</span> is the deterministic direction (same as flow matching), <span class="math inline">\(\textcolor{orange}{\text{diffusion coefficient}}\)</span> controls noise strength, and <span class="math inline">\(\textcolor{red}{\text{Brownian increment}}\)</span> adds randomness.</p>
 <div class="callout callout-style-simple callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">

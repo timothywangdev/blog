@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -488,12 +488,14 @@ window.Quarto = {
 <h3 class="anchored" data-anchor-id="the-mathematical-inevitability">The Mathematical Inevitability</h3>
 <p>When you train a neural network with MSE loss:</p>
 <p><span class="math display">\[
-\mathcal{L} = \mathbb{E}\left[\|f_\theta(x) - y\|^2\right]
+\textcolor{blue}{\mathcal{L}} = \mathbb{E}\left[\|\textcolor{purple}{f_\theta(x)} - \textcolor{green}{y}\|^2\right]
 \]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures error between <span class="math inline">\(\textcolor{purple}{\text{prediction}}\)</span> and <span class="math inline">\(\textcolor{green}{\text{target}}\)</span>.</p>
 <p>The optimal solution is provably the <strong>conditional mean</strong>:</p>
 <p><span class="math display">\[
-f^*(x) = \mathbb{E}[y \mid x]
+\textcolor{purple}{f^*(x)} = \textcolor{red}{\mathbb{E}[y \mid x]}
 \]</span></p>
+<p>where the <span class="math inline">\(\textcolor{purple}{\text{optimal prediction}}\)</span> equals the <span class="math inline">\(\textcolor{red}{\text{average of all valid outputs}}\)</span>.</p>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -960,8 +962,9 @@ Figure&nbsp;2: Direct regression with MSE collapses to the mean (center), while 
 <h4 class="anchored" data-anchor-id="sec-insight-velocity">Insight 1: The Velocity Prediction Has a Unique Answer</h4>
 <p>Even when the data distribution is multimodal, the <strong>conditional expected velocity</strong> is well-defined and unique. For the <a href="../11-practical-flow-matching/#sec-gaussian-condot">Gaussian CondOT path</a> where <span class="math inline">\(x_t = (1-t)x_0 + tx_1\)</span>:</p>
 <p><span id="eq-velocity-target"><span class="math display">\[
-u_t^\theta(x_t) \approx \mathbb{E}[x_1 - x_0 \mid x_t]
+\textcolor{blue}{u_t^\theta(x_t)} \approx \mathbb{E}[\textcolor{green}{x_1} - \textcolor{orange}{x_0} \mid x_t]
 \tag{2}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{learned velocity}}\)</span> approximates the expected direction from <span class="math inline">\(\textcolor{orange}{\text{noise}}\)</span> to <span class="math inline">\(\textcolor{green}{\text{data}}\)</span>.</p>
 <div class="callout callout-style-simple callout-note">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
@@ -1131,9 +1134,9 @@ Figure&nbsp;5: VAE, GAN, and Diffusion represent different trade-offs: VAE cover
 <h3 class="anchored" data-anchor-id="the-problem-with-behavioral-cloning">The Problem with Behavioral Cloning</h3>
 <p>Traditional imitation learning uses regression:</p>
 <p><span class="math display">\[
-\pi_\theta(s) = \arg\min_\theta \mathbb{E}\left[\|\pi_\theta(s) - a_{\text{demo}}\|^2\right]
+\textcolor{purple}{\pi_\theta(s)} = \arg\min_\theta \mathbb{E}\left[\|\textcolor{purple}{\pi_\theta(s)} - \textcolor{green}{a_{\text{demo}}}\|^2\right]
 \]</span></p>
-<p>When demonstrations contain multiple valid strategies, the policy learns their <strong>average</strong>.</p>
+<p>where <span class="math inline">\(\textcolor{purple}{\text{learned policy}}\)</span> is trained to match <span class="math inline">\(\textcolor{green}{\text{demonstration actions}}\)</span>. When demonstrations contain multiple valid strategies, the policy learns their <strong>average</strong>.</p>
 </section>
 <section id="concrete-example-push-t-task" class="level3">
 <h3 class="anchored" data-anchor-id="concrete-example-push-t-task">Concrete Example: Push-T Task</h3>
@@ -1374,9 +1377,9 @@ Figure&nbsp;6: The Push-T task illustrates mode averaging failure: direct regres
 <p>For readers who’ve followed the <a href="../4-flow-matching-loss/">flow matching derivations</a>, here’s the connection:</p>
 <p>The <strong>Conditional Flow Matching</strong> loss is (from <a href="../4-flow-matching-loss/">Part 4</a>):</p>
 <p><span class="math display">\[
-\mathcal{L}_{\text{CFM}} = \mathbb{E}_{t, z, x}\left[\|u_t^\theta(x) - u_t^{\text{target}}(x|z)\|^2\right]
+\textcolor{blue}{\mathcal{L}_{\text{CFM}}} = \mathbb{E}_{t, z, x}\left[\|\textcolor{purple}{u_t^\theta(x)} - \textcolor{green}{u_t^{\text{target}}(x|z)}\|^2\right]
 \]</span></p>
-<p>where <span class="math inline">\(z \sim p_{\text{data}}\)</span> is a data sample and <span class="math inline">\(x\)</span> is drawn from the conditional path <span class="math inline">\(p_t(x|z)\)</span>.</p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures error between <span class="math inline">\(\textcolor{purple}{\text{predicted velocity}}\)</span> and <span class="math inline">\(\textcolor{green}{\text{target velocity}}\)</span>, with <span class="math inline">\(z \sim p_{\text{data}}\)</span> as a data sample.</p>
 <p>For the <strong>Gaussian CondOT path</strong> we use throughout this series (<a href="../7-training/">Part 7</a>):</p>
 <p><span class="math display">\[
 x_t = t \cdot z + (1-t) \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)

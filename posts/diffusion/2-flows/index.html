@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -428,10 +428,11 @@ Figure&nbsp;1: A single trajectory following the vector field
 <p>Every ODE is defined by a vector field <span class="math inline">\(u_t(x)\)</span>. A solution <span class="math inline">\(X_t\)</span> starting from <span class="math inline">\(x_0\)</span> must satisfy:</p>
 <p><span id="eq-vector-field"><span class="math display">\[
 \begin{aligned}
-\frac{dX_t}{dt} &amp;= u_t(X_t) \\
+\textcolor{blue}{\frac{dX_t}{dt}} &amp;= \textcolor{green}{u_t}(\textcolor{orange}{X_t}) \\
 X_0 &amp;= x_0 \quad (\text{initial condition})
 \end{aligned}
 \tag{1}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{velocity}}\)</span> equals the <span class="math inline">\(\textcolor{green}{\text{vector field}}\)</span> evaluated at your <span class="math inline">\(\textcolor{orange}{\text{current position}}\)</span>.</p>
 <p>In words: “your velocity equals whatever the vector field says at your current location.”</p>
 </section>
 <section id="from-trajectory-to-flow" class="level2">
@@ -458,8 +459,8 @@ Figure&nbsp;2: Multiple trajectories: the flow describes where ANY starting poin
 <p>Since the flow satisfies the ODE, we can substitute <span class="math inline">\(X_t = \phi_t(x_0)\)</span>:</p>
 <p><span id="eq-flow-ode"><span class="math display">\[
 \begin{aligned}
-\frac{dX_t}{dt} &amp;= u_t(X_t) \implies \frac{d \phi_t(x_0)}{dt} = u_t(\phi_t(x_0)) \\
-X_0 &amp;= x_0 \implies \phi_0(x_0) = x_0
+\textcolor{blue}{\frac{dX_t}{dt}} = \textcolor{green}{u_t}(\textcolor{orange}{X_t}) \implies \textcolor{blue}{\frac{d \phi_t(x_0)}{dt}} = \textcolor{green}{u_t}(\textcolor{orange}{\phi_t(x_0)}) \\
+X_0 = x_0 \implies \phi_0(x_0) = x_0
 \end{aligned}
 \tag{2}\]</span></span></p>
 <p>The second line says: at <span class="math inline">\(t=0\)</span>, every point is where it started (the flow is the identity map).</p>

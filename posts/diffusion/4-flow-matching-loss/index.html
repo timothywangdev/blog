@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -558,8 +558,9 @@ J = \rho F
 <div class="callout-body-container callout-body">
 <p>We proved the <strong>marginalization trick</strong>: training on conditional targets <span class="math inline">\(u_t^{target}(x|z)\)</span> is mathematically equivalent to training on the intractable marginal <span class="math inline">\(u_t^{target}(x)\)</span>. The key step was showing that the cross-term <span class="math inline">\(\mathbb{E}[u_t^\theta \cdot u_t^{target}]\)</span> simplifies when we expand the marginal definition — the intractable <span class="math inline">\(p_t(x)\)</span> cancels.</p>
 <p>This gives us the <strong>Conditional Flow Matching (CFM) loss</strong>: <span class="math display">\[
-\mathcal{L}_{CFM}(\theta) = \mathbb{E}_{t,z,x}[\|u_t^\theta(x) - u_t^{target}(x|z)\|^2]
+\textcolor{blue}{\mathcal{L}_{CFM}(\theta)} = \mathbb{E}_{t,z,x}[\|\textcolor{purple}{u_t^\theta(x)} - \textcolor{green}{u_t^{target}(x|z)}\|^2]
 \]</span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures the error between our <span class="math inline">\(\textcolor{purple}{\text{learned velocity}}\)</span> and the <span class="math inline">\(\textcolor{green}{\text{target velocity}}\)</span> (which points toward data point <span class="math inline">\(z\)</span>).</p>
 <p>The flow matching framework is now complete for deterministic sampling. Next, we’ll add stochasticity to get diffusion models.</p>
 </div>
 </div>

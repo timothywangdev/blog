@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Hujie Wang">
+<meta name="dcterms.date" content="2026-01-31">
+
+<title>Much Ado About Noising: Why Diffusion Policies Actually Work – Foundation Models &amp; Robotics</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../">
+<link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
+<script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-1RBJ1WWR89"></script>
+
+<script type="text/javascript">
+
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
+</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../../styles.css">
+</head>
+
+<body class="nav-fixed quarto-light"><script id="quarto-html-before-body" type="application/javascript">
+    const toggleBodyColorMode = (bsSheetEl) => {
+      const mode = bsSheetEl.getAttribute("data-mode");
+      const bodyEl = window.document.querySelector("body");
+      if (mode === "dark") {
+        bodyEl.classList.add("quarto-dark");
+        bodyEl.classList.remove("quarto-light");
+      } else {
+        bodyEl.classList.add("quarto-light");
+        bodyEl.classList.remove("quarto-dark");
+      }
+    }
+    const toggleBodyColorPrimary = () => {
+      const bsSheetEl = window.document.querySelector("link#quarto-bootstrap:not([rel=disabled-stylesheet])");
+      if (bsSheetEl) {
+        toggleBodyColorMode(bsSheetEl);
+      }
+    }
+    const setColorSchemeToggle = (alternate) => {
+      const toggles = window.document.querySelectorAll('.quarto-color-scheme-toggle');
+      for (let i=0; i < toggles.length; i++) {
+        const toggle = toggles[i];
+        if (toggle) {
+          if (alternate) {
+            toggle.classList.add("alternate");
+          } else {
+            toggle.classList.remove("alternate");
+          }
+        }
+      }
+    };
+    const toggleColorMode = (alternate) => {
+      // Switch the stylesheets
+      const primaryStylesheets = window.document.querySelectorAll('link.quarto-color-scheme:not(.quarto-color-alternate)');
+      const alternateStylesheets = window.document.querySelectorAll('link.quarto-color-scheme.quarto-color-alternate');
+      manageTransitions('#quarto-margin-sidebar .nav-link', false);
+      if (alternate) {
+        // note: dark is layered on light, we don't disable primary!
+        enableStylesheet(alternateStylesheets);
+        for (const sheetNode of alternateStylesheets) {
+          if (sheetNode.id === "quarto-bootstrap") {
+            toggleBodyColorMode(sheetNode);
+          }
+        }
+      } else {
+        disableStylesheet(alternateStylesheets);
+        enableStylesheet(primaryStylesheets)
+        toggleBodyColorPrimary();
+      }
+      manageTransitions('#quarto-margin-sidebar .nav-link', true);
+      // Switch the toggles
+      setColorSchemeToggle(alternate)
+      // Hack to workaround the fact that safari doesn't
+      // properly recolor the scrollbar when toggling (#1455)
+      if (navigator.userAgent.indexOf('Safari') > 0 && navigator.userAgent.indexOf('Chrome') == -1) {
+        manageTransitions("body", false);
+        window.scrollTo(0, 1);
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          manageTransitions("body", true);
+        }, 40);
+      }
+    }
+    const disableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        stylesheet.rel = 'disabled-stylesheet';
+      }
+    }
+    const enableStylesheet = (stylesheets) => {
+      for (let i=0; i < stylesheets.length; i++) {
+        const stylesheet = stylesheets[i];
+        if(stylesheet.rel !== 'stylesheet') { // for Chrome, which will still FOUC without this check
+          stylesheet.rel = 'stylesheet';
+        }
+      }
+    }
+    const manageTransitions = (selector, allowTransitions) => {
+      const els = window.document.querySelectorAll(selector);
+      for (let i=0; i < els.length; i++) {
+        const el = els[i];
+        if (allowTransitions) {
+          el.classList.remove('notransition');
+        } else {
+          el.classList.add('notransition');
+        }
+      }
+    }
+    const isFileUrl = () => {
+      return window.location.protocol === 'file:';
+    }
+    const hasAlternateSentinel = () => {
+      let styleSentinel = getColorSchemeSentinel();
+      if (styleSentinel !== null) {
+        return styleSentinel === "alternate";
+      } else {
+        return false;
+      }
+    }
+    const setStyleSentinel = (alternate) => {
+      const value = alternate ? "alternate" : "default";
+      if (!isFileUrl()) {
+        window.localStorage.setItem("quarto-color-scheme", value);
+      } else {
+        localAlternateSentinel = value;
+      }
+    }
+    const getColorSchemeSentinel = () => {
+      if (!isFileUrl()) {
+        const storageValue = window.localStorage.getItem("quarto-color-scheme");
+        return storageValue != null ? storageValue : localAlternateSentinel;
+      } else {
+        return localAlternateSentinel;
+      }
+    }
+    const toggleGiscusIfUsed = (isAlternate, darkModeDefault) => {
+      const baseTheme = document.querySelector('#giscus-base-theme')?.value ?? 'light';
+      const alternateTheme = document.querySelector('#giscus-alt-theme')?.value ?? 'dark';
+      let newTheme = '';
+      if(authorPrefersDark) {
+        newTheme = isAlternate ? baseTheme : alternateTheme;
+      } else {
+        newTheme = isAlternate ? alternateTheme : baseTheme;
+      }
+      const changeGiscusTheme = () => {
+        // From: https://github.com/giscus/giscus/issues/336
+        const sendMessage = (message) => {
+          const iframe = document.querySelector('iframe.giscus-frame');
+          if (!iframe) return;
+          iframe.contentWindow.postMessage({ giscus: message }, 'https://giscus.app');
+        }
+        sendMessage({
+          setConfig: {
+            theme: newTheme
+          }
+        });
+      }
+      const isGiscussLoaded = window.document.querySelector('iframe.giscus-frame') !== null;
+      if (isGiscussLoaded) {
+        changeGiscusTheme();
+      }
+    };
+    const authorPrefersDark = false;
+    const darkModeDefault = authorPrefersDark;
+      document.querySelector('link#quarto-text-highlighting-styles.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+      document.querySelector('link#quarto-bootstrap.quarto-color-scheme-extra').rel = 'disabled-stylesheet';
+    let localAlternateSentinel = darkModeDefault ? 'alternate' : 'default';
+    // Dark / light mode switch
+    window.quartoToggleColorScheme = () => {
+      // Read the current dark / light value
+      let toAlternate = !hasAlternateSentinel();
+      toggleColorMode(toAlternate);
+      setStyleSentinel(toAlternate);
+      toggleGiscusIfUsed(toAlternate, darkModeDefault);
+      window.dispatchEvent(new Event('resize'));
+    };
+    // Switch to dark mode if need be
+    if (hasAlternateSentinel()) {
+      toggleColorMode(true);
+    } else {
+      toggleColorMode(false);
+    }
+  </script>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo light-content">
+    <img src="../../../images/ahead-of-robotics-logo-square.png" alt="" class="navbar-logo dark-content">
+    </a>
+    <a class="navbar-brand" href="../../../index.html">
+    <span class="navbar-title">Foundation Models &amp; Robotics</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../about.html"> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/timothywangdev/blog"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../index.xml"> <i class="bi bi-rss" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+  <a href="" class="quarto-color-scheme-toggle quarto-navigation-tool  px-1" onclick="window.quartoToggleColorScheme(); return false;" title="Toggle dark mode"><i class="bi"></i></a>
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#sec-myths" id="toc-sec-myths" class="nav-link active" data-scroll-target="#sec-myths">The Conventional Wisdom</a></li>
+  <li><a href="#sec-setup" id="toc-sec-setup" class="nav-link" data-scroll-target="#sec-setup">The Experimental Setup</a>
+  <ul class="collapse">
+  <li><a href="#benchmarks-28-tasks-total" id="toc-benchmarks-28-tasks-total" class="nav-link" data-scroll-target="#benchmarks-28-tasks-total">Benchmarks (28 Tasks Total)</a></li>
+  <li><a href="#architectures-tested" id="toc-architectures-tested" class="nav-link" data-scroll-target="#architectures-tested">Architectures Tested</a></li>
+  <li><a href="#policy-types-compared" id="toc-policy-types-compared" class="nav-link" data-scroll-target="#policy-types-compared">Policy Types Compared</a></li>
+  </ul></li>
+  <li><a href="#finding-1-architecture-trumps-everything" id="toc-finding-1-architecture-trumps-everything" class="nav-link" data-scroll-target="#finding-1-architecture-trumps-everything">Finding 1: Architecture Trumps Everything</a></li>
+  <li><a href="#finding-2-multimodality-doesnt-explain-performance" id="toc-finding-2-multimodality-doesnt-explain-performance" class="nav-link" data-scroll-target="#finding-2-multimodality-doesnt-explain-performance">Finding 2: Multimodality Doesn’t Explain Performance</a>
+  <ul class="collapse">
+  <li><a href="#test-1-do-action-distributions-have-multiple-modes" id="toc-test-1-do-action-distributions-have-multiple-modes" class="nav-link" data-scroll-target="#test-1-do-action-distributions-have-multiple-modes">Test 1: Do Action Distributions Have Multiple Modes?</a></li>
+  <li><a href="#test-2-does-stochastic-sampling-help" id="toc-test-2-does-stochastic-sampling-help" class="nav-link" data-scroll-target="#test-2-does-stochastic-sampling-help">Test 2: Does Stochastic Sampling Help?</a></li>
+  <li><a href="#test-3-remove-multimodality-entirely" id="toc-test-3-remove-multimodality-entirely" class="nav-link" data-scroll-target="#test-3-remove-multimodality-entirely">Test 3: Remove Multimodality Entirely</a></li>
+  </ul></li>
+  <li><a href="#finding-3-expressivity-is-a-red-herring" id="toc-finding-3-expressivity-is-a-red-herring" class="nav-link" data-scroll-target="#finding-3-expressivity-is-a-red-herring">Finding 3: Expressivity Is a Red Herring</a></li>
+  <li><a href="#finding-4-what-actually-matters" id="toc-finding-4-what-actually-matters" class="nav-link" data-scroll-target="#finding-4-what-actually-matters">Finding 4: What Actually Matters</a>
+  <ul class="collapse">
+  <li><a href="#the-winning-combination-c2-c3" id="toc-the-winning-combination-c2-c3" class="nav-link" data-scroll-target="#the-winning-combination-c2-c3">The Winning Combination: C2 + C3</a></li>
+  <li><a href="#the-minimal-iterative-policy-mip" id="toc-the-minimal-iterative-policy-mip" class="nav-link" data-scroll-target="#the-minimal-iterative-policy-mip">The Minimal Iterative Policy (MIP)</a></li>
+  </ul></li>
+  <li><a href="#sec-manifold" id="toc-sec-manifold" class="nav-link" data-scroll-target="#sec-manifold">The Real Mechanism: Manifold Adherence</a>
+  <ul class="collapse">
+  <li><a href="#the-off-manifold-experiment" id="toc-the-off-manifold-experiment" class="nav-link" data-scroll-target="#the-off-manifold-experiment">The Off-Manifold Experiment</a></li>
+  <li><a href="#why-does-this-work" id="toc-why-does-this-work" class="nav-link" data-scroll-target="#why-does-this-work">Why Does This Work?</a></li>
+  </ul></li>
+  <li><a href="#sec-analysis" id="toc-sec-analysis" class="nav-link" data-scroll-target="#sec-analysis">Critical Analysis</a>
+  <ul class="collapse">
+  <li><a href="#limitation-1-benchmark-selection" id="toc-limitation-1-benchmark-selection" class="nav-link" data-scroll-target="#limitation-1-benchmark-selection">Limitation 1: Benchmark Selection</a></li>
+  <li><a href="#limitation-2-expert-quality" id="toc-limitation-2-expert-quality" class="nav-link" data-scroll-target="#limitation-2-expert-quality">Limitation 2: Expert Quality</a></li>
+  <li><a href="#limitation-3-high-precision-tasks" id="toc-limitation-3-high-precision-tasks" class="nav-link" data-scroll-target="#limitation-3-high-precision-tasks">Limitation 3: High-Precision Tasks</a></li>
+  <li><a href="#open-question-why-supervised-iteration" id="toc-open-question-why-supervised-iteration" class="nav-link" data-scroll-target="#open-question-why-supervised-iteration">Open Question: Why Supervised Iteration?</a></li>
+  </ul></li>
+  <li><a href="#implications-for-the-field" id="toc-implications-for-the-field" class="nav-link" data-scroll-target="#implications-for-the-field">Implications for the Field</a>
+  <ul class="collapse">
+  <li><a href="#for-practitioners" id="toc-for-practitioners" class="nav-link" data-scroll-target="#for-practitioners">For Practitioners</a></li>
+  <li><a href="#for-researchers" id="toc-for-researchers" class="nav-link" data-scroll-target="#for-researchers">For Researchers</a></li>
+  <li><a href="#for-the-diffusion-policy-narrative" id="toc-for-the-diffusion-policy-narrative" class="nav-link" data-scroll-target="#for-the-diffusion-policy-narrative">For the Diffusion Policy Narrative</a></li>
+  </ul></li>
+  <li><a href="#the-bigger-picture" id="toc-the-bigger-picture" class="nav-link" data-scroll-target="#the-bigger-picture">The Bigger Picture</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  <li><a href="#further-reading" id="toc-further-reading" class="nav-link" data-scroll-target="#further-reading">Further Reading</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Much Ado About Noising: Why Diffusion Policies Actually Work</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">robotics</div>
+    <div class="quarto-category">diffusion-policy</div>
+    <div class="quarto-category">imitation-learning</div>
+    <div class="quarto-category">research-deep-dive</div>
+  </div>
+  </div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Hujie Wang </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 31, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Diffusion Policy achieved a 46.9% improvement over baselines. The explanation seemed obvious: diffusion models capture multimodal action distributions, so robots commit to one valid action instead of averaging conflicting options into nonsense.</p>
+<p>Everyone built on this intuition. Papers cited multimodality as the key insight. Researchers designed increasingly sophisticated distribution-matching objectives. The narrative became dogma.</p>
+<p>But a new paper just ran the experiments to test it — and the evidence doesn’t hold up. <strong>Diffusion’s success has almost nothing to do with multimodality.</strong></p>
+<div id="fig-teaser" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-teaser-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="teaser.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-teaser-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The conventional wisdom (left): diffusion policies succeed through distributional learning (C1). The actual finding (right): stochasticity (C2) + iterative computation (C3) are sufficient — distribution matching contributes almost nothing. Figure from Pan et al.<span class="math inline">\(^{[1]}\)</span>
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>TL;DR
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>A comprehensive study across 28 benchmarks challenges why diffusion/flow policies work:</p>
+<ul>
+<li><strong>The myth</strong>: Diffusion captures multimodal action distributions</li>
+<li><strong>The reality</strong>: Two simpler components explain the gains — noise during training + iterative refinement</li>
+<li><strong>The proof</strong>: A two-step regression policy (MIP) matches flow performance with 4.5× fewer compute steps</li>
+<li><strong>The implication</strong>: You might be paying for complexity you don’t need</li>
+</ul>
+</div>
+</div>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Paper Details
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>Much Ado About Noising: Dispelling the Myths of Generative Robotic Control</strong><span class="math inline">\(^{[1]}\)</span></p>
+<p>Pan, Anantharaman, Huang, Jin, Pfrommer, Yuan, Permenter, Qu, Boffi, Shi, Simchowitz</p>
+<p>CMU, MIT, Toyota Research Institute</p>
+<p><a href="https://arxiv.org/abs/2512.01809">arXiv:2512.01809</a> | <a href="https://simchowitzlabpublic.github.io/much-ado-about-noising-project/">Project Page</a> | <a href="https://github.com/simchowitzlabpublic/much-ado-about-noising">Code</a></p>
+<p><em>Max Simchowitz and Guanya Shi are CMU faculty with ICML Best Paper awards; Nicholas Boffi leads CMU’s generative AI theory group.</em></p>
+</div>
+</div>
+<section id="sec-myths" class="level2">
+<h2 class="anchored" data-anchor-id="sec-myths">The Conventional Wisdom</h2>
+<p>Before we can understand what the paper found, we need to establish what the field believed:</p>
+<p><strong>Myth 1: Multimodality</strong> — Diffusion policies work because they can represent multiple valid actions (go left OR go right) instead of averaging them (go straight into the wall).</p>
+<p><strong>Myth 2: Expressivity</strong> — Diffusion models can express more complex observation-to-action mappings than simple regression networks.</p>
+<p><strong>Myth 3: Distribution Matching</strong> — Learning the full action distribution <span class="math inline">\(p(a|o)\)</span> is fundamentally better than just predicting the mean action.</p>
+<p>These explanations felt intuitive. They matched our understanding of diffusion for image generation. And they guided years of follow-up research.</p>
+<p>The problem? The evidence doesn’t support them.</p>
+<p>The authors set out to test each myth with controlled experiments. Let’s examine their methodology before trusting the conclusions.</p>
+</section>
+<section id="sec-setup" class="level2">
+<h2 class="anchored" data-anchor-id="sec-setup">The Experimental Setup</h2>
+<p>This paper’s strength is its comprehensive experimental design.</p>
+<section id="benchmarks-28-tasks-total" class="level3">
+<h3 class="anchored" data-anchor-id="benchmarks-28-tasks-total">Benchmarks (28 Tasks Total)</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>Benchmarks</th>
+<th>Tasks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>State-based</td>
+<td>Robomimic, Push-T, Kitchen, MetaWorld, Adroit</td>
+<td>15</td>
+</tr>
+<tr class="even">
+<td>Pixel-based</td>
+<td>Robomimic (image), Push-T (image)</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<td>Point cloud</td>
+<td>Robomimic</td>
+<td>3</td>
+</tr>
+<tr class="even">
+<td>Vision-language</td>
+<td>LIBERO</td>
+<td>130 (4 suites)</td>
+</tr>
+</tbody>
+</table>
+<p>This is unusually thorough. Most papers cherry-pick 3-5 tasks where their method shines.</p>
+</section>
+<section id="architectures-tested" class="level3">
+<h3 class="anchored" data-anchor-id="architectures-tested">Architectures Tested</h3>
+<p>A critical methodological choice: they test <strong>identical architectures</strong> for both generative (flow/diffusion) and regression policies. This controls for the confound that diffusion papers often use fancier networks.</p>
+<ul>
+<li><strong>Chi-UNet</strong>: The original Diffusion Policy architecture</li>
+<li><strong>Chi-Transformer</strong>: Transformer variant from Chi et al.</li>
+<li><strong>Sudeep-DiT</strong>: Diffusion Transformer from recent work</li>
+<li><strong>MLPs and RNNs</strong>: Traditional baselines</li>
+</ul>
+</section>
+<section id="policy-types-compared" class="level3">
+<h3 class="anchored" data-anchor-id="policy-types-compared">Policy Types Compared</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Policy</th>
+<th>Training</th>
+<th>Inference</th>
+<th>Components</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regression</td>
+<td>MSE loss</td>
+<td>Single forward pass</td>
+<td>Baseline</td>
+</tr>
+<tr class="even">
+<td>Flow</td>
+<td>Flow matching loss</td>
+<td>Multi-step ODE</td>
+<td>C1 + C2 + C3</td>
+</tr>
+<tr class="odd">
+<td>Straight Flow</td>
+<td>MSE on interpolant</td>
+<td>Multi-step</td>
+<td>C2 only</td>
+</tr>
+<tr class="even">
+<td>Residual Regression</td>
+<td>MSE + residual</td>
+<td>Multi-step</td>
+<td>C3 only</td>
+</tr>
+<tr class="odd">
+<td>MIP</td>
+<td>MSE at two noise levels</td>
+<td>Two-step</td>
+<td>C2 + C3</td>
+</tr>
+</tbody>
+</table>
+<p>Where the components are:</p>
+<div id="fig-components" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-components-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="key-ingredients.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-components-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: The three components of generative control policies. <strong>C1</strong> (distributional learning) is what people thought mattered. <strong>C2</strong> (stochasticity) and <strong>C3</strong> (supervised iteration) are what actually drive performance. Figure from Pan et al.<span class="math inline">\(^{[1]}\)</span>
+</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>C1 — Distributional learning</strong>: Fitting the full conditional distribution <span class="math inline">\(p(a|o)\)</span> via flow matching or diffusion</li>
+<li><strong>C2 — Stochasticity injection</strong>: Adding noise during training (the interpolant in flow matching)</li>
+<li><strong>C3 — Supervised iterative computation</strong>: Generating outputs through multiple steps, each supervised during training</li>
+</ul>
+<p>This decomposition is the paper’s key contribution — isolating which components actually matter.</p>
+</section>
+</section>
+<section id="finding-1-architecture-trumps-everything" class="level2">
+<h2 class="anchored" data-anchor-id="finding-1-architecture-trumps-everything">Finding 1: Architecture Trumps Everything</h2>
+<p>The first surprise: when you give regression policies the same architecture as diffusion policies, the performance gap largely disappears.</p>
+<blockquote class="blockquote">
+<p>“Architecture choice dictates performance far more than the generative versus regression distinction.”</p>
+</blockquote>
+<p>On most benchmarks, properly-architected regression matches or approaches flow performance. The exceptions are high-precision insertion tasks (Square, Threading) — more on why later.</p>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Implication for Practitioners
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Before switching to diffusion, try upgrading your regression policy’s architecture. You might get 80% of the benefit with 10% of the complexity.</p>
+</div>
+</div>
+</section>
+<section id="finding-2-multimodality-doesnt-explain-performance" class="level2">
+<h2 class="anchored" data-anchor-id="finding-2-multimodality-doesnt-explain-performance">Finding 2: Multimodality Doesn’t Explain Performance</h2>
+<p>This is the most counterintuitive finding. The authors attack the multimodality hypothesis from three angles:</p>
+<section id="test-1-do-action-distributions-have-multiple-modes" class="level3">
+<h3 class="anchored" data-anchor-id="test-1-do-action-distributions-have-multiple-modes">Test 1: Do Action Distributions Have Multiple Modes?</h3>
+<p>They visualize action distributions at ambiguous states using t-SNE. If multimodality matters, we should see distinct clusters (left vs.&nbsp;right).</p>
+<p><strong>Result</strong>: Single clusters. Even at symmetric states where humans see obvious alternatives, the expert demonstrations form unimodal distributions.</p>
+<p>Why? Human demonstrators are biased. They prefer one approach over another, even unconsciously. The “multimodal” states we imagine rarely appear in real data.</p>
+</section>
+<section id="test-2-does-stochastic-sampling-help" class="level3">
+<h3 class="anchored" data-anchor-id="test-2-does-stochastic-sampling-help">Test 2: Does Stochastic Sampling Help?</h3>
+<p>If capturing multimodality is important, stochastic sampling (drawing from the full distribution) should outperform mean sampling (just taking the mode).</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Stochastic</th>
+<th>Mean</th>
+<th>Difference</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Tool-Hang</td>
+<td>0.80</td>
+<td>0.78</td>
+<td>+2%</td>
+</tr>
+<tr class="even">
+<td>Kitchen</td>
+<td>0.99</td>
+<td>0.99</td>
+<td>0%</td>
+</tr>
+<tr class="odd">
+<td>Transport</td>
+<td>0.96</td>
+<td>0.94</td>
+<td>+2%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Result</strong>: Negligible difference. The multimodal capacity isn’t being used.</p>
+</section>
+<section id="test-3-remove-multimodality-entirely" class="level3">
+<h3 class="anchored" data-anchor-id="test-3-remove-multimodality-entirely">Test 3: Remove Multimodality Entirely</h3>
+<p>They create a <strong>deterministic expert dataset</strong> — only one action per state, no ambiguity possible.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Performance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Flow</td>
+<td>0.72</td>
+</tr>
+<tr class="even">
+<td>Regression</td>
+<td>0.64</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Result</strong>: Flow still wins. The advantage persists even when multimodality is impossible.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>The Insight
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Diffusion policies aren’t winning because they model multiple modes. They’re winning for a different reason entirely.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="finding-3-expressivity-is-a-red-herring" class="level2">
+<h2 class="anchored" data-anchor-id="finding-3-expressivity-is-a-red-herring">Finding 3: Expressivity Is a Red Herring</h2>
+<p>Maybe diffusion models can fit more complex functions? The authors test this via <strong>Lipschitz constants</strong>.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>What’s a Lipschitz Constant?
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The Lipschitz constant <span class="math inline">\(L\)</span> measures how “steep” or “sensitive” a function can be:</p>
+<p><span class="math display">\[|f(x_1) - f(x_2)| \leq L \cdot |x_1 - x_2|\]</span></p>
+<p>It bounds how much the output can change relative to input changes:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Lipschitz Constant</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(L = 1\)</span></td>
+<td>Output changes at most as fast as input</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(L = 100\)</span></td>
+<td>Output can change much faster — near-vertical jumps</td>
+</tr>
+</tbody>
+</table>
+<p>Higher Lipschitz = can fit sharper, more complex functions.</p>
+</div>
+</div>
+<p>Here’s the key insight the paper makes: <strong>what looks like multimodality can be fit by a deterministic function with sharp transitions.</strong></p>
+<div id="fig-lipschitz" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lipschitz-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="lipschitz-multimodal.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lipschitz-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Data that appears multimodal (left) — two clusters of “go left” vs “go right” actions — can be perfectly fit by a deterministic function with a steep decision boundary (right). No distribution modeling required.
+</figcaption>
+</figure>
+</div>
+<p>Consider a T-intersection where the robot could go left or right. This <em>seems</em> multimodal — two valid actions for similar observations. But a deterministic policy with high Lipschitz constant can fit this perfectly: slightly left of the decision boundary → go left; slightly right → go right. The transition is nearly vertical — a tiny change in observation causes a large change in action.</p>
+<p>The policy isn’t modeling a distribution over both options. It’s learning a steep decision boundary that picks one action definitively based on subtle differences in the observation.</p>
+<blockquote class="blockquote">
+<p>“Data that appears multi-modal can be fit with a policy that has a high Lipschitz constant… This reflects a broader principle in control that we need only capture the mapping from observation to a <strong>single effective action</strong>, rather than reproduce the distribution over all possible actions.”</p>
+</blockquote>
+<p><strong>Theoretical result (Theorem 1)</strong>: For log-concave (unimodal) distributions, flow-based policies have Lipschitz constants bounded by a constant factor of the underlying flow field. They can’t be arbitrarily more expressive.</p>
+<p><strong>Empirical result</strong>: Regression policies actually show <em>higher</em> Lipschitz constants than flow policies.</p>
+<p>The expressivity hypothesis doesn’t hold up — if anything, regression can fit sharper functions.</p>
+</section>
+<section id="finding-4-what-actually-matters" class="level2">
+<h2 class="anchored" data-anchor-id="finding-4-what-actually-matters">Finding 4: What Actually Matters</h2>
+<p>Through systematic ablations, the authors identify the true success factors:</p>
+<section id="the-winning-combination-c2-c3" class="level3">
+<h3 class="anchored" data-anchor-id="the-winning-combination-c2-c3">The Winning Combination: C2 + C3</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Components</th>
+<th>Description</th>
+<th>Performance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>C1 only</td>
+<td>Distribution matching</td>
+<td>≈ Regression</td>
+</tr>
+<tr class="even">
+<td>C2 only</td>
+<td>Stochasticity</td>
+<td>≈ Regression</td>
+</tr>
+<tr class="odd">
+<td>C3 only</td>
+<td>Iterative computation</td>
+<td>&lt; Regression</td>
+</tr>
+<tr class="even">
+<td><strong>C2 + C3</strong></td>
+<td><strong>Stochasticity + Iteration</strong></td>
+<td><strong>≈ Flow</strong></td>
+</tr>
+<tr class="odd">
+<td>C1 + C2 + C3</td>
+<td>Full flow</td>
+<td>Baseline</td>
+</tr>
+</tbody>
+</table>
+<p>Neither component alone helps. But together, they recover nearly all of flow’s performance.</p>
+</section>
+<section id="the-minimal-iterative-policy-mip" class="level3">
+<h3 class="anchored" data-anchor-id="the-minimal-iterative-policy-mip">The Minimal Iterative Policy (MIP)</h3>
+<p>To prove this, they design MIP — the simplest possible policy using C2 + C3:</p>
+<pre><code>Training:
+1. Sample noise level t★ = 0.9 (fixed)
+2. Create noisy action: a_noisy = (1-t★) * a_clean + t★ * noise
+3. Train network to predict clean action from noisy action
+4. Also train on t = 0 (no noise) for initialization
+
+Inference:
+1. Start from zero (not random noise)
+2. Apply network once → get refined prediction
+3. Apply network again → get final action</code></pre>
+<p>That’s it. Two forward passes, no ODE solver, no noise schedule tuning.</p>
+<p><strong>Results on LIBERO</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Dataset</th>
+<th>Regression</th>
+<th>Flow</th>
+<th>MIP</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>LIBERO Object</td>
+<td>92.6</td>
+<td>97.4</td>
+<td>95.8</td>
+</tr>
+<tr class="even">
+<td>LIBERO Goal</td>
+<td>94.6</td>
+<td>95.0</td>
+<td>95.2</td>
+</tr>
+<tr class="odd">
+<td>LIBERO Spatial</td>
+<td>97.2</td>
+<td>95.8</td>
+<td>97.6</td>
+</tr>
+<tr class="even">
+<td>LIBERO 10</td>
+<td>78.0</td>
+<td>81.6</td>
+<td>82.2</td>
+</tr>
+</tbody>
+</table>
+<p>MIP matches or exceeds flow on most tasks with 2 function evaluations instead of 9.</p>
+</section>
+</section>
+<section id="sec-manifold" class="level2">
+<h2 class="anchored" data-anchor-id="sec-manifold">The Real Mechanism: Manifold Adherence</h2>
+<p>If not multimodality or expressivity, what explains the advantage?</p>
+<p>The authors propose <strong>manifold adherence</strong> — the policy’s ability to produce plausible actions even when encountering unfamiliar states.</p>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Analogy: Walking a Mountain Ridge
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine expert demonstrations trace a path along a mountain ridge (the “action manifold”). A regression policy memorizes the path perfectly — but step slightly off-trail, and it might direct you off a cliff. A policy with C2+C3 training learns the shape of the ridge itself. Even starting from mid-air, iterative refinement pulls you back toward the ridge.</p>
+</div>
+</div>
+<div id="fig-manifold" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-manifold-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="manifold-adherence.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-manifold-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Manifold adherence visualized. Starting from any point in action space, iterative refinement converges toward the expert manifold (the surface). Methods with C2+C3 stay closer to this surface even when the input state is unfamiliar. Figure from Pan et al.<span class="math inline">\(^{[1]}\)</span>
+</figcaption>
+</figure>
+</div>
+<section id="the-off-manifold-experiment" class="level3">
+<h3 class="anchored" data-anchor-id="the-off-manifold-experiment">The Off-Manifold Experiment</h3>
+<p>They design a clever test:</p>
+<ol type="1">
+<li>Collect expert actions at neighboring states</li>
+<li>Compute the subspace spanned by these actions</li>
+<li>For a new state, measure how much the predicted action deviates from this subspace</li>
+</ol>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Off-Manifold Error</th>
+<th>Validation Loss</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regression</td>
+<td>0.058</td>
+<td>0.073</td>
+</tr>
+<tr class="even">
+<td>Straight Flow</td>
+<td>0.061</td>
+<td>0.071</td>
+</tr>
+<tr class="odd">
+<td>Residual Regression</td>
+<td>0.057</td>
+<td>0.062</td>
+</tr>
+<tr class="even">
+<td><strong>MIP</strong></td>
+<td><strong>0.043</strong></td>
+<td>0.069</td>
+</tr>
+<tr class="odd">
+<td>Flow</td>
+<td>0.032</td>
+<td>0.074</td>
+</tr>
+</tbody>
+</table>
+<p>All methods achieve similar validation loss. But only C2+C3 methods (MIP, Flow) achieve low off-manifold error.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Mechanism
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Supervised iterative computation + stochasticity creates an inductive bias toward staying on the “action manifold” — the space of actions that actually appear in demonstrations.</p>
+<p>When the policy encounters an unfamiliar state, it produces an action that <em>could</em> plausibly be part of a demonstration, even if it’s not exactly right.</p>
+</div>
+</div>
+</section>
+<section id="why-does-this-work" class="level3">
+<h3 class="anchored" data-anchor-id="why-does-this-work">Why Does This Work?</h3>
+<p>The intuition: training with noise injection forces the network to learn mappings from <em>anywhere in action space</em> back to the expert manifold. Even when starting from irrelevant noise, it must recover valid actions.</p>
+<p>Think of it like <strong>GPS navigation vs.&nbsp;memorized directions</strong>:</p>
+<ul>
+<li><p><strong>Regression (memorized directions)</strong>: “At the third light, turn left.” Works perfectly on the trained route. But take a wrong turn? The directions are useless.</p></li>
+<li><p><strong>C2+C3 (GPS)</strong>: Knows the destination and the general landscape. Even when off-route, it recalculates a path back. The iterative steps are like GPS recalculating: “In 100 meters, turn right to rejoin the route.”</p></li>
+</ul>
+<p>At test time, when distribution shift occurs (robot in unfamiliar state), the policy’s bias toward the expert manifold keeps it from predicting completely nonsensical actions. It may not find the <em>optimal</em> action, but it finds <em>a plausible</em> action — one that looks like something an expert might do.</p>
+<p>Regression policies lack this regularization. They can memorize training data but extrapolate poorly.</p>
+</section>
+</section>
+<section id="sec-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="sec-analysis">Critical Analysis</h2>
+<p>This paper is strong, but let me highlight limitations and open questions:</p>
+<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Common Misconception
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>“This paper says diffusion doesn’t work”</strong> — No.&nbsp;Diffusion/flow policies work great. The paper questions <em>why</em> they work. The practical method is unchanged; our understanding of the mechanism is refined.</p>
+</div>
+</div>
+<section id="limitation-1-benchmark-selection" class="level3">
+<h3 class="anchored" data-anchor-id="limitation-1-benchmark-selection">Limitation 1: Benchmark Selection</h3>
+<p>The benchmarks are primarily short-horizon manipulation tasks. The authors acknowledge:</p>
+<blockquote class="blockquote">
+<p>“Findings apply primarily to behavior cloning, with applicability to RL-finetuning, pretraining, and long-horizon planning remaining open questions.”</p>
+</blockquote>
+<p>For tasks requiring genuine long-horizon multimodal planning (assemble furniture with multiple valid orderings), the multimodality hypothesis might still hold.</p>
+</section>
+<section id="limitation-2-expert-quality" class="level3">
+<h3 class="anchored" data-anchor-id="limitation-2-expert-quality">Limitation 2: Expert Quality</h3>
+<p>The “deterministic expert” experiment removes multimodality from data but uses scripted/optimal experts. Real human demonstrations have noise and suboptimality — might multimodality matter more there?</p>
+</section>
+<section id="limitation-3-high-precision-tasks" class="level3">
+<h3 class="anchored" data-anchor-id="limitation-3-high-precision-tasks">Limitation 3: High-Precision Tasks</h3>
+<p>Flow still outperforms on insertion tasks (Square, Threading). The paper attributes this to “iterative refinement for precision” but doesn’t fully explain why C2+C3 alone doesn’t capture this.</p>
+</section>
+<section id="open-question-why-supervised-iteration" class="level3">
+<h3 class="anchored" data-anchor-id="open-question-why-supervised-iteration">Open Question: Why Supervised Iteration?</h3>
+<p>The paper identifies <em>what</em> works (C2+C3) but not <em>why</em> at a fundamental level:</p>
+<blockquote class="blockquote">
+<p>“A theoretical framework explaining why stochastic supervision with MSE loss induces manifold adherence behavior remains elusive.”</p>
+</blockquote>
+<p>This is an invitation for theory work.</p>
+</section>
+</section>
+<section id="implications-for-the-field" class="level2">
+<h2 class="anchored" data-anchor-id="implications-for-the-field">Implications for the Field</h2>
+<section id="for-practitioners" class="level3">
+<h3 class="anchored" data-anchor-id="for-practitioners">For Practitioners</h3>
+<ol type="1">
+<li><p><strong>Don’t cargo-cult diffusion.</strong> If you’re using diffusion “because it handles multimodality,” reconsider. You might be paying complexity costs for benefits you’re not receiving.</p></li>
+<li><p><strong>Try MIP first.</strong> Two-step refinement with noise training might be all you need.</p></li>
+<li><p><strong>Invest in architecture.</strong> Upgrading from MLP to U-Net/Transformer matters more than switching from regression to flow.</p></li>
+<li><p><strong>Benchmark carefully.</strong> The task you’re solving might not actually benefit from generative approaches.</p></li>
+</ol>
+</section>
+<section id="for-researchers" class="level3">
+<h3 class="anchored" data-anchor-id="for-researchers">For Researchers</h3>
+<ol type="1">
+<li><p><strong>Mechanism matters.</strong> “It works” isn’t enough. Understanding <em>why</em> prevents building on false foundations.</p></li>
+<li><p><strong>Ablate ruthlessly.</strong> This paper’s component decomposition (C1, C2, C3) is a model for rigorous analysis.</p></li>
+<li><p><strong>Question conventional wisdom.</strong> The multimodality story was appealing but unsupported. What other “obvious” explanations deserve scrutiny?</p></li>
+<li><p><strong>Theory gap.</strong> Why does C2+C3 induce manifold adherence? There’s a paper in answering this.</p></li>
+</ol>
+</section>
+<section id="for-the-diffusion-policy-narrative" class="level3">
+<h3 class="anchored" data-anchor-id="for-the-diffusion-policy-narrative">For the Diffusion Policy Narrative</h3>
+<p>This doesn’t mean Diffusion Policy was wrong — it identified a method that works. But the explanation was incomplete.</p>
+<p>The corrected narrative:</p>
+<blockquote class="blockquote">
+<p>Diffusion Policy works not because it models multimodal distributions, but because <strong>supervised iterative computation with stochasticity injection</strong> creates an inductive bias toward producing actions that look like expert demonstrations, even under distribution shift.</p>
+</blockquote>
+<p>This is actually more useful! It tells us <em>which components to keep</em> when simplifying or extending the method.</p>
+</section>
+</section>
+<section id="the-bigger-picture" class="level2">
+<h2 class="anchored" data-anchor-id="the-bigger-picture">The Bigger Picture</h2>
+<p>This paper exemplifies healthy scientific progress. Diffusion Policy (Chi et al., 2023) made a practical breakthrough. This paper (Simchowitz et al., 2025) refines our understanding of <em>why</em>.</p>
+<p>Both are valuable:</p>
+<ul>
+<li>Without Chi et al., we wouldn’t have a method that works</li>
+<li>Without Simchowitz et al., we’d be optimizing the wrong things</li>
+</ul>
+<p>The field now has better guidance for when to use generative approaches, what components matter, and where to focus future research.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Summary
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><strong>The Old Story</strong>: Diffusion policies capture multimodal action distributions, avoiding the averaging problem.</p>
+<p><strong>The New Story</strong>: Diffusion policies succeed through supervised iterative computation + stochasticity, which creates an inductive bias for manifold adherence under distribution shift.</p>
+<p><strong>Practical Takeaway</strong>: A two-step regression policy (MIP) captures most benefits with fraction of the complexity. Reserve full diffusion/flow for tasks requiring high precision or genuine long-horizon multimodality.</p>
+</div>
+</div>
+<hr>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>[1] Pan, C., Anantharaman, G., Huang, N., Jin, C., Pfrommer, D., Yuan, C., Permenter, F., Qu, G., Boffi, N., Shi, G., &amp; Simchowitz, M. <a href="https://arxiv.org/abs/2512.01809">Much Ado About Noising: Dispelling the Myths of Generative Robotic Control</a>. <em>arXiv 2025</em>.</p>
+<p>[2] Chi, C., Feng, S., Du, Y., Xu, Z., Cousineau, E., Burchfiel, B., &amp; Song, S. <a href="https://arxiv.org/abs/2303.04137">Diffusion Policy: Visuomotor Policy Learning via Action Diffusion</a>. <em>RSS 2023</em>.</p>
+<p>[3] Lipman, Y., Chen, R. T. Q., Ben-Hamu, H., Nickel, M., &amp; Le, M. <a href="https://arxiv.org/abs/2210.02747">Flow Matching for Generative Modeling</a>. <em>ICLR 2023</em>.</p>
+</section>
+<section id="further-reading" class="level2">
+<h2 class="anchored" data-anchor-id="further-reading">Further Reading</h2>
+<ul>
+<li><a href="../1-diffusion-policy/">Part 1: Diffusion Policy</a> — The foundational paper this work challenges</li>
+<li><a href="https://simchowitzlabpublic.github.io/much-ado-about-noising-project/">Project Page</a> — Visualizations and additional results</li>
+<li><a href="https://github.com/simchowitzlabpublic/much-ado-about-noising">Code Repository</a> — Reproduce the experiments</li>
+</ul>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    // Ensure there is a toggle, if there isn't float one in the top right
+    if (window.document.querySelector('.quarto-color-scheme-toggle') === null) {
+      const a = window.document.createElement('a');
+      a.classList.add('top-right');
+      a.classList.add('quarto-color-scheme-toggle');
+      a.href = "";
+      a.onclick = function() { try { window.quartoToggleColorScheme(); } catch {} return false; };
+      const i = window.document.createElement("i");
+      i.classList.add('bi');
+      a.appendChild(i);
+      window.document.body.appendChild(a);
+    }
+    setColorSchemeToggle(hasAlternateSentinel())
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/layernorm\.dev");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="light">
+<input type="hidden" id="giscus-alt-theme" value="dark_dimmed">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      if (authorPrefersDark) {
+          [baseTheme, altTheme] = [altTheme, baseTheme];
+      }
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "timothywangdev/blog";
+    script.dataset.repoId = "MDEwOlJlcG9zaXRvcnkyNjIyMTE2OTI=";
+    script.dataset.category = "Announcements";
+    script.dataset.categoryId = "DIC_kwDOD6EIbM4CzgxQ";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "bottom";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>Copyright 2025, Foundation Models &amp; Robotics</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

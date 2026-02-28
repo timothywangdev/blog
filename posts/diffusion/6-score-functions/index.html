@@ -46,9 +46,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -618,17 +618,18 @@ p_t(x | z) = \frac{1}{(2\pi \beta_t^2)^{d/2}} \exp\left(-\frac{\|x - \alpha_t z\
 \end{aligned}
 \]</span></p>
 <p>Therefore, if we set <span class="math display">\[
-u_t^{sde} = u_t^{target} + \frac{\sigma_t^2}{2} \nabla \log p_t
+\textcolor{blue}{u_t^{sde}} = \textcolor{green}{u_t^{target}} + \textcolor{red}{\frac{\sigma_t^2}{2} \nabla \log p_t}
 \]</span></p>
-<p>then it satisfies the Fokker-Planck equation.</p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{SDE drift}}\)</span> = <span class="math inline">\(\textcolor{green}{\text{ODE drift}}\)</span> + <span class="math inline">\(\textcolor{red}{\text{score correction}}\)</span>, then it satisfies the Fokker-Planck equation.</p>
 <p><span class="math display">\[
 \partial_t p_t(x) = -\nabla \cdot (p_t u_t^{sde})(x) + \frac{\sigma_t^2}{2} \Delta p_t(x)
 \]</span></p>
 <p>To understand this intuitively, the SDE can be seen as follows: <span class="math display">\[
 \begin{aligned}
-dX_t = [\underbrace{u_t^{target}(X_t)}_{\text{ODE drift}} + \underbrace{\frac{\sigma_t^2}{2} \nabla \log p_t(X_t)}_{\text{score correction}}] dt + \underbrace{\sigma_t dW_t}_{\text{noise}}
+dX_t = [\textcolor{green}{u_t^{target}(X_t)} + \textcolor{red}{\frac{\sigma_t^2}{2} \nabla \log p_t(X_t)}] \, dt + \textcolor{orange}{\sigma_t dW_t}
 \end{aligned}
 \]</span></p>
+<p>The <span class="math inline">\(\textcolor{green}{\text{ODE drift}}\)</span> provides direction, the <span class="math inline">\(\textcolor{red}{\text{score correction}}\)</span> counteracts diffusion to maintain the probability path, and <span class="math inline">\(\textcolor{orange}{\text{noise}}\)</span> adds stochasticity.</p>
 <section id="intuition-the-drunken-marching-band" class="level3">
 <h3 class="anchored" data-anchor-id="intuition-the-drunken-marching-band">Intuition: The Drunken Marching Band</h3>
 <div class="quarto-figure quarto-figure-center">

@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Timothy Wang">
+<meta name="author" content="Hujie Wang">
 <meta name="dcterms.date" content="2025-11-27">
 
 <title>Diffusion &amp; Flow Matching Part 1: Introduction – Foundation Models &amp; Robotics</title>
@@ -45,9 +45,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -305,8 +305,8 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
   <ul>
   <li><a href="#series-overview" id="toc-series-overview" class="nav-link active" data-scroll-target="#series-overview">Series Overview</a></li>
   <li><a href="#what-are-we-building" id="toc-what-are-we-building" class="nav-link" data-scroll-target="#what-are-we-building">What Are We Building?</a></li>
-  <li><a href="#diffusion-models-the-noisy-path" id="toc-diffusion-models-the-noisy-path" class="nav-link" data-scroll-target="#diffusion-models-the-noisy-path">Diffusion Models: The Noisy Path</a></li>
-  <li><a href="#flow-matching-the-direct-path" id="toc-flow-matching-the-direct-path" class="nav-link" data-scroll-target="#flow-matching-the-direct-path">Flow Matching: The Direct Path</a></li>
+  <li><a href="#diffusion-models-adding-stochasticity" id="toc-diffusion-models-adding-stochasticity" class="nav-link" data-scroll-target="#diffusion-models-adding-stochasticity">Diffusion Models: Adding Stochasticity</a></li>
+  <li><a href="#flow-matching-the-deterministic-path" id="toc-flow-matching-the-deterministic-path" class="nav-link" data-scroll-target="#flow-matching-the-deterministic-path">Flow Matching: The Deterministic Path</a></li>
   <li><a href="#how-do-they-compare" id="toc-how-do-they-compare" class="nav-link" data-scroll-target="#how-do-they-compare">How Do They Compare?</a></li>
   <li><a href="#the-deep-connection" id="toc-the-deep-connection" class="nav-link" data-scroll-target="#the-deep-connection">The Deep Connection</a></li>
   <li><a href="#whats-next" id="toc-whats-next" class="nav-link" data-scroll-target="#whats-next">What’s Next?</a></li>
@@ -334,7 +334,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Timothy Wang </p>
+             <p>Hujie Wang </p>
           </div>
   </div>
     
@@ -364,9 +364,10 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>Diffusion models</strong> gradually add noise to data, then learn to reverse the process</li>
-<li><strong>Flow matching</strong> learns a velocity field that directly transports noise to data</li>
-<li>Both achieve state-of-the-art results; flow matching is often simpler to train</li>
+<li>Both <strong>diffusion</strong> and <strong>flow matching</strong> learn to transform noise into data</li>
+<li><strong>Flow matching</strong>: deterministic ODE trajectories (smooth, predictable paths)</li>
+<li><strong>Diffusion</strong>: stochastic SDE trajectories (paths with random perturbations)</li>
+<li>They’re deeply connected — this series develops a unified framework for both</li>
 </ul>
 </div>
 </div>
@@ -468,78 +469,112 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="diffusion-vs-flow.png" class="img-fluid figure-img"></p>
-<figcaption>Diffusion gradually adds noise then learns to reverse it; flow matching learns a direct velocity field from noise to data</figcaption>
+<figcaption>Both approaches transform noise (t=0) into data (t=1). The key difference: flow matching follows deterministic ODE trajectories; diffusion follows stochastic SDE trajectories with random perturbations.</figcaption>
 </figure>
 </div>
 </section>
-<section id="diffusion-models-the-noisy-path" class="level2">
-<h2 class="anchored" data-anchor-id="diffusion-models-the-noisy-path">Diffusion Models: The Noisy Path</h2>
-<p>The key idea behind diffusion models is surprisingly simple:</p>
-<ol type="1">
-<li><strong>Forward process</strong>: Take real data and gradually corrupt it with noise until it becomes pure random noise</li>
-<li><strong>Reverse process</strong>: Train a neural network to undo this corruption step by step</li>
-</ol>
-<p>Think of it like this: if you slowly blur a photograph until it’s unrecognizable static, the neural network learns to “unblur” it. At generation time, you start with pure static and apply the learned unblurring process to create a new image.</p>
-<p>The forward process is fixed (just adding noise), so the only thing we need to learn is how to reverse it. The network is trained to predict how much noise was added at each step.</p>
+<section id="diffusion-models-adding-stochasticity" class="level2">
+<h2 class="anchored" data-anchor-id="diffusion-models-adding-stochasticity">Diffusion Models: Adding Stochasticity</h2>
+<p>Diffusion models work just like flow matching — they learn to transport noise into data — but with one key addition: <strong>random perturbations</strong> during sampling.</p>
+<p>Think of it this way: flow matching follows a smooth, deterministic path from noise to data. Diffusion adds small random “jitters” at each step, like a leaf floating downstream while also being buffeted by turbulence. Both end up at the same destination (the data distribution), but diffusion takes a noisier route.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>A Note on Conventions
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If you read early diffusion papers (DDPM, 2020), you’ll see a different framing: “add noise to data, then learn to reverse.” This describes the same math with <strong>flipped time</strong>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Convention</th>
+<th>t=0</th>
+<th>t=1</th>
+<th>Generation direction</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>DDPM (2020)</strong></td>
+<td>Data</td>
+<td>Noise</td>
+<td>Reverse: t=1 → t=0</td>
+</tr>
+<tr class="even">
+<td><strong>Flow matching (2022+)</strong></td>
+<td>Noise</td>
+<td>Data</td>
+<td>Forward: t=0 → t=1</td>
+</tr>
+</tbody>
+</table>
+<p>These are <strong>mathematically equivalent</strong> — just substitute τ = 1−t to convert. This series uses the flow matching convention (t=0 = noise, t=1 = data) because it’s more intuitive: generation “flows forward” from noise to data. Modern systems like Stable Diffusion 3 and FLUX also use this convention.</p>
+</div>
+</div>
 </section>
-<section id="flow-matching-the-direct-path" class="level2">
-<h2 class="anchored" data-anchor-id="flow-matching-the-direct-path">Flow Matching: The Direct Path</h2>
-<p>Flow matching takes a more direct approach:</p>
+<section id="flow-matching-the-deterministic-path" class="level2">
+<h2 class="anchored" data-anchor-id="flow-matching-the-deterministic-path">Flow Matching: The Deterministic Path</h2>
+<p>Flow matching learns a <a href="../2-flows/">vector field</a> that tells each point which direction to move:</p>
 <ol type="1">
 <li><strong>Define a path</strong>: Specify how to smoothly interpolate between noise and data</li>
 <li><strong>Learn the velocity</strong>: Train a neural network to predict the direction of motion along this path</li>
 </ol>
-<p>Imagine dropping a leaf into a river. The current (<a href="../2-flows/">vector field</a>) tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the “noise region” will flow toward the “data region.”</p>
-<p>The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories.</p>
+<p>Imagine dropping a leaf into a river. The current tells the leaf which way to move at each moment. If we design the currents correctly, leaves dropped anywhere in the “noise region” will flow toward the “data region.”</p>
+<p>The simplest path is a straight line between a noise sample and a data sample. The network learns the velocity field that produces these straight-line trajectories. At generation time, we start from random noise and follow the learned flow — a deterministic ODE that produces the same output every time for a given starting point.</p>
 </section>
 <section id="how-do-they-compare" class="level2">
 <h2 class="anchored" data-anchor-id="how-do-they-compare">How Do They Compare?</h2>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 23%">
-<col style="width: 32%">
 <col style="width: 44%">
+<col style="width: 32%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>Aspect</th>
-<th>Diffusion</th>
 <th>Flow Matching</th>
+<th>Diffusion</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Corruption process</td>
-<td>Gradual noise addition</td>
-<td>Direct interpolation</td>
+<td><strong>Dynamics</strong></td>
+<td>ODE (deterministic)</td>
+<td>SDE (stochastic)</td>
 </tr>
 <tr class="even">
-<td>What the network learns</td>
-<td>How much noise to remove</td>
-<td>Which direction to move</td>
+<td><strong>Trajectories</strong></td>
+<td>Smooth, predictable paths</td>
+<td>Paths with random perturbations</td>
 </tr>
 <tr class="odd">
-<td>Sampling method</td>
-<td>Iterative denoising</td>
-<td>Following the learned flow</td>
+<td><strong>What it learns</strong></td>
+<td>Velocity field</td>
+<td>Velocity field + score function</td>
 </tr>
 <tr class="even">
-<td>Underlying theory</td>
-<td>Score matching</td>
-<td>Optimal transport</td>
+<td><strong>Sampling</strong></td>
+<td>Integrate ODE forward</td>
+<td>Simulate SDE forward</td>
 </tr>
 <tr class="odd">
-<td>Path type</td>
-<td>Stochastic (random)</td>
-<td>Deterministic (fixed)</td>
+<td><strong>Key advantage</strong></td>
+<td>Simpler, often faster</td>
+<td>Better sample diversity</td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="the-deep-connection" class="level2">
 <h2 class="anchored" data-anchor-id="the-deep-connection">The Deep Connection</h2>
-<p>Despite their different presentations, diffusion and flow matching are deeply related. Every diffusion model has an equivalent “probability flow” formulation that looks like flow matching. The <a href="../6-score-functions/">score function</a> (gradient of log probability) in diffusion corresponds to the velocity field in flow matching.</p>
-<p>This connection means insights from one framework often transfer to the other, and modern systems sometimes combine ideas from both.</p>
+<p>Diffusion and flow matching aren’t just related — they’re two views of the same underlying mathematics. Every diffusion model has an equivalent deterministic ODE formulation (the “probability flow ODE”), and every flow matching model can be extended with stochasticity.</p>
+<p>The <a href="../6-score-functions/">score function</a> ∇ log p_t(x) in diffusion and the velocity field u_t(x) in flow matching are directly related through a conversion formula (derived in <a href="../7-training/">Part 7</a>). Train one, and you can compute the other.</p>
+<p>This deep connection means you can mix and match: train with the simpler flow matching loss, then sample with the SDE for better diversity. Modern systems like Stable Diffusion 3 do exactly this.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -550,8 +585,8 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>We’ve seen two paradigms for generative modeling: <strong>diffusion</strong> (add noise, learn to denoise) and <strong>flow matching</strong> (learn a velocity field that transports noise to data). Despite their different motivations, they share deep mathematical structure — every diffusion model has an equivalent ODE formulation.</p>
-<p>This series will make these connections precise. We’ll build up the theory piece by piece: first understanding what flows are (Part 2), then constructing probability paths (Part 3), deriving training losses (Part 4), adding stochasticity (Part 5), and finally connecting everything through score functions (Parts 6-7).</p>
+<p>We’ve seen two approaches to generative modeling that are more alike than different. Both <strong>flow matching</strong> and <strong>diffusion</strong> learn to transform noise (t=0) into data (t=1). The key difference: flow matching follows deterministic ODE paths, while diffusion adds stochasticity via SDEs.</p>
+<p>This series develops a unified framework for both. We’ll build up the theory piece by piece: first understanding what flows are (Part 2), then constructing probability paths (Part 3), deriving training losses (Part 4), adding stochasticity (Part 5), and finally connecting everything through score functions (Parts 6-7).</p>
 </div>
 </div>
 </section>

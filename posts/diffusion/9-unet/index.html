@@ -46,9 +46,9 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-bef907f6732176253b823e5b0ca4e8cd.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-50d1fec12509f5fe6463d32d00f015f7.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -670,8 +670,10 @@ Figure&nbsp;6: Time and condition injection in a U-Net residual block: embedding
 <section id="sec-loss" class="level3">
 <h3 class="anchored" data-anchor-id="sec-loss">Loss Functions</h3>
 <p>U-Net is trained with standard diffusion objectives (see <a href="../7-training/">Part 7</a>):</p>
-<p><strong>Flow matching</strong> (Conditional Flow Matching loss): <span id="eq-flow-matching-loss"><span class="math display">\[\mathcal{L}_{FM}(\theta) = \mathbb{E}_{t, z \sim p_{data}, x_t \sim p_t(\cdot|z)} \|u_\theta(x_t, t) - u_t(x_t|z)\|^2 \tag{1}\]</span></span></p>
-<p><strong>Score matching</strong> (Denoising Score Matching loss): <span id="eq-score-matching-loss"><span class="math display">\[\mathcal{L}_{DSM}(\theta) = \mathbb{E}_{t, z \sim p_{data}, x_t \sim p_t(\cdot|z)} \|s_\theta(x_t, t) - s_t(x_t|z)\|^2 \tag{2}\]</span></span></p>
+<p><strong>Flow matching</strong> (Conditional Flow Matching loss): <span id="eq-flow-matching-loss"><span class="math display">\[\textcolor{blue}{\mathcal{L}_{FM}(\theta)} = \mathbb{E}_{t, z \sim p_{data}, x_t \sim p_t(\cdot|z)} \|\textcolor{purple}{u_\theta(x_t, t)} - \textcolor{green}{u_t(x_t|z)}\|^2 \tag{1}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures error between <span class="math inline">\(\textcolor{purple}{\text{predicted velocity}}\)</span> and <span class="math inline">\(\textcolor{green}{\text{target velocity}}\)</span>.</p>
+<p><strong>Score matching</strong> (Denoising Score Matching loss): <span id="eq-score-matching-loss"><span class="math display">\[\textcolor{blue}{\mathcal{L}_{DSM}(\theta)} = \mathbb{E}_{t, z \sim p_{data}, x_t \sim p_t(\cdot|z)} \|\textcolor{purple}{s_\theta(x_t, t)} - \textcolor{green}{s_t(x_t|z)}\|^2 \tag{2}\]</span></span></p>
+<p>where <span class="math inline">\(\textcolor{blue}{\text{loss}}\)</span> measures error between <span class="math inline">\(\textcolor{purple}{\text{predicted score}}\)</span> and <span class="math inline">\(\textcolor{green}{\text{target score}}\)</span>.</p>
 <div class="callout callout-style-simple callout-note">
 <div class="callout-body d-flex">
 <div class="callout-icon-container">
