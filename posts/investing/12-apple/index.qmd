@@ -4,7 +4,7 @@ author: "Hujie Wang"
 date: "2026-02-02"
 categories: [investing, valuation, buffett, case-study]
 toc: true
-draft: false
+draft: true
 ---
 
 ::: {.callout-note appearance="simple"}

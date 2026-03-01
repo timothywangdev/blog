@@ -4,7 +4,7 @@ author: "Hujie Wang"
 date: "2026-02-28"
 categories: [robotics, state-space-models, neuroscience, oscillations, architecture, robot-learning]
 toc: true
-draft: true
+draft: false
 ---
 
 State Space Models were supposed to handle long sequences. Mamba processes 1M tokens. S4 has mathematical elegance. LRU is fast.
