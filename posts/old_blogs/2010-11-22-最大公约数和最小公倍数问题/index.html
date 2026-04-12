@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.27">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -10,6 +10,9 @@
 
 <title>最大公约数和最小公倍数问题 – Foundation Models &amp; Robotics</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -34,19 +37,18 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
 <script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-43b2d995d73a1754bd3a6f5d899fe64b.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-90bc4b5f12df028b4425c2edb9bceabf.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -333,7 +335,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </header>
 
 
-<p>题目:最大公约数和最小公倍数问题 问题编号:304 题目描述 输入二个正整数x0,y0(2&lt;=x0&lt;100000,2&lt;=y0&lt;=1000000),求出满足下列条件的P,Q的个数 条件: 1.P,Q是正整数 2.要求P,Q以x0为最大公约数,以y0为最小公倍数. 试求:满足条件的所有可能的两个正整数的个数. 输入格式 第一行，两个整数，x0，y0 输出格式 满足条件的P,Q的个数 样例输入 3 60 样例输出 4 说明(不用输出)此时的 P Q 分别为: 3 60 15 12 12 15 60 3 所以:满足条件的所有可能的两个正整数的个数共4种. var x0,y0,t,tmp,i:longint; function gcd(x,y:longint):longint; var t:longint; begin if y=0 then begin gcd:=x; exit end; if x &lt; y then begin t:=x; x:=y; y:=t end; gcd:=gcd(y,x mod y) end;{gcd} begin t:=0; readln(x0,y0); if y0 mod x0&lt;&gt;0 then begin writeln(0); exit end; if y0=x0 then begin writeln(1); exit end else begin tmp:=y0 div x0; for i:=1 to trunc(sqrt(tmp))+1 do if (tmp mod i=0)and(gcd(i,tmp div i)=1)then inc(t,2); writeln(t) end; end. 疑问(已解决）： 设n=1<em>(p1<sup>l1)<em>(p2<sup>l2)<em>…</em>(pk</sup>lk) 当k=1时 1&lt;=sqrt(n)&lt;(p1^l1) 所以有k个 当k=2时 1</em>(p1</sup>l1)&lt;=sqrt(n)&lt;(p2^l2)所以有k个 (所以t不用减一，因为当k&lt;=2时，1点未算进去。） 当k&gt;2时 1</em>(p1<sup>l1)<em>(p2<sup>l2)<em>…</em>(pk</sup>lk)&lt;=sqrt(n) 所以有k+1个 总结： 如果要根据结果求出质因子个数则： 如果t&gt;2 则 k:=t-1 否则 k:=t 证明：当k=1时 (p1<sup>l1)&gt;√(p1</sup>l1) 证毕。 证明：当k=2时 1</em>(p1</sup>l1)&lt;=sqrt(n)&lt;(p2^l2) 设a=p1<sup>l1,b=p2</sup>l2. 由基本不等式 (a+b)/2&gt;√(a<em>b) 得 -0—a——(a+b)/2——-b—— -————-|( √(a</em>b)在此区间内） 又因为 a</p>
+<p>题目:最大公约数和最小公倍数问题 问题编号:304 题目描述 输入二个正整数x0,y0(2&lt;=x0&lt;100000,2&lt;=y0&lt;=1000000),求出满足下列条件的P,Q的个数 条件: 1.P,Q是正整数 2.要求P,Q以x0为最大公约数,以y0为最小公倍数. 试求:满足条件的所有可能的两个正整数的个数. 输入格式 第一行，两个整数，x0，y0 输出格式 满足条件的P,Q的个数 样例输入 3 60 样例输出 4 说明(不用输出)此时的 P Q 分别为: 3 60 15 12 12 15 60 3 所以:满足条件的所有可能的两个正整数的个数共4种. var x0,y0,t,tmp,i:longint; function gcd(x,y:longint):longint; var t:longint; begin if y=0 then begin gcd:=x; exit end; if x &lt; y then begin t:=x; x:=y; y:=t end; gcd:=gcd(y,x mod y) end;{gcd} begin t:=0; readln(x0,y0); if y0 mod x0&lt;&gt;0 then begin writeln(0); exit end; if y0=x0 then begin writeln(1); exit end else begin tmp:=y0 div x0; for i:=1 to trunc(sqrt(tmp))+1 do if (tmp mod i=0)and(gcd(i,tmp div i)=1)then inc(t,2); writeln(t) end; end. 疑问(已解决）： 设n=1<em>(p1<sup>l1)*(p2</sup>l2)</em>…<em>(pk^lk) 当k=1时 1&lt;=sqrt(n)&lt;(p1^l1) 所以有k个 当k=2时 1</em>(p1<sup>l1)&lt;=sqrt(n)&lt;(p2</sup>l2)所以有k个 (所以t不用减一，因为当k&lt;=2时，1点未算进去。） 当k&gt;2时 1<em>(p1<sup>l1)*(p2</sup>l2)</em>…<em>(pk^lk)&lt;=sqrt(n) 所以有k+1个 总结： 如果要根据结果求出质因子个数则： 如果t&gt;2 则 k:=t-1 否则 k:=t 证明：当k=1时 (p1<sup>l1)&gt;√(p1</sup>l1) 证毕。 证明：当k=2时 1</em>(p1<sup>l1)&lt;=sqrt(n)&lt;(p2</sup>l2) 设a=p1<sup>l1,b=p2</sup>l2. 由基本不等式 (a+b)/2&gt;√(a<em>b) 得 -0—a——(a+b)/2——-b—— -————-|( √(a</em>b)在此区间内） 又因为 a</p>
 
 
 

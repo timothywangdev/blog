@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.27">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -10,6 +10,9 @@
 
 <title>15届noip初赛问题求解2 – Foundation Models &amp; Robotics</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -34,19 +37,18 @@ ul.task-list li input[type="checkbox"] {
 <link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
 <script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-43b2d995d73a1754bd3a6f5d899fe64b.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-90bc4b5f12df028b4425c2edb9bceabf.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -333,7 +335,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </header>
 
 
-<p>2、某个国家的钱币面值有1，7，7<sup>2，7</sup>3共计四种，如果要用现金付清10015元的货物，假设买卖双方各种钱币的数量无限且允许找零，那么交易过程中至少需要流通______张钱币。 首先先看10015分别包含多少个上述面值的钱币，那么我们要把10015化成10015=a<em>7<sup>3+b<em>7<sup>2+c<em>7<sup>0+d<em>7^0 这种形式 看起来是不是很熟悉？ 没错，这就是7进制转10进制的步骤。 明显，先把10015转换成7进制41125，那么a,b,c,d就可得知。 10015（10）=41125（7）=4</em>7</sup>4+1</em>7</sup>3+1</em>7</sup>2+2</em>7+5 =（4<em>7+1）</em>7<sup>3+1<em>7<sup>2+2<em>7+5 =29</em>7</sup>3+1</em>7</sup>2+2<em>7+5 可以得出，如果不能找零，那么需要37张去付款。 那么可以找零的话，我们可以尝试多加一张大的，并加一些小的用作找零。 首先，对于a</em>7^(i+1),b*7^i a,b∈N 多拿一张7^(i+1)面值的纸币，那么多出 7<sup>(i+1)-b<em>7^i =7<sup>i<em>7-b</em>7</sup>i =(7-b)</em>7</sup>i 显然，需要用7-b张较小的找零。 那么总共需要1+7-b张 对比原来的b张 我们要比原来更少的张数 那么 1+7-b&lt;b (注意这里没有加上a来算，结果一样) 8&lt;2b b&gt;4 可以得出只要较小的张数b&gt;4，那么加一张较大的并上找零需要的张数一定比原来的较小的张数小。 另外，根据1+7-b可以看出，b越大，新的张数越小。 最后，我们可以轻而易举的得出，找出7进制中大于4的数，不算第5,4位（没有比他更大面值的纸币了），用一张较大的加找零的替换。 若有多个大于4的，从小往大替换。 对于本题 把第5位用较大的替换，那么替换后有1+7-5=3张 加上前面的，最少需要29+1+2+3=35张。</p>
+<p>2、某个国家的钱币面值有1，7，7<sup>2，7</sup>3共计四种，如果要用现金付清10015元的货物，假设买卖双方各种钱币的数量无限且允许找零，那么交易过程中至少需要流通______张钱币。 首先先看10015分别包含多少个上述面值的钱币，那么我们要把10015化成10015=a<em>7<sup>3+b*7</sup>2+c</em>7<sup>0+d*7</sup>0 这种形式 看起来是不是很熟悉？ 没错，这就是7进制转10进制的步骤。 明显，先把10015转换成7进制41125，那么a,b,c,d就可得知。 10015（10）=41125（7）=4<em>7<sup>4+1*7</sup>3+1</em>7^2+2<em>7+5 =（4</em>7+1）<em>7<sup>3+1*7</sup>2+2</em>7+5 =29<em>7<sup>3+1*7</sup>2+2</em>7+5 可以得出，如果不能找零，那么需要37张去付款。 那么可以找零的话，我们可以尝试多加一张大的，并加一些小的用作找零。 首先，对于a<em>7<sup>(i+1),b*7</sup>i a,b∈N 多拿一张7^(i+1)面值的纸币，那么多出 7<sup>(i+1)-b*7</sup>i =7<sup>i<em>7-b</em>7</sup>i =(7-b)</em>7^i 显然，需要用7-b张较小的找零。 那么总共需要1+7-b张 对比原来的b张 我们要比原来更少的张数 那么 1+7-b&lt;b (注意这里没有加上a来算，结果一样) 8&lt;2b b&gt;4 可以得出只要较小的张数b&gt;4，那么加一张较大的并上找零需要的张数一定比原来的较小的张数小。 另外，根据1+7-b可以看出，b越大，新的张数越小。 最后，我们可以轻而易举的得出，找出7进制中大于4的数，不算第5,4位（没有比他更大面值的纸币了），用一张较大的加找零的替换。 若有多个大于4的，从小往大替换。 对于本题 把第5位用较大的替换，那么替换后有1+7-5=3张 加上前面的，最少需要29+1+2+3=35张。</p>
 
 
 

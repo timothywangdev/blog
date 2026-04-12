@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.27">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -11,6 +11,9 @@
 
 <title>Why Mamba Fails on 50k Sequences (And How Springs Fixed It) – Foundation Models &amp; Robotics</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -21,41 +24,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-html { -webkit-text-size-adjust: 100%; }
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -70,19 +38,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../images/ahead-of-robotics-logo-square.png" rel="icon" type="image/png">
 <script src="../../../site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="../../../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="../../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-dark-43b2d995d73a1754bd3a6f5d899fe64b.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="../../../site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-dark-90bc4b5f12df028b4425c2edb9bceabf.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -121,7 +88,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -368,22 +335,42 @@ window.Quarto = {
    
   <ul>
   <li><a href="#sec-intro" id="toc-sec-intro" class="nav-link active" data-scroll-target="#sec-intro">Why SSMs Struggle on Ultra-Long Sequences</a></li>
-  <li><a href="#sec-physics" id="toc-sec-physics" class="nav-link" data-scroll-target="#sec-physics">The Forced Harmonic Oscillator</a>
+  <li><a href="#sec-path" id="toc-sec-path" class="nav-link" data-scroll-target="#sec-path">The Path to LinOSS: A Detective Story</a>
   <ul class="collapse">
-  <li><a href="#the-simple-harmonic-oscillator" id="toc-the-simple-harmonic-oscillator" class="nav-link" data-scroll-target="#the-simple-harmonic-oscillator">The Simple Harmonic Oscillator</a></li>
-  <li><a href="#adding-external-forcing" id="toc-adding-external-forcing" class="nav-link" data-scroll-target="#adding-external-forcing">Adding External Forcing</a></li>
-  <li><a href="#why-oscillators-for-sequence-modeling" id="toc-why-oscillators-for-sequence-modeling" class="nav-link" data-scroll-target="#why-oscillators-for-sequence-modeling">Why Oscillators for Sequence Modeling?</a></li>
+  <li><a href="#the-problem-everyone-knew" id="toc-the-problem-everyone-knew" class="nav-link" data-scroll-target="#the-problem-everyone-knew">The Problem Everyone Knew</a></li>
+  <li><a href="#the-engineering-approaches-what-others-did" id="toc-the-engineering-approaches-what-others-did" class="nav-link" data-scroll-target="#the-engineering-approaches-what-others-did">The Engineering Approaches (What Others Did)</a></li>
+  <li><a href="#ruschs-insight-ask-physics" id="toc-ruschs-insight-ask-physics" class="nav-link" data-scroll-target="#ruschs-insight-ask-physics">Rusch’s Insight: Ask Physics</a></li>
+  <li><a href="#why-harmonic-oscillators-from-second-order-to-first-order" id="toc-why-harmonic-oscillators-from-second-order-to-first-order" class="nav-link" data-scroll-target="#why-harmonic-oscillators-from-second-order-to-first-order">Why Harmonic Oscillators? From Second-Order to First-Order</a></li>
+  <li><a href="#wait-linoss-has-forcing.-why-are-eigenvalues-still-imaginary" id="toc-wait-linoss-has-forcing.-why-are-eigenvalues-still-imaginary" class="nav-link" data-scroll-target="#wait-linoss-has-forcing.-why-are-eigenvalues-still-imaginary">Wait: LinOSS Has Forcing. Why Are Eigenvalues Still Imaginary?</a></li>
+  <li><a href="#the-neuroscience-connection" id="toc-the-neuroscience-connection" class="nav-link" data-scroll-target="#the-neuroscience-connection">The Neuroscience Connection</a></li>
   </ul></li>
   <li><a href="#sec-architecture" id="toc-sec-architecture" class="nav-link" data-scroll-target="#sec-architecture">The LinOSS Architecture</a>
   <ul class="collapse">
   <li><a href="#the-continuous-time-model" id="toc-the-continuous-time-model" class="nav-link" data-scroll-target="#the-continuous-time-model">The Continuous-Time Model</a></li>
-  <li><a href="#first-order-form" id="toc-first-order-form" class="nav-link" data-scroll-target="#first-order-form">First-Order Form</a></li>
+  <li><a href="#sec-uncoupled" id="toc-sec-uncoupled" class="nav-link" data-scroll-target="#sec-uncoupled">Why Is A Diagonal?</a></li>
+  <li><a href="#sec-full-block" id="toc-sec-full-block" class="nav-link" data-scroll-target="#sec-full-block">The Full Multi-Layer Model</a></li>
+  <li><a href="#sec-why-depth" id="toc-sec-why-depth" class="nav-link" data-scroll-target="#sec-why-depth">Why Multiple Blocks?</a></li>
   </ul></li>
-  <li><a href="#sec-discretization" id="toc-sec-discretization" class="nav-link" data-scroll-target="#sec-discretization">Discretization: Two Flavors</a>
+  <li><a href="#sec-discretization" id="toc-sec-discretization" class="nav-link" data-scroll-target="#sec-discretization">Discretization: Three Flavors</a>
   <ul class="collapse">
-  <li><a href="#linoss-im-implicit-dissipative" id="toc-linoss-im-implicit-dissipative" class="nav-link" data-scroll-target="#linoss-im-implicit-dissipative">LinOSS-IM: Implicit (Dissipative)</a></li>
-  <li><a href="#linoss-imex-symplectic-conservative" id="toc-linoss-imex-symplectic-conservative" class="nav-link" data-scroll-target="#linoss-imex-symplectic-conservative">LinOSS-IMEX: Symplectic (Conservative)</a></li>
+  <li><a href="#first-order-form" id="toc-first-order-form" class="nav-link" data-scroll-target="#first-order-form">First-Order Form</a></li>
+  <li><a href="#the-core-problem-how-do-we-update-position-and-velocity" id="toc-the-core-problem-how-do-we-update-position-and-velocity" class="nav-link" data-scroll-target="#the-core-problem-how-do-we-update-position-and-velocity">The Core Problem: How Do We Update Position and Velocity?</a></li>
+  <li><a href="#three-options-three-fates" id="toc-three-options-three-fates" class="nav-link" data-scroll-target="#three-options-three-fates">Three Options, Three Fates</a></li>
+  <li><a href="#option-a-explicit-euler-all-old-values-not-used-by-linoss" id="toc-option-a-explicit-euler-all-old-values-not-used-by-linoss" class="nav-link" data-scroll-target="#option-a-explicit-euler-all-old-values-not-used-by-linoss">Option A: Explicit Euler (All Old Values) → NOT used by LinOSS</a></li>
+  <li><a href="#sec-option-b" id="toc-sec-option-b" class="nav-link" data-scroll-target="#sec-option-b">Option B: Implicit Euler (All New Values) → LinOSS-IM</a></li>
+  <li><a href="#sec-option-c" id="toc-sec-option-c" class="nav-link" data-scroll-target="#sec-option-c">Option C: Symplectic / IMEX (The Trick) → LinOSS-IMEX</a></li>
+  <li><a href="#option-d-velocity-verlet-second-order-symplectic-linoss-vv" id="toc-option-d-velocity-verlet-second-order-symplectic-linoss-vv" class="nav-link" data-scroll-target="#option-d-velocity-verlet-second-order-symplectic-linoss-vv">Option D: Velocity Verlet (Second-Order Symplectic) → LinOSS-VV</a></li>
+  <li><a href="#why-all-old-values-seems-right-but-fails" id="toc-why-all-old-values-seems-right-but-fails" class="nav-link" data-scroll-target="#why-all-old-values-seems-right-but-fails">Why “All Old Values” Seems Right But Fails</a></li>
   <li><a href="#parallel-scan-for-efficiency" id="toc-parallel-scan-for-efficiency" class="nav-link" data-scroll-target="#parallel-scan-for-efficiency">Parallel Scan for Efficiency</a></li>
+  </ul></li>
+  <li><a href="#sec-stability" id="toc-sec-stability" class="nav-link" data-scroll-target="#sec-stability">Stability and Long-Range Memory</a>
+  <ul class="collapse">
+  <li><a href="#the-unrolled-recurrence-how-past-inputs-survive" id="toc-the-unrolled-recurrence-how-past-inputs-survive" class="nav-link" data-scroll-target="#the-unrolled-recurrence-how-past-inputs-survive">The Unrolled Recurrence: How Past Inputs Survive</a></li>
+  <li><a href="#linoss-im-dissipative-slight-forgetting" id="toc-linoss-im-dissipative-slight-forgetting" class="nav-link" data-scroll-target="#linoss-im-dissipative-slight-forgetting">LinOSS-IM: Dissipative (Slight Forgetting)</a></li>
+  <li><a href="#linoss-imex-conservative-perfect-memory" id="toc-linoss-imex-conservative-perfect-memory" class="nav-link" data-scroll-target="#linoss-imex-conservative-perfect-memory">LinOSS-IMEX: Conservative (Perfect Memory)</a></li>
+  <li><a href="#comparison" id="toc-comparison" class="nav-link" data-scroll-target="#comparison">Comparison</a></li>
+  <li><a href="#guaranteeing-a_kk-geq-0-parameterization-and-initialization" id="toc-guaranteeing-a_kk-geq-0-parameterization-and-initialization" class="nav-link" data-scroll-target="#guaranteeing-a_kk-geq-0-parameterization-and-initialization">Guaranteeing <span class="math inline">\(A_{kk} \geq 0\)</span>: Parameterization and Initialization</a></li>
+  <li><a href="#does-linoss-im-actually-learn-at-100k-steps" id="toc-does-linoss-im-actually-learn-at-100k-steps" class="nav-link" data-scroll-target="#does-linoss-im-actually-learn-at-100k-steps">Does LinOSS-IM Actually Learn at 100k Steps?</a></li>
   </ul></li>
   <li><a href="#sec-theory" id="toc-sec-theory" class="nav-link" data-scroll-target="#sec-theory">Universal Approximation</a></li>
   <li><a href="#sec-results" id="toc-sec-results" class="nav-link" data-scroll-target="#sec-results">Results: Outperforming Mamba</a>
@@ -392,27 +379,13 @@ window.Quarto = {
   <li><a href="#time-series-classification" id="toc-time-series-classification" class="nav-link" data-scroll-target="#time-series-classification">Time Series Classification</a></li>
   <li><a href="#very-long-classification-eigenworms" id="toc-very-long-classification-eigenworms" class="nav-link" data-scroll-target="#very-long-classification-eigenworms">Very Long Classification (EigenWorms)</a></li>
   <li><a href="#weather-forecasting" id="toc-weather-forecasting" class="nav-link" data-scroll-target="#weather-forecasting">Weather Forecasting</a></li>
-  </ul></li>
-  <li><a href="#sec-neuroscience" id="toc-sec-neuroscience" class="nav-link" data-scroll-target="#sec-neuroscience">Connection to Motor Cortex</a>
-  <ul class="collapse">
-  <li><a href="#cortical-oscillations" id="toc-cortical-oscillations" class="nav-link" data-scroll-target="#cortical-oscillations">Cortical Oscillations</a></li>
-  <li><a href="#central-pattern-generators" id="toc-central-pattern-generators" class="nav-link" data-scroll-target="#central-pattern-generators">Central Pattern Generators</a></li>
-  <li><a href="#the-forced-oscillator-as-neural-computation" id="toc-the-forced-oscillator-as-neural-computation" class="nav-link" data-scroll-target="#the-forced-oscillator-as-neural-computation">The Forced Oscillator as Neural Computation</a></li>
+  <li><a href="#efficiency" id="toc-efficiency" class="nav-link" data-scroll-target="#efficiency">Efficiency</a></li>
   </ul></li>
   <li><a href="#sec-robotics" id="toc-sec-robotics" class="nav-link" data-scroll-target="#sec-robotics">Implications for Robot Learning</a>
   <ul class="collapse">
-  <li><a href="#oscillatory-policy-networks" id="toc-oscillatory-policy-networks" class="nav-link" data-scroll-target="#oscillatory-policy-networks">1. Oscillatory Policy Networks</a></li>
-  <li><a href="#hybrid-vla-architectures" id="toc-hybrid-vla-architectures" class="nav-link" data-scroll-target="#hybrid-vla-architectures">2. Hybrid VLA Architectures</a></li>
-  <li><a href="#cpg-rl-with-linoss" id="toc-cpg-rl-with-linoss" class="nav-link" data-scroll-target="#cpg-rl-with-linoss">3. CPG-RL with LinOSS</a></li>
+  <li><a href="#why-control-frequency-is-the-key-variable" id="toc-why-control-frequency-is-the-key-variable" class="nav-link" data-scroll-target="#why-control-frequency-is-the-key-variable">Why Control Frequency Is the Key Variable</a></li>
   </ul></li>
   <li><a href="#sec-misconceptions" id="toc-sec-misconceptions" class="nav-link" data-scroll-target="#sec-misconceptions">Common Misconceptions</a></li>
-  <li><a href="#sec-open-questions" id="toc-sec-open-questions" class="nav-link" data-scroll-target="#sec-open-questions">Open Questions</a>
-  <ul class="collapse">
-  <li><a href="#coupling-the-oscillators" id="toc-coupling-the-oscillators" class="nav-link" data-scroll-target="#coupling-the-oscillators">1. Coupling the Oscillators</a></li>
-  <li><a href="#nonlinear-extensions" id="toc-nonlinear-extensions" class="nav-link" data-scroll-target="#nonlinear-extensions">2. Nonlinear Extensions</a></li>
-  <li><a href="#multi-timescale-dynamics" id="toc-multi-timescale-dynamics" class="nav-link" data-scroll-target="#multi-timescale-dynamics">3. Multi-Timescale Dynamics</a></li>
-  <li><a href="#direct-robotics-benchmarks" id="toc-direct-robotics-benchmarks" class="nav-link" data-scroll-target="#direct-robotics-benchmarks">4. Direct Robotics Benchmarks</a></li>
-  </ul></li>
   <li><a href="#sec-conclusion" id="toc-sec-conclusion" class="nav-link" data-scroll-target="#sec-conclusion">Conclusion</a></li>
   <li><a href="#sec-references" id="toc-sec-references" class="nav-link" data-scroll-target="#sec-references">References</a></li>
   </ul>
@@ -462,7 +435,7 @@ window.Quarto = {
 
 
 <p>State Space Models were supposed to handle long sequences. Mamba processes 1M tokens. S4 has mathematical elegance. LRU is fast.</p>
-<p>But run them on 50,000-step cardiac monitoring data, and Mamba’s prediction error is <strong>2x worse</strong> than a model based on 17th-century physics.</p>
+<p>But on 50,000-step cardiac monitoring data, Mamba’s prediction error is <strong>~66% higher</strong> than a model based on 17th-century physics.</p>
 <div id="fig-overview" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-overview-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -474,7 +447,7 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 </figure>
 </div>
 <p><strong>LinOSS</strong><span class="math inline">\(^{[1]}\)</span> (ICLR 2025 Oral, <strong>Top 1%</strong> of submissions) doesn’t engineer eigenvalue constraints like S4. It doesn’t use input-dependent gating like Mamba. Instead, it starts from a 400-year-old equation: the forced harmonic oscillator.</p>
-<p>The same physics that governs a guitar string. A playground swing. And — remarkably — the rotational dynamics of motor cortex during movement.</p>
+<p>The same physics that governs a guitar string. A playground swing. And (remarkably) the rotational dynamics of motor cortex during movement.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -486,10 +459,10 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 </div>
 <div class="callout-body-container callout-body">
 <ul>
-<li><strong>The problem</strong>: State Space Models (S4, Mamba, LRU) struggle on ultra-long sequences (50k+) — numerical instability accumulates</li>
-<li><strong>The solution</strong>: LinOSS uses forced harmonic oscillators with one constraint (<span class="math inline">\(\mathbf{A}\)</span> diagonal, nonnegative) to guarantee stability</li>
-<li><strong>The results</strong>: <strong>~2x better</strong> than Mamba on 50k sequences; <strong>95% vs 85%</strong> on EigenWorms</li>
-<li><strong>Why robotics</strong>: Oscillatory dynamics match motor cortex rotations — LinOSS may be the most biologically-aligned SSM</li>
+<li><strong>The problem</strong>: SSMs struggle on ultra-long sequences (50k+): small numerical errors compound over thousands of steps</li>
+<li><strong>The solution</strong>: LinOSS uses uncoupled harmonic oscillators with one constraint (<span class="math inline">\(\mathbf{A}\)</span> diagonal, nonnegative) to guarantee stability by construction</li>
+<li><strong>The results</strong>: ~1.7x lower error than Mamba on 50k-step cardiac data; <strong>95% vs 87.8%</strong> on EigenWorms vs LRU (best prior SSM)</li>
+<li><strong>Why robotics</strong>: At 100 Hz control, a 30-second task is 3,000 steps; a laundry sequence is 60,000: squarely where LinOSS wins</li>
 </ul>
 </div>
 </div>
@@ -497,12 +470,12 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 <h2 class="anchored" data-anchor-id="sec-intro">Why SSMs Struggle on Ultra-Long Sequences</h2>
 <p>In <a href="../6-eigenvalue-dynamics/">Part 6: Eigenvalue Dynamics</a>, we explored a surprising convergence: motor cortex exhibits rotational dynamics because eigenvalues near the unit circle with imaginary components produce stable oscillations. Independently, ML researchers discovered the same constraint prevents vanishing/exploding gradients in RNNs.</p>
 <p>State Space Models (S4, Mamba, LRU) exploit this insight by parameterizing eigenvalues directly. But they still require careful initialization and constraints to maintain stability. On very long sequences, small numerical errors compound over thousands of steps.</p>
-<p><strong>LinOSS</strong> takes a different approach: instead of engineering eigenvalue constraints, they start from <strong>physics</strong>. Forced harmonic oscillators — the equations governing springs, pendulums, and countless physical systems — naturally produce the oscillatory dynamics we need.</p>
+<p><strong>LinOSS</strong> takes a different approach: instead of engineering eigenvalue constraints, they start from <strong>physics</strong>. Forced harmonic oscillators (the equations governing springs, pendulums, and countless physical systems) naturally produce the oscillatory dynamics we need.</p>
 <p>The result is an architecture that:</p>
 <ol type="1">
-<li><strong>Achieves stability by construction</strong> — no careful tuning required</li>
+<li><strong>Achieves stability by construction</strong>: no careful tuning required</li>
 <li><strong>Outperforms Mamba</strong> on very long sequences (50k+ tokens)</li>
-<li><strong>Proves universal approximation</strong> — can learn any causal operator</li>
+<li><strong>Proves universal approximation</strong>: can learn any causal operator</li>
 <li><strong>Mirrors biological neural dynamics</strong> more closely than prior SSMs</li>
 </ol>
 <div class="callout callout-style-simple callout-tip callout-titled">
@@ -548,66 +521,414 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 </tbody>
 </table>
 <p>For robot learning, this suggests architectures that are simultaneously <strong>principled</strong> (grounded in physics), <strong>biologically plausible</strong> (matching brain dynamics), and <strong>practical</strong> (fast, stable, SOTA performance).</p>
+<p>As Rusch noted in his TED talk<span class="math inline">\(^{[9]}\)</span>: “The human brain is really unmatched when it comes to energy efficiency… my brain was operating on nothing else than probably a few mugs of coffee or sandwiches.” LinOSS aims to capture some of that efficiency.</p>
 </div>
 </div>
 </section>
-<section id="sec-physics" class="level2">
-<h2 class="anchored" data-anchor-id="sec-physics">The Forced Harmonic Oscillator</h2>
-<p>Before getting to the architecture, we need to understand its physical foundation. Don’t worry — the physics is high school level, and the payoff is understanding why LinOSS works.</p>
-<section id="the-simple-harmonic-oscillator" class="level3">
-<h3 class="anchored" data-anchor-id="the-simple-harmonic-oscillator">The Simple Harmonic Oscillator</h3>
-<p>A mass on a spring follows Newton’s second law:</p>
-<p><span id="eq-simple-harmonic"><span class="math display">\[m\frac{d^2y}{dt^2} = -ky \tag{1}\]</span></span></p>
-<p>where <span class="math inline">\(y\)</span> is position, <span class="math inline">\(m\)</span> is mass, and <span class="math inline">\(k\)</span> is the spring constant. Dividing by mass:</p>
-<p><span id="eq-normalized-harmonic"><span class="math display">\[\frac{d^2y}{dt^2} = -\omega^2 y \tag{2}\]</span></span></p>
-<p>where <span class="math inline">\(\omega = \sqrt{k/m}\)</span> is the natural frequency.</p>
-<p><strong>Solution</strong>: <span class="math inline">\(y(t) = A\cos(\omega t + \phi)\)</span> — pure oscillation at frequency <span class="math inline">\(\omega\)</span>.</p>
+<section id="sec-path" class="level2">
+<h2 class="anchored" data-anchor-id="sec-path">The Path to LinOSS: A Detective Story</h2>
+<p>How did the authors arrive at “use harmonic oscillators”? This wasn’t a lucky guess; it’s the culmination of a 5-year research program and centuries of physics. Here’s how the pieces fit together.</p>
+<section id="the-problem-everyone-knew" class="level3">
+<h3 class="anchored" data-anchor-id="the-problem-everyone-knew">The Problem Everyone Knew</h3>
+<p>By 2020, the SSM community had identified the core issue: <strong>eigenvalue stability</strong> in RNNs.</p>
+<section id="step-1-the-rnn-stability-problem-discrete-time" class="level4">
+<h4 class="anchored" data-anchor-id="step-1-the-rnn-stability-problem-discrete-time">Step 1: The RNN Stability Problem (Discrete Time)</h4>
+<p>RNNs process sequences by multiplying the hidden state by a matrix at each timestep:</p>
+<p><span class="math display">\[x_{n} = A \cdot x_{n-1} = A^n \cdot x_0\]</span></p>
+<p>For each eigenvalue <span class="math inline">\(\lambda\)</span> of the matrix <span class="math inline">\(A\)</span>, its contribution after <span class="math inline">\(n\)</span> steps scales as <span class="math inline">\(\lambda^n\)</span>. What happens over thousands of steps?</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Magnitude</th>
+<th><span class="math inline">\(\lambda^n\)</span> as <span class="math inline">\(n \to \infty\)</span></th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(|\lambda| &gt; 1\)</span></td>
+<td><span class="math inline">\(\to \infty\)</span></td>
+<td><strong>Explodes</strong> (gradients blow up)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(|\lambda| = 1\)</span></td>
+<td>stays bounded</td>
+<td><strong>Stable</strong> (long-range memory)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(|\lambda| &lt; 1\)</span></td>
+<td><span class="math inline">\(\to 0\)</span></td>
+<td><strong>Vanishes</strong> (gradients disappear)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example:</strong> If <span class="math inline">\(\lambda = 1.01\)</span>, then <span class="math inline">\(\lambda^{1000} \approx 10^{4}\)</span> (explosion). If <span class="math inline">\(\lambda = 0.99\)</span>, then <span class="math inline">\(\lambda^{1000} \approx 10^{-4}\)</span> (vanished).</p>
+<p><strong>The goal:</strong> Keep eigenvalues on the unit circle (<span class="math inline">\(|\lambda| = 1\)</span>). But this is hard to engineer directly.</p>
 </section>
-<section id="adding-external-forcing" class="level3">
-<h3 class="anchored" data-anchor-id="adding-external-forcing">Adding External Forcing</h3>
-<p>Real systems have inputs — forces that drive them. A <strong>forced</strong> harmonic oscillator adds an external force <span class="math inline">\(u(t)\)</span>:</p>
-<p><span id="eq-forced-harmonic"><span class="math display">\[\frac{d^2y}{dt^2} = -\omega^2 y + u(t) \tag{3}\]</span></span></p>
-<p>Now the system responds to inputs while maintaining its oscillatory nature. This is the foundation of LinOSS.</p>
+<section id="step-2-linosss-insight-start-from-physics-instead" class="level4">
+<h4 class="anchored" data-anchor-id="step-2-linosss-insight-start-from-physics-instead">Step 2: LinOSS’s Insight: Start from Physics Instead</h4>
+<p>In continuous systems, stability is determined by the <strong>real part</strong> of eigenvalues. If the real part is zero, amplitude stays constant; positive means explosion, negative means decay. LinOSS starts from continuous-time physics, where this property is easier to guarantee than in discrete systems.</p>
+</section>
+<section id="step-3-why-harmonic-oscillators-are-magic" class="level4">
+<h4 class="anchored" data-anchor-id="step-3-why-harmonic-oscillators-are-magic">Step 3: Why Harmonic Oscillators Are Magic</h4>
+<p>Harmonic oscillators (springs, pendulums) have purely imaginary eigenvalues: <span class="math inline">\(\lambda = \pm i\omega\)</span>. The real part is exactly zero, so the amplitude stays constant forever. We’ll derive this below.</p>
+</section>
+<section id="step-4-discretization-connects-the-two-worlds" class="level4">
+<h4 class="anchored" data-anchor-id="step-4-discretization-connects-the-two-worlds">Step 4: Discretization Connects the Two Worlds</h4>
+<p>Symplectic discretization maps purely imaginary continuous eigenvalues (<span class="math inline">\(\lambda = i\omega\)</span>) to the unit circle in discrete time (<span class="math inline">\(|\lambda| = 1\)</span>). The stability guarantee transfers automatically. Naive methods (Euler’s method) break this property; symplectic integrators preserve it by design.</p>
+</section>
+</section>
+<section id="the-engineering-approaches-what-others-did" class="level3">
+<h3 class="anchored" data-anchor-id="the-engineering-approaches-what-others-did">The Engineering Approaches (What Others Did)</h3>
+<p>Before LinOSS, the SSM community solved the eigenvalue problem by engineering constraints. All of these approaches work, but they’re fragile: the constraints are ad hoc, and small numerical errors accumulate over very long sequences.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 23%">
+<col style="width: 36%">
+<col style="width: 40%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>The Trick</th>
+<th>Philosophy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>S4</strong></td>
+<td>Hand-craft HiPPO matrix from Legendre polynomials</td>
+<td>Optimal polynomial projection theory</td>
+</tr>
+<tr class="even">
+<td><strong>S4D</strong></td>
+<td>Fix Re(λ) = -1/2, tune imaginary parts</td>
+<td>Approximate HiPPO spectrum</td>
+</tr>
+<tr class="odd">
+<td><strong>Mamba</strong></td>
+<td>Keep A diagonal, use log-space, high precision</td>
+<td>Pragmatic: hope it works</td>
+</tr>
+<tr class="even">
+<td><strong>LRU</strong></td>
+<td>Parameterize as exp(-ν+iθ), enforce ν &gt; 0</td>
+<td>Clever reparameterization</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ruschs-insight-ask-physics" class="level3">
+<h3 class="anchored" data-anchor-id="ruschs-insight-ask-physics">Rusch’s Insight: Ask Physics</h3>
+<p>T. Konstantin Rusch (first author) took a different path: ask physics to solve the problem instead of engineering around it. His path to LinOSS spans five years of work.</p>
+<p>In 2021, Rusch published <strong>coRNN</strong> (ICLR), which asked a simple question: what if the neurons in an RNN were oscillators? The paper proved gradient bounds, showing that oscillator-based networks avoid the vanishing/exploding gradient problem by construction. But coRNN was slow, because the oscillators were coupled to each other through a dense connectivity matrix.</p>
+<p>The same year, Rusch addressed this in <strong>UniCoRNN</strong> (ICML 2021): cut the connections between oscillators. Make each one independent, with a diagonal A matrix. This gave the same stability guarantees at a fraction of the cost.</p>
+<p>In 2022, <strong>GraphCON</strong> (ICML) extended the oscillator idea to graph neural networks, where it solved oversmoothing (a failure mode in graph networks where node representations become indistinguishable after many layers).</p>
+<p>The theoretical foundation arrived in 2023 with <strong>“Neural Oscillators are Universal”</strong> (NeurIPS). This paper proved that forced harmonic oscillators with a nonlinear readout layer can approximate any continuous function. The key realization: if nonlinearity only happens <em>between</em> oscillator blocks (in the readout), the oscillator core can stay entirely linear. Linear means the recurrence has a closed form. Closed form means parallel scan. That’s LinOSS.</p>
+<p><strong>LinOSS</strong> (ICLR 2025) combined this universality proof with SSM-style parallelization. The oscillator core stays linear; expressiveness comes from the GELU+GLU layers between blocks. Physics solves the stability problem, and the universality theorem says you’re not giving up anything in terms of what the model can represent.</p>
+</section>
+<section id="why-harmonic-oscillators-from-second-order-to-first-order" class="level3">
+<h3 class="anchored" data-anchor-id="why-harmonic-oscillators-from-second-order-to-first-order">Why Harmonic Oscillators? From Second-Order to First-Order</h3>
+<p>The harmonic oscillator is the second-order ODE: <span class="math inline">\(y'' = -\omega^2 y\)</span></p>
+<p>To analyze eigenvalues, we convert to a first-order system. Define <span class="math inline">\(z = y'\)</span> (velocity). Then <span class="math inline">\(z' = y''\)</span>, so:</p>
+<p><span class="math display">\[y'' = -\omega^2 y \quad \Rightarrow \quad \begin{cases} y' = z \\ z' = -\omega^2 y \end{cases}\]</span></p>
+<p>In matrix form with state <span class="math inline">\(\mathbf{x} = [y, z]^T\)</span>:</p>
+<p><span class="math display">\[\frac{d}{dt}\begin{bmatrix} y \\ z \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix} \begin{bmatrix} y \\ z \end{bmatrix}\]</span></p>
+<p><strong>Now let’s find the eigenvalues.</strong></p>
+<p>Eigenvalues satisfy <span class="math inline">\(\mathbf{A}\mathbf{v} = \lambda\mathbf{v}\)</span>, which rearranges to <span class="math inline">\((\mathbf{A} - \lambda\mathbf{I})\mathbf{v} = 0\)</span>. For a non-zero <span class="math inline">\(\mathbf{v}\)</span> to exist, the matrix <span class="math inline">\((\mathbf{A} - \lambda\mathbf{I})\)</span> must be singular (not invertible), which means det<span class="math inline">\((\mathbf{A} - \lambda\mathbf{I}) = 0\)</span>.</p>
+<p>(This is universal: a square matrix is singular iff its determinant is zero. So det<span class="math inline">\((\mathbf{A} - \lambda\mathbf{I}) = 0\)</span> is the standard way to find eigenvalues for any matrix.)</p>
+<p>Subtract <span class="math inline">\(\lambda\mathbf{I}\)</span> from <span class="math inline">\(\mathbf{A}\)</span>:</p>
+<p><span class="math display">\[\mathbf{A} - \lambda\mathbf{I} = \begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix} - \begin{bmatrix} \lambda &amp; 0 \\ 0 &amp; \lambda \end{bmatrix} = \begin{bmatrix} -\lambda &amp; 1 \\ -\omega^2 &amp; -\lambda \end{bmatrix}\]</span></p>
+<p>Set the determinant to zero (recall: det of 2×2 is <span class="math inline">\(ad - bc\)</span>):</p>
+<p><span class="math display">\[\det\begin{bmatrix} -\lambda &amp; 1 \\ -\omega^2 &amp; -\lambda \end{bmatrix} = (-\lambda)(-\lambda) - (1)(-\omega^2) = \lambda^2 + \omega^2 = 0\]</span></p>
+<p>Solving: <span class="math inline">\(\lambda^2 = -\omega^2\)</span>, so <span class="math inline">\(\lambda = \pm i\omega\)</span>. Purely imaginary!</p>
+<p><strong>But why does the harmonic oscillator give imaginary eigenvalues, while other systems don’t?</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 35%">
+<col style="width: 16%">
+<col style="width: 27%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Equation</th>
+<th>Physical system</th>
+<th>Matrix</th>
+<th>Eigenvalues</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(y'' = -\omega^2 y\)</span></td>
+<td>Oscillator (spring)</td>
+<td><span class="math inline">\(\begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix}\)</span></td>
+<td><span class="math inline">\(\pm i\omega\)</span> (imaginary)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(y'' = +\omega^2 y\)</span></td>
+<td>Unstable (inverted pendulum)</td>
+<td><span class="math inline">\(\begin{bmatrix} 0 &amp; 1 \\ +\omega^2 &amp; 0 \end{bmatrix}\)</span></td>
+<td><span class="math inline">\(\pm\omega\)</span> (real, explodes)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(y'' = -\omega^2 y - \gamma y'\)</span></td>
+<td>Damped oscillator</td>
+<td><span class="math inline">\(\begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; -\gamma \end{bmatrix}\)</span></td>
+<td>Complex with Re &lt; 0 (decays)</td>
+</tr>
+</tbody>
+</table>
+<p>The harmonic oscillator is special because it <strong>conserves energy</strong>: it oscillates forever without growing or decaying.</p>
+<div id="fig-eigenvalue-stability" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-eigenvalue-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="eigenvalue-stability-v2.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-eigenvalue-stability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: <strong>Continuous vs discrete eigenvalue stability.</strong> Left: In continuous time, the stability boundary is the imaginary axis (Re = 0). Harmonic oscillator eigenvalues <span class="math inline">\(\pm i\omega\)</span> lie exactly here. Right: After symplectic discretization, they map to <span class="math inline">\(e^{\pm i\omega\Delta t}\)</span> on the unit circle, where <span class="math inline">\(|\lambda| = 1\)</span>.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Deeper Connection: Hamiltonian Mechanics
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A <strong>Hamiltonian system</strong> is one where total energy <span class="math inline">\(H\)</span> is conserved. The harmonic oscillator has energy:</p>
+<p><span class="math display">\[H = \underbrace{\frac{1}{2}p^2}_{\text{kinetic}} + \underbrace{\frac{1}{2}\omega^2 q^2}_{\text{potential}}\]</span></p>
+<p>where <span class="math inline">\(q\)</span> is position and <span class="math inline">\(p\)</span> is momentum (velocity).</p>
+<p><strong>Why does energy conservation force imaginary eigenvalues?</strong></p>
+<p>Recall that eigenvalues control how solutions evolve: <span class="math inline">\(x(t) \sim e^{\lambda t}\)</span>.</p>
+<ul>
+<li>If <span class="math inline">\(\lambda\)</span> has <strong>positive real part</strong> → solution grows → energy grows → contradicts conservation</li>
+<li>If <span class="math inline">\(\lambda\)</span> has <strong>negative real part</strong> → solution decays → energy decays → contradicts conservation</li>
+<li>Only option: <strong>zero real part</strong> → purely imaginary → energy stays constant ✓</li>
+</ul>
+<p><strong>Why doesn’t the inverted pendulum work?</strong> It’s also Hamiltonian, but with energy <span class="math inline">\(H = \frac{1}{2}p^2 - \frac{1}{2}\omega^2 q^2\)</span>. This energy is <strong>not positive definite</strong>: it can be negative. Trajectories aren’t bounded, so eigenvalues are real <span class="math inline">\(\pm\omega\)</span>.</p>
+<p><strong>The full statement:</strong> Hamiltonian + positive definite energy → purely imaginary eigenvalues.</p>
+</div>
+</div>
+</div>
+<p><strong>What about damping?</strong> Adding a damping term <span class="math inline">\(y'' = -\omega^2 y - \gamma y'\)</span> breaks energy conservation (energy dissipates as heat). The matrix becomes:</p>
+<p><span class="math display">\[\begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; -\gamma \end{bmatrix}\]</span></p>
+<p>Now the eigenvalues have negative real parts, so oscillations decay over time. This is fine for modeling physical systems, but bad for sequence models (we’d lose long-range memory).</p>
+</section>
+<section id="wait-linoss-has-forcing.-why-are-eigenvalues-still-imaginary" class="level3">
+<h3 class="anchored" data-anchor-id="wait-linoss-has-forcing.-why-are-eigenvalues-still-imaginary">Wait: LinOSS Has Forcing. Why Are Eigenvalues Still Imaginary?</h3>
+<p>This confused me too. LinOSS uses <strong>forced</strong> harmonic oscillators:</p>
+<p><span class="math display">\[y'' = -\omega^2 y + b \cdot u(t)\]</span></p>
+<div id="fig-forcing" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-forcing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="forcing-concept.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-forcing-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: <strong>Forcing in a harmonic oscillator.</strong> Left: Natural oscillation, where the pendulum swings on its own. Right: Forced oscillation, where external input <span class="math inline">\(u(t)\)</span> pumps energy into the system. The key insight: forcing changes <em>trajectories</em> but not <em>stability</em> (eigenvalues of the dynamics matrix stay imaginary).
+</figcaption>
+</figure>
+</div>
+<p>Energy is being pumped in by <span class="math inline">\(u(t)\)</span>! So how can we talk about “energy conservation” and “Hamiltonian”?</p>
+<p><strong>Step 1: What are we finding eigenvalues OF?</strong></p>
+<p>When we convert to first-order:</p>
+<p><span class="math display">\[\frac{d}{dt}\begin{bmatrix} y \\ z \end{bmatrix} = \underbrace{\begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix}}_{\mathbf{A}} \begin{bmatrix} y \\ z \end{bmatrix} + \underbrace{\begin{bmatrix} 0 \\ b \end{bmatrix}}_{\mathbf{B}} u(t)\]</span></p>
+<p>The eigenvalues we care about are eigenvalues of <strong>A</strong> (the dynamics matrix), not of the whole system. The forcing term <span class="math inline">\(\mathbf{B}u(t)\)</span> is separate: it’s an <strong>input</strong>, not part of the dynamics.</p>
+<p><strong>Step 2: Where does the forcing term go?</strong></p>
+<p>Look at the two equations:</p>
+<ul>
+<li><span class="math inline">\(y' = z\)</span> (no forcing here; just says velocity = derivative of position)</li>
+<li><span class="math inline">\(z' = -\omega^2 y + b \cdot u(t)\)</span> (forcing is <strong>additive</strong>, separate from <span class="math inline">\(-\omega^2 y\)</span>)</li>
+</ul>
+<p>The <span class="math inline">\(-\omega^2 y\)</span> term (which creates the oscillation) is unchanged. The forcing just adds energy on top.</p>
+<p><strong>Step 3: Why does the A matrix still have imaginary eigenvalues?</strong></p>
+<p>The A matrix is: <span class="math display">\[\mathbf{A} = \begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix}\]</span></p>
+<p>This is <strong>exactly the same</strong> as the unforced oscillator! The eigenvalues are still <span class="math inline">\(\pm i\omega\)</span>.</p>
+<p><strong>Step 4: Here’s the catch: the forced system isn’t energy-conserving!</strong></p>
+<p>Correct! When you push a swing (apply forcing), you’re adding energy. Energy is NOT conserved.</p>
+<p>So why do we still get stable dynamics?</p>
+<p><strong>The key insight:</strong> We don’t need energy conservation. We need something weaker: <strong>no friction</strong>.</p>
+<p>Think about it:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 26%">
+<col style="width: 26%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>System</th>
+<th>Energy</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Swing with friction</td>
+<td>Decreases</td>
+<td>Slows down, stops (eigenvalues decay)</td>
+</tr>
+<tr class="even">
+<td>Swing with rocket booster</td>
+<td>Increases</td>
+<td>Speeds up forever (eigenvalues explode)</td>
+</tr>
+<tr class="odd">
+<td>Swing with someone pushing</td>
+<td>Varies (they control it)</td>
+<td><strong>Bounded</strong>: you control the amplitude</td>
+</tr>
+</tbody>
+</table>
+<p>The forced harmonic oscillator is like the third case. Energy goes up and down depending on the input <span class="math inline">\(u(t)\)</span>, but there’s <strong>no friction</strong> built into the system itself. The system doesn’t naturally decay or explode; it just responds to whatever you push it with.</p>
+<p><strong>Step 5: Why does “no friction” guarantee stability?</strong></p>
+<p>Mathematically, “no friction” means the <strong>A matrix</strong> has no damping term:</p>
+<p><span class="math display">\[\mathbf{A} = \begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix} \quad \text{(no friction)}\]</span></p>
+<p>Compare to a damped system:</p>
+<p><span class="math display">\[\mathbf{A}_{\text{damped}} = \begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; -\gamma \end{bmatrix} \quad \text{(friction coefficient } \gamma \text{)}\]</span></p>
+<p>The <span class="math inline">\(-\gamma\)</span> term is what causes decay. Without it, eigenvalues are purely imaginary → no decay, no explosion.</p>
+<p><strong>Step 6: What about after discretization?</strong></p>
+<p>When we discretize for computers, we need to be careful not to accidentally add numerical “friction” or “anti-friction”.</p>
+<p>The LinOSS paper uses <strong>symplectic integrators</strong>: numerical methods specifically designed to preserve the “no friction” property. The paper shows (Remark 3.2 / Appendix Proposition A.2):</p>
+<blockquote class="blockquote">
+<p>“All absolute eigenvalues of <span class="math inline">\(\mathbf{M}^{\text{IMEX}}\)</span> are exactly 1”</p>
+</blockquote>
+<p>This means the discrete system also has no decay and no explosion, exactly what we want for sequence modeling.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Physical Intuition
+<span class="screen-reader-only">Note</span>Summary: Why Forcing Doesn’t Break Stability
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Think of pushing a child on a swing:</p>
-<ul>
-<li>The swing naturally oscillates (harmonic oscillator)</li>
-<li>Your pushes are the forcing function <span class="math inline">\(u(t)\)</span></li>
-<li>The swing’s motion combines its natural rhythm with your input timing</li>
-<li>If you push at the right frequency (resonance), amplitude grows</li>
-<li>Otherwise, the system filters your input through its natural dynamics</li>
-</ul>
-<p>LinOSS uses this same principle: sequential data is the “forcing,” and the network’s dynamics process it through oscillatory modes.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>What</th>
+<th>Unforced oscillator</th>
+<th>Forced oscillator (LinOSS)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Energy</td>
+<td>Conserved</td>
+<td>NOT conserved (pumped in by input)</td>
+</tr>
+<tr class="even">
+<td>A matrix eigenvalues</td>
+<td><span class="math inline">\(\pm i\omega\)</span></td>
+<td><span class="math inline">\(\pm i\omega\)</span> (unchanged!)</td>
+</tr>
+<tr class="odd">
+<td>Hamiltonian?</td>
+<td>Yes (time-independent)</td>
+<td>Yes (time-dependent)</td>
+</tr>
+<tr class="even">
+<td>Phase space volume</td>
+<td>Preserved</td>
+<td>Preserved</td>
+</tr>
+<tr class="odd">
+<td>Discrete eigenvalues</td>
+<td><span class="math inline">\(\|λ\| = 1\)</span></td>
+<td><span class="math inline">\(\|λ\| = 1\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>The forcing changes <strong>trajectories</strong> but not <strong>stability</strong>. The oscillator structure guarantees bounded dynamics regardless of what input you feed it.</p>
 </div>
 </div>
 </section>
-<section id="why-oscillators-for-sequence-modeling" class="level3">
-<h3 class="anchored" data-anchor-id="why-oscillators-for-sequence-modeling">Why Oscillators for Sequence Modeling?</h3>
-<p>The connection to eigenvalues becomes clear when we rewrite <a href="#eq-forced-harmonic" class="quarto-xref">Equation&nbsp;3</a> as a first-order system. Let <span class="math inline">\(z = \frac{dy}{dt}\)</span> (velocity):</p>
-<p><span id="eq-state-space"><span class="math display">\[\frac{d}{dt}\begin{bmatrix} y \\ z \end{bmatrix} = \begin{bmatrix} 0 &amp; 1 \\ -\omega^2 &amp; 0 \end{bmatrix} \begin{bmatrix} y \\ z \end{bmatrix} + \begin{bmatrix} 0 \\ 1 \end{bmatrix} u(t) \tag{4}\]</span></span></p>
-<p>The dynamics matrix has eigenvalues <span class="math inline">\(\lambda = \pm i\omega\)</span> — <strong>purely imaginary</strong>, exactly on the stability boundary. This is the “sweet spot” from <a href="../6-eigenvalue-dynamics/">Part 6</a>: sustained oscillations without growth or decay.</p>
+<section id="the-neuroscience-connection" class="level3">
+<h3 class="anchored" data-anchor-id="the-neuroscience-connection">The Neuroscience Connection</h3>
+<p>Oscillations aren’t just a curiosity in neuroscience; they’re everywhere. As Rusch put it in his TED talk<span class="math inline">\(^{[9]}\)</span>:</p>
+<blockquote class="blockquote">
+<p>“Already 100 years ago, in 1924, Hans Berger, who was the inventor of the EEG, found in one of the very first EEG recordings on a human, these very beautiful, very complicated oscillatory dynamics emerge… gamma waves. So oscillations are really everywhere in neuroscience.”</p>
+</blockquote>
+<p>From single neurons (action potentials are relaxation oscillators) to whole cortical columns, the brain runs on oscillations.</p>
+<p>Churchland et al.&nbsp;(2012)<span class="math inline">\(^{[2]}\)</span> discovered that motor cortex activity during reaching follows <strong>rotational dynamics</strong>: trajectories spiral through neural state space. They used jPCA, which fits a skew-symmetric matrix to the data. The trajectories show slight decay (spiral inward), suggesting eigenvalues with <strong>small negative real parts</strong>, close to but not exactly on the imaginary axis.</p>
+<p><strong>Why does biology use slight damping?</strong> Forgetting is <em>useful</em> for motor control. You don’t want yesterday’s reach plan interfering with today’s. The slight decay acts as a natural “reset”: activity returns to baseline after each movement.</p>
+<p>The shared insight with biology is <strong>oscillatory dynamics as a computational primitive</strong>. In LinOSS, each oscillator evolves independently; coupling between oscillators happens through the learned B and C matrices and the nonlinear layers between blocks, not within the oscillator core. This is what enables the parallel scan efficiency.</p>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>The Implication for Sequence Models
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 34%">
+<col style="width: 44%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>System</th>
+<th>Eigenvalues</th>
+<th>Memory behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Motor cortex</td>
+<td>Small negative real part</td>
+<td>Gradual forgetting (useful for motor control)</td>
+</tr>
+<tr class="even">
+<td>LinOSS-IMEX</td>
+<td>Exactly imaginary</td>
+<td>Perfect memory, no decay</td>
+</tr>
+<tr class="odd">
+<td>LinOSS-IM</td>
+<td>Slightly damped</td>
+<td>Controlled forgetting (regularization)</td>
+</tr>
+</tbody>
+</table>
+<p>Biology’s “imperfect” oscillators are actually well-suited for their task: motor control needs forgetting.</p>
+<p>But here’s the twist: <strong>LinOSS-IM often outperforms LinOSS-IMEX</strong> in practice. A little damping acts as regularization, preventing the model from holding onto noise indefinitely. The brain’s solution (near-imaginary eigenvalues with slight decay) may be optimal for generalization, not just a biological limitation.</p>
+<p>LinOSS-IMEX gives you the <em>option</em> of perfect memory. LinOSS-IM gives you tunable forgetting. The physics framework provides both.</p>
+</div>
+</div>
 </section>
 </section>
 <section id="sec-architecture" class="level2">
 <h2 class="anchored" data-anchor-id="sec-architecture">The LinOSS Architecture</h2>
-<p>Now let’s see how Rusch &amp; Rus turn this physics into a neural network.</p>
+<p>If you want to train LinOSS on a GPU, you need to translate the physics into concrete matrix operations. Here’s how Rusch &amp; Rus turn that 400-year-old equation into a neural network.</p>
 <section id="the-continuous-time-model" class="level3">
 <h3 class="anchored" data-anchor-id="the-continuous-time-model">The Continuous-Time Model</h3>
 <p>LinOSS models <span class="math inline">\(N\)</span> <strong>uncoupled</strong> forced harmonic oscillators:</p>
-<p><span id="eq-linoss-continuous"><span class="math display">\[\frac{d^2 \mathbf{y}}{dt^2} = -\mathbf{A}\mathbf{y}(t) + \mathbf{B}\mathbf{u}(t) \tag{5}\]</span></span></p>
+<p><span id="eq-linoss-continuous"><span class="math display">\[
+\frac{d^2\mathbf{y}}{dt^2} =
+\underbrace{-\mathbf{A}\,\mathbf{y}(t)}_{\text{oscillation}} +
+\underbrace{\mathbf{B}\,\textcolor{orange}{\mathbf{u}(t)} + \mathbf{b}}_{\text{forcing}}
+\tag{1}\]</span></span></p>
+<p><span class="math inline">\(\textcolor{orange}{\mathbf{u}(t)}\)</span> is the <strong>external input</strong> driving the oscillators. Left: spring physics. Right: what LinOSS adds as an ML model.</p>
 <p>with linear readout:</p>
-<p><span id="eq-linoss-readout"><span class="math display">\[\mathbf{o}(t) = \mathbf{C}\mathbf{y}(t) \tag{6}\]</span></span></p>
+<p><span id="eq-linoss-readout"><span class="math display">\[\mathbf{o}(t) = \mathbf{C}\,\mathbf{y}(t) + \mathbf{D}\,\textcolor{orange}{\mathbf{u}(t)} \tag{2}\]</span></span></p>
 <p>where:</p>
 <table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 34%">
+<col style="width: 40%">
+</colgroup>
 <thead>
 <tr class="header">
 <th>Symbol</th>
@@ -637,12 +958,55 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 <td>Input projection</td>
 </tr>
 <tr class="odd">
+<td><span class="math inline">\(\mathbf{b}\)</span></td>
+<td><span class="math inline">\(N \times 1\)</span></td>
+<td>Bias term</td>
+</tr>
+<tr class="even">
 <td><span class="math inline">\(\mathbf{C}\)</span></td>
 <td><span class="math inline">\(D_{out} \times N\)</span></td>
 <td>Output projection</td>
 </tr>
+<tr class="odd">
+<td><span class="math inline">\(\mathbf{D}\)</span></td>
+<td><span class="math inline">\(D_{out} \times D_{in}\)</span></td>
+<td>Direct feedthrough (input bypass)</td>
+</tr>
 </tbody>
 </table>
+<p>The critical word in that table is <strong>Diagonal</strong> next to <span class="math inline">\(\mathbf{A}\)</span>. That constraint is where all of LinOSS’s efficiency comes from, and it needs a real explanation.</p>
+</section>
+<section id="sec-uncoupled" class="level3">
+<h3 class="anchored" data-anchor-id="sec-uncoupled">Why Is A Diagonal?</h3>
+<p>A standard RNN uses a full weight matrix <span class="math inline">\(W_{hh}\)</span>: every hidden unit at step <span class="math inline">\(t\)</span> feeds into every hidden unit at step <span class="math inline">\(t+1\)</span>. That dense connectivity is also what makes parallelization impossible, because computing step <span class="math inline">\(t+1\)</span> requires completing step <span class="math inline">\(t\)</span> first. LinOSS breaks that dependency by constraining <span class="math inline">\(\mathbf{A}\)</span> to be diagonal, so each oscillator evolves only from itself, never from its neighbors. Rusch describes what this looks like in practice<span class="math inline">\(^{[9]}\)</span>:</p>
+<blockquote class="blockquote">
+<p>“In a standard RNN, each hidden neuron is connected to each other hidden neuron. So we have a very dense connectivity. Our approach is very different: we only have hidden connections for each neuron to itself. Some sort of sparse representation.”</p>
+</blockquote>
+<p>To see what this means, let’s start with a physical picture before the math.</p>
+<div id="fig-coupled-uncoupled" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-coupled-uncoupled-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="coupled-vs-uncoupled.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-coupled-uncoupled-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: <strong>Coupled vs Uncoupled systems.</strong> Left: In a coupled system, springs connect all masses, so pulling one moves them all. Right: LinOSS uses uncoupled oscillators, where each mass hangs from its own spring with frequency <span class="math inline">\(\omega_k\)</span>, evolving independently.
+</figcaption>
+</figure>
+</div>
+<section id="coupled-system-general-a-matrix" class="level4">
+<h4 class="anchored" data-anchor-id="coupled-system-general-a-matrix">Coupled System (General A Matrix)</h4>
+<p>If <span class="math inline">\(\mathbf{A}\)</span> were a <strong>full</strong> matrix, we’d have a <strong>coupled</strong> system where each oscillator’s motion depends on all the others:</p>
+<p><span class="math display">\[\begin{bmatrix} y_1'' \\ y_2'' \\ y_3'' \end{bmatrix} = -\begin{bmatrix} a_{11} &amp; a_{12} &amp; a_{13} \\ a_{21} &amp; a_{22} &amp; a_{23} \\ a_{31} &amp; a_{32} &amp; a_{33} \end{bmatrix} \begin{bmatrix} y_1 \\ y_2 \\ y_3 \end{bmatrix}\]</span></p>
+<p>Expanding the first row: <span class="math inline">\(y_1'' = -a_{11}y_1 - a_{12}y_2 - a_{13}y_3\)</span></p>
+<p>Oscillator 1’s acceleration depends on the positions of oscillators 2 and 3! Imagine three masses connected by springs to each other: pull one, and they all move together.</p>
+</section>
+<section id="uncoupled-system-diagonal-a-matrix-what-linoss-uses" class="level4">
+<h4 class="anchored" data-anchor-id="uncoupled-system-diagonal-a-matrix-what-linoss-uses">Uncoupled System (Diagonal A Matrix): What LinOSS Uses</h4>
+<p>LinOSS constrains <span class="math inline">\(\mathbf{A}\)</span> to be <strong>diagonal</strong>:</p>
+<p><span class="math display">\[\mathbf{A} = \begin{bmatrix} a_1 &amp; 0 &amp; 0 \\ 0 &amp; a_2 &amp; 0 \\ 0 &amp; 0 &amp; a_3 \end{bmatrix}\]</span></p>
+<p>Now each oscillator evolves <strong>independently</strong>:</p>
+<p><span class="math display">\[y_k'' = -a_k y_k + (\mathbf{B}\mathbf{u})_k + b_k\]</span></p>
+<p>This is literally <strong>N separate harmonic oscillators</strong>, each with its own natural frequency <span class="math inline">\(\omega_k = \sqrt{a_k}\)</span>.</p>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -655,6 +1019,13 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 <div class="callout-body-container callout-body">
 <p>The critical design choice is that <span class="math inline">\(\mathbf{A}\)</span> is <strong>diagonal</strong> with <strong>nonnegative entries</strong>:</p>
 <p><span class="math display">\[\mathbf{A} = \text{diag}(a_1, a_2, ..., a_N), \quad a_k \geq 0\]</span></p>
+<p>Why nonnegative? Each uncoupled oscillator satisfies <span class="math inline">\(y_k'' = -a_k y_k\)</span>. As a first-order system, its 2x2 matrix has eigenvalues <span class="math inline">\(\lambda = \pm\sqrt{-a_k}\)</span>:</p>
+<ul>
+<li><span class="math inline">\(a_k &gt; 0\)</span>: eigenvalues are <span class="math inline">\(\pm i\sqrt{a_k}\)</span> (purely imaginary) – stable oscillation at frequency <span class="math inline">\(\sqrt{a_k}\)</span></li>
+<li><span class="math inline">\(a_k = 0\)</span>: eigenvalues are <span class="math inline">\(0, 0\)</span> – constant velocity, marginally stable</li>
+<li><span class="math inline">\(a_k &lt; 0\)</span>: eigenvalues are <span class="math inline">\(\pm\sqrt{|a_k|}\)</span> (real) – exponential growth, unstable</li>
+</ul>
+<p>So <span class="math inline">\(a_k \geq 0\)</span> is precisely the condition for purely imaginary eigenvalues, which is what keeps the system on or inside the unit circle after discretization.</p>
 <p>This single constraint provides:</p>
 <ol type="1">
 <li><strong>Oscillatory dynamics</strong>: When <span class="math inline">\(a_k &gt; 0\)</span>, the <span class="math inline">\(k\)</span>-th mode oscillates at frequency <span class="math inline">\(\sqrt{a_k}\)</span></li>
@@ -701,112 +1072,886 @@ Figure&nbsp;1: <strong>LinOSS architecture</strong> from the paper. Input (left)
 </table>
 </div>
 </div>
-</section>
-<section id="first-order-form" class="level3">
-<h3 class="anchored" data-anchor-id="first-order-form">First-Order Form</h3>
-<p>To implement LinOSS, we rewrite the second-order ODE as a first-order system. Let <span class="math inline">\(\mathbf{z} = \frac{d\mathbf{y}}{dt}\)</span>:</p>
-<p><span id="eq-linoss-first-order"><span class="math display">\[\frac{d}{dt}\begin{bmatrix} \mathbf{y} \\ \mathbf{z} \end{bmatrix} = \begin{bmatrix} 0 &amp; I \\ -\mathbf{A} &amp; 0 \end{bmatrix} \begin{bmatrix} \mathbf{y} \\ \mathbf{z} \end{bmatrix} + \begin{bmatrix} 0 \\ \mathbf{B} \end{bmatrix} \mathbf{u}(t) \tag{7}\]</span></span></p>
-<p>The combined state <span class="math inline">\([\mathbf{y}, \mathbf{z}]^\top\)</span> has dimension <span class="math inline">\(2N\)</span>, doubling the hidden size compared to first-order SSMs. But the diagonal structure means computation scales linearly.</p>
-</section>
-</section>
-<section id="sec-discretization" class="level2">
-<h2 class="anchored" data-anchor-id="sec-discretization">Discretization: Two Flavors</h2>
-<p>Continuous ODEs must be discretized for computation. LinOSS proposes two schemes with different properties.</p>
-<div id="fig-discretization" class="quarto-float quarto-figure quarto-figure-center anchored">
+<p>The same idea expressed as a neural network: each hidden unit connects only to itself across time steps, giving a sparse O(m) connectivity instead of the O(m²) dense weight matrix of a standard RNN. This sparse structure is what enables the speed.</p>
+<div id="fig-dense-sparse" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-discretization-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="harmonic-oscillator.png" class="img-fluid figure-img">
+<div aria-describedby="fig-dense-sparse-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="dense-vs-sparse-v3.png" class="img-fluid figure-img">
 </div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-discretization-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmonic oscillator test. LinOSS-IMEX (blue) preserves energy perfectly — error stays bounded. LinOSS-IM (orange) has slight dissipation — error grows over very long horizons. For most tasks, the slight forgetting actually helps generalization.
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-dense-sparse-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: <strong>Dense vs Sparse recurrent structure.</strong> Left: Standard RNNs, where every hidden unit at <span class="math inline">\(t{-}1\)</span> connects to every hidden unit at <span class="math inline">\(t\)</span> via a full <span class="math inline">\(W_{hh}\)</span> matrix (O(m²) weights, all arrows crossing). Right: LinOSS, where each oscillator at step <span class="math inline">\(n\)</span> connects only to itself at step <span class="math inline">\(n{+}1\)</span> via diagonal A (O(m) weights, parallel arrows). Input enters via <span class="math inline">\(B\)</span>; output is read via <span class="math inline">\(C\)</span>.
 </figcaption>
 </figure>
 </div>
-<section id="linoss-im-implicit-dissipative" class="level3">
-<h3 class="anchored" data-anchor-id="linoss-im-implicit-dissipative">LinOSS-IM: Implicit (Dissipative)</h3>
-<p>The <strong>implicit</strong> discretization treats both position and velocity at the current timestep:</p>
-<p><span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_n + \mathbf{B}\mathbf{u}_n)\]</span> <span class="math display">\[\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_n\]</span></p>
-<p>Solving for <span class="math inline">\(\mathbf{y}_n\)</span> and <span class="math inline">\(\mathbf{z}_n\)</span>:</p>
-<p><span class="math display">\[\mathbf{y}_n = \mathbf{S}(\mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}) + \Delta t^2 \mathbf{S}\mathbf{B}\mathbf{u}_n\]</span> <span class="math display">\[\mathbf{z}_n = -\Delta t \mathbf{A}\mathbf{S}(\mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}) + \Delta t \mathbf{S}\mathbf{B}\mathbf{u}_n + \mathbf{z}_{n-1}\]</span></p>
-<p>where <span class="math inline">\(\mathbf{S} = (\mathbf{I} + \Delta t^2 \mathbf{A})^{-1}\)</span>.</p>
-<div class="callout callout-style-simple callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Why “Implicit” is Fast
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Computing <span class="math inline">\(\mathbf{S}^{-1}\)</span> normally requires <span class="math inline">\(O(N^3)\)</span> operations. But since <span class="math inline">\(\mathbf{A}\)</span> is <strong>diagonal</strong>:</p>
-<p><span class="math display">\[\mathbf{S} = \text{diag}\left(\frac{1}{1 + \Delta t^2 a_1}, \frac{1}{1 + \Delta t^2 a_2}, ..., \frac{1}{1 + \Delta t^2 a_N}\right)\]</span></p>
-<p>Just <span class="math inline">\(O(N)\)</span> elementwise operations!</p>
-</div>
-</div>
-<p><strong>Stability guarantee</strong>: All eigenvalues of the transition matrix satisfy <span class="math inline">\(|\lambda_k| \leq 1\)</span> when <span class="math inline">\(a_k \geq 0\)</span>. The system is <strong>asymptotically stable</strong> — information decays over time, acting as a “forgetting mechanism.”</p>
 </section>
-<section id="linoss-imex-symplectic-conservative" class="level3">
-<h3 class="anchored" data-anchor-id="linoss-imex-symplectic-conservative">LinOSS-IMEX: Symplectic (Conservative)</h3>
-<p>The <strong>implicit-explicit</strong> discretization treats forcing implicitly but position explicitly:</p>
-<p><span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_{n-1} + \mathbf{B}\mathbf{u}_n)\]</span> <span class="math display">\[\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_n\]</span></p>
-<p>This is a <strong>symplectic integrator</strong> — it preserves the Hamiltonian structure of the oscillator.</p>
-<p><strong>Key property</strong>: All eigenvalues satisfy <span class="math inline">\(|\lambda_k| = 1\)</span> exactly. No dissipation — information is preserved indefinitely.</p>
+<section id="how-input-reaches-the-oscillators-the-b-matrix" class="level4">
+<h4 class="anchored" data-anchor-id="how-input-reaches-the-oscillators-the-b-matrix">How Input Reaches the Oscillators: The B Matrix</h4>
+<p>The <span class="math inline">\(\mathbf{B}\)</span> matrix (<span class="math inline">\(N \times D_{in}\)</span>) projects input to each oscillator. Each oscillator receives a <strong>different linear combination</strong> of the input channels.</p>
+<div id="fig-b-matrix" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-b-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="b-matrix-projection.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-b-matrix-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: <strong>How the B matrix routes input to oscillators.</strong> Two input signals (temperature, pressure) pass through the learned B matrix. Each oscillator receives a different weighted combination: Oscillator 1 only “listens” to temperature, Oscillator 2 only to pressure, Oscillator 3 to both.
+</figcaption>
+</figure>
+</div>
+<p>Here’s the math for a concrete example with <span class="math inline">\(u_1 = 5\)</span> (temperature) and <span class="math inline">\(u_2 = 2\)</span> (pressure):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Oscillator</th>
+<th>Receives</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><span class="math inline">\(5.0\)</span></td>
+<td>Only “listens” to temperature (weights: 1, 0)</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><span class="math inline">\(2.0\)</span></td>
+<td>Only “listens” to pressure (weights: 0, 1)</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><span class="math inline">\(3.5\)</span></td>
+<td>Listens to both equally (weights: 0.5, 0.5)</td>
+</tr>
+</tbody>
+</table>
 <div class="callout callout-style-simple callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Tip</span>When to Use Which?
+<span class="screen-reader-only">Tip</span>Physical Analogy: Three Kids on Swings
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Imagine 3 kids on 3 <strong>separate</strong> swings (3 uncoupled oscillators). You have 2 hands (2 input channels).</p>
+<ul>
+<li><strong>Kid 1</strong>: You only push with your left hand</li>
+<li><strong>Kid 2</strong>: You only push with your right hand</li>
+<li><strong>Kid 3</strong>: You push with both hands equally</li>
+</ul>
+<p>The B matrix defines <strong>who gets pushed by which hand, and how strongly</strong>. The swings don’t affect each other (uncoupled), but they all respond to your hands through different “wiring.”</p>
+<p>During training, LinOSS <strong>learns</strong> the B matrix, figuring out which oscillators should respond to which input combinations.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-full-block" class="level3">
+<h3 class="anchored" data-anchor-id="sec-full-block">The Full Multi-Layer Model</h3>
+<p>A single LinOSS block (ODE + readout) is linear. To build a full deep network, the paper stacks <span class="math inline">\(L\)</span> blocks with nonlinearities between them. The exact algorithm from the paper (Appendix A):</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathbf{u}^0 &amp;= \mathbf{W}_{\text{enc}}\,\mathbf{u} + \mathbf{b}_{\text{enc}} &amp;&amp; \text{(linear encoder)} \\
+\mathbf{y}^l &amp;= \text{LinOSS-ODE}(\mathbf{u}^{l-1}) &amp;&amp; \text{(parallel scan)} \\
+\mathbf{x}^l &amp;= \mathbf{C}\mathbf{y}^l + \mathbf{D}\mathbf{u}^{l-1} &amp;&amp; \text{(linear readout)} \\
+\mathbf{x}^l &amp;= \text{GELU}(\mathbf{x}^l) &amp;&amp; \text{(smooth nonlinearity)} \\
+\mathbf{u}^l &amp;= \text{GLU}(\mathbf{x}^l) + \mathbf{u}^{l-1} &amp;&amp; \text{(gating + skip)} \\
+\mathbf{o} &amp;= \mathbf{W}_{\text{dec}}\,\mathbf{y}^L + \mathbf{b}_{\text{dec}} &amp;&amp; \text{(linear decoder)}
+\end{aligned}
+\]</span></p>
+<p>where: - <span class="math inline">\(\mathbf{W}_{\text{enc}} \in \mathbb{R}^{D_h \times D_{in}}\)</span>, <span class="math inline">\(\mathbf{b}_{\text{enc}} \in \mathbb{R}^{D_h}\)</span>: learned encoder weights and bias - <span class="math inline">\(\mathbf{C} \in \mathbb{R}^{D_h \times N}\)</span>: output projection (reads oscillator positions) - <span class="math inline">\(\mathbf{D} \in \mathbb{R}^{D_h \times D_h}\)</span>: skip-connection weight (direct passthrough from input) - <span class="math inline">\(\mathbf{W}_{\text{dec}} \in \mathbb{R}^{D_{out} \times D_h}\)</span>, <span class="math inline">\(\mathbf{b}_{\text{dec}} \in \mathbb{R}^{D_{out}}\)</span>: learned decoder weights and bias - <span class="math inline">\(\text{GLU}(\mathbf{x}) = \sigma(\mathbf{W}_1\mathbf{x}) \odot \mathbf{W}_2\mathbf{x}\)</span>: sigmoid-gated linear unit, where <span class="math inline">\(\mathbf{W}_1, \mathbf{W}_2 \in \mathbb{R}^{D_h \times D_h}\)</span> are learned</p>
+<div id="fig-architecture" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="linoss-architecture.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-architecture-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: <strong>Left:</strong> Full LinOSS model: input <span class="math inline">\(\mathbf{u}\)</span> enters at top, passes through encoder → <span class="math inline">\(L\)</span> stacked blocks → decoder, exits as output <span class="math inline">\(\mathbf{o}\)</span> at bottom. <strong>Right:</strong> Inside one block: input <span class="math inline">\(\mathbf{u}^{l-1}\)</span> enters at top, flows through ODE → linear readout → GELU → GLU → residual add, exits as <span class="math inline">\(\mathbf{u}^l\)</span> at bottom. Skip connection bypasses down the right side.
+</figcaption>
+</figure>
+</div>
+<p><strong>Why GELU?</strong> GELU (Gaussian Error Linear Unit: <span class="math inline">\(x \cdot \Phi(x)\)</span>) is a smooth approximation to ReLU. Unlike ReLU it has a nonzero gradient everywhere, which helps gradient flow through many stacked layers. It “softly” suppresses near-zero activations without hard-clipping them.</p>
+<p><strong>Why GLU?</strong> The sigmoid branch <span class="math inline">\(\sigma(\mathbf{W}_1\mathbf{x}) \in (0,1)\)</span> learns a <em>gate</em> (which features to pass through). The linear branch <span class="math inline">\(\mathbf{W}_2\mathbf{x}\)</span> provides the content. Element-wise multiplication means the model can adaptively zero out irrelevant dimensions at each timestep. This is the same mechanism as SwiGLU in LLaMA/PaLM, which empirically outperforms plain MLP activations.</p>
+<p><strong>Why GELU then GLU?</strong> GELU is a global, parameter-free thresholding of the readout. GLU is a learned, adaptive gate with its own weight matrices <span class="math inline">\(\mathbf{W}_1, \mathbf{W}_2\)</span>. Together they form a two-stage nonlinear transformation: first compress the linear oscillator output, then selectively gate it.</p>
+<p><strong>Why skip connection?</strong> The residual <span class="math inline">\(+ \mathbf{u}^{l-1}\)</span> means each block only needs to learn a <em>correction</em> to the input, not a full transformation. This is the same reason residual networks train reliably to depth: gradient flows through the skip path even if the block is near-zero.</p>
+<p>This is the “nonlinear readout” that the universality theorem (Section <a href="#sec-theory">Universal Approximation</a>) requires. The oscillatory core stays linear (and stable); the expressiveness comes from the GELU + GLU layers stacked between blocks.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Comparison to Mamba and Modern Transformers
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Each LinOSS block follows the same pattern as modern sequence models:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 15%">
+<col style="width: 13%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>LinOSS</th>
+<th>Mamba</th>
+<th>Modern Transformer (LLaMA)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Temporal mixing</td>
+<td>ODE via parallel scan</td>
+<td>Selective SSM</td>
+<td>Multi-head attention</td>
+</tr>
+<tr class="even">
+<td>Per-position nonlinearity</td>
+<td>GELU + GLU</td>
+<td>SiLU + multiplicative gate</td>
+<td>SwiGLU in FFN</td>
+</tr>
+<tr class="odd">
+<td>Skip connection</td>
+<td>✓</td>
+<td>✓</td>
+<td>✓</td>
+</tr>
+<tr class="even">
+<td>Stability guarantee</td>
+<td>✓ (eigenvalue bounds)</td>
+<td>✗</td>
+<td>✗</td>
+</tr>
+<tr class="odd">
+<td>Compute complexity</td>
+<td><span class="math inline">\(O(N \log N)\)</span></td>
+<td><span class="math inline">\(O(N \log N)\)</span></td>
+<td><span class="math inline">\(O(N^2)\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>The original 2017 Transformer used a plain <code>Dense → ReLU → Dense</code> FFN with no gating. Modern Transformers (LLaMA, PaLM) adopted SwiGLU in ~2022 because gating empirically outperforms fixed activations. LinOSS uses the same insight.</p>
+<p>The key LinOSS-specific advantage: the temporal mixer (ODE) has <strong>physics-grounded eigenvalue guarantees</strong> that neither Mamba nor any Transformer can claim.</p>
+</div>
+</div>
+</section>
+<section id="sec-why-depth" class="level3">
+<h3 class="anchored" data-anchor-id="sec-why-depth">Why Multiple Blocks?</h3>
+<p>A natural question: why stack <span class="math inline">\(L\)</span> identical blocks instead of one big one?</p>
+<p><strong>A single LinOSS block is a linear function of input history.</strong> The ODE computes a weighted sum of all past inputs (oscillators at different frequencies), but still a linear combination. No matter how many oscillators you add <em>within</em> one block, one composition of linear-then-nonlinear can only learn one “level” of feature.</p>
+<p><strong>The deeper answer comes from Mamba interpretability.</strong> A 2025 mechanistic study of Mamba (Airlangga et al., <a href="https://arxiv.org/abs/2506.15156">arXiv:2506.15156</a>) found that different layers spontaneously specialize in different timescales during training:</p>
+<ul>
+<li><strong>Shallow blocks</strong> develop large Δ for slowly-varying inputs, quickly resetting and re-injecting; they handle fast, high-frequency dynamics</li>
+<li><strong>One specific deep layer (Layer 17 in Mamba-7B)</strong> concentrates “long-memory channels” (channels where the cumulative forget gate product stays near 1 across the <em>entire</em> sequence). This layer is causally responsible for first-position (primacy) recall; ablating it destroys long-term memory while leaving short-term intact</li>
+<li><strong>Deeper layers progressively increase</strong> their Δ for low-frequency inputs, meaning each additional depth level picks up a slower timescale</li>
+</ul>
+<p>This is not designed-in; it <strong>emerges from training</strong>. The model self-organizes depth to cover the full frequency spectrum.</p>
+<p><strong>For robot manipulation</strong>, this maps directly:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 21%">
+<col style="width: 33%">
+<col style="width: 45%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Depth</th>
+<th>Timescale</th>
+<th>Robot example</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Shallow blocks</td>
+<td>Fast (~10ms)</td>
+<td>Fingertip contact forces, vibrations</td>
+</tr>
+<tr class="even">
+<td>Middle blocks</td>
+<td>Medium (~100ms)</td>
+<td>Arm joint trajectories</td>
+</tr>
+<tr class="odd">
+<td>Deep blocks</td>
+<td>Slow (~seconds)</td>
+<td>Task-level strategy, cloth fold sequence</td>
+</tr>
+</tbody>
+</table>
+<p><strong>HiSS (<a href="https://arxiv.org/abs/2402.10211">arXiv:2402.10211</a>) confirmed this explicitly</strong>: a designed 2-level SSM (one layer for local features, one for global) outperformed flat stacking by <strong>+23% on robotics benchmarks</strong>. When you engineer the timescale hierarchy instead of letting it emerge, performance improves further.</p>
+<p>One LinOSS block can represent oscillators at many frequencies, but it applies a single GELU+GLU gate to all of them. Multiple blocks let <em>each block’s nonlinearity</em> specialize: early blocks compress fast contact dynamics into features, late blocks compose those features into task-level representations.</p>
+</section>
+</section>
+<section id="sec-discretization" class="level2">
+<h2 class="anchored" data-anchor-id="sec-discretization">Discretization: Three Flavors</h2>
+<p>The physics gives us continuous equations. But a GPU can’t integrate an ODE; it needs discrete update rules. The choice turns out to matter more than you’d expect: naive discretization breaks the stability guarantee, while the right choice preserves it exactly.</p>
+<section id="first-order-form" class="level3">
+<h3 class="anchored" data-anchor-id="first-order-form">First-Order Form</h3>
+<p>To implement LinOSS, we rewrite the second-order ODE as a first-order system. Let <span class="math inline">\(\mathbf{z} = \frac{d\mathbf{y}}{dt}\)</span>:</p>
+<p><span id="eq-linoss-first-order"><span class="math display">\[
+\frac{d}{dt}\begin{bmatrix} \mathbf{y} \\ \mathbf{z} \end{bmatrix} = \begin{bmatrix} 0 &amp; I \\ -\mathbf{A} &amp; 0 \end{bmatrix} \begin{bmatrix} \mathbf{y} \\ \mathbf{z} \end{bmatrix} + \begin{bmatrix} 0 \\ \mathbf{B} \end{bmatrix} \textcolor{orange}{\mathbf{u}(t)}
+\tag{3}\]</span></span></p>
+<p>The combined state <span class="math inline">\([\mathbf{y}, \mathbf{z}]^\top\)</span> has dimension <span class="math inline">\(2N\)</span>, doubling the hidden size compared to first-order SSMs. But the diagonal structure means computation scales linearly.</p>
+</section>
+<section id="the-core-problem-how-do-we-update-position-and-velocity" class="level3">
+<h3 class="anchored" data-anchor-id="the-core-problem-how-do-we-update-position-and-velocity">The Core Problem: How Do We Update Position and Velocity?</h3>
+<p>At each timestep, we have two variables to update: - <strong>Position</strong> <span class="math inline">\(y\)</span>: where the oscillator is - <strong>Velocity</strong> <span class="math inline">\(z\)</span>: how fast it’s moving</p>
+<p>The continuous equations say: <span class="math display">\[\frac{dy}{dt} = z, \quad \frac{dz}{dt} = -\omega^2 y + \text{input}\]</span></p>
+<p>To discretize, we approximate these derivatives. The question is: <strong>which values do we use: old or new?</strong></p>
+</section>
+<section id="three-options-three-fates" class="level3">
+<h3 class="anchored" data-anchor-id="three-options-three-fates">Three Options, Three Fates</h3>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Notation: Scalar vs Matrix
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Below we use <strong>scalar notation</strong> (<span class="math inline">\(\omega^2\)</span>, scalar <span class="math inline">\(y\)</span>, <span class="math inline">\(z\)</span>) for a single oscillator, which is easier to see what’s happening.</p>
+<p>The paper uses <strong>matrix notation</strong> for <span class="math inline">\(N\)</span> oscillators: replace <span class="math inline">\(\omega^2 \to \mathbf{A}\)</span> (diagonal), <span class="math inline">\(y \to \mathbf{y}\)</span>, <span class="math inline">\(z \to \mathbf{z}\)</span>. Same math, just <span class="math inline">\(N\)</span> copies running in parallel.</p>
+</div>
+</div>
+<div id="fig-discretization-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-discretization-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="discretization-comparison.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-discretization-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;8: <strong>The three discretization methods</strong> applied to a harmonic oscillator in phase space (position vs velocity). Explicit Euler uses all old values: area grows, trajectory spirals outward. Implicit Euler uses all new values: area shrinks, trajectory spirals inward. Symplectic (IMEX) uses a clever mix: area preserved, trajectory stays stable.
+</figcaption>
+</figure>
+</div>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 20%">
+<col style="width: 8%">
+<col style="width: 19%">
+<col style="width: 19%">
+<col style="width: 11%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>LinOSS variant</th>
+<th>Order</th>
+<th>Position uses</th>
+<th>Velocity uses</th>
+<th>Causal?</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Explicit Euler</strong></td>
+<td>(not used)</td>
+<td>1st</td>
+<td>old <span class="math inline">\(z\)</span></td>
+<td>old <span class="math inline">\(y\)</span></td>
+<td>Yes</td>
+<td>Explodes (det &gt; 1)</td>
+</tr>
+<tr class="even">
+<td><strong>Implicit Euler</strong></td>
+<td><strong>LinOSS-IM</strong></td>
+<td>1st</td>
+<td>new <span class="math inline">\(z\)</span></td>
+<td>new <span class="math inline">\(y\)</span></td>
+<td>Yes</td>
+<td>Decays (det &lt; 1)</td>
+</tr>
+<tr class="odd">
+<td><strong>Symplectic</strong></td>
+<td><strong>LinOSS-IMEX</strong></td>
+<td>1st</td>
+<td><strong>new</strong> <span class="math inline">\(z\)</span></td>
+<td>old <span class="math inline">\(y\)</span></td>
+<td>Yes</td>
+<td>Stable (det = 1)</td>
+</tr>
+<tr class="even">
+<td><strong>Velocity Verlet</strong></td>
+<td><strong>LinOSS-VV</strong></td>
+<td>2nd</td>
+<td>old <span class="math inline">\(z\)</span> + acceleration</td>
+<td>avg of old &amp; new</td>
+<td>No*</td>
+<td>Stable (det = 1)</td>
+</tr>
+</tbody>
+</table>
+<p>*VV needs <span class="math inline">\(\mathbf{u}_{n+1}\)</span>, not usable for causal sequence modeling.</p>
+<p>We’ll work through all three methods; the first two show WHY naive approaches fail, and the third (IMEX) is what LinOSS actually uses.</p>
+</section>
+<section id="option-a-explicit-euler-all-old-values-not-used-by-linoss" class="level3">
+<h3 class="anchored" data-anchor-id="option-a-explicit-euler-all-old-values-not-used-by-linoss">Option A: Explicit Euler (All Old Values) → NOT used by LinOSS</h3>
+<p>LinOSS doesn’t use this, as it would explode. But it’s the most intuitive approach, so let’s see why it fails.</p>
+<p><strong>Update equations</strong> (using old values for everything): <span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_{n-1} + \mathbf{B}\mathbf{u}_n)\]</span> <span class="math display">\[\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}\]</span></p>
+<p><strong>Recurrence form</strong> <span class="math inline">\(\mathbf{x}_n = \mathbf{M}\mathbf{x}_{n-1} + \mathbf{F}\mathbf{u}_n\)</span> where <span class="math inline">\(\mathbf{x} = [\mathbf{y}, \mathbf{z}]^T\)</span>:</p>
+<p><span class="math display">\[\mathbf{M}_{\text{explicit}} = \begin{bmatrix} \mathbf{I} &amp; \Delta t \mathbf{I} \\ -\Delta t \mathbf{A} &amp; \mathbf{I} \end{bmatrix}, \quad \mathbf{F}_{\text{explicit}} = \begin{bmatrix} \mathbf{0} \\ \Delta t \mathbf{B} \end{bmatrix}\]</span></p>
+<p><strong>Determinant:</strong> <span class="math inline">\(\det(\mathbf{M}) = \det(\mathbf{I})\det(\mathbf{I} + \Delta t^2 \mathbf{A}) = \prod_k (1 + \Delta t^2 a_k) &gt; 1\)</span></p>
+<p><strong>Problem:</strong> Area grows every step. The oscillator spirals outward.</p>
+</section>
+<section id="sec-option-b" class="level3">
+<h3 class="anchored" data-anchor-id="sec-option-b">Option B: Implicit Euler (All New Values) → LinOSS-IM</h3>
+<p>This is what the LinOSS paper calls <strong>“IM” (Implicit)</strong>. Use the new values you’re computing:</p>
+<p><strong>Update equations</strong> (using new <span class="math inline">\(\mathbf{y}_n\)</span> in velocity update): <span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_n + \mathbf{B}\mathbf{u}_n)\]</span> <span class="math display">\[\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_n\]</span></p>
+<p>This is a chicken-and-egg problem: <span class="math inline">\(\mathbf{z}_n\)</span> depends on <span class="math inline">\(\mathbf{y}_n\)</span> which depends on <span class="math inline">\(\mathbf{z}_n\)</span>. To solve, substitute <span class="math inline">\(\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t\mathbf{z}_n\)</span> into the velocity equation:</p>
+<p><span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t\bigl(-\mathbf{A}(\mathbf{y}_{n-1} + \Delta t\mathbf{z}_n) + \mathbf{B}\mathbf{u}_n\bigr)\]</span></p>
+<p>Collect <span class="math inline">\(\mathbf{z}_n\)</span> on the left:</p>
+<p><span class="math display">\[(\mathbf{I} + \Delta t^2\mathbf{A})\,\mathbf{z}_n = \mathbf{z}_{n-1} - \Delta t\mathbf{A}\mathbf{y}_{n-1} + \Delta t\mathbf{B}\mathbf{u}_n\]</span></p>
+<p>Define <span class="math inline">\(\mathbf{S} \triangleq (\mathbf{I} + \Delta t^2\mathbf{A})^{-1}\)</span> and multiply both sides by <span class="math inline">\(\mathbf{S}\)</span>. Since <span class="math inline">\(\mathbf{A}\)</span> is diagonal, <span class="math inline">\(S_{kk} = \frac{1}{1+\Delta t^2 A_{kk}}\)</span> (just the reciprocal of each diagonal entry). Substituting <span class="math inline">\(\mathbf{z}_n\)</span> back into <span class="math inline">\(\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t\mathbf{z}_n\)</span> gives:</p>
+<p><span class="math display">\[\mathbf{y}_n = \mathbf{S}(\mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}) + \Delta t^2 \mathbf{S}\mathbf{B}\mathbf{u}_n\]</span> <span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} - \Delta t \mathbf{A}\mathbf{S}(\mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1}) + \Delta t \mathbf{S}\mathbf{B}\mathbf{u}_n\]</span></p>
+<p><strong>Recurrence form</strong> <span class="math inline">\(\mathbf{x}_n = \mathbf{M}\mathbf{x}_{n-1} + \mathbf{F}\mathbf{u}_n\)</span>, where the state vector is:</p>
+<p><span class="math display">\[\mathbf{x}_n = \begin{bmatrix} \mathbf{y}_n \\ \mathbf{z}_n \end{bmatrix} = \begin{bmatrix} y_1 \\ \vdots \\ y_N \\ z_1 \\ \vdots \\ z_N \end{bmatrix}\]</span></p>
+<p>Positions occupy rows <span class="math inline">\(1..N\)</span>, velocities occupy rows <span class="math inline">\(N+1..2N\)</span>. This stacking choice directly determines how M is laid out: <strong>column <span class="math inline">\(k\)</span> of M = “how does old <span class="math inline">\(y_k\)</span> affect everything?”</strong> (so it lives in the top half), and <strong>column <span class="math inline">\(N+k\)</span> = “how does old <span class="math inline">\(z_k\)</span> affect everything?”</strong> (bottom half).</p>
+<p><span class="math display">\[\mathbf{M}_{\text{IM}} = \begin{bmatrix} \mathbf{S} &amp; \Delta t \mathbf{S} \\ -\Delta t \mathbf{A}\mathbf{S} &amp; \mathbf{S} \end{bmatrix}, \quad \mathbf{F}_{\text{IM}} = \begin{bmatrix} \Delta t^2 \mathbf{S}\mathbf{B} \\ \Delta t \mathbf{S}\mathbf{B} \end{bmatrix}\]</span></p>
+<p><span class="math inline">\(\mathbf{S} = (\mathbf{I} + \Delta t^2 \mathbf{A})^{-1}\)</span> is the <strong>shrinkage operator</strong>: it scales each mode by <span class="math inline">\(S_{kk} = \frac{1}{1+\Delta t^2 A_{kk}} &lt; 1\)</span>, producing the slight dissipation that makes IM forget. Note both diagonal blocks are <span class="math inline">\(\mathbf{S}\)</span> – the bottom-right simplifies from <span class="math inline">\(\mathbf{I}-\Delta t^2\mathbf{AS}\)</span> to <span class="math inline">\(\mathbf{S}\)</span> via the same identity (<span class="math inline">\(\mathbf{I}-\Delta t^2\mathbf{AS} = \mathbf{S}\)</span> follows directly from the definition).</p>
+<p><strong>What does this matrix actually look like?</strong> <span class="math inline">\(\mathbf{M}_{\text{IM}}\)</span> is a 2×2 block matrix of N×N sub-matrices – but each sub-matrix (<span class="math inline">\(\mathbf{S}\)</span>, <span class="math inline">\(\Delta t\mathbf{S}\)</span>, <span class="math inline">\(-\Delta t\mathbf{A}\mathbf{S}\)</span>, and the bottom-right <span class="math inline">\(\mathbf{S}\)</span> that simplifies from <span class="math inline">\(\mathbf{I}-\Delta t^2\mathbf{A}\mathbf{S}\)</span>) is <strong>diagonal</strong> because <span class="math inline">\(\mathbf{A}\)</span> and <span class="math inline">\(\mathbf{S}\)</span> are diagonal. So the full 2N×2N matrix has nonzero entries only where oscillator <span class="math inline">\(k\)</span> talks to itself: row/column <span class="math inline">\(y_k\)</span> and <span class="math inline">\(z_k\)</span>. No oscillator ever affects another.</p>
+<p>Here’s what M actually looks like as a <span class="math inline">\(2N \times 2N\)</span> matrix – each color is one oscillator, and you can see each quadrant is diagonal:</p>
+<div id="fig-m-step1" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-m-step1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="m-step1-stacked.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-m-step1-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;9: <strong><span class="math inline">\(\mathbf{M}_{\text{IM}}\)</span> in stacked ordering.</strong> All four quadrants (<span class="math inline">\(\mathbf{S}\)</span>, <span class="math inline">\(\Delta t\mathbf{S}\)</span>, <span class="math inline">\(-\Delta t\mathbf{A}\mathbf{S}\)</span>, <span class="math inline">\(\mathbf{S}\)</span>) are diagonal. Same color = same oscillator. Each oscillator’s entries are confined to its own row/column – no cross-oscillator coupling.
+</figcaption>
+</figure>
+</div>
+<p><strong>Why oscillators are independent – and how to find eigenvalues.</strong> Because <span class="math inline">\(\mathbf{A}\)</span> and <span class="math inline">\(\mathbf{S}\)</span> are diagonal, oscillator <span class="math inline">\(k\)</span> only appears in rows/columns <span class="math inline">\(k\)</span> and <span class="math inline">\(N+k\)</span> of <span class="math inline">\(\mathbf{M}\)</span>. So <span class="math inline">\(\det(\mathbf{M}_{\text{IM}} - \lambda\mathbf{I})\)</span> factorizes into <span class="math inline">\(N\)</span> independent scalar quadratics. Here’s the derivation (following the paper directly):</p>
+<p><strong>Step 1: Write the block determinant.</strong> Since both diagonal blocks of <span class="math inline">\(\mathbf{M}_{\text{IM}}\)</span> are <span class="math inline">\(\mathbf{S}\)</span>:</p>
+<p><span class="math display">\[\det(\mathbf{M}_{\text{IM}} - \lambda\mathbf{I}) = \begin{vmatrix} \mathbf{S} - \lambda\mathbf{I} &amp; \Delta t\,\mathbf{S} \\ -\Delta t\,\mathbf{A}\mathbf{S} &amp; \mathbf{S} - \lambda\mathbf{I} \end{vmatrix}\]</span></p>
+<p><strong>Step 2: Row-reduce to zero out the bottom-left block.</strong> Adding <span class="math inline">\(\Delta t\,\mathbf{AS}(\mathbf{S}-\lambda\mathbf{I})^{-1}\)</span> times Row<span class="math inline">\(_1\)</span> to Row<span class="math inline">\(_2\)</span> leaves the determinant unchanged and zeros the bottom-left:</p>
+<p><span class="math display">\[= \begin{vmatrix} \mathbf{S} - \lambda\mathbf{I} &amp; \Delta t\,\mathbf{S} \\ \mathbf{0} &amp; (\mathbf{S}-\lambda\mathbf{I}) + \Delta t^2\mathbf{A}\mathbf{S}^2(\mathbf{S}-\lambda\mathbf{I})^{-1} \end{vmatrix}\]</span></p>
+<p>(Since <span class="math inline">\(\mathbf{S}\)</span> is diagonal, <span class="math inline">\((\mathbf{S}-\lambda\mathbf{I})^{-1}\)</span> is elementwise <span class="math inline">\(\frac{1}{S_{kk}-\lambda}\)</span> – no matrix inversion needed.) The determinant of an upper-triangular block matrix is the product of the diagonal blocks. Since all blocks are diagonal, expand entry-wise for oscillator <span class="math inline">\(k\)</span>:</p>
+<p><span class="math display">\[= \prod_{k=1}^N (S_{kk}-\lambda)\left[(S_{kk}-\lambda) + \frac{\Delta t^2 A_{kk} S_{kk}^2}{S_{kk}-\lambda}\right] = \prod_{k=1}^N \bigl[(S_{kk}-\lambda)^2 + \Delta t^2 A_{kk} S_{kk}^2\bigr] = 0\]</span></p>
+<p>Setting each factor to zero: <span class="math inline">\((S_{kk}-\lambda)^2 = -\Delta t^2 A_{kk} S_{kk}^2\)</span>. Taking the square root (and noting <span class="math inline">\(\sqrt{-1} = i\)</span>):</p>
+<p><span class="math display">\[S_{kk} - \lambda = \pm\, i\,\Delta t\, S_{kk}\sqrt{A_{kk}} \quad\Rightarrow\quad \boxed{\lambda_k = S_{kk} \pm i\,\Delta t\,S_{kk}\sqrt{A_{kk}}}\]</span></p>
+<p>The magnitude: for a complex number <span class="math inline">\(a + ib\)</span>, <span class="math inline">\(|a+ib|^2 = a^2 + b^2\)</span>. Here <span class="math inline">\(a = S_{kk}\)</span>, <span class="math inline">\(b = \Delta t\,S_{kk}\sqrt{A_{kk}}\)</span>, so:</p>
+<p><span class="math display">\[|\lambda_k|^2 = S_{kk}^2 + \Delta t^2 S_{kk}^2 A_{kk} = S_{kk}^2(1 + \Delta t^2 A_{kk}) = S_{kk} \cdot \underbrace{S_{kk}(1+\Delta t^2 A_{kk})}_{=\,1 \text{ by definition of }S_{kk}} = S_{kk}\]</span></p>
+<p>Since <span class="math inline">\(A_{kk} \geq 0\)</span>, we have <span class="math inline">\(S_{kk} = \frac{1}{1+\Delta t^2 A_{kk}} \leq 1\)</span>, so <span class="math inline">\(|\lambda_k| \leq 1\)</span>. All <span class="math inline">\(2N\)</span> eigenvalues lie inside the unit circle.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Why This Is Still Fast
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Normally <span class="math inline">\(\mathbf{S}^{-1}\)</span> costs <span class="math inline">\(O(N^3)\)</span>. But since <span class="math inline">\(\mathbf{A}\)</span> is <strong>diagonal</strong> (uncoupled oscillators!):</p>
+<p><span class="math display">\[S_{kk} = \frac{1}{1 + \Delta t^2 A_{kk}}, \quad k = 1,\ldots,N\]</span></p>
+<p>Just <span class="math inline">\(O(N)\)</span> elementwise operations.</p>
+</div>
+</div>
+<p><strong>Result:</strong> All eigenvalues satisfy <span class="math inline">\(|\lambda_k| \leq 1\)</span>. Information decays: a “forgetting mechanism.”</p>
+</section>
+<section id="sec-option-c" class="level3">
+<h3 class="anchored" data-anchor-id="sec-option-c">Option C: Symplectic / IMEX (The Trick) → LinOSS-IMEX</h3>
+<p>This is what the LinOSS paper calls <strong>“IMEX” (Implicit-Explicit)</strong>. The trick: do updates <strong>in order</strong>, using step 1’s result in step 2.</p>
+<p><strong>Update equations</strong> (using old <span class="math inline">\(\mathbf{y}_{n-1}\)</span> in velocity, but NEW <span class="math inline">\(\mathbf{z}_n\)</span> in position): <span class="math display">\[\text{Step 1: } \mathbf{z}_n = \mathbf{z}_{n-1} + \Delta t(-\mathbf{A}\mathbf{y}_{n-1} + \mathbf{B}\mathbf{u}_n)\]</span> <span class="math display">\[\text{Step 2: } \mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_n \quad \leftarrow \text{uses NEW } \mathbf{z}_n \text{ from Step 1!}\]</span></p>
+<p>Substituting step 1 into step 2 gives the closed-form:</p>
+<p><span class="math display">\[\mathbf{y}_n = \mathbf{y}_{n-1} + \Delta t \mathbf{z}_{n-1} - \Delta t^2 \mathbf{A}\mathbf{y}_{n-1} + \Delta t^2 \mathbf{B}\mathbf{u}_n\]</span> <span class="math display">\[\mathbf{z}_n = \mathbf{z}_{n-1} - \Delta t \mathbf{A}\mathbf{y}_{n-1} + \Delta t \mathbf{B}\mathbf{u}_n\]</span></p>
+<p><strong>Recurrence form</strong> <span class="math inline">\(\mathbf{x}_n = \mathbf{M}\mathbf{x}_{n-1} + \mathbf{F}\mathbf{u}_n\)</span> (same <span class="math inline">\(\mathbf{x} = [\mathbf{y}, \mathbf{z}]^T\)</span> stacking as above):</p>
+<p><span class="math display">\[\mathbf{M}_{\text{IMEX}} = \begin{bmatrix} \mathbf{I} - \Delta t^2 \mathbf{A} &amp; \Delta t \mathbf{I} \\ -\Delta t \mathbf{A} &amp; \mathbf{I} \end{bmatrix}, \quad \mathbf{F}_{\text{IMEX}} = \begin{bmatrix} \Delta t^2 \mathbf{B} \\ \Delta t \mathbf{B} \end{bmatrix}\]</span></p>
+<p><strong>Why det = 1:</strong> This M is the product of two shear matrices (each with det = 1):</p>
+<p><span class="math display">\[\mathbf{M}_{\text{IMEX}} = \underbrace{\begin{bmatrix} \mathbf{I} &amp; \Delta t \mathbf{I} \\ \mathbf{0} &amp; \mathbf{I} \end{bmatrix}}_{\text{Shear 2}} \times \underbrace{\begin{bmatrix} \mathbf{I} &amp; \mathbf{0} \\ -\Delta t \mathbf{A} &amp; \mathbf{I} \end{bmatrix}}_{\text{Shear 1}}\]</span></p>
+<p><span class="math inline">\(\det(\text{Shear 1}) = 1\)</span>, <span class="math inline">\(\det(\text{Shear 2}) = 1\)</span> → <span class="math inline">\(\det(\mathbf{M}) = 1\)</span></p>
+<p><strong>Result:</strong> All eigenvalues satisfy <span class="math inline">\(|\lambda| = 1\)</span> exactly. No dissipation, no explosion: perfect memory.</p>
+<p>Same structure as IM: <span class="math inline">\(\mathbf{A}\)</span> is diagonal, so each oscillator <span class="math inline">\(k\)</span> only appears in rows/columns <span class="math inline">\(k\)</span> and <span class="math inline">\(N+k\)</span>. Following the same det approach:</p>
+<p><strong>Step 1: Write the block determinant.</strong> Subtracting <span class="math inline">\(\lambda\mathbf{I}\)</span> from both diagonal blocks:</p>
+<p><span class="math display">\[\det(\mathbf{M}_{\text{IMEX}} - \lambda\mathbf{I}) = \begin{vmatrix} (1-\lambda)\mathbf{I} - \Delta t^2\mathbf{A} &amp; \Delta t\,\mathbf{I} \\ -\Delta t\,\mathbf{A} &amp; (1-\lambda)\mathbf{I} \end{vmatrix}\]</span></p>
+<p><strong>Step 2: Expand entry-wise.</strong> Since <span class="math inline">\(\mathbf{A}\)</span> is diagonal, each oscillator <span class="math inline">\(k\)</span> contributes an independent <span class="math inline">\(2\times 2\)</span> block. Multiplying out that block:</p>
+<p><span class="math display">\[= \prod_{k=1}^N \bigl[(1-\lambda-\Delta t^2 A_{kk})(1-\lambda) + \Delta t^2 A_{kk}\bigr] = \prod_{k=1}^N \bigl[\lambda^2 - (2-\Delta t^2 A_{kk})\lambda + 1\bigr] = 0\]</span></p>
+<p>Setting each factor to zero and applying the quadratic formula with <span class="math inline">\(c_k = 2 - \Delta t^2 A_{kk}\)</span>:</p>
+<p><span class="math display">\[\lambda^2 - c_k\lambda + 1 = 0 \quad\Rightarrow\quad \boxed{\lambda_k = \frac{c_k \pm i\sqrt{4 - c_k^2}}{2} = \frac{2-\Delta t^2 A_{kk}}{2} \pm \frac{i}{2}\sqrt{\Delta t^2 A_{kk}(4 - \Delta t^2 A_{kk})}}\]</span></p>
+<p>(assuming <span class="math inline">\(0 &lt; \Delta t^2 A_{kk} &lt; 4\)</span>, so the discriminant is negative and roots are complex).</p>
+<p><strong>Magnitude:</strong> <span class="math inline">\(|\lambda_k|^2 = \left(\frac{2-\Delta t^2 A_{kk}}{2}\right)^2 + \frac{\Delta t^2 A_{kk}(4-\Delta t^2 A_{kk})}{4}\)</span>. Expanding:</p>
+<p><span class="math display">\[= \frac{4 - 4\Delta t^2 A_{kk} + \Delta t^4 A_{kk}^2 + 4\Delta t^2 A_{kk} - \Delta t^4 A_{kk}^2}{4} = \frac{4}{4} = 1\]</span></p>
+<p>All cancellations exact: <span class="math inline">\(|\lambda_k| = 1\)</span> for every oscillator.</p>
+</section>
+<section id="option-d-velocity-verlet-second-order-symplectic-linoss-vv" class="level3">
+<h3 class="anchored" data-anchor-id="option-d-velocity-verlet-second-order-symplectic-linoss-vv">Option D: Velocity Verlet (Second-Order Symplectic) → LinOSS-VV</h3>
+<p>Velocity Verlet uses a Taylor expansion to achieve second-order accuracy: position gets a <span class="math inline">\(\frac{\Delta t^2}{2}\)</span> acceleration term; velocity averages acceleration at both endpoints. This keeps det(M) = 1 (symplectic), but requires <span class="math inline">\(\mathbf{u}_{n+1}\)</span> (the <strong>next</strong> input) in the velocity update.</p>
+<p>For causal sequence modeling, that’s a dealbreaker: you can’t know input <span class="math inline">\(n+1\)</span> when computing step <span class="math inline">\(n\)</span>. The paper includes VV for theoretical completeness (Appendix D), but <strong>all experiments use IMEX</strong>.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Geometric View: Shear Transformations
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>A shear is like pushing the top of a deck of cards sideways while holding the bottom fixed. The shape changes, but the area doesn’t.</p>
+<p><strong>Explicit Euler</strong> does both updates simultaneously with old values. This is NOT a composition of shears; it’s a single transformation that stretches area.</p>
+<p><strong>Symplectic Euler</strong> does updates sequentially:</p>
+<ol type="1">
+<li><strong>Shear 1 (update velocity):</strong> Horizontal shear based on position → determinant = 1</li>
+<li><strong>Shear 2 (update position):</strong> Vertical shear based on NEW velocity → determinant = 1</li>
+</ol>
+<p>Product of two shears: <span class="math inline">\(\det = 1 \times 1 = 1\)</span>. Area preserved.</p>
+<p>This is why the order matters. The sequential update creates two area-preserving transformations instead of one area-growing transformation.</p>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>The Physics View: Hamiltonian and Liouville’s Theorem
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-12" class="callout-12-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The LinOSS paper gives the rigorous justification (Equation 7):</p>
+<blockquote class="blockquote">
+<p>“ODE system (2) represents a Hamiltonian system… The numerical approximation using the IMEX discretization is symplectic, i.e., it preserves a Hamiltonian close to the Hamiltonian of the continuous system.”</p>
+</blockquote>
+<p><strong>The logic chain:</strong></p>
+<ol type="1">
+<li>LinOSS is a Hamiltonian system (even with forcing, it’s a time-dependent Hamiltonian)</li>
+<li>The IMEX discretization is <strong>symplectic</strong>: it preserves Hamiltonian structure</li>
+<li><strong>Liouville’s theorem:</strong> Any Hamiltonian system preserves phase space volume</li>
+<li>Volume preserved → <span class="math inline">\(|\det(\mathbf{M})| = 1\)</span></li>
+<li>For oscillators with conjugate eigenvalue pairs: <span class="math inline">\(\det = |\lambda|^2 = 1\)</span> → <span class="math inline">\(|\lambda| = 1\)</span></li>
+</ol>
+<p>This also enables <strong>memory-efficient backpropagation</strong>: since the transformation is invertible, you can reconstruct intermediate states by running backward, saving memory during training.</p>
+</div>
+</div>
+</div>
+</section>
+<section id="why-all-old-values-seems-right-but-fails" class="level3">
+<h3 class="anchored" data-anchor-id="why-all-old-values-seems-right-but-fails">Why “All Old Values” Seems Right But Fails</h3>
+<p>Your intuition says: “I know where I am. I know how fast I’m moving. Use those to compute the next state.”</p>
+<p>This works for most systems! Falling balls, cooling coffee, population growth: explicit Euler is fine.</p>
+<p><strong>Oscillators are special.</strong> The position and velocity are coupled: when one changes, it immediately affects the other. Using “stale” values means you’re always slightly behind reality, and for oscillators, these errors don’t cancel; they accumulate in the same direction (outward spiral).</p>
+<p>The symplectic trick accounts for this coupling by using the updated velocity immediately when computing the new position.</p>
+<hr>
+<div id="fig-discretization" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-discretization-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="harmonic-oscillator.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-discretization-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;10: <strong>Symplectic vs implicit discretization</strong> on a harmonic oscillator test. LinOSS-IMEX (blue) preserves energy perfectly: error stays bounded. LinOSS-IM (orange) has slight dissipation: error grows over very long horizons. For most tasks, the slight forgetting actually helps generalization.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Discretization Summary
 </div>
 </div>
 <div class="callout-body-container callout-body">
 <table class="caption-top table">
 <colgroup>
-<col style="width: 21%">
-<col style="width: 30%">
-<col style="width: 23%">
-<col style="width: 23%">
+<col style="width: 18%">
+<col style="width: 14%">
+<col style="width: 27%">
+<col style="width: 18%">
+<col style="width: 20%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>Variant</th>
+<th>Order</th>
 <th>Eigenvalues</th>
-<th>Behavior</th>
+<th>Causal?</th>
 <th>Best For</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><strong>LinOSS-IM</strong></td>
-<td><span class="math inline">\(\|\lambda\| \leq 1\)</span></td>
-<td>Gradual forgetting</td>
-<td>Most tasks, stability-critical</td>
+<td>1st</td>
+<td><span class="math inline">\(|\lambda| \leq 1\)</span></td>
+<td>Yes</td>
+<td>Most tasks: slight forgetting helps generalization</td>
 </tr>
 <tr class="even">
 <td><strong>LinOSS-IMEX</strong></td>
-<td><span class="math inline">\(\|\lambda\| = 1\)</span></td>
-<td>Perfect memory</td>
+<td>1st</td>
+<td><span class="math inline">\(|\lambda| = 1\)</span></td>
+<td>Yes</td>
 <td>Very long sequences, reversible dynamics</td>
+</tr>
+<tr class="odd">
+<td><strong>LinOSS-VV</strong></td>
+<td>2nd</td>
+<td><span class="math inline">\(|\lambda| = 1\)</span></td>
+<td>No*</td>
+<td>Physics simulation with known future forcing</td>
 </tr>
 </tbody>
 </table>
-<p>In practice, LinOSS-IM performs slightly better on most benchmarks, likely because some forgetting helps generalization.</p>
+<p>*VV needs <span class="math inline">\(\mathbf{u}_{n+1}\)</span>, not usable for causal sequence modeling.</p>
+<p>Higher-order isn’t always better: a first-order symplectic method (IMEX) bounds total error across millions of steps; a fourth-order non-symplectic method can drift unboundedly. Structure matters more than order.</p>
 </div>
 </div>
 </section>
 <section id="parallel-scan-for-efficiency" class="level3">
 <h3 class="anchored" data-anchor-id="parallel-scan-for-efficiency">Parallel Scan for Efficiency</h3>
-<p>Both variants can be computed via <strong>associative parallel scans</strong> in <span class="math inline">\(O(\log_2 L)\)</span> parallel time for sequence length <span class="math inline">\(L\)</span>. This matches the efficiency of S4/Mamba.</p>
-<p>The recurrence:</p>
-<p><span class="math display">\[\begin{bmatrix} \mathbf{y}_n \\ \mathbf{z}_n \end{bmatrix} = \mathbf{M} \begin{bmatrix} \mathbf{y}_{n-1} \\ \mathbf{z}_{n-1} \end{bmatrix} + \mathbf{N}\mathbf{u}_n\]</span></p>
-<p>where <span class="math inline">\(\mathbf{M}\)</span> is the transition matrix. Since matrix multiplication is associative, we can compute all timesteps in parallel using a scan.</p>
+<p>All three LinOSS variants produce a <strong>linear recurrence</strong>:</p>
+<p><span class="math display">\[\mathbf{x}_t = \textcolor{purple}{\mathbf{M}}\,\mathbf{x}_{t-1} + \mathbf{F}\,\textcolor{orange}{\mathbf{u}_t}\]</span></p>
+<p><span class="math inline">\(\textcolor{purple}{\mathbf{M}}\)</span> carries the <strong>learned dynamics</strong>; <span class="math inline">\(\textcolor{orange}{\mathbf{u}_t}\)</span> is the <strong>external input</strong> at each step.</p>
+<p>where: - <span class="math inline">\(\mathbf{x}_t = [\mathbf{y}_t, \mathbf{z}_t]^T \in \mathbb{R}^{2N}\)</span>: full state at timestep <span class="math inline">\(t\)</span> (position + velocity, <span class="math inline">\(N\)</span> oscillators) - <span class="math inline">\(\mathbf{M} \in \mathbb{R}^{2N \times 2N}\)</span>: transition matrix (from the IMEX/IM discretization) - <span class="math inline">\(\mathbf{F} \in \mathbb{R}^{2N \times p}\)</span>: input matrix (<span class="math inline">\(p\)</span> = number of input channels) - <span class="math inline">\(\mathbf{u}_t \in \mathbb{R}^p\)</span>: input at timestep <span class="math inline">\(t\)</span> - <span class="math inline">\(n\)</span>: total sequence length</p>
+<p>To compute <span class="math inline">\(\mathbf{x}_{n}\)</span>, you naively need <span class="math inline">\(\mathbf{x}_{n-1}\)</span> first, which needs <span class="math inline">\(\mathbf{x}_{n-2}\)</span>, and so on: <strong><span class="math inline">\(n\)</span> steps, one at a time</strong>. Same bottleneck as RNNs.</p>
+<p><strong>The fix: treat each timestep as an operator, then compose them in a tree.</strong></p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="parallel-scan.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Sequential vs parallel scan.</strong> Left: Sequential RNN processes timesteps one at a time, requiring <span class="math inline">\(n\)</span> serial steps. Right: Parallel scan uses a binary tree – each level halves the number of remaining chunks. With enough GPU cores, the same <span class="math inline">\(O(n)\)</span> work finishes in <span class="math inline">\(O(\log_2 n)\)</span> wall-clock stages because the merge operator <span class="math inline">\(\otimes\)</span> is associative.</figcaption>
+</figure>
+</div>
+<p><strong>Why a tree works:</strong> Each timestep is a linear map encoded as a pair <span class="math inline">\((\mathbf{M}_n, \mathbf{F}_n)\)</span>. Two consecutive steps can be merged into one by substituting step 1 into step 2:</p>
+<p><span class="math display">\[\mathbf{x}_1 = \mathbf{M}_1\mathbf{x}_0 + \mathbf{F}_1\]</span> <span class="math display">\[\mathbf{x}_2 = \mathbf{M}_2\mathbf{x}_1 + \mathbf{F}_2 = \mathbf{M}_2(\mathbf{M}_1\mathbf{x}_0 + \mathbf{F}_1) + \mathbf{F}_2 = \underbrace{\mathbf{M}_2\mathbf{M}_1}_{M_{\text{new}}}\,\mathbf{x}_0 + \underbrace{\mathbf{M}_2\mathbf{F}_1 + \mathbf{F}_2}_{F_{\text{new}}}\]</span></p>
+<p>Two steps = one step with a new <span class="math inline">\((M, F)\)</span> pair. Write this merge as <span class="math inline">\(\otimes\)</span>:</p>
+<p><span class="math display">\[(\mathbf{M}_2, \mathbf{F}_2) \otimes (\mathbf{M}_1, \mathbf{F}_1) := \left(\mathbf{M}_2 \mathbf{M}_1,\ \bbox[border: 2px dashed orange]{\mathbf{M}_2\mathbf{F}_1} + \mathbf{F}_2\right)\]</span></p>
+<p>The boxed term <span class="math inline">\(\mathbf{M}_2\mathbf{F}_1\)</span> is the non-obvious part: it propagates chunk 1’s <strong>accumulated forcing</strong> through chunk 2’s dynamics before adding chunk 2’s own forcing.</p>
+<p>This <span class="math inline">\(\otimes\)</span> is <strong>associative</strong> (because matrix multiplication is associative), so we can merge in any order, exactly like <span class="math inline">\((a+b)+(c+d)\)</span> instead of <span class="math inline">\(((a+b)+c)+d\)</span>.</p>
+<p><strong>Where does <span class="math inline">\(O(\log n)\)</span> come from?</strong> Each tree level halves the number of chunks (<span class="math inline">\(n\)</span> = sequence length, <span class="math inline">\(k\)</span> = number of levels):</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Level</th>
+<th>Merges (all parallel)</th>
+<th>Chunks remaining</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><span class="math inline">\(n/2\)</span></td>
+<td><span class="math inline">\(n/2\)</span></td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><span class="math inline">\(n/4\)</span></td>
+<td><span class="math inline">\(n/4\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\vdots\)</span></td>
+<td><span class="math inline">\(\vdots\)</span></td>
+<td><span class="math inline">\(\vdots\)</span></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(k\)</span></td>
+<td><span class="math inline">\(1\)</span></td>
+<td>done</td>
+</tr>
+</tbody>
+</table>
+<p>After <span class="math inline">\(k\)</span> levels: <span class="math inline">\(n / 2^k = 1 \implies k = \log_2 n\)</span>. So <strong>number of parallel stages = <span class="math inline">\(\log_2 n\)</span></strong>.</p>
+<p><strong>Important distinction: work vs.&nbsp;wall-clock time:</strong></p>
+<p>Total merges across all levels: <span class="math inline">\(n/2 + n/4 + \cdots + 1 = n - 1 = O(n)\)</span>, same as sequential!</p>
+<p>The parallel scan doesn’t save <em>work</em>, it saves <em>time</em> by doing merges simultaneously:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Total work (merges)</th>
+<th>Wall-clock time</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sequential RNN</td>
+<td><span class="math inline">\(O(n)\)</span></td>
+<td><span class="math inline">\(O(n)\)</span> (one at a time)</td>
+</tr>
+<tr class="even">
+<td>Parallel scan</td>
+<td><span class="math inline">\(O(n)\)</span></td>
+<td><span class="math inline">\(O(\log n)\)</span> (simultaneous)</td>
+</tr>
+</tbody>
+</table>
+<p>With enough GPU cores, <span class="math inline">\(O(n)\)</span> work spread across <span class="math inline">\(O(\log n)\)</span> stages = <span class="math inline">\(O(\log n)\)</span> wall-clock. <span class="math inline">\(n = 100{,}000\)</span> timesteps → <strong>17 parallel stages</strong>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="work-vs-wallclock.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Work vs wall-clock time.</strong> Sequential RNN (top) runs all operations on 1 core, taking <span class="math inline">\(n\)</span> time units. Parallel scan (bottom) distributes work across cores, finishing in <span class="math inline">\(\log_2 n\)</span> time units: same total work, far less wall-clock time.</figcaption>
+</figure>
+</div>
+<p><strong>Why LinOSS is especially fast:</strong> Each merge costs <span class="math inline">\(O(N^3)\)</span> in general (matrix multiply). Because <span class="math inline">\(\mathbf{A}\)</span> is diagonal, each merge costs only <span class="math inline">\(O(N)\)</span>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th></th>
+<th>Total work</th>
+<th>Wall-clock (parallel)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sequential RNN</td>
+<td><span class="math inline">\(O(Nn)\)</span></td>
+<td><span class="math inline">\(O(Nn)\)</span></td>
+</tr>
+<tr class="even">
+<td>LinOSS parallel scan</td>
+<td><span class="math inline">\(O(Nn)\)</span></td>
+<td><span class="math inline">\(O(N \log n)\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>Same asymptotic cost as S4 and Mamba, derived from physical oscillators rather than complex number engineering.</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Further reading
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p><a href="https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda">GPU Gems Ch. 39: Parallel Prefix Sum</a> (NVIDIA): “All-prefix-sums looks inherently sequential, but has an efficient parallel algorithm when the binary operator is associative.”</p>
+</div>
+</div>
+</section>
+</section>
+<section id="sec-stability" class="level2">
+<h2 class="anchored" data-anchor-id="sec-stability">Stability and Long-Range Memory</h2>
+<p>We’ve shown that LinOSS eigenvalues satisfy <span class="math inline">\(|\lambda| \leq 1\)</span> by construction (from the physics). That answers the stability question. But there’s a second, harder question:</p>
+<p><strong>Can LinOSS actually <em>learn</em> from inputs 10,000 steps ago, or do gradients vanish before reaching them?</strong></p>
+<p>This section answers that. The key is that LinOSS uses a <em>linear</em> recurrence (no tanh squashing), which means gradients flow freely, but only if eigenvalues are controlled.</p>
+<section id="the-unrolled-recurrence-how-past-inputs-survive" class="level3">
+<h3 class="anchored" data-anchor-id="the-unrolled-recurrence-how-past-inputs-survive">The Unrolled Recurrence: How Past Inputs Survive</h3>
+<p>The recurrence <span class="math inline">\(\mathbf{x}_n = \mathbf{M}\mathbf{x}_{n-1} + \mathbf{F}\mathbf{u}_n\)</span> can be unrolled to see exactly how each past input contributes to the current state.</p>
+<p><strong>Diagonalize</strong> <span class="math inline">\(\mathbf{M} = \mathbf{S}\mathbf{\Lambda}\mathbf{S}^{-1}\)</span> (where <span class="math inline">\(\mathbf{\Lambda}\)</span> is diagonal with eigenvalues, <span class="math inline">\(\mathbf{S}\)</span> holds eigenvectors). Change coordinates: <span class="math inline">\(\bar{\mathbf{x}}_n = \mathbf{S}^{-1}\mathbf{x}_n\)</span>. The dynamics simplify to:</p>
+<div class="callout callout-style-simple callout-note callout-titled">
+<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-15-contents" aria-controls="callout-15" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>When is M not diagonalizable?
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-15" class="callout-15-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>Each oscillator <span class="math inline">\(k\)</span> contributes a 2×2 block to <span class="math inline">\(\mathbf{M}\)</span> (one dimension for position, one for velocity). Everything else is zero: oscillators don’t talk to each other inside <span class="math inline">\(\mathbf{M}\)</span>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="m-block-diagonal.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Block-diagonal structure of M.</strong> The full <span class="math inline">\(2N \times 2N\)</span> matrix has N independent 2×2 blocks on the diagonal, one per oscillator. Each block <span class="math inline">\(M_k\)</span> couples only that oscillator’s position <span class="math inline">\(y_k\)</span> and velocity <span class="math inline">\(z_k\)</span>. Off-diagonal entries are zero.</figcaption>
+</figure>
+</div>
+<p>A 2×2 matrix is diagonalizable when its two eigenvalues are distinct. They coincide – making diagonalization impossible – in one specific case: when the discretization timestep <span class="math inline">\(\Delta t\)</span> happens to equal exactly <span class="math inline">\(2/\omega_k\)</span>, the Nyquist period of that oscillator.</p>
+<p>Physically, this is like sampling a pendulum at exactly twice its natural frequency: your measurement grid accidentally locks onto the oscillator’s resonance. The 2×2 block then has a repeated eigenvalue and takes a <strong>Jordan block</strong> form <span class="math inline">\(\mathbf{J}_k^n = \begin{bmatrix} \lambda^n &amp; n\lambda^{n-1} \\ 0 &amp; \lambda^n \end{bmatrix}\)</span> instead of just <span class="math inline">\(\text{diag}(\lambda^n, \lambda^n)\)</span>.</p>
+<p>The extra term <span class="math inline">\(n\lambda^{n-1}\)</span> grows polynomially, not exponentially. For LinOSS-IM where <span class="math inline">\(|\lambda| &lt; 1\)</span>, exponential decay wins over polynomial growth and hidden states still remain bounded. The stability conclusion is unchanged. For LinOSS-IMEX where <span class="math inline">\(|\lambda| = 1\)</span> exactly, the Jordan block would cause slow drift, but hitting the exact Nyquist resonance during training requires a continuous parameter <span class="math inline">\(a_k\)</span> to land on a single value – a probability-zero event in practice.</p>
+<p>The paper (Rusch &amp; Rus, 2024) notes this in passing: “if not [diagonalizable], one can make a similar argument leveraging the Jordan normal form.”</p>
+</div>
+</div>
+</div>
+<p><span class="math display">\[\bar{\mathbf{x}}_n = \mathbf{\Lambda}\bar{\mathbf{x}}_{n-1} + \bar{\mathbf{B}}\mathbf{u}_n \quad \text{where } \bar{\mathbf{B}} = \mathbf{S}^{-1}\mathbf{B}\]</span></p>
+<p>Since <span class="math inline">\(\mathbf{\Lambda}\)</span> is diagonal, each coordinate evolves independently. Unrolling from <span class="math inline">\(\mathbf{x}_0 = \mathbf{0}\)</span>:</p>
+<p><span class="math display">\[\mathbf{x}_n = \sum_{k=0}^{n-1} \underbrace{\mathbf{\Lambda}^k}_{\text{memory decay}} \bar{\mathbf{B}}\, \textcolor{orange}{\mathbf{u}_{n-k}}\]</span></p>
+<p>Each past input <span class="math inline">\(\textcolor{orange}{\mathbf{u}_{n-k}}\)</span> is weighted by <span class="math inline">\(\mathbf{\Lambda}^k\)</span>: eigenvalues raised to the <span class="math inline">\(k\)</span>-th power. That exponent is what makes the memory flat (<span class="math inline">\(|\lambda|=1\)</span>, IMEX) or exponentially decaying (<span class="math inline">\(|\lambda|&lt;1\)</span>, IM).</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="recurrence-chain.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Recurrence chain.</strong> Each state <span class="math inline">\(\bar{\mathbf{x}}_n\)</span> receives the previous state scaled by <span class="math inline">\(\mathbf{\Lambda}\)</span> plus the current input through <span class="math inline">\(\bar{\mathbf{B}}\)</span>.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="unrolled-recurrence.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Unrolled sum.</strong> The current state <span class="math inline">\(\bar{\mathbf{x}}_n\)</span> is a weighted sum of all past inputs. Each weight <span class="math inline">\(\mathbf{\Lambda}^k\)</span> shrinks with distance, so older inputs fade.</figcaption>
+</figure>
+</div>
+<p>Here <span class="math inline">\(\mathbf{u}_{n-k}\)</span> is the input from <span class="math inline">\(k\)</span> steps ago. <span class="math inline">\(\mathbf{\Lambda}^k\)</span> is a <strong>diagonal matrix</strong>: since <span class="math inline">\(\mathbf{\Lambda}\)</span> is diagonal, raising it to the <span class="math inline">\(k\)</span>-th power just raises each diagonal entry independently:</p>
+<p><span class="math display">\[\mathbf{\Lambda}^k = \begin{bmatrix}\lambda_1^k &amp; &amp; \\ &amp; \lambda_2^k &amp; \\ &amp; &amp; \ddots\end{bmatrix}\]</span></p>
+<p>So each component <span class="math inline">\(j\)</span> of <span class="math inline">\(\bar{\mathbf{x}}_n\)</span> is scaled by the scalar <span class="math inline">\(\lambda_j^k\)</span>, independently. The stability condition follows per-component: if <span class="math inline">\(|\lambda_j| &gt; 1\)</span>, then <span class="math inline">\(\lambda_j^k \to \infty\)</span> and that component explodes. If <span class="math inline">\(|\lambda_j| \leq 1\)</span>, it stays bounded.</p>
+<p>How fast do past inputs fade? That depends entirely on <span class="math inline">\(|\lambda|\)</span>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="past-input-contribution.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Which past inputs still matter?</strong> Each arrow weight equals <span class="math inline">\(\mathbf{\Lambda}^k\)</span>, the diagonal matrix of eigenvalues raised to the <span class="math inline">\(k\)</span>-th power. With <span class="math inline">\(|\lambda|=1\)</span> (IMEX) every arrow has equal weight. With <span class="math inline">\(|\lambda|&lt;1\)</span> (IM) older arrows fade exponentially. The current state <span class="math inline">\(\mathbf{x}_n\)</span> is the weighted sum of all contributions.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="memory-profiles-bar.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Bar chart: contribution weight by steps ago.</strong> Each group of bars shows <span class="math inline">\(|\lambda|^k\)</span> for inputs <span class="math inline">\(k\)</span> steps in the past. LinOSS-IMEX (<span class="math inline">\(|\lambda|=1\)</span>, dark blue) stays flat at 1.0 for all <span class="math inline">\(k\)</span>: perfect memory. LinOSS-IM variants (<span class="math inline">\(|\lambda|&lt;1\)</span>) decay exponentially; at <span class="math inline">\(|\lambda|=0.5\)</span> an input from 5 steps ago already contributes less than 4%.</figcaption>
+</figure>
+</div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="memory-profiles.png" class="img-fluid figure-img"></p>
+<figcaption><strong>Memory profiles (line view).</strong> Same effect as decay curves: LinOSS-IMEX (<span class="math inline">\(|\lambda|=1\)</span>) is flat; LinOSS-IM curves decay exponentially with rate set by <span class="math inline">\(A_{kk}\)</span>.</figcaption>
+</figure>
+</div>
+</section>
+<section id="linoss-im-dissipative-slight-forgetting" class="level3">
+<h3 class="anchored" data-anchor-id="linoss-im-dissipative-slight-forgetting">LinOSS-IM: Dissipative (Slight Forgetting)</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Proposition (LinOSS-IM eigenvalues)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Given <span class="math inline">\(A_{kk} \geq 0\)</span> and <span class="math inline">\(\Delta t &gt; 0\)</span>, the derivation in <a href="#sec-option-b" class="quarto-xref">4.5</a> gives the exact eigenvalues of <span class="math inline">\(\mathbf{M}^{\text{IM}}\)</span>:</p>
+<p><span class="math display">\[\lambda_j = S_{kk} \pm i\,\Delta t\,S_{kk}\sqrt{A_{kk}} = \frac{1}{1+\Delta t^2 A_{kk}} \pm i\frac{\Delta t\sqrt{A_{kk}}}{1+\Delta t^2 A_{kk}}\]</span></p>
+<p>where <span class="math inline">\(k = j \bmod N\)</span> (each oscillator <span class="math inline">\(k\)</span> gives one complex-conjugate pair). Their magnitude:</p>
+<p><span class="math display">\[\boxed{|\lambda_j|^2 = S_{kk} = \frac{1}{1 + \Delta t^2 A_{kk}} \leq 1}\]</span></p>
+<p>Larger <span class="math inline">\(A_{kk}\)</span> (higher frequency) → smaller <span class="math inline">\(|\lambda_j|\)</span> → faster forgetting.</p>
+</div>
+</div>
+<div class="callout callout-style-simple callout-warning callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Warning</span>Why <span class="math inline">\(A_{kk} \geq 0\)</span> is required
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>If <span class="math inline">\(A_{kk} &lt; 0\)</span>, the term <span class="math inline">\(\sqrt{A_{kk}}\)</span> becomes imaginary, turning the <span class="math inline">\(\pm i\sqrt{A_{kk}}\)</span> factor into a <strong>real</strong> number. The two eigenvalues are then <span class="math inline">\(S_{kk} \pm \Delta t\,S_{kk}\sqrt{|A_{kk}|}\)</span>: both real, and the larger one exceeds 1, causing that oscillator’s state to diverge.</p>
+<p>LinOSS enforces this by parameterizing <span class="math inline">\(A_{kk} = \text{ReLU}(\hat{A}_{kk})\)</span>, where <span class="math inline">\(\hat{A}_{kk}\)</span> is the learned parameter. ReLU clamps any negative value to zero, so <span class="math inline">\(A_{kk} \geq 0\)</span> holds by construction – no runtime check needed, and stability is guaranteed throughout training.</p>
+</div>
+</div>
+</section>
+<section id="linoss-imex-conservative-perfect-memory" class="level3">
+<h3 class="anchored" data-anchor-id="linoss-imex-conservative-perfect-memory">LinOSS-IMEX: Conservative (Perfect Memory)</h3>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Proposition (LinOSS-IMEX eigenvalues)
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Given <span class="math inline">\(A_{kk} &gt; 0\)</span> and <span class="math inline">\(0 &lt; \Delta t \leq \frac{2}{\sqrt{A_{kk}}}\)</span>, the derivation in <a href="#sec-option-c" class="quarto-xref">4.6</a> gives the exact eigenvalues of <span class="math inline">\(\mathbf{M}^{\text{IMEX}}\)</span>:</p>
+<p><span class="math display">\[\lambda_j = \frac{2-\Delta t^2 A_{kk}}{2} \pm \frac{i}{2}\sqrt{\Delta t^2 A_{kk}(4 - \Delta t^2 A_{kk})}\]</span></p>
+<p>where <span class="math inline">\(k = j \bmod N\)</span>. All eigenvalues satisfy <span class="math inline">\(|\lambda_j| = 1\)</span> exactly.</p>
+</div>
+</div>
+</section>
+<section id="comparison" class="level3">
+<h3 class="anchored" data-anchor-id="comparison">Comparison</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 24%">
+<col style="width: 42%">
+<col style="width: 17%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variant</th>
+<th><span class="math inline">\(|\lambda_j|\)</span></th>
+<th>Gradient over <span class="math inline">\(N\)</span> steps</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>LinOSS-IM</strong></td>
+<td><span class="math inline">\(&lt; 1\)</span> (depends on <span class="math inline">\(A_{kk}\)</span>)</td>
+<td>Decays, but non-zero in expectation</td>
+<td>Slight forgetting, acts as regularization</td>
+</tr>
+<tr class="even">
+<td><strong>LinOSS-IMEX</strong></td>
+<td><span class="math inline">\(= 1\)</span> exactly</td>
+<td>Always 1, no vanishing</td>
+<td>Perfect memory, no forgetting</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="guaranteeing-a_kk-geq-0-parameterization-and-initialization" class="level3">
+<h3 class="anchored" data-anchor-id="guaranteeing-a_kk-geq-0-parameterization-and-initialization">Guaranteeing <span class="math inline">\(A_{kk} \geq 0\)</span>: Parameterization and Initialization</h3>
+<p>Both variants require <span class="math inline">\(A_{kk} \geq 0\)</span>. The paper considers two parameterizations:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 51%">
+<col style="width: 27%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Parameterization</th>
+<th>Formula</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Squaring</strong></td>
+<td><span class="math inline">\(\mathbf{A} = \hat{\mathbf{A}}^2\)</span></td>
+<td>Always <span class="math inline">\(\geq 0\)</span>, but oscillator can never turn off</td>
+</tr>
+<tr class="even">
+<td><strong>ReLU</strong></td>
+<td><span class="math inline">\(\mathbf{A} = \text{ReLU}(\hat{\mathbf{A}})\)</span></td>
+<td>Always <span class="math inline">\(\geq 0\)</span>, and <span class="math inline">\(\hat{A}_{kk} &lt; 0\)</span> silences that oscillator</td>
+</tr>
+</tbody>
+</table>
+<p>The paper uses <strong>ReLU</strong>: the network can set <span class="math inline">\(\hat{A}_{kk} &lt; 0\)</span> to completely deactivate the <span class="math inline">\(k\)</span>-th oscillator, a natural pruning mechanism learned during training.</p>
+<p><strong>Initialization:</strong> Since LinOSS-IMEX has <span class="math inline">\(|\lambda| = 1\)</span> regardless of <span class="math inline">\(\mathbf{A}\)</span>, and LinOSS-IM benefits from eigenvalues spread across the unit disk (not collapsed near 0 or 1), both variants use:</p>
+<p><span class="math display">\[A_{kk} \sim \mathcal{U}([0, 1]), \quad \Delta t = 1\]</span></p>
+</section>
+<section id="does-linoss-im-actually-learn-at-100k-steps" class="level3">
+<h3 class="anchored" data-anchor-id="does-linoss-im-actually-learn-at-100k-steps">Does LinOSS-IM Actually Learn at 100k Steps?</h3>
+<p>For IMEX, gradients never vanish (<span class="math inline">\(|\lambda|=1\)</span> always), so there is no concern. For IM, since <span class="math inline">\(|\lambda| &lt; 1\)</span>, past inputs decay as <span class="math inline">\(|\lambda|^k\)</span>. With a fixed <span class="math inline">\(|\lambda| = 0.99\)</span> and <span class="math inline">\(N = 100{,}000\)</span> steps: <span class="math inline">\(0.99^{100000} \approx 10^{-436}\)</span>, effectively zero.</p>
+<p>But <span class="math inline">\(A_{kk}\)</span> is <em>random at initialization</em>, so different oscillators have different <span class="math inline">\(|\lambda|\)</span>. The paper computes the <strong>expected</strong> contribution after <span class="math inline">\(N\)</span> steps averaged over initialization:</p>
+<p><span class="math display">\[\mathbb{E}(|\lambda_j|^N) = \frac{(\Delta t^2 A_{\max}+1)^{1-\frac{N}{2}} - 1}{\Delta t^2 A_{\max}(1-\frac{N}{2})}\]</span></p>
+<p>where <span class="math inline">\(A_{kk} \sim \mathcal{U}([0, A_{\max}])\)</span>.</p>
+<p>With the default initialization (<span class="math inline">\(\Delta t = A_{\max} = 1\)</span>) and <span class="math inline">\(N = 100{,}000\)</span>:</p>
+<p><span class="math display">\[\mathbb{E}(|\lambda_j|^{100k}) = \frac{1}{49{,}999} \approx 2 \times 10^{-5}\]</span></p>
+<p>Not zero. Tiny but <strong>non-vanishing</strong>: enough for SGD to make progress. Even though any single oscillator might forget quickly, the <em>distribution</em> ensures some always carry long-range signal.</p>
+<div class="callout callout-style-simple callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>Why IM Outperforms IMEX in Practice
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>LinOSS-IMEX has <span class="math inline">\(|\lambda|=1\)</span> (no forgetting) which sounds ideal. But LinOSS-IM’s slight forgetting acts as <strong>implicit regularization</strong>: the model learns to focus on the most relevant timescales and discard noise. In practice, IM consistently outperforms IMEX on benchmarks.</p>
+</div>
+</div>
 </section>
 </section>
 <section id="sec-theory" class="level2">
 <h2 class="anchored" data-anchor-id="sec-theory">Universal Approximation</h2>
-<p>Beyond empirical performance, LinOSS has theoretical guarantees.</p>
+<p>Stability and good benchmark numbers are useful, but they don’t rule out the possibility that LinOSS simply can’t represent certain functions. This section answers that: can LinOSS represent <em>anything</em>, or are there inherent blind spots? Good empirical results could be a fluke of the datasets chosen; a theoretical guarantee rules that out.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -823,42 +1968,30 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 <p>for all inputs <span class="math inline">\(\mathbf{u}\)</span> in a compact set.</p>
 </div>
 </div>
-<p><strong>What this means</strong>: LinOSS isn’t just expressive — it’s <strong>universally expressive</strong> for the class of operators relevant to sequence modeling. Any continuous mapping from input sequences to output sequences can be learned.</p>
-<p>This is stronger than function approximation (which maps vectors to vectors). <strong>Operator approximation</strong> maps entire functions to functions — exactly what sequence models do.</p>
+<p><strong>What this means</strong>: LinOSS isn’t just expressive; it’s <strong>universally expressive</strong> for the class of operators relevant to sequence modeling. Any continuous mapping from input sequences to output sequences can be learned.</p>
+<p>This is stronger than function approximation (which maps vectors to vectors). <strong>Operator approximation</strong> maps entire functions to functions, exactly what sequence models do.</p>
 </section>
 <section id="sec-results" class="level2">
 <h2 class="anchored" data-anchor-id="sec-results">Results: Outperforming Mamba</h2>
-<p>Theory is nice, but does it work? LinOSS demonstrates strong empirical results across diverse benchmarks.</p>
+<p>Theory tells us LinOSS <em>can</em> approximate any target. Benchmarks tell us whether it actually does, and whether the physics-grounded stability translates to real accuracy gains. LinOSS demonstrates strong empirical results across diverse benchmarks.</p>
 <section id="ultra-long-sequences-50k-tokens" class="level3">
 <h3 class="anchored" data-anchor-id="ultra-long-sequences-50k-tokens">Ultra-Long Sequences (50k+ tokens)</h3>
 <p>On the <strong>PPG-DaLiA</strong> dataset (cardiac monitoring, ~50,000 timesteps):</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Model</th>
-<th>Mean Absolute Error</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Mamba</td>
-<td>9.2</td>
-</tr>
-<tr class="even">
-<td>LRU</td>
-<td>8.5</td>
-</tr>
-<tr class="odd">
-<td><strong>LinOSS-IM</strong></td>
-<td><strong>4.2</strong></td>
-</tr>
-</tbody>
-</table>
-<p><strong>LinOSS reduces error by ~50%</strong> compared to Mamba on this very long sequence task.</p>
+<div id="fig-ppg-results" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-ppg-results-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="ppg-dalia-results.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-ppg-results-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;11: <strong>LinOSS cuts error in half</strong> on 50k-step cardiac monitoring. Where Mamba and LRU struggle with numerical stability over tens of thousands of timesteps, LinOSS’s physics-based eigenvalue structure maintains precision.
+</figcaption>
+</figure>
+</div>
+<p><strong>LinOSS reduces error by ~40%</strong> compared to Mamba on this very long sequence task (6.4 vs 10.6 MSE×10⁻², a ~1.7x improvement).</p>
 </section>
 <section id="time-series-classification" class="level3">
 <h3 class="anchored" data-anchor-id="time-series-classification">Time Series Classification</h3>
-<p>On the <strong>UEA Multivariate Time Series Classification Archive</strong> (30 datasets):</p>
+<p>On six datasets from the <strong>UEA Multivariate Time Series Classification Archive</strong> (the six with the longest sequences):</p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -869,11 +2002,11 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 <tbody>
 <tr class="odd">
 <td>Log-NCDE</td>
-<td>64.4%</td>
+<td>64.3%</td>
 </tr>
 <tr class="even">
 <td>S5</td>
-<td>63.1%</td>
+<td>61.8%</td>
 </tr>
 <tr class="odd">
 <td><strong>LinOSS-IM</strong></td>
@@ -894,8 +2027,8 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 </thead>
 <tbody>
 <tr class="odd">
-<td>Previous SOTA</td>
-<td>85%</td>
+<td>LRU</td>
+<td>87.8%</td>
 </tr>
 <tr class="even">
 <td><strong>LinOSS-IM</strong></td>
@@ -903,11 +2036,34 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 </tr>
 </tbody>
 </table>
-<p>A <strong>10 percentage point improvement</strong> on this challenging long-sequence task.</p>
+<p>LRU was the strongest prior SSM on this dataset at 87.8%. LinOSS-IM improves by over <strong>7 percentage points</strong>, a large jump on this challenging long-sequence task.</p>
 </section>
 <section id="weather-forecasting" class="level3">
 <h3 class="anchored" data-anchor-id="weather-forecasting">Weather Forecasting</h3>
 <p>LinOSS outperforms both Transformer-based and SSM baselines on long-horizon weather prediction, demonstrating practical utility for real-world forecasting.</p>
+</section>
+<section id="efficiency" class="level3">
+<h3 class="anchored" data-anchor-id="efficiency">Efficiency</h3>
+<p>Beyond accuracy, LinOSS is computationally efficient thanks to the parallel scan. The key improvement is in wall-clock time, not total work:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Comparison</th>
+<th>LinOSS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Computational complexity</td>
+<td>O(n) work → O(log₂ n) wall-clock</td>
+</tr>
+<tr class="even">
+<td>vs sequential RNN</td>
+<td>Same total ops, ~log₂(n) fewer serial steps</td>
+</tr>
+</tbody>
+</table>
+<p>The O(log₂ n) comes from the parallel scan: instead of processing 50,000 timesteps sequentially, you can process them in ~16 parallel stages. Per-dataset runtime comparisons to other models vary; see Table 6 in the paper appendix for specific numbers across all six UEA datasets.</p>
 <div class="callout callout-style-simple callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -924,115 +2080,95 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 <li><strong>Tasks requiring stable long-range memory</strong></li>
 <li><strong>Continuous/smooth temporal dynamics</strong></li>
 </ol>
-<p>These are exactly the characteristics of robot control tasks — long trajectories, stable execution, smooth movements.</p>
+<p>These are exactly the characteristics of robot control tasks: long trajectories, stable execution, smooth movements.</p>
 </div>
 </div>
-</section>
-</section>
-<section id="sec-neuroscience" class="level2">
-<h2 class="anchored" data-anchor-id="sec-neuroscience">Connection to Motor Cortex</h2>
-<p>LinOSS isn’t just inspired by physics — it’s also <strong>biologically plausible</strong>.</p>
-<section id="cortical-oscillations" class="level3">
-<h3 class="anchored" data-anchor-id="cortical-oscillations">Cortical Oscillations</h3>
-<p>In <a href="../4-brain-motor-control/">Part 4</a> and <a href="../6-eigenvalue-dynamics/">Part 6</a>, we discussed how motor cortex exhibits <strong>rotational dynamics</strong>. Neural population activity during reaching shows spiral trajectories through state space — exactly what you’d expect from coupled oscillators.</p>
-<p>The jPCA analysis of Churchland et al.<span class="math inline">\(^{[2]}\)</span> fits motor cortex dynamics with a <strong>skew-symmetric</strong> matrix, which has purely imaginary eigenvalues. LinOSS’s symplectic variant (LinOSS-IMEX) produces the same eigenvalue structure.</p>
-</section>
-<section id="central-pattern-generators" class="level3">
-<h3 class="anchored" data-anchor-id="central-pattern-generators">Central Pattern Generators</h3>
-<p>Locomotion is controlled by <strong>Central Pattern Generators (CPGs)</strong> — neural circuits that produce rhythmic motor patterns. CPGs are literally coupled oscillators in the spinal cord.</p>
-<p>LinOSS’s uncoupled oscillators can be seen as a simplified CPG model. Extensions coupling the oscillators could model more complex rhythmic behaviors.</p>
-</section>
-<section id="the-forced-oscillator-as-neural-computation" class="level3">
-<h3 class="anchored" data-anchor-id="the-forced-oscillator-as-neural-computation">The Forced Oscillator as Neural Computation</h3>
-<p>The “forcing” in LinOSS (<span class="math inline">\(\mathbf{B}\mathbf{u}(t)\)</span>) corresponds to <strong>external input</strong> driving neural activity. The intrinsic oscillatory dynamics (<span class="math inline">\(-\mathbf{A}\mathbf{y}\)</span>) correspond to the <strong>recurrent connectivity</strong> that shapes the response.</p>
-<p>This matches how motor cortex works:</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>LinOSS Component</th>
-<th>Neural Analog</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Input <span class="math inline">\(\mathbf{u}(t)\)</span></td>
-<td>Sensory/goal input from other brain areas</td>
-</tr>
-<tr class="even">
-<td>Oscillator dynamics</td>
-<td>Recurrent connectivity in motor cortex</td>
-</tr>
-<tr class="odd">
-<td>Output <span class="math inline">\(\mathbf{C}\mathbf{y}\)</span></td>
-<td>Projections to spinal motor neurons</td>
-</tr>
-</tbody>
-</table>
 </section>
 </section>
 <section id="sec-robotics" class="level2">
 <h2 class="anchored" data-anchor-id="sec-robotics">Implications for Robot Learning</h2>
-<p>LinOSS suggests several directions for robot learning architectures.</p>
-<section id="oscillatory-policy-networks" class="level3">
-<h3 class="anchored" data-anchor-id="oscillatory-policy-networks">1. Oscillatory Policy Networks</h3>
-<p>Current robot policies (Diffusion Policy, ACT) use Transformers or U-Nets for action prediction. LinOSS could replace these backbones:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> LinOSSPolicy(nn.Module):</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, obs_dim, action_dim, hidden_dim<span class="op">=</span><span class="dv">256</span>):</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Observation encoder</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.encoder <span class="op">=</span> nn.Linear(obs_dim, hidden_dim)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># LinOSS sequence model</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.linoss <span class="op">=</span> LinOSSLayer(</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            input_dim<span class="op">=</span>hidden_dim,</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            hidden_dim<span class="op">=</span>hidden_dim,</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>            variant<span class="op">=</span><span class="st">'IM'</span>  <span class="co"># or 'IMEX' for perfect memory</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Action decoder</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.decoder <span class="op">=</span> nn.Linear(hidden_dim, action_dim)</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, obs_sequence):</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Encode observations</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        h <span class="op">=</span> <span class="va">self</span>.encoder(obs_sequence)</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Process through oscillatory dynamics</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        y, z <span class="op">=</span> <span class="va">self</span>.linoss(h)  <span class="co"># Returns both position and velocity</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Decode to actions</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        actions <span class="op">=</span> <span class="va">self</span>.decoder(y)</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> actions</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p><strong>Potential benefits</strong>:</p>
-<ul>
-<li><strong>Smooth outputs</strong>: Oscillatory dynamics naturally produce smooth trajectories</li>
-<li><strong>Stable long-horizon</strong>: Eigenvalues on unit circle prevent gradient vanishing for long action sequences</li>
-<li><strong>Fast inference</strong>: Parallel scan is <span class="math inline">\(O(L \log L)\)</span>, competitive with Transformers</li>
-</ul>
-</section>
-<section id="hybrid-vla-architectures" class="level3">
-<h3 class="anchored" data-anchor-id="hybrid-vla-architectures">2. Hybrid VLA Architectures</h3>
-<p>For Vision-Language-Action models, LinOSS could serve as the “motor cortex” — a fast, oscillatory layer that converts high-level plans into smooth actions:</p>
-<pre><code>Vision + Language Encoder (Transformer)
-         ↓
-   Goal/Task Embedding
-         ↓
-   LinOSS Action Generator  ← Oscillatory dynamics for smooth control
-         ↓
-    Action Sequence</code></pre>
-<p>This mirrors the brain’s organization: slow, deliberative processing in cortex, fast oscillatory execution in motor areas.</p>
-</section>
-<section id="cpg-rl-with-linoss" class="level3">
-<h3 class="anchored" data-anchor-id="cpg-rl-with-linoss">3. CPG-RL with LinOSS</h3>
-<p>For locomotion, LinOSS could implement a <strong>learnable CPG</strong>:</p>
-<ol type="1">
-<li>Initialize oscillator frequencies <span class="math inline">\(\sqrt{a_k}\)</span> to match natural gait frequencies</li>
-<li>Learn coupling and input weights through RL</li>
-<li>The oscillatory structure provides a strong inductive bias for rhythmic motion</li>
-</ol>
-<p>This extends CPG-RL<span class="math inline">\(^{[3]}\)</span> with a more principled oscillatory substrate.</p>
+<p>LinOSS’s stability at 50k+ timesteps is only useful for robotics if robot tasks actually involve sequences that long. This section makes that case concrete, then explores what oscillatory dynamics offer that other SSMs don’t.</p>
+<section id="why-control-frequency-is-the-key-variable" class="level3">
+<h3 class="anchored" data-anchor-id="why-control-frequency-is-the-key-variable">Why Control Frequency Is the Key Variable</h3>
+<p>When thinking about sequence length for robot policies, the right unit isn’t time; it’s <strong>control steps</strong>. And control frequency is determined by hardware response time: the faster a robot can sense-plan-act, the better its performance (smoother trajectories, faster reactions, finer control).</p>
+<p>A cloth folding task takes about 30 seconds. But how many steps that is depends entirely on the control loop:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Control frequency</th>
+<th>Use case</th>
+<th>Cloth folding (30s)</th>
+<th>Full laundry (10min)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>30 Hz</td>
+<td>Slow manipulation</td>
+<td>900 steps</td>
+<td>18,000 steps</td>
+</tr>
+<tr class="even">
+<td>100 Hz</td>
+<td>Standard arm control</td>
+<td>3,000 steps</td>
+<td>60,000 steps</td>
+</tr>
+<tr class="odd">
+<td>500 Hz</td>
+<td>Reactive/fast control</td>
+<td>15,000 steps</td>
+<td>300,000 steps</td>
+</tr>
+<tr class="even">
+<td>1000 Hz</td>
+<td>Force/impedance control</td>
+<td>30,000 steps</td>
+<td>600,000 steps</td>
+</tr>
+</tbody>
+</table>
+<p>At <strong>100 Hz</strong> (the standard for modern robot arms) cloth folding alone is 3,000 steps, where LSTMs are already struggling. A full laundry sequence at 100 Hz is 60,000 steps: squarely in LinOSS’s demonstrated range. At 500 Hz force control, even a single 30-second task exceeds what LSTMs can handle reliably.</p>
+<p>This is the concrete robotics argument: it’s not that tasks are long in seconds, it’s that <strong>high control frequency turns short tasks into very long sequences</strong>.</p>
+<div id="fig-eigenvalue-memory" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-eigenvalue-memory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="eigenvalue-memory.png" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-eigenvalue-memory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;12: <strong>Eigenvalue magnitude determines long-sequence behavior.</strong> |λ|&gt;1 causes the hidden state to explode; |λ|&lt;1 causes it to forget distant inputs; only |λ|=1 maintains stable, perfect long-range memory. LinOSS’s physics-based parameterization keeps all eigenvalues on or inside the unit circle, making it suitable for the 60,000-step sequences that arise at 100 Hz control.
+</figcaption>
+</figure>
+</div>
+<div class="callout callout-style-simple callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Tip</span>Real-World Demo: Humanoid Kitchen Tasks
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>From Rusch’s TED talk<span class="math inline">\(^{[9]}\)</span>:</p>
+<blockquote class="blockquote">
+<p>“We trained a humanoid robot in our lab to perform some kitchen chores (pouring water, scooping material into a pan). The training data was only based on human tactile data. LinOSS was the <strong>only model</strong> that led to physically meaningful representations: representations which were extremely close to the human trajectories.”</p>
+</blockquote>
+<p>When they visualized the hidden neuron activations during inference, “you can see these very beautiful oscillatory dynamics emerge.”</p>
+<p>This is the payoff: oscillatory dynamics don’t just improve benchmarks; they produce <strong>physically meaningful representations</strong> for robot control.</p>
+</div>
+</div>
 </section>
 </section>
 <section id="sec-misconceptions" class="level2">
 <h2 class="anchored" data-anchor-id="sec-misconceptions">Common Misconceptions</h2>
+<p>Several intuitive objections to LinOSS turn out to be wrong. Here are the three that come up most often.</p>
 <div class="callout callout-style-default callout-warning callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -1043,7 +2179,7 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>LinOSS uses a second-order ODE, which requires tracking both position <span class="math inline">\(\mathbf{y}\)</span> and velocity <span class="math inline">\(\mathbf{z}\)</span> — doubling the state size compared to first-order SSMs like Mamba.</p>
+<p>LinOSS uses a second-order ODE, which requires tracking both position <span class="math inline">\(\mathbf{y}\)</span> and velocity <span class="math inline">\(\mathbf{z}\)</span>, doubling the state size compared to first-order SSMs like Mamba.</p>
 <p><strong>Reality</strong>: The diagonal structure means computation is still <span class="math inline">\(O(N)\)</span> per step, just with a factor of 2. The parallel scan remains <span class="math inline">\(O(\log L)\)</span>. In practice, LinOSS matches Mamba’s wall-clock time on the benchmarks.</p>
 </div>
 </div>
@@ -1064,7 +2200,7 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 <li><strong>Learned input/output projections</strong> (<span class="math inline">\(\mathbf{B}\)</span>, <span class="math inline">\(\mathbf{C}\)</span>) are full dense matrices</li>
 <li><strong>Stacking layers</strong> creates deep nonlinear networks overall</li>
 </ol>
-<p>The universal approximation theorem guarantees LinOSS can represent any continuous causal operator — linearity in the dynamics is not a limitation.</p>
+<p>The universal approximation theorem guarantees LinOSS can represent any continuous causal operator; linearity in the dynamics is not a limitation.</p>
 </div>
 </div>
 <div class="callout callout-style-default callout-warning callout-titled">
@@ -1078,33 +2214,9 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 </div>
 <div class="callout-body-container callout-body">
 <p>The word “oscillatory” suggests LinOSS only works on rhythmic signals.</p>
-<p><strong>Reality</strong>: LinOSS excels on non-periodic data too (text, weather, cardiac monitoring). The oscillators provide a <strong>rich temporal basis</strong> — different frequencies combine to represent arbitrary smooth functions. It’s like Fourier analysis: any signal can be decomposed into oscillatory components.</p>
+<p><strong>Reality</strong>: LinOSS excels on non-periodic data too (text, weather, cardiac monitoring). The oscillators provide a <strong>rich temporal basis</strong>: different frequencies combine to represent arbitrary smooth functions. It’s like Fourier analysis: any signal can be decomposed into oscillatory components.</p>
 </div>
 </div>
-</section>
-<section id="sec-open-questions" class="level2">
-<h2 class="anchored" data-anchor-id="sec-open-questions">Open Questions</h2>
-<p>LinOSS opens several research directions:</p>
-<section id="coupling-the-oscillators" class="level3">
-<h3 class="anchored" data-anchor-id="coupling-the-oscillators">1. Coupling the Oscillators</h3>
-<p>LinOSS uses <strong>uncoupled</strong> oscillators for computational efficiency. But real CPGs have coupling that produces phase relationships (e.g., alternating leg movements).</p>
-<p><strong>Question</strong>: Can we add learnable coupling while maintaining parallel efficiency?</p>
-</section>
-<section id="nonlinear-extensions" class="level3">
-<h3 class="anchored" data-anchor-id="nonlinear-extensions">2. Nonlinear Extensions</h3>
-<p>LinOSS is linear for stability and efficiency. But motor cortex has nonlinearities.</p>
-<p><strong>Question</strong>: Can we add controlled nonlinearities (e.g., in the readout) without breaking stability guarantees?</p>
-</section>
-<section id="multi-timescale-dynamics" class="level3">
-<h3 class="anchored" data-anchor-id="multi-timescale-dynamics">3. Multi-Timescale Dynamics</h3>
-<p>Different tasks need different frequencies. Reaching is slow (~1 Hz), grasping faster (~10 Hz), contact control very fast (~100 Hz).</p>
-<p><strong>Question</strong>: How should we initialize oscillator frequencies for robot control? Task-specific or learned?</p>
-</section>
-<section id="direct-robotics-benchmarks" class="level3">
-<h3 class="anchored" data-anchor-id="direct-robotics-benchmarks">4. Direct Robotics Benchmarks</h3>
-<p>LinOSS has been tested on generic sequence benchmarks but not robot control tasks.</p>
-<p><strong>Question</strong>: How does LinOSS compare to Transformer/Mamba backbones on LIBERO, Meta-World, or real-world manipulation?</p>
-</section>
 </section>
 <section id="sec-conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="sec-conclusion">Conclusion</h2>
@@ -1118,16 +2230,17 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p><strong>LinOSS</strong> demonstrates that classical physics — the forced harmonic oscillator — provides an excellent foundation for sequence modeling:</p>
+<p><strong>LinOSS</strong> demonstrates that classical physics (the forced harmonic oscillator) provides an excellent foundation for sequence modeling:</p>
 <ol type="1">
 <li><strong>Simplicity</strong>: Just require <span class="math inline">\(\mathbf{A}\)</span> diagonal with nonnegative entries</li>
 <li><strong>Stability</strong>: Eigenvalues automatically bounded by unit circle</li>
 <li><strong>Expressiveness</strong>: Universal approximation of causal operators</li>
-<li><strong>Performance</strong>: ~2x better than Mamba on ultra-long sequences</li>
+<li><strong>Performance</strong>: ~1.7x better than Mamba on ultra-long sequences (6.4 vs 10.6 MSE)</li>
 <li><strong>Biological plausibility</strong>: Matches motor cortex oscillatory dynamics</li>
 </ol>
 <p>For robotics, LinOSS offers a principled architecture that’s simultaneously grounded in physics, aligned with neuroscience, and competitive with modern deep learning.</p>
 <p>The convergence is striking: evolution optimized motor cortex for oscillatory dynamics; physicists understood these dynamics centuries ago; and now ML is rediscovering them for sequence modeling. LinOSS makes this connection explicit.</p>
+<p>The open empirical question is whether these gains transfer to real robot hardware. LinOSS has the theory; Mamba has the robotics benchmarks. Whether an oscillatory model beats Mamba on a manipulation task is the natural next experiment.</p>
 </div>
 </div>
 <div class="callout callout-style-simple callout-note callout-titled">
@@ -1142,10 +2255,10 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 <div class="callout-body-container callout-body">
 <p>This post connects to the Robot Learning series:</p>
 <ul>
-<li><a href="../4-brain-motor-control/">Part 4: Brain Motor Control</a> — Neuroscience foundations</li>
-<li><a href="../5-neuro-inspired-architectures/">Part 5: Neuro-Inspired Architectures</a> — Engineering principles</li>
-<li><a href="../6-eigenvalue-dynamics/">Part 6: Eigenvalue Dynamics</a> — Mathematical bridge (mentions LinOSS)</li>
-<li><a href="../7-neural-manifolds/">Part 7: Neural Manifolds</a> — Geometry of skill representation</li>
+<li><a href="../4-brain-motor-control/">Part 4: Brain Motor Control</a>: Neuroscience foundations</li>
+<li><a href="../5-neuro-inspired-architectures/">Part 5: Neuro-Inspired Architectures</a>: Engineering principles</li>
+<li><a href="../6-eigenvalue-dynamics/">Part 6: Eigenvalue Dynamics</a>: Mathematical bridge (mentions LinOSS)</li>
+<li><a href="../7-neural-manifolds/">Part 7: Neural Manifolds</a>: Geometry of skill representation</li>
 </ul>
 <p>LinOSS is the most explicit implementation of the eigenvalue insights from Part 6.</p>
 </div>
@@ -1157,9 +2270,17 @@ Figure&nbsp;2: <strong>Symplectic vs implicit discretization</strong> on a harmo
 <p>[2] <a href="https://www.nature.com/articles/nature11129">Churchland, M. M., et al.&nbsp;(2012). Neural Population Dynamics During Reaching. <em>Nature</em>.</a></p>
 <p>[3] <a href="https://arxiv.org/abs/2211.00458">Bellegarda, G., et al.&nbsp;(2022). CPG-RL: Learning Central Pattern Generators for Quadruped Locomotion.</a></p>
 <p>[4] <a href="https://arxiv.org/abs/2111.00396">Gu, A., et al.&nbsp;(2022). Efficiently Modeling Long Sequences with Structured State Spaces. <em>ICLR</em>.</a> (S4)</p>
-<p>[5] <a href="https://arxiv.org/abs/2312.00752">Gu, A., &amp; Dao, T. (2024). Mamba: Linear-Time Sequence Modeling with Selective State Spaces. <em>COLM</em>.</a></p>
+<p>[5] <a href="https://arxiv.org/abs/2312.00752">Gu, A., &amp; Dao, T. (2024). Mamba: Linear-Time Sequence Modeling with Selective State Spaces. <em>COLM 2024</em>.</a></p>
 <p>[6] <a href="https://arxiv.org/abs/2303.06349">Orvieto, A., et al.&nbsp;(2023). Resurrecting Recurrent Neural Networks for Long Sequences. <em>ICML</em>.</a> (LRU)</p>
 <p>[7] <a href="https://news.mit.edu/2025/novel-ai-model-inspired-neural-dynamics-from-brain-0502">MIT News: Novel AI Model Inspired by Neural Dynamics from the Brain. May 2025.</a></p>
+<p>[8] <a href="https://arxiv.org/abs/2010.00951">Rusch, T. K., &amp; Mishra, S. (2021). Coupled Oscillatory Recurrent Neural Network (coRNN): An Accurate and (Gradient) Stable Architecture for Learning Long Time Dependencies. <em>ICLR 2021</em>.</a></p>
+<p>[9] <a href="https://www.youtube.com/watch?v=_MpDy6bL0XE">Rusch, T. K. (2025). TED Talk: Oscillatory State Space Models.</a></p>
+<p>[10] <a href="https://arxiv.org/abs/2406.08234">Jia, X., et al.&nbsp;(2024). MaIL: Improving Imitation Learning with Mamba. <em>CoRL 2024</em>.</a></p>
+<p>[11] <a href="https://arxiv.org/abs/2501.05905">Liu, Y., et al.&nbsp;(2025). MTIL: Multi-Task Imitation Learning with Mamba. <em>RA-L 2025</em>.</a></p>
+<p>[12] <a href="https://arxiv.org/abs/2409.07163">Shi, J., et al.&nbsp;(2025). Mamba Policy: Towards Efficient 3D Diffusion Policy with Hybrid SSM-Diffusion Models. <em>IROS 2025</em>.</a></p>
+<p>[13] Wen, C., et al.&nbsp;(2026). DiSPo: Diffusion-SSM Planning for Long-Horizon Tasks. <em>ICRA 2026</em>. (arXiv link to be verified)</p>
+<p>[14] <a href="https://arxiv.org/abs/2403.19925">Zhu, Z., et al.&nbsp;(2024). Decision Mamba: Reinforcement Learning via Sequence Modeling with Selective State Spaces. <em>NeurIPS 2024</em>.</a></p>
+<p>[15] <a href="https://arxiv.org/abs/2509.19658">Yoo, Y., et al.&nbsp;(2025). RoboSSM: In-Context Imitation Learning with State Space Models. <em>2025</em>.</a></p>
 <hr>
 <p><em>This post explores LinOSS, a state-space model based on forced harmonic oscillators. For the mathematical foundation connecting eigenvalues to motor cortex dynamics, see <a href="../6-eigenvalue-dynamics/">Part 6</a>. For broader architectural principles from neuroscience, see <a href="../5-neuro-inspired-architectures/">Part 5</a>.</em></p>
 

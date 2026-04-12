@@ -9,13 +9,13 @@
       "/posts/robotics/7-neural-manifolds/index.html",
       "/posts/robotics/6-eigenvalue-dynamics/index.html",
       "/posts/robotics/5-neuro-inspired-architectures/index.html",
-      "/posts/robotics/1.5-action-chunking/index.html",
       "/posts/robotics/3-vla-models/index.html",
-      "/posts/diffusion/12-why-diffusion/index.html",
+      "/posts/robotics/1.5-action-chunking/index.html",
       "/posts/diffusion/11-practical-flow-matching/index.html",
+      "/posts/diffusion/12-why-diffusion/index.html",
+      "/posts/robotics/0-intro/index.html",
       "/posts/robotics/1-background/index.html",
       "/posts/robotics/1-diffusion-policy/index.html",
-      "/posts/robotics/0-intro/index.html",
       "/posts/diffusion/10-diffusion-transformers/index.html",
       "/posts/diffusion/9-unet/index.html",
       "/posts/diffusion/8-guidance/index.html",
@@ -25,8 +25,8 @@
       "/posts/diffusion/4-flow-matching-loss/index.html",
       "/posts/diffusion/3-probability-paths/index.html",
       "/posts/diffusion/2-flows/index.html",
-      "/posts/diffusion/1-intro/index.html",
-      "/posts/welcome/index.html"
+      "/posts/welcome/index.html",
+      "/posts/diffusion/1-intro/index.html"
     ]
   }
 ]

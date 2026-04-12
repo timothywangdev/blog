@@ -2,13 +2,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.8.27">
+<meta name="generator" content="quarto-1.9.37">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>Foundation Models &amp; Robotics</title>
 <style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
 div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -35,19 +38,18 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-listing/quarto-listing.js"></script>
 <script src="site_libs/quarto-html/quarto.js" type="module"></script>
 <script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-7fb59815a1c41eec7c034637f0c35ff0.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-2a367172f4fe7d9182ebf8e09f85cb4e.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-dark-43b2d995d73a1754bd3a6f5d899fe64b.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-4e5466e430b1db38349d513585fd1d59.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-dark-a9598367588f984fe3cf7c9796caf1be.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
-<link href="site_libs/bootstrap/bootstrap-2e5df0c6a0ab06134656deae125ed9fe.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-dark-90bc4b5f12df028b4425c2edb9bceabf.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-f2034c9774f2b850923ba223765127a6.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -115,7 +117,7 @@ gtag('config', 'G-1RBJ1WWR89', { 'anonymize_ip': true});
 </script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -388,10 +390,10 @@ window.Quarto = {
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="cm9ib3RpY3MlMkNzdGF0ZS1zcGFjZS1tb2RlbHMlMkNuZXVyb3NjaWVuY2UlMkNvc2NpbGxhdGlvbnMlMkNhcmNoaXRlY3R1cmUlMkNyb2JvdC1sZWFybmluZw==" data-listing-date-sort="1772236800000" data-listing-file-modified-sort="1772338572058" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="15" data-listing-word-count-sort="2867">
+<div class="quarto-post image-right" data-index="0" data-categories="cm9ib3RpY3MlMkNzdGF0ZS1zcGFjZS1tb2RlbHMlMkNuZXVyb3NjaWVuY2UlMkNvc2NpbGxhdGlvbnMlMkNhcmNoaXRlY3R1cmUlMkNyb2JvdC1sZWFybmluZw==" data-listing-date-sort="1772236800000" data-listing-file-modified-sort="1776032785957" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="51" data-listing-word-count-sort="10079">
 <div class="thumbnail"><a href="./posts/robotics/linoss/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/linoss/linoss-overview.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/linoss/linoss-overview.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -431,10 +433,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="1" data-categories="cm9ib3RpY3MlMkNiZW5jaG1hcmtzJTJDdmxhJTJDcm9ib3QtbGVhcm5pbmclMkNldmFsdWF0aW9u" data-listing-date-sort="1771891200000" data-listing-file-modified-sort="1772338572032" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1525">
+<div class="quarto-post image-right" data-index="1" data-categories="cm9ib3RpY3MlMkNiZW5jaG1hcmtzJTJDdmxhJTJDcm9ib3QtbGVhcm5pbmclMkNldmFsdWF0aW9u" data-listing-date-sort="1771891200000" data-listing-file-modified-sort="1776032785929" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1525">
 <div class="thumbnail"><a href="./posts/robotics/libero-benchmark/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/libero-benchmark/libero-overview.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/libero-benchmark/libero-overview.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -472,10 +474,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="cm9ib3RpY3MlMkNWTEElMkNkaWZmdXNpb24tcG9saWN5JTJDZm91bmRhdGlvbi1tb2RlbHMlMkN5ZWFyLWluLXJldmlldw==" data-listing-date-sort="1770681600000" data-listing-file-modified-sort="1772338572114" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="19" data-listing-word-count-sort="3771">
+<div class="quarto-post image-right" data-index="2" data-categories="cm9ib3RpY3MlMkNWTEElMkNkaWZmdXNpb24tcG9saWN5JTJDZm91bmRhdGlvbi1tb2RlbHMlMkN5ZWFyLWluLXJldmlldw==" data-listing-date-sort="1770681600000" data-listing-file-modified-sort="1776032786024" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="19" data-listing-word-count-sort="3771">
 <div class="thumbnail"><a href="./posts/robotics/state-of-robotics-2026/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/state-of-robotics-2026/figure02-bmw-official.jpg"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/state-of-robotics-2026/figure02-bmw-official.jpg"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -513,10 +515,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="3" data-categories="cm9ib3RpY3MlMkNkaWZmdXNpb24tcG9saWN5JTJDaW1pdGF0aW9uLWxlYXJuaW5nJTJDcmVzZWFyY2gtZGVlcC1kaXZl" data-listing-date-sort="1769817600000" data-listing-file-modified-sort="1772338572010" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="13" data-listing-word-count-sort="2569">
+<div class="quarto-post image-right" data-index="3" data-categories="cm9ib3RpY3MlMkNkaWZmdXNpb24tcG9saWN5JTJDaW1pdGF0aW9uLWxlYXJuaW5nJTJDcmVzZWFyY2gtZGVlcC1kaXZl" data-listing-date-sort="1769817600000" data-listing-file-modified-sort="1776032785910" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="13" data-listing-word-count-sort="2569">
 <div class="thumbnail"><a href="./posts/robotics/2-much-ado-about-noising/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/2-much-ado-about-noising/teaser.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/2-much-ado-about-noising/teaser.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -552,7 +554,7 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="4" data-categories="cm9ib3RpY3MlMkNuZXVyb3NjaWVuY2UlMkNtYW5pZm9sZHMlMkNkaW1lbnNpb25hbGl0eS1yZWR1Y3Rpb24lMkNtb3Rvci1jb250cm9sJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1769299200000" data-listing-file-modified-sort="1772338572032" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18" data-listing-word-count-sort="3490">
+<div class="quarto-post image-right" data-index="4" data-categories="cm9ib3RpY3MlMkNuZXVyb3NjaWVuY2UlMkNtYW5pZm9sZHMlMkNkaW1lbnNpb25hbGl0eS1yZWR1Y3Rpb24lMkNtb3Rvci1jb250cm9sJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1769299200000" data-listing-file-modified-sort="1776032785929" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18" data-listing-word-count-sort="3490">
 <div class="thumbnail"><a href="./posts/robotics/7-neural-manifolds/index.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -595,10 +597,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="5" data-categories="cm9ib3RpY3MlMkNuZXVyb3NjaWVuY2UlMkNSTk4lMkNzdGF0ZS1zcGFjZS1tb2RlbHMlMkNlaWdlbnZhbHVlcyUyQ21vdG9yLWNvbnRyb2wlMkNyb2JvdC1sZWFybmluZw==" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1772338572030" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="45" data-listing-word-count-sort="8854">
+<div class="quarto-post image-right" data-index="5" data-categories="cm9ib3RpY3MlMkNuZXVyb3NjaWVuY2UlMkNSTk4lMkNzdGF0ZS1zcGFjZS1tb2RlbHMlMkNlaWdlbnZhbHVlcyUyQ21vdG9yLWNvbnRyb2wlMkNyb2JvdC1sZWFybmluZw==" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1776032785928" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="45" data-listing-word-count-sort="8854">
 <div class="thumbnail"><a href="./posts/robotics/6-eigenvalue-dynamics/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/6-eigenvalue-dynamics/convergent-discovery.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/6-eigenvalue-dynamics/convergent-discovery.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -640,10 +642,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="6" data-categories="cm9ib3RpY3MlMkNuZXVyb3NjaWVuY2UlMkNtb3Rvci1jb250cm9sJTJDYXJjaGl0ZWN0dXJlJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1772338572026" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="31" data-listing-word-count-sort="6064">
+<div class="quarto-post image-right" data-index="6" data-categories="cm9ib3RpY3MlMkNuZXVyb3NjaWVuY2UlMkNtb3Rvci1jb250cm9sJTJDYXJjaGl0ZWN0dXJlJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1769212800000" data-listing-file-modified-sort="1776032785924" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="31" data-listing-word-count-sort="6064">
 <div class="thumbnail"><a href="./posts/robotics/5-neuro-inspired-architectures/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/5-neuro-inspired-architectures/cbc-architecture.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/5-neuro-inspired-architectures/cbc-architecture.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -681,51 +683,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="7" data-categories="cm9ib3RpY3MlMkN0cmFuc2Zvcm1lcnMlMkNpbWl0YXRpb24tbGVhcm5pbmclMkNWQUUlMkNyb2JvdC1sZWFybmluZw==" data-listing-date-sort="1769126400000" data-listing-file-modified-sort="1772338572007" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="15" data-listing-word-count-sort="2981">
-<div class="thumbnail"><a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/robotics/1.5-action-chunking/horizon-reduction.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">Robot Learning Part 1.5: Action Chunking with Transformers (ACT)</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external"></a>
-</div>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('dHJhbnNmb3JtZXJz'); return false;">transformers</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('aW1pdGF0aW9uLWxlYXJuaW5n'); return false;">imitation-learning</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('VkFF'); return false;">VAE</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3QtbGVhcm5pbmc='); return false;">robot-learning</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">
-Imagine teaching a robot to pick up a mug. In traditional behavioral cloning (recall from Part 1), the robot predicts one tiny action at a time — 50 micro-adjustments per…<strong></strong>
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">
-<div class="listing-date">
-Jan 23, 2026
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="8" data-categories="cm9ib3RpY3MlMkNWTEElMkN0cmFuc2Zvcm1lcnMlMkNmb3VuZGF0aW9uLW1vZGVscyUyQ3JvYm90LWxlYXJuaW5n" data-listing-date-sort="1769126400000" data-listing-file-modified-sort="1772338572017" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="21" data-listing-word-count-sort="4088">
+<div class="quarto-post image-right" data-index="7" data-categories="cm9ib3RpY3MlMkNWTEElMkN0cmFuc2Zvcm1lcnMlMkNmb3VuZGF0aW9uLW1vZGVscyUyQ3JvYm90LWxlYXJuaW5n" data-listing-date-sort="1769126400000" data-listing-file-modified-sort="1776032785916" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="21" data-listing-word-count-sort="4088">
 <div class="thumbnail"><a href="./posts/robotics/3-vla-models/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/3-vla-models/vla-architecture.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/3-vla-models/vla-architecture.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -763,7 +724,89 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="9" data-categories="ZGlmZnVzaW9uJTJDZ2VuZXJhdGl2ZS1tb2RlbHMlMkNkZWVwLWxlYXJuaW5nJTJDZmxvdy1tYXRjaGluZw==" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1772338571845" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18" data-listing-word-count-sort="3402">
+<div class="quarto-post image-right" data-index="8" data-categories="cm9ib3RpY3MlMkN0cmFuc2Zvcm1lcnMlMkNpbWl0YXRpb24tbGVhcm5pbmclMkNWQUUlMkNyb2JvdC1sZWFybmluZw==" data-listing-date-sort="1769126400000" data-listing-file-modified-sort="1776032785907" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="15" data-listing-word-count-sort="2981">
+<div class="thumbnail"><a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/1.5-action-chunking/horizon-reduction.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">Robot Learning Part 1.5: Action Chunking with Transformers (ACT)</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('dHJhbnNmb3JtZXJz'); return false;">transformers</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aW1pdGF0aW9uLWxlYXJuaW5n'); return false;">imitation-learning</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('VkFF'); return false;">VAE</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3QtbGVhcm5pbmc='); return false;">robot-learning</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">
+Imagine teaching a robot to pick up a mug. In traditional behavioral cloning (recall from Part 1), the robot predicts one tiny action at a time — 50 micro-adjustments per…<strong></strong>
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/robotics/1.5-action-chunking/index.html" class="no-external">
+<div class="listing-date">
+Jan 23, 2026
+</div>
+<div class="listing-author">
+Hujie Wang
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="9" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDdHV0b3JpYWwlMkNjaWZhci0xMA==" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1776032785739" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="11" data-listing-word-count-sort="2117">
+<div class="thumbnail"><a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/11-practical-flow-matching/linear-path-diagram.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">Diffusion &amp; Flow Matching Part 11: Building an Image Generator</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('dHV0b3JpYWw='); return false;">tutorial</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Y2lmYXItMTA='); return false;">cifar-10</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">
+In the previous posts, we built up the mathematical foundations of flow matching:
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">
+<div class="listing-date">
+Jan 20, 2026
+</div>
+<div class="listing-author">
+Hujie Wang
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="10" data-categories="ZGlmZnVzaW9uJTJDZ2VuZXJhdGl2ZS1tb2RlbHMlMkNkZWVwLWxlYXJuaW5nJTJDZmxvdy1tYXRjaGluZw==" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1776032785752" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="18" data-listing-word-count-sort="3402">
 <div class="thumbnail"><a href="./posts/diffusion/12-why-diffusion/index.html" class="no-external">
 
 <img loading="lazy" src="./posts/diffusion/12-why-diffusion/mode-averaging.png" class="thumbnail-image">
@@ -802,129 +845,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="10" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDdHV0b3JpYWwlMkNjaWZhci0xMA==" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1772338571832" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="11" data-listing-word-count-sort="2117">
-<div class="thumbnail"><a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/11-practical-flow-matching/linear-path-diagram.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">Diffusion &amp; Flow Matching Part 11: Building an Image Generator</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external"></a>
-</div>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('dHV0b3JpYWw='); return false;">tutorial</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Y2lmYXItMTA='); return false;">cifar-10</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">
-In the previous posts, we built up the mathematical foundations of flow matching:
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/11-practical-flow-matching/index.html" class="no-external">
-<div class="listing-date">
-Jan 20, 2026
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="11" data-categories="cm9ib3RpY3MlMkNyZWluZm9yY2VtZW50LWxlYXJuaW5nJTJDaW1pdGF0aW9uLWxlYXJuaW5nJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1772338571907" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="14" data-listing-word-count-sort="2741">
-<div class="thumbnail"><a href="./posts/robotics/1-background/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/robotics/1-background/distribution-shift.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/robotics/1-background/index.html" class="no-external">Robot Learning Part 1: Background &amp; Current State of the Field</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/robotics/1-background/index.html" class="no-external"></a>
-</div>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('cmVpbmZvcmNlbWVudC1sZWFybmluZw=='); return false;">reinforcement-learning</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('aW1pdGF0aW9uLWxlYXJuaW5n'); return false;">imitation-learning</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3QtbGVhcm5pbmc='); return false;">robot-learning</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/robotics/1-background/index.html" class="no-external">
-In Part 0, we surveyed the robot learning landscape and saw how diffusion models are revolutionizing robotic manipulation. But to truly understand <em>why</em> Diffusion Policy works…
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/robotics/1-background/index.html" class="no-external">
-<div class="listing-date">
-Jan 20, 2026
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="12" data-categories="cm9ib3RpY3MlMkNkaWZmdXNpb24tcG9saWN5JTJDaW1pdGF0aW9uLWxlYXJuaW5nJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1772338571919" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="35" data-listing-word-count-sort="6845">
-<div class="thumbnail"><a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/robotics/1-diffusion-policy/teaser.svg"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">Why Robots Keep Crashing Into Walls (And How Diffusion Fixed It)</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external"></a>
-</div>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9uLXBvbGljeQ=='); return false;">diffusion-policy</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('aW1pdGF0aW9uLWxlYXJuaW5n'); return false;">imitation-learning</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3QtbGVhcm5pbmc='); return false;">robot-learning</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">
-Train a robot to avoid an obstacle. Show it 100 demos going left, 100 going right. What does it learn?
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">
-<div class="listing-date">
-Jan 20, 2026
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="13" data-categories="cm9ib3RpY3MlMkNkaWZmdXNpb24tcG9saWN5JTJDVkxBJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1772338571905" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1502">
+<div class="quarto-post image-right" data-index="11" data-categories="cm9ib3RpY3MlMkNkaWZmdXNpb24tcG9saWN5JTJDVkxBJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1776032785808" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1502">
 <div class="thumbnail"><a href="./posts/robotics/0-intro/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/robotics/0-intro/vla-pipeline.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/0-intro/vla-pipeline.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -960,10 +884,88 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="14" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDdHJhbnNmb3JtZXIlMkN2aXQlMkNkaXQlMkNhcmNoaXRlY3R1cmU=" data-listing-date-sort="1768608000000" data-listing-file-modified-sort="1772338571828" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="15" data-listing-word-count-sort="2891">
+<div class="quarto-post image-right" data-index="12" data-categories="cm9ib3RpY3MlMkNyZWluZm9yY2VtZW50LWxlYXJuaW5nJTJDaW1pdGF0aW9uLWxlYXJuaW5nJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1776032785808" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="14" data-listing-word-count-sort="2741">
+<div class="thumbnail"><a href="./posts/robotics/1-background/index.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/1-background/distribution-shift.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/robotics/1-background/index.html" class="no-external">Robot Learning Part 1: Background &amp; Current State of the Field</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/robotics/1-background/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cmVpbmZvcmNlbWVudC1sZWFybmluZw=='); return false;">reinforcement-learning</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aW1pdGF0aW9uLWxlYXJuaW5n'); return false;">imitation-learning</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3QtbGVhcm5pbmc='); return false;">robot-learning</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/robotics/1-background/index.html" class="no-external">
+In Part 0, we surveyed the robot learning landscape and saw how diffusion models are revolutionizing robotic manipulation. But to truly understand <em>why</em> Diffusion Policy works…
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/robotics/1-background/index.html" class="no-external">
+<div class="listing-date">
+Jan 20, 2026
+</div>
+<div class="listing-author">
+Hujie Wang
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="13" data-categories="cm9ib3RpY3MlMkNkaWZmdXNpb24tcG9saWN5JTJDaW1pdGF0aW9uLWxlYXJuaW5nJTJDcm9ib3QtbGVhcm5pbmc=" data-listing-date-sort="1768867200000" data-listing-file-modified-sort="1776032785819" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="35" data-listing-word-count-sort="6845">
+<div class="thumbnail"><a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="posts/robotics/1-diffusion-policy/teaser.svg"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">Why Robots Keep Crashing Into Walls (And How Diffusion Fixed It)</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3RpY3M='); return false;">robotics</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9uLXBvbGljeQ=='); return false;">diffusion-policy</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('aW1pdGF0aW9uLWxlYXJuaW5n'); return false;">imitation-learning</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('cm9ib3QtbGVhcm5pbmc='); return false;">robot-learning</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">
+Train a robot to avoid an obstacle. Show it 100 demos going left, 100 going right. What does it learn?
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/robotics/1-diffusion-policy/index.html" class="no-external">
+<div class="listing-date">
+Jan 20, 2026
+</div>
+<div class="listing-author">
+Hujie Wang
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="14" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDdHJhbnNmb3JtZXIlMkN2aXQlMkNkaXQlMkNhcmNoaXRlY3R1cmU=" data-listing-date-sort="1768608000000" data-listing-file-modified-sort="1776032785734" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="15" data-listing-word-count-sort="2891">
 <div class="thumbnail"><a href="./posts/diffusion/10-diffusion-transformers/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/10-diffusion-transformers/vit-architecture-original.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/10-diffusion-transformers/vit-architecture-original.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1005,10 +1007,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="15" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDdS1uZXQlMkNhcmNoaXRlY3R1cmU=" data-listing-date-sort="1768435200000" data-listing-file-modified-sort="1772338571882" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="16" data-listing-word-count-sort="3063">
+<div class="quarto-post image-right" data-index="15" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDdS1uZXQlMkNhcmNoaXRlY3R1cmU=" data-listing-date-sort="1768435200000" data-listing-file-modified-sort="1776032785787" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="16" data-listing-word-count-sort="3063">
 <div class="thumbnail"><a href="./posts/diffusion/9-unet/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/9-unet/unet-original.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/9-unet/unet-original.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1046,10 +1048,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="16" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDZ3VpZGFuY2UlMkNjbGFzc2lmaWVyLWZyZWUtZ3VpZGFuY2U=" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1772338571881" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="11" data-listing-word-count-sort="2121">
+<div class="quarto-post image-right" data-index="16" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDZ3VpZGFuY2UlMkNjbGFzc2lmaWVyLWZyZWUtZ3VpZGFuY2U=" data-listing-date-sort="1766188800000" data-listing-file-modified-sort="1776032785785" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="11" data-listing-word-count-sort="2121">
 <div class="thumbnail"><a href="./posts/diffusion/8-guidance/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/8-guidance/cfg-concept.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/8-guidance/cfg-concept.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1087,7 +1089,7 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="17" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2NvcmUtbWF0Y2hpbmclMkN0cmFpbmluZw==" data-listing-date-sort="1765670400000" data-listing-file-modified-sort="1772338571876" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="14" data-listing-word-count-sort="2662">
+<div class="quarto-post image-right" data-index="17" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2NvcmUtbWF0Y2hpbmclMkN0cmFpbmluZw==" data-listing-date-sort="1765670400000" data-listing-file-modified-sort="1776032785781" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="14" data-listing-word-count-sort="2662">
 <div class="thumbnail"><a href="./posts/diffusion/7-training/index.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -1128,10 +1130,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="18" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2NvcmUtZnVuY3Rpb24lMkNzY29yZS1tYXRjaGluZyUyQ2Zva2tlci1wbGFuY2s=" data-listing-date-sort="1764633600000" data-listing-file-modified-sort="1772338571869" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="12" data-listing-word-count-sort="2229">
+<div class="quarto-post image-right" data-index="18" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2NvcmUtZnVuY3Rpb24lMkNzY29yZS1tYXRjaGluZyUyQ2Zva2tlci1wbGFuY2s=" data-listing-date-sort="1764633600000" data-listing-file-modified-sort="1776032785774" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="12" data-listing-word-count-sort="2229">
 <div class="thumbnail"><a href="./posts/diffusion/6-score-functions/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/6-score-functions/score-function-vector-field.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/6-score-functions/score-function-vector-field.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1171,10 +1173,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="19" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2Rl" data-listing-date-sort="1764547200000" data-listing-file-modified-sort="1772338571866" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1584">
+<div class="quarto-post image-right" data-index="19" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxzJTJDc2Rl" data-listing-date-sort="1764547200000" data-listing-file-modified-sort="1776032785772" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="8" data-listing-word-count-sort="1584">
 <div class="thumbnail"><a href="./posts/diffusion/5-diffusion-sde/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/5-diffusion-sde/ode-vs-sde.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/5-diffusion-sde/ode-vs-sde.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1210,10 +1212,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="20" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764460800000" data-listing-file-modified-sort="1772338571866" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1149">
+<div class="quarto-post image-right" data-index="20" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764460800000" data-listing-file-modified-sort="1776032785770" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1149">
 <div class="thumbnail"><a href="./posts/diffusion/4-flow-matching-loss/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/4-flow-matching-loss/divergence-negative.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/4-flow-matching-loss/divergence-negative.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1247,10 +1249,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="21" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764374400000" data-listing-file-modified-sort="1772338571861" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1175">
+<div class="quarto-post image-right" data-index="21" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764374400000" data-listing-file-modified-sort="1776032785767" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1175">
 <div class="thumbnail"><a href="./posts/diffusion/3-probability-paths/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/3-probability-paths/conditional-vs-marginal.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/3-probability-paths/conditional-vs-marginal.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1284,10 +1286,10 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="22" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764288000000" data-listing-file-modified-sort="1772338571853" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="548">
+<div class="quarto-post image-right" data-index="22" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764288000000" data-listing-file-modified-sort="1776032785761" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="3" data-listing-word-count-sort="548">
 <div class="thumbnail"><a href="./posts/diffusion/2-flows/index.html" class="no-external">
 
-<p class="card-img-top"><img src="posts/diffusion/2-flows/single-trajectory.png"  class="thumbnail-image card-img"/></p>
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/2-flows/single-trajectory.png"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
@@ -1321,44 +1323,7 @@ Hujie Wang
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="23" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1772338571825" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1056">
-<div class="thumbnail"><a href="./posts/diffusion/1-intro/index.html" class="no-external">
-
-<p class="card-img-top"><img src="posts/diffusion/1-intro/diffusion-vs-flow.png"  class="thumbnail-image card-img"/></p>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/diffusion/1-intro/index.html" class="no-external">Diffusion &amp; Flow Matching Part 1: Introduction</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/diffusion/1-intro/index.html" class="no-external"></a>
-</div>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/diffusion/1-intro/index.html" class="no-external">
-This multi-part series explores the theory behind modern generative models. Each post builds on the previous one:
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/diffusion/1-intro/index.html" class="no-external">
-<div class="listing-date">
-Nov 27, 2025
-</div>
-<div class="listing-author">
-Hujie Wang
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="24" data-categories="bmV3cyUyQ2ludHJvZHVjdGlvbg==" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1772338572160" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="90">
+<div class="quarto-post image-right" data-index="23" data-categories="bmV3cyUyQ2ludHJvZHVjdGlvbg==" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1776032786080" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="90">
 <div class="thumbnail"><a href="./posts/welcome/index.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -1389,6 +1354,43 @@ Nov 27, 2025
 </div>
 <div class="listing-author">
 Timothy Wang
+</div>
+</a>
+</div>
+</div>
+<div class="quarto-post image-right" data-index="24" data-categories="ZGlmZnVzaW9uJTJDZmxvdy1tYXRjaGluZyUyQ2dlbmVyYXRpdmUtbW9kZWxz" data-listing-date-sort="1764201600000" data-listing-file-modified-sort="1776032785732" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="6" data-listing-word-count-sort="1056">
+<div class="thumbnail"><a href="./posts/diffusion/1-intro/index.html" class="no-external">
+
+<p class="card-img-top"><img loading='lazy' src="posts/diffusion/1-intro/diffusion-vs-flow.png"  class="thumbnail-image card-img"/></p>
+
+</a></div>
+<div class="body">
+<h3 class="no-anchor listing-title">
+<a href="./posts/diffusion/1-intro/index.html" class="no-external">Diffusion &amp; Flow Matching Part 1: Introduction</a>
+</h3>
+<div class="listing-subtitle">
+<a href="./posts/diffusion/1-intro/index.html" class="no-external"></a>
+</div>
+<div class="listing-categories">
+
+<div class="listing-category" onclick="window.quartoListingCategory('ZGlmZnVzaW9u'); return false;">diffusion</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Zmxvdy1tYXRjaGluZw=='); return false;">flow-matching</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('Z2VuZXJhdGl2ZS1tb2RlbHM='); return false;">generative-models</div>
+
+</div>
+<div class="delink listing-description"><a href="./posts/diffusion/1-intro/index.html" class="no-external">
+This multi-part series explores the theory behind modern generative models. Each post builds on the previous one:
+</a></div>
+</div>
+<div class="metadata">
+<a href="./posts/diffusion/1-intro/index.html" class="no-external">
+<div class="listing-date">
+Nov 27, 2025
+</div>
+<div class="listing-author">
+Hujie Wang
 </div>
 </a>
 </div>
