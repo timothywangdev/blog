@@ -6,13 +6,22 @@
 
 ## Working Style
 
-- **Use multiple agents in parallel whenever possible**: Always prefer launching multiple Task agents in parallel rather than sequentially. This applies to:
+- **Always spawn a team of agents**: Default to parallel agent teams for every non-trivial task. Never execute passes or subtasks sequentially when they can run concurrently. This is not an optimization — it is the required approach.
   - **Research tasks**: Launch 3-4 agents simultaneously to explore different aspects of a topic, search for papers/tutorials, or gather information from multiple sources
-  - **Independent operations**: If tasks don't depend on each other's results, run them in parallel (e.g., reading multiple files, searching different codebases, fetching multiple web resources)
-  - **Exploratory work**: When investigating a codebase or concept, spawn parallel agents to examine different areas simultaneously
-  - **General rule**: If you can launch tasks in parallel without waiting for sequential results, do it. Maximize parallelism for performance.
+  - **Polish/editing runs**: Spawn all pass-agents at once (structure, math, credibility, visuals) — never do passes one at a time
+  - **Independent operations**: If tasks don't depend on each other's results, run them in parallel (reading multiple files, searching different codebases, fetching multiple web resources)
+  - **Exploratory work**: Spawn parallel agents to examine different areas of a codebase or concept simultaneously
+  - **Enforcement**: If you find yourself about to do a second sequential task, stop and ask whether it could have been launched in parallel with the first
 
 - **Draft posts with /polish**: When creating or editing blog posts, follow the guidelines in `.claude/commands/polish.md`
+
+## Thinking Principles
+
+- **Surface assumptions explicitly**: For complex decisions, identify and state key assumptions before proceeding.
+- **Steelman alternatives**: When recommending an approach, present the strongest case for alternatives. Develop competing hypotheses for research tasks.
+- **Trace to first principles**: For technical decisions, reason from fundamental truths rather than conventions or analogies.
+- **Self-check before concluding**: Verify your answer against original requirements and constraints before finishing.
+- **State uncertainty directly**: When confidence is low, say so explicitly with reasoning.
 
 ## Blog Structure
 
@@ -20,6 +29,10 @@
 - Each post is a Quarto `.qmd` file in its own folder with an `index.qmd`
 - Images go in the same directory as the post
 - Use `draft: true` in frontmatter for work-in-progress posts
+
+## Skills
+
+- **arxivsub-skill**: Use `/arxivsub-skill` to search academic papers via the arXivSub API. Covers arXiv and major AI/CV conferences (CVPR, ICCV, ICLR, ICML, NeurIPS, AAAI, MICCAI). Use for finding recent research when writing blog posts.
 
 ## Tech Stack
 

@@ -12,7 +12,22 @@ Polish the current document for clarity, mathematical rigor, and accessibility.
 ## Critical Requirements
 
 - **Author name**: Always use `author: "Hujie Wang"` in frontmatter
-- **Parallel research**: Launch 3-4 Task agents simultaneously, not sequentially
+- **Always spawn a team**: Launch agents in parallel for EVERY polish run — never execute passes sequentially yourself. Minimum team configuration below.
+
+## Team Configuration (spawn all at once)
+
+When `/polish` is invoked, immediately spawn these agents in a single message:
+
+| Agent | Passes | What it does |
+|-------|--------|--------------|
+| **Agent 1: Structure + Hooks** | Pass 0, 1, 2, 5 | Research analogies, scope check, TL;DR, section hooks, PAS opening |
+| **Agent 2: Math + Notation** | Pass 3, 7 | Equation intuition, variable definitions, notation consistency, math colors |
+| **Agent 3: Credibility + References** | Pass 4 | Verify all references via web search, misconceptions, real-system connections |
+| **Agent 4: Visuals** | Pass 6 | Visual density audit, hero visual, generate/find missing diagrams |
+
+Each agent reads the post and the relevant sub-skill (polish-hooks, polish-math, polish-visuals). Each returns exact `old_string → new_string` edit pairs. Apply edits after all 4 return.
+
+**Never do passes one-at-a-time.** Parallelism is the default, not an optimization.
 
 ## Target Audiences
 
@@ -121,6 +136,7 @@ Write for a brilliant but exhausted PhD student at 2am. No skipped steps. No imp
 
 **Avoid**: delve, utilize, harness, pivotal, seamless, groundbreaking, leverage, crucial
 **Avoid phrases**: "Let's dive in", "It's worth noting", "Furthermore", "In conclusion"
+**Never use em dashes** (—): replace with commas, colons, parentheses, or restructure the sentence.
 **Do**: Use contractions inconsistently, vary paragraph length, include fragments, be specific
 
 ## Task Passes
@@ -179,5 +195,21 @@ Write for a brilliant but exhausted PhD student at 2am. No skipped steps. No imp
 - ❌ 200+ lines without a visual
 - ❌ "Imagine..." without an actual picture
 - ❌ Key equation without preceding intuition diagram
+
+### Pass 7: Math Visuals (from `/polish-math`)
+
+**Professional standard: 1–2 colors per equation, only on the term that carries the new insight.**
+
+- [ ] Identify the 1-3 "thesis" equations the post is fundamentally about
+- [ ] Per equation: identify ONE concept to highlight — color only that (1–2 terms max)
+- [ ] Use `\underbrace` to name conceptual chunks (e.g., "oscillation" vs "forcing") — not individual symbols
+- [ ] Wrap the single most critical subterm in `\bbox[border: 2px dashed orange]{}` (once per post)
+- [ ] Use `\boxed{}` for the key result of a derivation (one per section, no color inside)
+- [ ] Add prose legend only if variables aren't defined in adjacent text/table
+- [ ] Structural scaffolding (I, Δt, bias terms) stays black
+- [ ] Check colorblind safety: no red+green pairs
+- [ ] Verify `\bbox` renders with `quarto preview` (MathJax only, not KaTeX)
+
+**Only apply to posts with ≥ 3 key equations. Skip for mostly-prose posts.**
 
 Do NOT change mathematical content — only improve exposition.
