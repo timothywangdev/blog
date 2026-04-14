@@ -888,7 +888,17 @@ def build_tiptap_with_native_latex(
     import copy
     import re
 
-    # First, use the library's markdown parser
+    # Pre-convert markdown links to placeholders BEFORE from_markdown().
+    # from_markdown() sets href: null for ALL links — placeholders preserve URLs.
+    # Bullet item links are already converted by preprocess_for_api(), so this
+    # only affects links in regular paragraphs and callout bodies.
+    # (?<!!) negative lookbehind: skip image syntax ![alt](url), only match [text](url)
+    _link_pre_pattern = re.compile(r'(?<!!)\[([^\]]+)\]\(([^)\s]+)\)')
+    def _link_to_placeholder(m):
+        return f'%%LINK_START%%{m.group(2)}%%LINK_SEP%%{m.group(1)}%%LINK_END%%'
+    markdown_content = _link_pre_pattern.sub(_link_to_placeholder, markdown_content)
+
+    # Use the library's markdown parser
     post.from_markdown(markdown_content, api=_substack_api)
 
     # ===== POST-PROCESS: Fix links and lists that library doesn't handle =====
@@ -925,9 +935,12 @@ def build_tiptap_with_native_latex(
         return result if result else [{'type': 'text', 'text': text}]
 
     def fix_links_in_node(node: dict) -> dict:
-        """Recursively fix markdown links in text nodes."""
+        """Recursively fix markdown links and link placeholders in text nodes."""
         if node.get('type') == 'text':
             text = node.get('text', '')
+            if '%%LINK_START%%' in text:
+                # Convert link placeholders to proper link nodes
+                return convert_link_placeholders(text)
             if '[' in text and '](' in text:
                 # This text contains markdown links - convert it
                 return convert_text_with_links(text)
@@ -1287,12 +1300,17 @@ def build_tiptap_with_native_latex(
                 else:
                     # Clean any stray markers and add to blockquote
                     if inner_node.get('type') == 'paragraph':
-                        cleaned_text = remove_marker_from_text(inner_text)
-                        if cleaned_text:
-                            blockquote_content.append({
-                                'type': 'paragraph',
-                                'content': [{'type': 'text', 'text': cleaned_text}]
-                            })
+                        if text_contains_callout_marker(inner_text):
+                            # Node has a marker in it — strip it, rebuild as plain text
+                            cleaned_text = remove_marker_from_text(inner_text)
+                            if cleaned_text:
+                                blockquote_content.append({
+                                    'type': 'paragraph',
+                                    'content': convert_text_with_links(cleaned_text)
+                                })
+                        else:
+                            # No marker — pass the original node through to preserve link marks
+                            blockquote_content.append(inner_node)
                     elif inner_node.get('type') == 'latex_block':
                         # LaTeX inside callout - add to blockquote
                         blockquote_content.append(inner_node)
@@ -1359,7 +1377,8 @@ def publish_to_substack(
     subtitle: str,
     markdown_content: str,
     draft_only: bool = False,
-    native_latex: bool = True
+    native_latex: bool = True,
+    update_draft_id: int | None = None
 ) -> dict | None:
     """
     Publish content directly to Substack via API.
@@ -1370,6 +1389,7 @@ def publish_to_substack(
         markdown_content: Processed markdown content (not HTML)
         draft_only: If True, only create draft (don't publish)
         native_latex: If True, use native latex_block nodes (consistent sizing)
+        update_draft_id: If set, update this existing draft instead of creating a new one
 
     Returns:
         Dict with post info (id, url) on success, None on failure
@@ -1404,30 +1424,49 @@ def publish_to_substack(
         # Build content with our custom parser
         build_post_from_markdown(markdown_content, post, native_latex=native_latex)
 
-        # Create draft with retry
+        # Create or update draft with retry
         import time
-        print("   Creating draft on Substack...")
         draft_body = post.get_draft()
 
         draft_result = None
-        for attempt in range(3):
-            try:
-                draft_result = _substack_api.post_draft(draft_body)
-                break
-            except Exception as e:
-                if "429" in str(e) and attempt < 2:
-                    wait_time = 5 * (attempt + 1)
-                    print(f"   ⏳ Rate limited, waiting {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
-                    raise
+        if update_draft_id:
+            print(f"   Updating existing draft {update_draft_id}...")
+            for attempt in range(3):
+                try:
+                    draft_result = _substack_api.put_draft(update_draft_id, **draft_body)
+                    if not isinstance(draft_result, dict):
+                        draft_result = {"id": update_draft_id}
+                    elif "id" not in draft_result:
+                        draft_result["id"] = update_draft_id
+                    break
+                except Exception as e:
+                    if "429" in str(e) and attempt < 2:
+                        wait_time = 5 * (attempt + 1)
+                        print(f"   ⏳ Rate limited, waiting {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise
+        else:
+            print("   Creating draft on Substack...")
+            for attempt in range(3):
+                try:
+                    draft_result = _substack_api.post_draft(draft_body)
+                    break
+                except Exception as e:
+                    if "429" in str(e) and attempt < 2:
+                        wait_time = 5 * (attempt + 1)
+                        print(f"   ⏳ Rate limited, waiting {wait_time}s...")
+                        time.sleep(wait_time)
+                    else:
+                        raise
 
         if not draft_result or "id" not in draft_result:
-            print("❌ Failed to create draft")
+            print("❌ Failed to create/update draft")
             return None
 
         draft_id = draft_result["id"]
-        print(f"   ✅ Draft created: ID {draft_id}")
+        action = "updated" if update_draft_id else "created"
+        print(f"   ✅ Draft {action}: ID {draft_id}")
 
         if draft_only:
             # Return draft info
@@ -1473,7 +1512,8 @@ def convert_qmd_to_substack(
     output_path: Path,
     upload: bool = False,
     publish: bool = False,
-    draft_only: bool = False
+    draft_only: bool = False,
+    update_draft_id: int | None = None
 ) -> bool:
     """
     Main conversion function.
@@ -1509,6 +1549,13 @@ def convert_qmd_to_substack(
     author = frontmatter.get('author', '')
     date = frontmatter.get('date', '')
     print(f"   Title: {title}")
+
+    # Auto-detect draft_id from frontmatter (used when update_draft_id not explicitly passed)
+    if update_draft_id is None:
+        fm_draft_id = frontmatter.get('draft_id')
+        if fm_draft_id:
+            update_draft_id = int(fm_draft_id)
+            print(f"   Draft ID from frontmatter: {update_draft_id} (will update existing draft)")
 
     # Process callouts
     print("   Processing callouts...")
@@ -1725,7 +1772,7 @@ def convert_qmd_to_substack(
             publish_content = replace_math_with_images(processed_content, qmd_path.parent, upload=True)
             publish_content = clean_html_tags(publish_content)
 
-        result = publish_to_substack(title, subtitle, publish_content, draft_only=draft_only, native_latex=use_native_latex)
+        result = publish_to_substack(title, subtitle, publish_content, draft_only=draft_only, native_latex=use_native_latex, update_draft_id=update_draft_id)
 
         if result:
             status = result.get('status', 'unknown')
@@ -1830,6 +1877,12 @@ def main():
         action="store_true",
         help="With --publish: create draft only, don't publish"
     )
+    parser.add_argument(
+        "--update-draft",
+        type=int,
+        metavar="DRAFT_ID",
+        help="With --publish: update this existing draft instead of creating a new one"
+    )
 
     args = parser.parse_args()
 
@@ -1859,7 +1912,8 @@ def main():
         output_path,
         upload=upload,
         publish=args.publish,
-        draft_only=args.draft
+        draft_only=args.draft,
+        update_draft_id=args.update_draft
     )
     sys.exit(0 if success else 1)
 

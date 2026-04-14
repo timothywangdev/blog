@@ -41,6 +41,14 @@ Substack only supports **block LaTeX** (centered equations). Inline math like `$
 - Renders as images on separate lines (breaks reading flow)
 - Doesn't render at all in email newsletters
 
+## HARD RULES (never violate these)
+
+> **NO MARKDOWN TABLES.** Substack does not support tables. Tables render as jumbled, unreadable text. This applies to ALL tables — including tables you add during rewriting or polishing. Convert every table to bullet lists (see Rule 8 below). If you are tempted to add a table for clarity, use bullet lists instead.
+
+> **NO INLINE `$...$` MATH.** Every inline `$...$` gets extracted into a separate block image, breaking prose flow. Use Unicode for inline references (λ, Δt, Sₖₖ) and reserve `$$...$$` for key displayed equations only.
+
+> **NO RAW URLs AS LINK TEXT.** Never write `[https://example.com/path](https://example.com/path)` or bare URLs as visible text. Always use a descriptive phrase as the anchor: `[full blog post](https://layernorm.dev/posts/...)`, `[original paper](https://arxiv.org/...)`. Raw URLs as link text look broken and are unreadable on Substack.
+
 ## Your Task
 
 Given a QMD file path as argument, rewrite the content following these rules:
@@ -304,7 +312,7 @@ Follow the full guidelines in `/polish` under "Avoiding AI-Typical Language". Ke
 
 - Replace flagged words: delve → explore, leverage/utilize/harness → use, crucial/pivotal → important
 - Remove filler phrases: "It's important to note...", "Let's dive in", "Furthermore/Moreover"
-- Reduce em-dashes: limit to 1-2 per paragraph, use commas or periods instead
+- **Never use em dashes** (—): replace with commas, colons, parentheses, or restructure the sentence. Zero tolerance.
 - Vary sentence length and use contractions naturally
 - Be specific: names and citations instead of "many researchers"
 

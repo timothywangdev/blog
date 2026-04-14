@@ -13,6 +13,7 @@ Polish the current document for clarity, mathematical rigor, and accessibility.
 
 - **Author name**: Always use `author: "Hujie Wang"` in frontmatter
 - **Always spawn a team**: Launch agents in parallel for EVERY polish run — never execute passes sequentially yourself. Minimum team configuration below.
+- **Substack posts (_substack.qmd): NO TABLES EVER.** Substack does not render markdown tables — they appear as jumbled unreadable text. If polishing a `_substack.qmd` file, convert any tables to bullet lists and never introduce new tables. Use bullet lists for all comparisons, schedules, and structured data.
 
 ## Team Configuration (spawn all at once)
 

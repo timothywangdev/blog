@@ -11,6 +11,10 @@
 .venv/
 **/.venv/
 
+# Python cache
+**/__pycache__/
+**/*.pyc
+
 # Playwright state
 .playwright-mcp/
 # Part 11 data files
